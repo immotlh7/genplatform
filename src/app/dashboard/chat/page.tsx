@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { CommanderCard } from '@/components/chat/CommanderCard'
 import { ProjectSelector } from '@/components/chat/ProjectSelector'
+import { NewIdeaModal } from '@/components/chat/NewIdeaModal'
 import { 
   MessageCircle, 
   Send, 
@@ -22,7 +23,8 @@ import {
   Lock,
   AlertCircle,
   Shield,
-  Target
+  Target,
+  Lightbulb
 } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { getCurrentUserClient, getUserPermissionSummary } from '@/lib/access-control'
@@ -88,6 +90,12 @@ export default function ChatPage() {
   const [arabicConfidence, setArabicConfidence] = useState(0)
   const [isListening, setIsListening] = useState(false)
   const [selectedProject, setSelectedProject] = useState<Project | null>(null)
+  const [showNewIdeaModal, setShowNewIdeaModal] = useState(false)
+  const [ideaContext, setIdeaContext] = useState<{
+    originalText?: string
+    translatedText?: string
+    content?: string
+  }>({})
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
@@ -136,7 +144,8 @@ export default function ChatPage() {
           canRead: permissions.isManager || permissions.isAdmin, // Chat read requires MANAGER+
           canWrite: permissions.isManager || permissions.isAdmin, // Chat write requires MANAGER+
           canModerate: permissions.isAdmin, // Chat moderation requires ADMIN+
-          canUseCommander: permissions.isManager || permissions.isAdmin // Commander requires MANAGER+
+          canUseCommander: permissions.isManager || permissions.isAdmin, // Commander requires MANAGER+
+          canCreateIdeas: true // All users can create ideas
         })
       }
     } catch (error) {
@@ -349,6 +358,52 @@ export default function ChatPage() {
       title: "Sent to project",
       description: `Command: "${text}" has been added to ${selectedProject.name}.`,
     })
+  }
+
+  const handleCreateIdeaFromMessage = (message: Message) => {
+    if (!userPermissions?.canCreateIdeas) {
+      toast({
+        title: "Access Denied",
+        description: "You don't have permission to create ideas.",
+        variant: "destructive",
+      })
+      return
+    }
+
+    setIdeaContext({
+      originalText: message.metadata?.isArabic ? message.content : undefined,
+      translatedText: message.metadata?.translatedText || (!message.metadata?.isArabic ? message.content : undefined),
+      content: message.content
+    })
+    setShowNewIdeaModal(true)
+  }
+
+  const handleQuickCreateIdea = () => {
+    if (!userPermissions?.canCreateIdeas) {
+      toast({
+        title: "Access Denied",
+        description: "You don't have permission to create ideas.",
+        variant: "destructive",
+      })
+      return
+    }
+
+    setIdeaContext({
+      content: inputValue.trim()
+    })
+    setShowNewIdeaModal(true)
+  }
+
+  const handleIdeaSuccess = (idea: any) => {
+    toast({
+      title: "Idea Created",
+      description: `"${idea.title}" has been saved to Ideas Lab.`,
+    })
+    
+    // Optionally clear input if it was used for the idea
+    if (inputValue.trim() === idea.content) {
+      setInputValue('')
+    }
   }
 
   const startVoiceInput = () => {
@@ -607,15 +662,32 @@ export default function ChatPage() {
                           {message.metadata?.userRole || 'Unknown'}
                         </Badge>
                       </div>
-                      <div className={`p-3 rounded-lg ${
-                        message.role === 'user' 
-                          ? 'bg-blue-600 text-white ml-auto' 
-                          : 'bg-muted'
-                      }`}>
-                        <p className={message.metadata?.isArabic ? 'text-right' : 'text-left'} 
-                           dir={message.metadata?.isArabic ? 'rtl' : 'ltr'}>
-                          {message.content}
-                        </p>
+                      <div className="relative group">
+                        <div className={`p-3 rounded-lg ${
+                          message.role === 'user' 
+                            ? 'bg-blue-600 text-white ml-auto' 
+                            : 'bg-muted'
+                        }`}>
+                          <p className={message.metadata?.isArabic ? 'text-right' : 'text-left'} 
+                             dir={message.metadata?.isArabic ? 'rtl' : 'ltr'}>
+                            {message.content}
+                          </p>
+                        </div>
+                        
+                        {/* Message Actions */}
+                        {message.role === 'user' && userPermissions?.canCreateIdeas && (
+                          <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleCreateIdeaFromMessage(message)}
+                              className="h-6 px-2 bg-black/10 hover:bg-black/20 text-white"
+                            >
+                              <Lightbulb className="h-3 w-3 mr-1" />
+                              <span className="text-xs">Idea</span>
+                            </Button>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -667,12 +739,27 @@ export default function ChatPage() {
                     </Badge>
                   )}
                 </div>
-                {isLoading && (
-                  <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-                    <RefreshCw className="h-3 w-3 animate-spin" />
-                    <span>Processing...</span>
-                  </div>
-                )}
+                <div className="flex items-center space-x-2">
+                  {isLoading && (
+                    <div className="flex items-center space-x-2 text-sm text-muted-foreground">
+                      <RefreshCw className="h-3 w-3 animate-spin" />
+                      <span>Processing...</span>
+                    </div>
+                  )}
+                  
+                  {/* Quick Create Idea */}
+                  {inputValue.trim() && userPermissions?.canCreateIdeas && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleQuickCreateIdea}
+                      className="flex items-center space-x-1"
+                    >
+                      <Lightbulb className="h-3 w-3" />
+                      <span>Save as Idea</span>
+                    </Button>
+                  )}
+                </div>
               </div>
 
               {/* Input Row */}
@@ -735,6 +822,20 @@ export default function ChatPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* New Idea Modal */}
+      <NewIdeaModal
+        isOpen={showNewIdeaModal}
+        onClose={() => {
+          setShowNewIdeaModal(false)
+          setIdeaContext({})
+        }}
+        initialContent={ideaContext.content}
+        originalText={ideaContext.originalText}
+        translatedText={ideaContext.translatedText}
+        selectedProject={selectedProject}
+        onSuccess={handleIdeaSuccess}
+      />
     </div>
   )
 }
