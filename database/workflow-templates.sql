@@ -233,11 +233,134 @@ INSERT INTO workflows (
     }'::jsonb
 );
 
+-- Task 7-07: "New Feature" Template
+INSERT INTO workflows (
+    id,
+    name,
+    description,
+    template_type,
+    is_active,
+    trigger_type,
+    config
+) VALUES (
+    'new-feature-template',
+    'New Feature',
+    'Plan, code, review, and deploy new features',
+    'new_feature',
+    false, -- Start inactive, user can activate
+    'manual',
+    '{
+        "steps": [
+            {
+                "id": "plan_feature",
+                "name": "📋 Plan Feature",
+                "type": "action",
+                "description": "Create detailed feature specification and design",
+                "role": "product_manager",
+                "command": "Create a comprehensive feature plan including: requirements, user stories, acceptance criteria, technical specifications, and design mockups.",
+                "estimated_duration": "30-45 minutes",
+                "outputs": ["feature_spec", "user_stories", "acceptance_criteria", "design_mockups", "technical_requirements"],
+                "success_criteria": "Feature is fully specified and ready for implementation"
+            },
+            {
+                "id": "wait_feature_approval",
+                "name": "⏸️ Wait for Approval",
+                "type": "approval",
+                "description": "Stakeholder approval before proceeding with development",
+                "approval_message": "Review the feature plan and specifications. Approve to proceed with feature development?",
+                "required_role": "ADMIN",
+                "dependencies": ["plan_feature"],
+                "include_outputs": ["feature_spec", "user_stories", "design_mockups"]
+            },
+            {
+                "id": "code_feature",
+                "name": "💻 Code Feature",
+                "type": "action",
+                "description": "Implement the approved feature",
+                "role": "developer",
+                "command": "Implement the approved feature according to the specifications. Follow coding standards, write tests, and ensure proper documentation.",
+                "estimated_duration": "1-2 hours",
+                "outputs": ["feature_implementation", "unit_tests", "integration_tests", "code_documentation"],
+                "dependencies": ["wait_feature_approval"],
+                "success_criteria": "Feature is fully implemented with tests"
+            },
+            {
+                "id": "code_review",
+                "name": "🔍 Code Review",
+                "type": "action",
+                "description": "Thorough code review by senior developer",
+                "role": "senior_developer",
+                "command": "Conduct comprehensive code review focusing on: code quality, security, performance, maintainability, and adherence to architecture.",
+                "estimated_duration": "20-30 minutes",
+                "outputs": ["review_feedback", "approval_status", "improvement_suggestions"],
+                "dependencies": ["code_feature"],
+                "success_criteria": "Code review passed with any issues addressed"
+            },
+            {
+                "id": "security_check",
+                "name": "🛡️ Security Check",
+                "type": "action",
+                "description": "Security audit of the new feature",
+                "role": "security_specialist",
+                "command": "Perform security analysis of the new feature. Check for vulnerabilities, data exposure risks, and security best practices compliance.",
+                "estimated_duration": "15-20 minutes",
+                "outputs": ["security_assessment", "vulnerability_scan", "compliance_check"],
+                "dependencies": ["code_review"],
+                "success_criteria": "No security issues identified"
+            },
+            {
+                "id": "deploy_feature",
+                "name": "🚀 Deploy",
+                "type": "action",
+                "description": "Deploy feature to production",
+                "role": "devops",
+                "command": "Deploy the reviewed and approved feature to production environment. Monitor deployment and verify functionality.",
+                "estimated_duration": "10-15 minutes",
+                "outputs": ["deployment_status", "production_verification", "monitoring_setup"],
+                "dependencies": ["security_check"]
+            },
+            {
+                "id": "notify_feature_live",
+                "name": "🔔 Notify: Feature Live!",
+                "type": "notification",
+                "description": "Notify stakeholders that feature is deployed",
+                "message": "🎉 New feature successfully deployed and live in production!",
+                "notification_channels": ["dashboard", "email", "slack", "product_team"],
+                "include_outputs": ["feature_summary", "deployment_status", "user_documentation"],
+                "dependencies": ["deploy_feature"]
+            }
+        ],
+        "estimated_total_duration": "2-3 hours",
+        "success_criteria": [
+            "Feature fully implemented according to specifications",
+            "All tests passing",
+            "Code review approved", 
+            "Security check passed",
+            "Successfully deployed to production",
+            "Feature working as expected"
+        ],
+        "failure_handling": {
+            "max_retries": 2,
+            "retry_steps": ["code_feature", "code_review"],
+            "escalation_roles": ["ADMIN", "OWNER"],
+            "rollback_on_failure": true,
+            "notification_on_failure": true
+        },
+        "quality_gates": {
+            "code_coverage_threshold": 80,
+            "security_scan_required": true,
+            "performance_test_required": true,
+            "documentation_required": true
+        },
+        "tags": ["feature", "enhancement", "production"]
+    }'::jsonb
+);
+
 -- Add workflow metadata and tracking
 UPDATE workflows SET 
     created_at = now(),
     updated_at = now()
-WHERE id IN ('idea-to-mvp-template', 'bug-fix-template');
+WHERE id IN ('idea-to-mvp-template', 'bug-fix-template', 'new-feature-template');
 
 -- Create index for quick template lookup
 CREATE INDEX IF NOT EXISTS idx_workflows_template_lookup ON workflows(template_type, is_active);
@@ -249,4 +372,4 @@ COMMENT ON TABLE workflows IS 'Pre-built workflow templates for common automatio
 -- SELECT name, template_type, trigger_type, is_active, 
 --        jsonb_array_length(config->'steps') as step_count
 -- FROM workflows 
--- WHERE template_type IN ('idea_to_mvp', 'bug_fix');
+-- WHERE template_type IN ('idea_to_mvp', 'bug_fix', 'new_feature');
