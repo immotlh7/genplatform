@@ -331,7 +331,7 @@ export default function SettingsPage() {
                 value={settings.profile.timezone} 
                 onValueChange={(value) => setSettings(prev => ({
                   ...prev,
-                  profile: { ...prev.profile, timezone: value }
+                  profile: { ...prev.profile, timezone: value || 'Africa/Casablanca' }
                 }))}
               >
                 <SelectTrigger>
@@ -369,7 +369,7 @@ export default function SettingsPage() {
                 value={settings.appearance.theme} 
                 onValueChange={(value) => setSettings(prev => ({
                   ...prev,
-                  appearance: { ...prev.appearance, theme: value as 'light' | 'dark' | 'system' }
+                  appearance: { ...prev.appearance, theme: (value || 'dark') as 'light' | 'dark' | 'system' }
                 }))}
               >
                 <SelectTrigger>
@@ -403,7 +403,7 @@ export default function SettingsPage() {
                 value={settings.appearance.sidebarPosition} 
                 onValueChange={(value) => setSettings(prev => ({
                   ...prev,
-                  appearance: { ...prev.appearance, sidebarPosition: value as 'left' | 'right' }
+                  appearance: { ...prev.appearance, sidebarPosition: (value || 'left') as 'left' | 'right' }
                 }))}
               >
                 <SelectTrigger>
