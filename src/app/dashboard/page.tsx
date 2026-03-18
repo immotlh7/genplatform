@@ -25,6 +25,7 @@ import {
 import Link from 'next/link'
 import { TaskTracker } from '@/components/dashboard/TaskTracker'
 import { ActivityStream } from '@/components/dashboard/ActivityStream'
+import { ImprovementsWidget } from '@/components/dashboard/ImprovementsWidget'
 import { supabaseHelpers } from '@/lib/supabase'
 import { getCurrentUserClient, getAccessibleProjects } from '@/lib/access-control'
 import type { User } from '@/lib/access-control'
@@ -208,11 +209,19 @@ export default function DashboardPage() {
   const getQuickActions = (user: User | null): QuickAction[] => {
     const baseActions: QuickAction[] = [
       {
+        id: 'view-reports',
+        title: 'System Reports',
+        description: 'View generated reports',
+        href: '/dashboard/reports',
+        icon: <FileText className="h-4 w-4" />,
+        color: 'bg-blue-500'
+      },
+      {
         id: 'create-memory',
         title: 'Create Memory File',
         description: 'Add new memory or notes',
         href: '/dashboard/memory',
-        icon: <FileText className="h-4 w-4" />,
+        icon: <Brain className="h-4 w-4" />,
         color: 'bg-green-500'
       },
       {
@@ -233,7 +242,7 @@ export default function DashboardPage() {
         description: 'Start a new project',
         href: '/dashboard/projects',
         icon: <Plus className="h-4 w-4" />,
-        color: 'bg-blue-500'
+        color: 'bg-purple-500'
       })
     }
 
@@ -244,7 +253,7 @@ export default function DashboardPage() {
         description: 'Create automated task',
         href: '/dashboard/cron',
         icon: <Clock className="h-4 w-4" />,
-        color: 'bg-purple-500'
+        color: 'bg-indigo-500'
       })
     }
 
@@ -415,10 +424,10 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* Main Content Grid: Quick Actions + Activity Stream */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      {/* Main Content Grid: Quick Actions + Activity Stream + Improvements */}
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
         {/* Quick Actions - Role-based */}
-        <Card className="lg:col-span-1">
+        <Card className="lg:col-span-2">
           <CardHeader>
             <CardTitle className="flex items-center space-x-2">
               <Settings className="h-5 w-5" />
@@ -446,7 +455,7 @@ export default function DashboardPage() {
         </Card>
 
         {/* Activity Stream - Filtered for user's projects */}
-        <div className="lg:col-span-2">
+        <div className="lg:col-span-3">
           <ActivityStream 
             refreshInterval={30000} 
             maxEvents={20}
@@ -455,53 +464,59 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Performance Overview */}
-      {stats && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <TrendingUp className="h-5 w-5" />
-              <span>System Performance</span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-              <div className="space-y-2">
-                <div className="flex items-center justify-between text-sm">
-                  <span>CPU Usage</span>
-                  <span className="font-medium">{Math.round(stats.system.cpu)}%</span>
+      {/* Secondary Content Grid: Improvements Widget + System Performance */}
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+        {/* System Improvements Widget */}
+        <ImprovementsWidget />
+
+        {/* Performance Overview */}
+        {stats && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <TrendingUp className="h-5 w-5" />
+                <span>System Performance</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-sm">
+                    <span>CPU Usage</span>
+                    <span className="font-medium">{Math.round(stats.system.cpu)}%</span>
+                  </div>
+                  <Progress value={stats.system.cpu} />
+                  <div className="text-xs text-muted-foreground">
+                    {stats.system.cpu < 70 ? 'Normal' : stats.system.cpu < 85 ? 'High' : 'Critical'}
+                  </div>
                 </div>
-                <Progress value={stats.system.cpu} />
-                <div className="text-xs text-muted-foreground">
-                  {stats.system.cpu < 70 ? 'Normal' : stats.system.cpu < 85 ? 'High' : 'Critical'}
+                
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-sm">
+                    <span>Memory Usage</span>
+                    <span className="font-medium">{Math.round(stats.system.memory)}%</span>
+                  </div>
+                  <Progress value={stats.system.memory} />
+                  <div className="text-xs text-muted-foreground">
+                    {stats.system.memory < 70 ? 'Normal' : stats.system.memory < 85 ? 'High' : 'Critical'}
+                  </div>
+                </div>
+                
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-sm">
+                    <span>Tasks Progress</span>
+                    <span className="font-medium">{stats.tasks.completionRate}%</span>
+                  </div>
+                  <Progress value={stats.tasks.completionRate} />
+                  <div className="text-xs text-muted-foreground">
+                    {stats.tasks.active} active, {stats.tasks.completed} completed
+                  </div>
                 </div>
               </div>
-              
-              <div className="space-y-2">
-                <div className="flex items-center justify-between text-sm">
-                  <span>Memory Usage</span>
-                  <span className="font-medium">{Math.round(stats.system.memory)}%</span>
-                </div>
-                <Progress value={stats.system.memory} />
-                <div className="text-xs text-muted-foreground">
-                  {stats.system.memory < 70 ? 'Normal' : stats.system.memory < 85 ? 'High' : 'Critical'}
-                </div>
-              </div>
-              
-              <div className="space-y-2">
-                <div className="flex items-center justify-between text-sm">
-                  <span>Tasks Progress</span>
-                  <span className="font-medium">{stats.tasks.completionRate}%</span>
-                </div>
-                <Progress value={stats.tasks.completionRate} />
-                <div className="text-xs text-muted-foreground">
-                  {stats.tasks.active} active, {stats.tasks.completed} completed
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </div>
-      )}
+            </CardContent>
+          </Card>
+        )}
+      </div>
     </div>
   )
 }
