@@ -4,6 +4,7 @@ import { User } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { ThemeToggle } from '@/components/ui/theme-toggle'
+import { MobileNav } from '@/components/layout/mobile-nav'
 import { logout } from '@/lib/auth'
 
 export function Header() {
@@ -13,12 +14,13 @@ export function Header() {
 
   return (
     <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="flex h-14 items-center px-6">
+      <div className="flex h-14 items-center px-4 lg:px-6">
         <div className="flex items-center space-x-4">
-          <h1 className="text-lg font-semibold hidden md:block">Mission Control Dashboard</h1>
+          <MobileNav />
+          <h1 className="text-lg font-semibold hidden sm:block">Mission Control Dashboard</h1>
         </div>
         
-        <div className="ml-auto flex items-center space-x-4">
+        <div className="ml-auto flex items-center space-x-2 md:space-x-4">
           {/* Theme Toggle */}
           <ThemeToggle />
 
