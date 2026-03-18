@@ -1,362 +1,459 @@
 "use client"
 
-import { useState, useEffect } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { useState, useMemo, useEffect } from 'react'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
-import { FileTree } from '@/components/memory/file-tree'
-import { FileViewer } from '@/components/memory/file-viewer'
-import { FileEditor } from '@/components/memory/file-editor'
+import { Progress } from '@/components/ui/progress'
 import { 
+  Search, 
+  Plus, 
+  FolderOpen, 
   Folder, 
   FileText, 
-  Search, 
-  Download, 
+  MoreHorizontal, 
   Edit, 
-  Trash2,
-  Plus,
-  Home,
+  Trash, 
+  Download,
+  Upload,
+  Brain,
+  Activity,
+  Calendar,
+  Archive,
+  BookOpen,
+  Shield,
+  Target,
+  Lightbulb,
   ChevronRight,
-  RefreshCw,
-  FolderPlus,
-  Upload
+  ChevronDown,
+  Home
 } from 'lucide-react'
-
-interface MemoryFile {
-  name: string
-  path: string
-  size: number
-  lastModified: string
-  type: 'file' | 'directory'
-  isMarkdown: boolean
-  preview?: string
-}
-
-interface MemoryStats {
-  totalFiles: number
-  totalDirs: number
-  totalSize: number
-}
-
-interface SearchResult {
-  path: string
-  name: string
-  matches: any[]
-  score: number
-  size: number
-  lastModified: string
-}
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import { memoryData, getMemoryStats, searchMemoryFiles, type MemoryFile } from '@/lib/memory-data'
 
 export default function MemoryPage() {
-  const [files, setFiles] = useState<MemoryFile[]>([])
-  const [stats, setStats] = useState<MemoryStats>({ totalFiles: 0, totalDirs: 0, totalSize: 0 })
-  const [currentPath, setCurrentPath] = useState('')
-  const [searchTerm, setSearchTerm] = useState('')
-  const [searchResults, setSearchResults] = useState<SearchResult[]>([])
-  const [loading, setLoading] = useState(true)
-  const [searching, setSearching] = useState(false)
-  const [selectedFile, setSelectedFile] = useState<string>('')
-  const [mode, setMode] = useState<'browse' | 'view' | 'edit' | 'search'>('browse')
-
+  const [searchQuery, setSearchQuery] = useState('')
+  const [currentPath, setCurrentPath] = useState('/')
+  const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set(['/', '/projects', '/areas', '/resources']))
+  const [selectedFile, setSelectedFile] = useState<MemoryFile | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  
+  const stats = useMemo(() => getMemoryStats(), [])
+  
   useEffect(() => {
-    loadMemoryFiles(currentPath)
-  }, [currentPath])
+    // Simulate loading
+    setTimeout(() => {
+      setIsLoading(false)
+    }, 300)
+  }, [])
 
-  useEffect(() => {
-    if (searchTerm.length >= 2) {
-      performSearch()
-    } else {
-      setSearchResults([])
-      if (mode === 'search') setMode('browse')
+  const getFolderIcon = (folderId: string, expanded: boolean = false) => {
+    const IconComponent = expanded ? FolderOpen : Folder
+    
+    switch (folderId) {
+      case 'projects': return <Target className="h-4 w-4 text-blue-500" />
+      case 'areas': return <Activity className="h-4 w-4 text-green-500" />
+      case 'resources': return <BookOpen className="h-4 w-4 text-purple-500" />
+      case 'tacit': return <Lightbulb className="h-4 w-4 text-yellow-500" />
+      case 'security': return <Shield className="h-4 w-4 text-red-500" />
+      case 'daily': return <Calendar className="h-4 w-4 text-orange-500" />
+      case 'learning': return <Brain className="h-4 w-4 text-indigo-500" />
+      default: return <IconComponent className="h-4 w-4 text-muted-foreground" />
     }
-  }, [searchTerm])
+  }
 
-  const loadMemoryFiles = async (path: string) => {
-    setLoading(true)
-    try {
-      const url = `/api/openclaw/memory?path=${encodeURIComponent(path)}&search=${encodeURIComponent('')}`
-      const response = await fetch(url)
-      const data = await response.json()
-      
-      if (data.type === 'directory') {
-        setFiles(data.files || [])
-        setStats(data.stats || { totalFiles: 0, totalDirs: 0, totalSize: 0 })
+  const toggleFolder = (folderId: string) => {
+    setExpandedFolders(prev => {
+      const newSet = new Set(prev)
+      if (newSet.has(folderId)) {
+        newSet.delete(folderId)
+      } else {
+        newSet.add(folderId)
       }
-    } catch (error) {
-      console.error('Failed to load memory files:', error)
-      setFiles([])
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const performSearch = async () => {
-    if (!searchTerm || searchTerm.length < 2) return
-
-    setSearching(true)
-    try {
-      const response = await fetch(`/api/openclaw/memory/search?q=${encodeURIComponent(searchTerm)}&limit=50&content=true`)
-      const data = await response.json()
-      setSearchResults(data.results || [])
-      setMode('search')
-    } catch (error) {
-      console.error('Search failed:', error)
-      setSearchResults([])
-    } finally {
-      setSearching(false)
-    }
-  }
-
-  const navigateTo = (path: string) => {
-    setCurrentPath(path)
-    setSearchTerm('')
-    setMode('browse')
-  }
-
-  const handleFileSelect = (path: string, isDirectory: boolean) => {
-    if (isDirectory) {
-      navigateTo(path)
-    } else {
-      setSelectedFile(path)
-      setMode('view')
-    }
-  }
-
-  const handleEditFile = (path: string) => {
-    setSelectedFile(path)
-    setMode('edit')
-  }
-
-  const handleSaveFile = async (path: string, content: string): Promise<boolean> => {
-    try {
-      const response = await fetch('/api/openclaw/memory', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'save', path, content })
-      })
-      return response.ok
-    } catch (error) {
-      console.error('Failed to save file:', error)
-      return false
-    }
-  }
-
-  const handleCreateFile = async () => {
-    const filename = prompt('Enter filename (include .md extension for markdown):')
-    if (!filename) return
-
-    const fullPath = currentPath ? `${currentPath}/${filename}` : filename
-
-    try {
-      const response = await fetch('/api/openclaw/memory/operations', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'create',
-          path: fullPath,
-          content: '# New File\n\nStart writing your content here...',
-          isDirectory: false
-        })
-      })
-
-      if (response.ok) {
-        await loadMemoryFiles(currentPath)
-        setSelectedFile(fullPath)
-        setMode('edit')
-      }
-    } catch (error) {
-      console.error('Failed to create file:', error)
-    }
-  }
-
-  const handleCreateFolder = async () => {
-    const foldername = prompt('Enter folder name:')
-    if (!foldername) return
-
-    const fullPath = currentPath ? `${currentPath}/${foldername}` : foldername
-
-    try {
-      const response = await fetch('/api/openclaw/memory/operations', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'create',
-          path: fullPath,
-          isDirectory: true
-        })
-      })
-
-      if (response.ok) {
-        await loadMemoryFiles(currentPath)
-      }
-    } catch (error) {
-      console.error('Failed to create folder:', error)
-    }
-  }
-
-  const goUp = () => {
-    const pathParts = currentPath.split('/').filter(Boolean)
-    pathParts.pop()
-    navigateTo(pathParts.join('/'))
+      return newSet
+    })
   }
 
   const formatFileSize = (bytes: number) => {
-    const units = ['B', 'KB', 'MB', 'GB']
-    let size = bytes
-    let unitIndex = 0
-    
-    while (size >= 1024 && unitIndex < units.length - 1) {
-      size /= 1024
-      unitIndex++
-    }
-    
-    return `${size.toFixed(1)} ${units[unitIndex]}`
+    if (bytes < 1024) return `${bytes} B`
+    if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`
+    return `${Math.round(bytes / (1024 * 1024))} MB`
   }
 
-  const pathParts = currentPath.split('/').filter(Boolean)
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    })
+  }
 
-  return (
-    <div className="h-screen flex flex-col">
-      {/* Header */}
-      <div className="border-b p-4 bg-muted/30">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h1 className="text-3xl font-bold">Memory Browser</h1>
-            <p className="text-muted-foreground">
-              Browse and manage memory files ({stats.totalFiles} files, {formatFileSize(stats.totalSize)})
-            </p>
+  const renderFileTree = (items: MemoryFile[], level = 0) => {
+    return items.map(item => (
+      <div key={item.id} className="select-none">
+        <div 
+          className={`flex items-center py-2 px-3 hover:bg-muted/50 rounded-md cursor-pointer group ${
+            selectedFile?.id === item.id ? 'bg-muted' : ''
+          }`}
+          style={{ marginLeft: `${level * 16}px` }}
+          onClick={() => {
+            if (item.type === 'folder') {
+              toggleFolder(item.id)
+            } else {
+              setSelectedFile(item)
+            }
+          }}
+        >
+          {item.type === 'folder' && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-4 w-4 p-0 mr-1 opacity-70 hover:opacity-100"
+              onClick={(e) => {
+                e.stopPropagation()
+                toggleFolder(item.id)
+              }}
+            >
+              {expandedFolders.has(item.id) ? (
+                <ChevronDown className="h-3 w-3" />
+              ) : (
+                <ChevronRight className="h-3 w-3" />
+              )}
+            </Button>
+          )}
+          
+          <div className="flex items-center space-x-2 flex-1 min-w-0">
+            <div className="flex-shrink-0">
+              {item.type === 'folder' ? 
+                getFolderIcon(item.id, expandedFolders.has(item.id)) : 
+                <FileText className="h-4 w-4 text-muted-foreground" />
+              }
+            </div>
+            <span className="font-medium text-sm truncate">{item.name}</span>
+            {item.type === 'folder' && item.children && (
+              <Badge variant="outline" className="text-xs ml-auto">
+                {item.children.length}
+              </Badge>
+            )}
           </div>
-          <div className="flex space-x-2">
-            <Button variant="outline" onClick={() => loadMemoryFiles(currentPath)}>
-              <RefreshCw className="h-4 w-4 mr-2" />
-              Refresh
-            </Button>
-            <Button variant="outline" onClick={handleCreateFolder}>
-              <FolderPlus className="h-4 w-4 mr-2" />
-              New Folder
-            </Button>
-            <Button onClick={handleCreateFile}>
-              <Plus className="h-4 w-4 mr-2" />
-              New File
-            </Button>
-          </div>
+
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <MoreHorizontal className="h-3 w-3" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem>
+                <Edit className="h-4 w-4 mr-2" />
+                {item.type === 'folder' ? 'Rename' : 'Edit'}
+              </DropdownMenuItem>
+              <DropdownMenuItem>
+                <Download className="h-4 w-4 mr-2" />
+                Download
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem className="text-red-600">
+                <Trash className="h-4 w-4 mr-2" />
+                Delete
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
 
-        {/* Search */}
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search across all memory files..."
-            className="pl-10"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-          {searching && <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
-          </div>}
+        {item.type === 'folder' && item.children && expandedFolders.has(item.id) && (
+          <div className="ml-2">
+            {renderFileTree(item.children, level + 1)}
+          </div>
+        )}
+      </div>
+    ))
+  }
+
+  const filteredResults = useMemo(() => {
+    if (!searchQuery) return []
+    return searchMemoryFiles(searchQuery)
+  }, [searchQuery])
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6 p-4 md:p-6">
+        <div className="animate-pulse">
+          <div className="h-8 bg-muted rounded w-64 mb-2"></div>
+          <div className="h-4 bg-muted rounded w-96"></div>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          {[1, 2, 3, 4].map(i => (
+            <div key={i} className="animate-pulse">
+              <div className="h-24 bg-muted rounded-lg"></div>
+            </div>
+          ))}
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="space-y-6 p-4 md:p-6">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl md:text-3xl font-bold">Memory</h1>
+          <p className="text-muted-foreground">
+            Organize your knowledge with the PARA method: Projects, Areas, Resources, Archives.
+          </p>
+        </div>
+        <div className="flex items-center space-x-2">
+          <Button variant="outline">
+            <Upload className="h-4 w-4 mr-2" />
+            Import
+          </Button>
+          <Button>
+            <Plus className="h-4 w-4 mr-2" />
+            New File
+          </Button>
         </div>
       </div>
 
-      <div className="flex-1 flex overflow-hidden">
-        {/* Left Panel - File Tree or Search Results */}
-        <div className="w-1/3 border-r bg-muted/10">
-          {mode === 'search' && searchResults.length > 0 ? (
-            <div className="h-full overflow-y-auto">
-              <div className="p-4">
-                <h3 className="font-medium mb-3">Search Results ({searchResults.length})</h3>
-                {searchResults.map((result) => (
-                  <div
-                    key={result.path}
-                    className="p-3 border rounded-lg mb-2 hover:bg-muted/50 cursor-pointer"
-                    onClick={() => handleFileSelect(result.path, false)}
-                  >
-                    <div className="flex items-center space-x-2 mb-1">
-                      <FileText className="h-4 w-4 text-blue-600" />
-                      <span className="font-medium text-sm">{result.name}</span>
-                      <Badge variant="outline" className="text-xs">Score: {result.score}</Badge>
-                    </div>
-                    <div className="text-xs text-muted-foreground mb-1">{result.path}</div>
-                    {result.matches.slice(0, 2).map((match, idx) => (
-                      <div key={idx} className="text-xs bg-muted p-1 rounded mt-1">
-                        Line {match.line}: {match.highlighted}
-                      </div>
-                    ))}
-                  </div>
-                ))}
-              </div>
-            </div>
-          ) : (
-            <>
-              {/* Navigation Breadcrumb */}
-              {mode === 'browse' && (
-                <div className="p-4 border-b bg-muted/20">
-                  <div className="flex items-center space-x-2 text-sm">
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      onClick={() => navigateTo('')}
-                      className="p-1 h-auto"
-                    >
-                      <Home className="h-4 w-4" />
-                    </Button>
-                    {pathParts.map((part, index) => (
-                      <div key={index} className="flex items-center">
-                        <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                        <Button 
-                          variant="ghost" 
-                          size="sm"
-                          onClick={() => navigateTo(pathParts.slice(0, index + 1).join('/'))}
-                          className="h-auto p-1 px-2"
+      {/* Stats Overview */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Files</CardTitle>
+            <FileText className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.files}</div>
+            <p className="text-xs text-muted-foreground">
+              {stats.totalSize} KB total
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Projects</CardTitle>
+            <Target className="h-4 w-4 text-blue-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.categories.projects}</div>
+            <p className="text-xs text-muted-foreground">
+              Active projects
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Areas</CardTitle>
+            <Activity className="h-4 w-4 text-green-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.categories.areas}</div>
+            <p className="text-xs text-muted-foreground">
+              Ongoing responsibilities
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Resources</CardTitle>
+            <BookOpen className="h-4 w-4 text-purple-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.categories.resources}</div>
+            <p className="text-xs text-muted-foreground">
+              Reference materials
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Search */}
+      <div className="flex flex-col sm:flex-row gap-4">
+        <div className="flex-1">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search files and content..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* File Tree */}
+        <Card className="lg:col-span-1">
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2">
+              <Home className="h-5 w-5" />
+              <span>Memory Structure</span>
+            </CardTitle>
+            <CardDescription>
+              PARA organizational system
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="p-0">
+            <div className="max-h-96 overflow-y-auto">
+              {searchQuery ? (
+                <div className="p-4">
+                  <h3 className="font-medium mb-3 text-sm">Search Results ({filteredResults.length})</h3>
+                  {filteredResults.length === 0 ? (
+                    <p className="text-muted-foreground text-sm">No results found</p>
+                  ) : (
+                    <div className="space-y-1">
+                      {filteredResults.map(file => (
+                        <div 
+                          key={file.id}
+                          className="flex items-center space-x-2 p-2 hover:bg-muted/50 rounded-md cursor-pointer"
+                          onClick={() => setSelectedFile(file)}
                         >
-                          {part}
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
+                          <FileText className="h-4 w-4 text-muted-foreground" />
+                          <span className="text-sm truncate">{file.name}</span>
+                          <span className="text-xs text-muted-foreground ml-auto">
+                            {file.path.split('/').slice(0, -1).join('/') || '/'}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="p-2">
+                  {renderFileTree(memoryData)}
                 </div>
               )}
-              <FileTree 
-                onFileSelect={handleFileSelect}
-                selectedPath={selectedFile}
-              />
-            </>
-          )}
-        </div>
+            </div>
+          </CardContent>
+        </Card>
 
-        {/* Right Panel - Content */}
-        <div className="flex-1 bg-background">
-          {mode === 'view' && selectedFile ? (
-            <FileViewer 
-              filePath={selectedFile}
-              onEdit={handleEditFile}
-            />
-          ) : mode === 'edit' && selectedFile ? (
-            <FileEditor
-              filePath={selectedFile}
-              onClose={() => setMode('view')}
-              onSave={handleSaveFile}
-            />
-          ) : (
-            <div className="flex items-center justify-center h-full text-muted-foreground">
-              <div className="text-center">
-                {mode === 'search' && searchTerm ? (
+        {/* File Content / Preview */}
+        <Card className="lg:col-span-2">
+          <CardHeader>
+            <CardTitle className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                {selectedFile ? (
                   <>
-                    <Search className="h-12 w-12 mx-auto mb-4" />
-                    <p>Search results will appear here</p>
-                    {searching && <p className="text-sm mt-2">Searching...</p>}
+                    <FileText className="h-5 w-5" />
+                    <span className="truncate">{selectedFile.name}</span>
                   </>
                 ) : (
                   <>
-                    <FileText className="h-12 w-12 mx-auto mb-4" />
-                    <p>Select a file to view its contents</p>
-                    <p className="text-sm mt-2">Or create a new file to get started</p>
+                    <Brain className="h-5 w-5" />
+                    <span>Memory Overview</span>
                   </>
                 )}
               </div>
-            </div>
-          )}
-        </div>
+              {selectedFile && (
+                <div className="flex items-center space-x-2">
+                  <Button variant="outline" size="sm">
+                    <Edit className="h-4 w-4 mr-1" />
+                    Edit
+                  </Button>
+                  <Button variant="outline" size="sm">
+                    <Download className="h-4 w-4 mr-1" />
+                    Download
+                  </Button>
+                </div>
+              )}
+            </CardTitle>
+            {selectedFile && (
+              <CardDescription className="flex items-center space-x-4 text-xs">
+                <span>{formatFileSize(selectedFile.size || 0)}</span>
+                <span>Modified {formatDate(selectedFile.lastModified || '')}</span>
+                <Badge variant="outline">{selectedFile.type}</Badge>
+              </CardDescription>
+            )}
+          </CardHeader>
+          <CardContent>
+            {selectedFile ? (
+              <div className="space-y-4">
+                {/* File content preview */}
+                <div className="bg-muted/30 rounded-lg p-4 max-h-96 overflow-y-auto">
+                  <pre className="whitespace-pre-wrap text-sm font-mono">
+                    {selectedFile.content || 'No content available'}
+                  </pre>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-6">
+                {/* PARA Method Overview */}
+                <div className="text-center py-8">
+                  <Brain className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <h3 className="text-lg font-semibold mb-2">Your Memory System</h3>
+                  <p className="text-muted-foreground mb-6">
+                    Select a file from the tree to view its content, or explore your PARA structure below.
+                  </p>
+                </div>
+
+                {/* PARA Categories */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="p-4 border rounded-lg">
+                    <div className="flex items-center space-x-2 mb-3">
+                      <Target className="h-5 w-5 text-blue-500" />
+                      <h4 className="font-medium">Projects</h4>
+                    </div>
+                    <p className="text-sm text-muted-foreground mb-2">
+                      Things with a deadline and specific outcome
+                    </p>
+                    <div className="text-sm font-medium">{stats.categories.projects} files</div>
+                  </div>
+
+                  <div className="p-4 border rounded-lg">
+                    <div className="flex items-center space-x-2 mb-3">
+                      <Activity className="h-5 w-5 text-green-500" />
+                      <h4 className="font-medium">Areas</h4>
+                    </div>
+                    <p className="text-sm text-muted-foreground mb-2">
+                      Ongoing responsibilities to maintain
+                    </p>
+                    <div className="text-sm font-medium">{stats.categories.areas} files</div>
+                  </div>
+
+                  <div className="p-4 border rounded-lg">
+                    <div className="flex items-center space-x-2 mb-3">
+                      <BookOpen className="h-5 w-5 text-purple-500" />
+                      <h4 className="font-medium">Resources</h4>
+                    </div>
+                    <p className="text-sm text-muted-foreground mb-2">
+                      Topics of ongoing interest for future reference
+                    </p>
+                    <div className="text-sm font-medium">{stats.categories.resources} files</div>
+                  </div>
+
+                  <div className="p-4 border rounded-lg">
+                    <div className="flex items-center space-x-2 mb-3">
+                      <Lightbulb className="h-5 w-5 text-yellow-500" />
+                      <h4 className="font-medium">Tacit Knowledge</h4>
+                    </div>
+                    <p className="text-sm text-muted-foreground mb-2">
+                      Personal insights, patterns, and learnings
+                    </p>
+                    <div className="text-sm font-medium">{stats.categories.tacit} files</div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
     </div>
   )
