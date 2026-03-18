@@ -1,64 +1,93 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createCSRFMiddleware } from '@/lib/csrf'
+import { requireCSRF } from '@/lib/csrf'
 
-// Create CSRF middleware
-const csrfMiddleware = createCSRFMiddleware()
+/**
+ * Next.js Middleware for Security
+ * Applies CSRF protection and security headers
+ */
 
 export async function middleware(req: NextRequest) {
-  const { pathname } = req.nextUrl
-
-  // Apply CSRF protection to all routes except excluded ones
-  const excludedPaths = [
-    '/_next',
-    '/api/_next',
-    '/favicon.ico',
-    '/robots.txt',
-    '/sitemap.xml',
-    '/api/webhooks', // Webhook endpoints use other auth methods
-    '/api/auth/callback', // OAuth callbacks
-    '/static',
-    '/images'
-  ]
-
-  const shouldApplyCSRF = !excludedPaths.some(path => pathname.startsWith(path))
-
-  if (shouldApplyCSRF) {
-    // Apply CSRF protection
-    const csrfResponse = await csrfMiddleware(req)
-    if (csrfResponse) {
-      return csrfResponse
+  const pathname = req.nextUrl.pathname
+  
+  // Apply security headers to all responses
+  const response = await applySecurityHeaders(req)
+  
+  // Skip CSRF protection for certain paths
+  const skipCSRF = shouldSkipCSRF(pathname)
+  
+  if (!skipCSRF) {
+    // Apply CSRF protection to API routes
+    if (pathname.startsWith('/api/')) {
+      const csrfResult = await requireCSRF(req)
+      
+      if (!csrfResult.valid && csrfResult.response) {
+        return csrfResult.response
+      }
     }
   }
+  
+  return response
+}
 
-  // Add security headers to all responses
+/**
+ * Apply security headers to response
+ */
+async function applySecurityHeaders(req: NextRequest): Promise<NextResponse> {
   const response = NextResponse.next()
-
-  // Security headers (Task 9-04 preview)
+  
+  // Security headers (Task 9-04)
   response.headers.set('X-Frame-Options', 'DENY')
   response.headers.set('X-Content-Type-Options', 'nosniff')
   response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin')
   response.headers.set('X-XSS-Protection', '1; mode=block')
   response.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()')
-
-  // CSP header for additional XSS protection
-  response.headers.set(
-    'Content-Security-Policy',
-    "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https://api.supabase.co https://*.supabase.co"
+  
+  // Content Security Policy (basic)
+  response.headers.set('Content-Security-Policy', 
+    "default-src 'self'; " +
+    "script-src 'self' 'unsafe-inline' 'unsafe-eval'; " +
+    "style-src 'self' 'unsafe-inline'; " +
+    "img-src 'self' data: https:; " +
+    "font-src 'self' data:; " +
+    "connect-src 'self' https://zvhtlsrcfvlmbhexuumf.supabase.co wss://zvhtlsrcfvlmbhexuumf.supabase.co; " +
+    "frame-ancestors 'none';"
   )
-
+  
+  // Additional security headers
+  response.headers.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains')
+  response.headers.set('X-Permitted-Cross-Domain-Policies', 'none')
+  
   return response
 }
 
-// Configure which paths the middleware runs on
+/**
+ * Determine if CSRF protection should be skipped for this path
+ */
+function shouldSkipCSRF(pathname: string): boolean {
+  const skipPaths = [
+    '/api/csrf-token', // CSRF token endpoint itself
+    '/api/health', // Health check
+    '/api/webhook/', // Webhooks (external calls)
+    '/api/test-', // Test endpoints during development
+  ]
+  
+  const skipMethods = ['GET', 'HEAD', 'OPTIONS']
+  
+  return skipPaths.some(path => pathname.startsWith(path))
+}
+
+/**
+ * Middleware configuration
+ */
 export const config = {
   matcher: [
     /*
      * Match all request paths except for the ones starting with:
-     * - api/webhooks (webhook endpoints)
      * - _next/static (static files)
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
+     * - public folder
      */
-    '/((?!_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml).*)',
+    '/((?!_next/static|_next/image|favicon.ico|public).*)',
   ],
 }

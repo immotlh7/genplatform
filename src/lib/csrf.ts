@@ -1,261 +1,289 @@
 /**
  * CSRF (Cross-Site Request Forgery) Protection
- * Task 9-02: Add CSRF protection with token generation and validation
+ * Generates and validates CSRF tokens to prevent CSRF attacks
  */
 
-import { NextRequest, NextResponse } from 'next/server'
-import { randomUUID } from 'crypto'
+import { NextRequest } from 'next/server'
+import { logCSRFViolation } from './security-logger'
 
-const CSRF_TOKEN_COOKIE = 'csrf-token'
-const CSRF_TOKEN_HEADER = 'x-csrf-token'
-const CSRF_TOKEN_FIELD = 'csrfToken'
-
-// Generate a new CSRF token
-export function generateCSRFToken(): string {
-  return randomUUID()
+interface CSRFToken {
+  token: string
+  timestamp: number
+  sessionId?: string
 }
 
-// Set CSRF token in cookie
-export function setCSRFTokenCookie(response: NextResponse, token: string): void {
-  response.cookies.set(CSRF_TOKEN_COOKIE, token, {
-    httpOnly: false, // Must be accessible by JavaScript for form submission
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
-    maxAge: 24 * 60 * 60, // 24 hours
-    path: '/'
-  })
+// In-memory token store (in production, use Redis or database)
+const tokenStore = new Map<string, CSRFToken>()
+
+// CSRF configuration
+const CSRF_CONFIG = {
+  tokenLength: 32,
+  expiryMs: 24 * 60 * 60 * 1000, // 24 hours
+  cookieName: 'csrf-token',
+  headerName: 'x-csrf-token',
+  formFieldName: 'csrfToken'
 }
 
-// Get CSRF token from cookie
-export function getCSRFTokenFromCookie(req: NextRequest): string | null {
-  return req.cookies.get(CSRF_TOKEN_COOKIE)?.value || null
-}
-
-// Get CSRF token from request (header or form data)
-export async function getCSRFTokenFromRequest(req: NextRequest): Promise<string | null> {
-  // First check header
-  const headerToken = req.headers.get(CSRF_TOKEN_HEADER)
-  if (headerToken) {
-    return headerToken
-  }
-
-  // Then check form data (for POST requests with form data)
-  if (req.headers.get('content-type')?.includes('application/json')) {
-    try {
-      const body = await req.json()
-      return body[CSRF_TOKEN_FIELD] || null
-    } catch {
-      // If JSON parsing fails, return null
-      return null
-    }
-  }
-
-  // For form-encoded data
-  if (req.headers.get('content-type')?.includes('application/x-www-form-urlencoded')) {
-    try {
-      const formData = await req.formData()
-      return formData.get(CSRF_TOKEN_FIELD) as string || null
-    } catch {
-      return null
-    }
-  }
-
-  return null
-}
-
-// Validate CSRF token
-export function validateCSRFToken(cookieToken: string | null, requestToken: string | null): boolean {
-  if (!cookieToken || !requestToken) {
-    return false
-  }
-
-  // Simple constant-time comparison to prevent timing attacks
-  return cookieToken === requestToken
-}
-
-// Middleware to check CSRF protection for state-changing operations
-export async function validateCSRF(req: NextRequest): Promise<{ valid: boolean; response?: NextResponse }> {
-  // Skip CSRF validation for safe methods
-  const method = req.method.toUpperCase()
-  if (['GET', 'HEAD', 'OPTIONS'].includes(method)) {
-    return { valid: true }
-  }
-
-  // Skip for API endpoints that use other authentication (like API keys)
-  const pathname = req.nextUrl.pathname
-  if (pathname.startsWith('/api/webhooks/') || pathname.includes('/callback')) {
-    return { valid: true }
-  }
-
-  const cookieToken = getCSRFTokenFromCookie(req)
+/**
+ * Generate a cryptographically secure CSRF token
+ */
+export function generateCSRFToken(sessionId?: string): string {
+  const crypto = require('crypto')
+  const token = crypto.randomBytes(CSRF_CONFIG.tokenLength).toString('hex')
+  const timestamp = Date.now()
   
-  // Clone request to read body (since it can only be read once)
-  const requestClone = req.clone()
-  const requestToken = await getCSRFTokenFromRequest(requestClone)
+  // Store token with metadata
+  tokenStore.set(token, {
+    token,
+    timestamp,
+    sessionId
+  })
+  
+  // Clean expired tokens to prevent memory buildup
+  cleanExpiredTokens()
+  
+  return token
+}
 
-  const isValid = validateCSRFToken(cookieToken, requestToken)
-
-  if (!isValid) {
-    // Log CSRF violation
-    console.warn('🛡️ CSRF Protection: Token validation failed', {
-      method,
-      pathname,
-      hasCookieToken: !!cookieToken,
-      hasRequestToken: !!requestToken,
-      ip: req.ip || 'unknown',
-      userAgent: req.headers.get('user-agent')
-    })
-
+/**
+ * Validate CSRF token from request
+ */
+export async function validateCSRFToken(req: NextRequest): Promise<{
+  valid: boolean
+  token?: string
+  error?: string
+}> {
+  try {
+    // Get token from header or form data
+    const tokenFromHeader = req.headers.get(CSRF_CONFIG.headerName)
+    const tokenFromCookie = req.cookies.get(CSRF_CONFIG.cookieName)?.value
+    
+    let tokenFromBody: string | undefined
+    
+    // Try to get token from form data for POST requests
+    try {
+      const contentType = req.headers.get('content-type') || ''
+      if (contentType.includes('application/json')) {
+        const body = await req.json()
+        tokenFromBody = body[CSRF_CONFIG.formFieldName]
+        // Reset request body for further processing
+        Object.defineProperty(req, 'json', {
+          value: () => Promise.resolve(body)
+        })
+      } else if (contentType.includes('application/x-www-form-urlencoded')) {
+        const formData = await req.formData()
+        tokenFromBody = formData.get(CSRF_CONFIG.formFieldName) as string
+        // Reset form data for further processing
+        Object.defineProperty(req, 'formData', {
+          value: () => Promise.resolve(formData)
+        })
+      }
+    } catch (error) {
+      // Body parsing failed, continue with header/cookie validation
+    }
+    
+    // Use token from header first, then body, then cookie
+    const submittedToken = tokenFromHeader || tokenFromBody || tokenFromCookie
+    
+    if (!submittedToken) {
+      return {
+        valid: false,
+        error: 'CSRF token missing from request'
+      }
+    }
+    
+    // Validate token
+    const storedToken = tokenStore.get(submittedToken)
+    
+    if (!storedToken) {
+      return {
+        valid: false,
+        token: submittedToken,
+        error: 'Invalid or expired CSRF token'
+      }
+    }
+    
+    // Check if token is expired
+    const now = Date.now()
+    if (now - storedToken.timestamp > CSRF_CONFIG.expiryMs) {
+      tokenStore.delete(submittedToken)
+      return {
+        valid: false,
+        token: submittedToken,
+        error: 'CSRF token expired'
+      }
+    }
+    
+    // Token is valid
+    return {
+      valid: true,
+      token: submittedToken
+    }
+    
+  } catch (error) {
+    console.error('CSRF validation error:', error)
     return {
       valid: false,
-      response: NextResponse.json(
-        {
-          success: false,
-          message: 'CSRF token validation failed',
-          error: 'Invalid or missing CSRF token'
-        },
-        { status: 403 }
-      )
+      error: 'CSRF validation failed'
     }
   }
+}
 
+/**
+ * CSRF middleware for API routes
+ * Use this to protect all POST/PUT/DELETE endpoints
+ */
+export async function requireCSRF(req: NextRequest): Promise<{
+  valid: boolean
+  response?: Response
+}> {
+  const method = req.method
+  
+  // Only check CSRF for state-changing methods
+  if (!['POST', 'PUT', 'DELETE', 'PATCH'].includes(method)) {
+    return { valid: true }
+  }
+  
+  const validation = await validateCSRFToken(req)
+  
+  if (!validation.valid) {
+    // Log CSRF violation
+    const ip = getClientIP(req)
+    const userAgent = req.headers.get('user-agent')
+    const endpoint = req.nextUrl.pathname
+    
+    await logCSRFViolation(ip, endpoint, userAgent)
+    
+    const response = new Response(
+      JSON.stringify({
+        success: false,
+        error: 'CSRF protection failed',
+        message: validation.error || 'Invalid CSRF token',
+        code: 'CSRF_VIOLATION'
+      }),
+      {
+        status: 403,
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      }
+    )
+    
+    return {
+      valid: false,
+      response
+    }
+  }
+  
   return { valid: true }
 }
 
-// Helper to create a protected API route wrapper
-export function withCSRFProtection(handler: (req: NextRequest, ...args: any[]) => Promise<NextResponse>) {
-  return async function protectedHandler(req: NextRequest, ...args: any[]): Promise<NextResponse> {
-    // Validate CSRF for state-changing operations
-    const csrfResult = await validateCSRF(req)
-    if (!csrfResult.valid && csrfResult.response) {
-      return csrfResult.response
+/**
+ * Get CSRF token for client-side use
+ */
+export function getCSRFTokenForClient(req: NextRequest): string {
+  const existingToken = req.cookies.get(CSRF_CONFIG.cookieName)?.value
+  
+  if (existingToken && tokenStore.has(existingToken)) {
+    const stored = tokenStore.get(existingToken)!
+    const now = Date.now()
+    
+    // Return existing token if still valid
+    if (now - stored.timestamp < CSRF_CONFIG.expiryMs) {
+      return existingToken
     }
-
-    // Call the original handler
-    return handler(req, ...args)
+    
+    // Clean expired token
+    tokenStore.delete(existingToken)
   }
+  
+  // Generate new token
+  return generateCSRFToken()
 }
 
-// React hook for getting CSRF token in components
-export function useCSRFToken(): {
-  token: string | null
-  getToken: () => string
-  addTokenToFormData: (formData: FormData) => void
-  addTokenToHeaders: (headers: HeadersInit) => HeadersInit
-} {
-  // Get token from cookie (client-side)
-  const getTokenFromCookie = (): string | null => {
-    if (typeof document === 'undefined') return null
-    
-    const cookies = document.cookie.split(';')
-    for (const cookie of cookies) {
-      const [name, value] = cookie.trim().split('=')
-      if (name === CSRF_TOKEN_COOKIE) {
-        return decodeURIComponent(value)
-      }
-    }
-    return null
-  }
-
-  // Generate new token if none exists
-  const getToken = (): string => {
-    let token = getTokenFromCookie()
-    if (!token) {
-      token = generateCSRFToken()
-      // Set token in cookie
-      document.cookie = `${CSRF_TOKEN_COOKIE}=${encodeURIComponent(token)}; path=/; max-age=${24 * 60 * 60}; samesite=lax`
-    }
-    return token
-  }
-
-  const addTokenToFormData = (formData: FormData): void => {
-    const token = getToken()
-    formData.append(CSRF_TOKEN_FIELD, token)
-  }
-
-  const addTokenToHeaders = (headers: HeadersInit = {}): HeadersInit => {
-    const token = getToken()
-    return {
-      ...headers,
-      [CSRF_TOKEN_HEADER]: token
+/**
+ * Clean expired tokens from memory
+ */
+function cleanExpiredTokens(): void {
+  const now = Date.now()
+  const expiredTokens: string[] = []
+  
+  for (const [token, data] of tokenStore.entries()) {
+    if (now - data.timestamp > CSRF_CONFIG.expiryMs) {
+      expiredTokens.push(token)
     }
   }
+  
+  expiredTokens.forEach(token => tokenStore.delete(token))
+}
 
+/**
+ * Get client IP for logging
+ */
+function getClientIP(req: NextRequest): string {
+  return req.headers.get('x-forwarded-for')?.split(',')[0] ||
+         req.headers.get('x-real-ip') ||
+         req.ip ||
+         'unknown'
+}
+
+/**
+ * Get CSRF configuration for client use
+ */
+export function getCSRFConfig() {
   return {
-    token: getTokenFromCookie(),
-    getToken,
-    addTokenToFormData,
-    addTokenToHeaders
+    cookieName: CSRF_CONFIG.cookieName,
+    headerName: CSRF_CONFIG.headerName,
+    formFieldName: CSRF_CONFIG.formFieldName
   }
 }
 
-// Utility for adding CSRF token to fetch requests
-export class CSRFProtectedFetch {
-  private getToken(): string {
-    // Get token from cookie
-    if (typeof document === 'undefined') return ''
+/**
+ * Create CSRF-protected fetch wrapper
+ */
+export function createProtectedFetch(csrfToken: string) {
+  return async (url: string, options: RequestInit = {}) => {
+    const headers = new Headers(options.headers)
     
-    const cookies = document.cookie.split(';')
-    for (const cookie of cookies) {
-      const [name, value] = cookie.trim().split('=')
-      if (name === CSRF_TOKEN_COOKIE) {
-        return decodeURIComponent(value)
-      }
-    }
+    // Add CSRF token to headers
+    headers.set(CSRF_CONFIG.headerName, csrfToken)
     
-    // Generate new token if none exists
-    const token = generateCSRFToken()
-    document.cookie = `${CSRF_TOKEN_COOKIE}=${encodeURIComponent(token)}; path=/; max-age=${24 * 60 * 60}; samesite=lax`
-    return token
-  }
-
-  async fetch(url: string, options: RequestInit = {}): Promise<Response> {
-    const token = this.getToken()
-    
-    // Add CSRF token to headers for all state-changing requests
-    const method = options.method?.toUpperCase() || 'GET'
-    if (!['GET', 'HEAD', 'OPTIONS'].includes(method)) {
-      const headers = new Headers(options.headers)
-      headers.set(CSRF_TOKEN_HEADER, token)
-      
-      // If sending JSON data, add token to body
-      if (headers.get('content-type')?.includes('application/json') && options.body) {
+    // For form submissions, add token to body
+    if (options.method && ['POST', 'PUT', 'DELETE', 'PATCH'].includes(options.method.toUpperCase())) {
+      if (options.body instanceof FormData) {
+        options.body.append(CSRF_CONFIG.formFieldName, csrfToken)
+      } else if (typeof options.body === 'string') {
         try {
-          const bodyObj = JSON.parse(options.body as string)
-          bodyObj[CSRF_TOKEN_FIELD] = token
-          options.body = JSON.stringify(bodyObj)
+          const data = JSON.parse(options.body)
+          data[CSRF_CONFIG.formFieldName] = csrfToken
+          options.body = JSON.stringify(data)
         } catch {
-          // If body is not JSON, just add header
+          // Body is not JSON, leave as is
         }
       }
-      
-      options.headers = headers
     }
-
-    return fetch(url, options)
+    
+    return fetch(url, {
+      ...options,
+      headers
+    })
   }
 }
 
-// Global instance for easy use
-export const csrfFetch = new CSRFProtectedFetch()
-
-// Middleware factory for Next.js
-export function createCSRFMiddleware() {
-  return async function csrfMiddleware(req: NextRequest): Promise<NextResponse | void> {
-    const response = NextResponse.next()
-    
-    // Generate and set CSRF token for new sessions
-    const existingToken = getCSRFTokenFromCookie(req)
-    if (!existingToken) {
-      const newToken = generateCSRFToken()
-      setCSRFTokenCookie(response, newToken)
-    }
-
-    // Add CSRF token to response headers for AJAX requests
-    if (existingToken) {
-      response.headers.set('X-CSRF-Token', existingToken)
-    }
-
-    return response
+/**
+ * Get CSRF statistics for monitoring
+ */
+export function getCSRFStats(): {
+  activeTokens: number
+  oldestToken: number | null
+  newestToken: number | null
+} {
+  const now = Date.now()
+  const timestamps = Array.from(tokenStore.values()).map(t => t.timestamp)
+  
+  return {
+    activeTokens: tokenStore.size,
+    oldestToken: timestamps.length > 0 ? Math.min(...timestamps) : null,
+    newestToken: timestamps.length > 0 ? Math.max(...timestamps) : null
   }
 }

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { isRateLimited, recordLoginAttempt, formatTimeRemaining } from '@/lib/rate-limiter'
+import { isRateLimited, recordLoginAttempt } from '@/lib/rate-limiter'
 import { logLoginAttempt, logRateLimitEvent } from '@/lib/security-logger'
+import { generateCSRFToken, getCSRFConfig } from '@/lib/csrf'
 
 // Configuration
 const DASHBOARD_PASSWORD = process.env.DASHBOARD_PASSWORD || 'admin123'
@@ -125,6 +126,10 @@ export async function POST(req: NextRequest) {
     // Create simple token (in production, use proper JWT with signing)
     const token = Buffer.from(JSON.stringify(sessionPayload)).toString('base64')
 
+    // Generate CSRF token for session
+    const csrfToken = generateCSRFToken(token)
+    const csrfConfig = getCSRFConfig()
+
     // Set response
     const response = NextResponse.json({
       success: true,
@@ -134,10 +139,14 @@ export async function POST(req: NextRequest) {
         role: 'OWNER',
         email: 'owner@genplatform.ai',
         displayName: 'Platform Owner'
+      },
+      csrf: {
+        token: csrfToken,
+        config: csrfConfig
       }
     })
 
-    // Set secure HttpOnly cookie
+    // Set secure HttpOnly cookie for authentication
     response.cookies.set('auth-token', token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
@@ -146,9 +155,8 @@ export async function POST(req: NextRequest) {
       path: '/'
     })
 
-    // Set CSRF token cookie for subsequent requests (Task 9-02)
-    const csrfToken = generateCSRFToken()
-    response.cookies.set('csrf-token', csrfToken, {
+    // Set CSRF token cookie for client access
+    response.cookies.set(csrfConfig.cookieName, csrfToken, {
       httpOnly: false, // Client needs to read this for forms
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
@@ -178,11 +186,4 @@ export async function POST(req: NextRequest) {
       { status: 500 }
     )
   }
-}
-
-/**
- * Generate CSRF token (Task 9-02 preparation)
- */
-function generateCSRFToken(): string {
-  return require('crypto').randomUUID()
 }
