@@ -9,18 +9,18 @@ interface UpdateTeamMemberRequest {
   status?: 'active' | 'disabled'
 }
 
-interface RouteParams {
-  params: {
+type RouteContext = {
+  params: Promise<{
     id: string
-  }
+  }>
 }
 
 /**
  * PUT /api/team/[id]
  * Update team member information (role, status, name)
  */
-export async function PUT(req: NextRequest, { params }: RouteParams) {
-  const { id } = params
+export async function PUT(req: NextRequest, context: RouteContext) {
+  const { id } = await context.params
   const ip = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'unknown'
   const userAgent = req.headers.get('user-agent') || 'unknown'
 
@@ -237,8 +237,8 @@ export async function PUT(req: NextRequest, { params }: RouteParams) {
  * DELETE /api/team/[id]
  * Remove team member from the platform (owner only)
  */
-export async function DELETE(req: NextRequest, { params }: RouteParams) {
-  const { id } = params
+export async function DELETE(req: NextRequest, context: RouteContext) {
+  const { id } = await context.params
   const ip = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'unknown'
   const userAgent = req.headers.get('user-agent') || 'unknown'
 
@@ -439,8 +439,8 @@ export async function DELETE(req: NextRequest, { params }: RouteParams) {
  * GET /api/team/[id]
  * Get individual team member details
  */
-export async function GET(req: NextRequest, { params }: RouteParams) {
-  const { id } = params
+export async function GET(req: NextRequest, context: RouteContext) {
+  const { id } = await context.params
   const ip = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'unknown'
   const userAgent = req.headers.get('user-agent') || 'unknown'
 

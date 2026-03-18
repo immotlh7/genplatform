@@ -850,12 +850,12 @@ export default function WorkflowMarketplace() {
               </div>
 
               {selectedTemplate.demo_url && (
-                <Button variant="outline" className="w-full" asChild>
-                  <a href={selectedTemplate.demo_url} target="_blank" rel="noopener noreferrer">
+                <a href={selectedTemplate.demo_url} target="_blank" rel="noopener noreferrer" className="w-full">
+                  <Button variant="outline" className="w-full">
                     <ExternalLink className="h-4 w-4 mr-1" />
                     View Demo
-                  </a>
-                </Button>
+                  </Button>
+                </a>
               )}
 
               <div>

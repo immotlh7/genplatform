@@ -34,7 +34,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { TeamMember, supabaseHelpers } from '@/lib/supabase'
+import { TeamMember, supabaseHelpers, supabaseAdmin } from '@/lib/supabase'
 import { Role, hasPermission, checkOwnerAuth } from '@/lib/rbac'
 
 interface TeamMemberWithProjects extends TeamMember {
@@ -71,7 +71,7 @@ export default function TeamPage() {
       const enhancedMembers = await Promise.all(
         members.map(async (member) => {
           try {
-            const { data: assignments } = await supabaseHelpers.supabase
+            const { data: assignments } = await supabaseAdmin!
               .from('project_assignments')
               .select('project_id, projects(name)')
               .eq('team_member_id', member.id)
@@ -79,7 +79,7 @@ export default function TeamPage() {
             return {
               ...member,
               projectCount: assignments?.length || 0,
-              lastProject: assignments?.[0]?.projects?.name || 'None'
+              lastProject: (assignments?.[0] as any)?.projects?.name || 'None'
             }
           } catch (error) {
             return {
@@ -228,7 +228,7 @@ export default function TeamPage() {
                 />
               </div>
             </div>
-            <Select value={roleFilter} onValueChange={setRoleFilter}>
+            <Select value={roleFilter} onValueChange={(value) => setRoleFilter(value || "all")}>
               <SelectTrigger className="w-40">
                 <SelectValue placeholder="Filter by role" />
               </SelectTrigger>
@@ -240,7 +240,7 @@ export default function TeamPage() {
                 <SelectItem value="VIEWER">Viewer</SelectItem>
               </SelectContent>
             </Select>
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <Select value={statusFilter} onValueChange={(value) => setStatusFilter(value || "all")}>
               <SelectTrigger className="w-40">
                 <SelectValue placeholder="Filter by status" />
               </SelectTrigger>

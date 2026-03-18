@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
 
-export async function GET(req: NextRequest, { params }: { params: { runId: string } }) {
+export async function GET(req: NextRequest, context: { params: Promise<{ runId: string }> }) {
   try {
-    const runId = params.runId
+    const runId = (await context.params).runId
 
     console.log(`📋 Fetching workflow run details: ${runId}`)
 

@@ -13,7 +13,7 @@ import {
   Filter,
   TrendingUp,
   Clock,
-  User,
+  User as UserIcon,
   Zap,
   CheckCircle,
   XCircle,
@@ -482,7 +482,7 @@ export default function IdeasPage() {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-4 text-sm text-muted-foreground">
                     <span className="flex items-center">
-                      <User className="h-3 w-3 mr-1" />
+                      <UserIcon className="h-3 w-3 mr-1" />
                       {idea.author}
                     </span>
                     <span className="flex items-center">

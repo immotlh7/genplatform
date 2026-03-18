@@ -7,12 +7,9 @@ const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
 const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
 // GET /api/workflows/[id] - Get specific workflow
-export async function GET(
-  req: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function GET(req: NextRequest, context: { params: Promise<{ id: string }> }) {
   try {
-    const workflowId = params.id
+    const workflowId = (await context.params).id
 
     // Fetch workflow from Supabase
     const { data: workflow, error } = await supabase
@@ -49,12 +46,9 @@ export async function GET(
 }
 
 // PATCH /api/workflows/[id] - Update workflow configuration
-export async function PATCH(
-  req: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function PATCH(req: NextRequest, context: { params: Promise<{ id: string }> }) {
   try {
-    const workflowId = params.id
+    const workflowId = (await context.params).id
     const updates = await req.json()
 
     // Validate the updates
@@ -154,12 +148,9 @@ export async function PATCH(
 }
 
 // DELETE /api/workflows/[id] - Delete workflow
-export async function DELETE(
-  req: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function DELETE(req: NextRequest, context: { params: Promise<{ id: string }> }) {
   try {
-    const workflowId = params.id
+    const workflowId = (await context.params).id
 
     // Check if workflow exists and get its name for logging
     const { data: existingWorkflow, error: fetchError } = await supabase
