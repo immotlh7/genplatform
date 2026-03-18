@@ -1,281 +1,290 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabase } from '@/lib/supabase'
+import { supabaseAdmin } from '@/lib/supabase'
+import { requirePermission, checkOwnerAuth } from '@/lib/rbac'
+import { logSecurityEvent } from '@/lib/security-logger'
 
+/**
+ * GET /api/workflows
+ * Get all workflows with run information and statistics
+ */
 export async function GET(req: NextRequest) {
+  const ip = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'unknown'
+  const userAgent = req.headers.get('user-agent') || 'unknown'
+  const url = new URL(req.url)
+
+  // Parse query parameters
+  const includeInactive = url.searchParams.get('include_inactive') === 'true'
+  const templateType = url.searchParams.get('template_type')
+  const triggerType = url.searchParams.get('trigger_type')
+  const limit = parseInt(url.searchParams.get('limit') || '50')
+  const offset = parseInt(url.searchParams.get('offset') || '0')
+
   try {
-    console.log('📋 Fetching all workflows with run information')
+    // Check authentication and permissions (only ADMIN+ can view workflows)
+    const authCookie = req.cookies.get('auth-token')?.value
+    let authorized = false
+    let requestorInfo = null
 
-    // Fetch all workflows with their last run information
-    const { data: workflows, error: workflowsError } = await supabase
-      .from('workflows')
-      .select('*')
-      .order('created_at', { ascending: false })
-
-    if (workflowsError) {
-      console.error('Error fetching workflows:', workflowsError)
-      return NextResponse.json({
-        success: false,
-        message: 'Failed to fetch workflows',
-        error: workflowsError.message
-      }, { status: 500 })
+    // Check owner authentication first
+    const ownerAuth = checkOwnerAuth(authCookie)
+    if (ownerAuth.isOwner) {
+      authorized = true
+      requestorInfo = ownerAuth.user
+    } else {
+      // Check team member permissions (ADMIN can view workflows)
+      const permissionCheck = await requirePermission('system:health') // Using system:health as proxy for ADMIN
+      if (permissionCheck.authorized) {
+        authorized = true
+        requestorInfo = permissionCheck.user
+      }
     }
 
-    // Enrich workflows with additional run statistics
-    const enrichedWorkflows = await Promise.all(
+    if (!authorized) {
+      await logSecurityEvent(ip, 'unauthorized_workflows_access_attempt', 'warning', {
+        userAgent,
+        queryParams: Object.fromEntries(url.searchParams),
+        timestamp: new Date().toISOString()
+      })
+
+      return NextResponse.json(
+        { success: false, message: 'Insufficient permissions to view workflows' },
+        { status: 403 }
+      )
+    }
+
+    if (!supabaseAdmin) {
+      return NextResponse.json(
+        { success: false, message: 'Workflow service unavailable' },
+        { status: 503 }
+      )
+    }
+
+    // Build query
+    let query = supabaseAdmin
+      .from('workflows')
+      .select(`
+        id,
+        name,
+        description,
+        template_type,
+        is_active,
+        trigger_type,
+        schedule,
+        config,
+        last_run_at,
+        last_run_status,
+        created_at,
+        updated_at
+      `)
+
+    // Apply filters
+    if (!includeInactive) {
+      query = query.eq('is_active', true)
+    }
+
+    if (templateType) {
+      query = query.eq('template_type', templateType)
+    }
+
+    if (triggerType) {
+      query = query.eq('trigger_type', triggerType)
+    }
+
+    // Apply pagination
+    query = query.range(offset, offset + limit - 1)
+
+    // Order by creation date (newest first)
+    query = query.order('created_at', { ascending: false })
+
+    const { data: workflows, error: fetchError, count } = await query
+
+    if (fetchError) {
+      console.error('Error fetching workflows:', fetchError)
+      return NextResponse.json(
+        { success: false, message: 'Failed to fetch workflows' },
+        { status: 500 }
+      )
+    }
+
+    // Enhance workflows with run statistics
+    const enhancedWorkflows = await Promise.all(
       (workflows || []).map(async (workflow) => {
         try {
-          // Get total runs count
-          const { count: totalRuns } = await supabase
-            .from('workflow_runs')
-            .select('*', { count: 'exact', head: true })
-            .eq('workflow_id', workflow.id)
+          // Get run statistics for each workflow
+          const [
+            { count: totalRuns },
+            { count: runningRuns },
+            { count: completedRuns },
+            { count: failedRuns },
+            { count: waitingApprovalRuns }
+          ] = await Promise.all([
+            supabaseAdmin
+              .from('workflow_runs')
+              .select('*', { count: 'exact', head: true })
+              .eq('workflow_id', workflow.id),
+            supabaseAdmin
+              .from('workflow_runs')
+              .select('*', { count: 'exact', head: true })
+              .eq('workflow_id', workflow.id)
+              .eq('status', 'running'),
+            supabaseAdmin
+              .from('workflow_runs')
+              .select('*', { count: 'exact', head: true })
+              .eq('workflow_id', workflow.id)
+              .eq('status', 'completed'),
+            supabaseAdmin
+              .from('workflow_runs')
+              .select('*', { count: 'exact', head: true })
+              .eq('workflow_id', workflow.id)
+              .eq('status', 'failed'),
+            supabaseAdmin
+              .from('workflow_runs')
+              .select('*', { count: 'exact', head: true })
+              .eq('workflow_id', workflow.id)
+              .eq('status', 'waiting_approval')
+          ])
 
-          // Get successful runs count
-          const { count: successfulRuns } = await supabase
-            .from('workflow_runs')
-            .select('*', { count: 'exact', head: true })
-            .eq('workflow_id', workflow.id)
-            .eq('status', 'completed')
-
-          // Get failed runs count
-          const { count: failedRuns } = await supabase
-            .from('workflow_runs')
-            .select('*', { count: 'exact', head: true })
-            .eq('workflow_id', workflow.id)
-            .eq('status', 'failed')
-
-          // Get currently running count
-          const { count: runningCount } = await supabase
-            .from('workflow_runs')
-            .select('*', { count: 'exact', head: true })
-            .eq('workflow_id', workflow.id)
-            .in('status', ['running', 'waiting_approval'])
+          // Calculate success rate
+          const completedRunsCount = completedRuns || 0
+          const totalRunsCount = totalRuns || 0
+          const successRate = totalRunsCount > 0 ? Math.round((completedRunsCount / totalRunsCount) * 100) : 0
 
           // Get latest run details
-          const { data: latestRun } = await supabase
+          const { data: latestRun } = await supabaseAdmin
             .from('workflow_runs')
-            .select('*')
+            .select('id, status, started_at, completed_at, steps_completed, steps_total')
             .eq('workflow_id', workflow.id)
             .order('started_at', { ascending: false })
             .limit(1)
             .single()
 
-          // Calculate success rate
-          const successRate = totalRuns && totalRuns > 0 
-            ? Math.round((successfulRuns / totalRuns) * 100)
-            : 0
-
-          // Calculate average duration for completed runs
-          let averageDuration = null
-          if (successfulRuns && successfulRuns > 0) {
-            const { data: completedRuns } = await supabase
-              .from('workflow_runs')
-              .select('started_at, completed_at')
-              .eq('workflow_id', workflow.id)
-              .eq('status', 'completed')
-              .not('completed_at', 'is', null)
-
-            if (completedRuns && completedRuns.length > 0) {
-              const totalDuration = completedRuns.reduce((sum, run) => {
-                const start = new Date(run.started_at).getTime()
-                const end = new Date(run.completed_at).getTime()
-                return sum + (end - start)
-              }, 0)
-              
-              averageDuration = Math.round(totalDuration / completedRuns.length / 1000) // Convert to seconds
-            }
-          }
-
           return {
             ...workflow,
-            // Run statistics
-            totalRuns: totalRuns || 0,
-            successfulRuns: successfulRuns || 0,
-            failedRuns: failedRuns || 0,
-            runningCount: runningCount || 0,
-            successRate,
-            averageDuration,
-            
-            // Latest run info
-            latestRun: latestRun ? {
-              id: latestRun.id,
-              status: latestRun.status,
-              started_at: latestRun.started_at,
-              completed_at: latestRun.completed_at,
-              steps_completed: latestRun.steps_completed,
-              steps_total: latestRun.steps_total
-            } : null,
-            
-            // Derived fields for UI
-            isActive: workflow.is_active,
-            lastRunAt: workflow.last_run_at,
-            lastRunStatus: workflow.last_run_status,
-            triggerType: workflow.trigger_type,
-            
-            // Template info
-            templateType: workflow.template_type,
-            stepsCount: workflow.config?.steps?.length || 0,
-            estimatedDuration: workflow.config?.estimatedTotalMinutes || null
+            runStatistics: {
+              totalRuns: totalRunsCount,
+              runningRuns: runningRuns || 0,
+              completedRuns: completedRunsCount,
+              failedRuns: failedRuns || 0,
+              waitingApprovalRuns: waitingApprovalRuns || 0,
+              successRate: successRate
+            },
+            latestRun: latestRun || null,
+            estimatedDuration: workflow.config?.estimated_total_duration || 'Unknown',
+            stepCount: workflow.config?.steps?.length || 0
           }
-        } catch (enrichError) {
-          console.error(`Error enriching workflow ${workflow.id}:`, enrichError)
-          
-          // Return basic workflow data if enrichment fails
+        } catch (error) {
+          console.warn(`Failed to fetch statistics for workflow ${workflow.id}:`, error)
           return {
             ...workflow,
-            totalRuns: 0,
-            successfulRuns: 0,
-            failedRuns: 0,
-            runningCount: 0,
-            successRate: 0,
-            averageDuration: null,
+            runStatistics: {
+              totalRuns: 0,
+              runningRuns: 0,
+              completedRuns: 0,
+              failedRuns: 0,
+              waitingApprovalRuns: 0,
+              successRate: 0
+            },
             latestRun: null,
-            isActive: workflow.is_active,
-            lastRunAt: workflow.last_run_at,
-            lastRunStatus: workflow.last_run_status,
-            triggerType: workflow.trigger_type,
-            templateType: workflow.template_type,
-            stepsCount: workflow.config?.steps?.length || 0,
-            estimatedDuration: workflow.config?.estimatedTotalMinutes || null
+            estimatedDuration: 'Unknown',
+            stepCount: 0
           }
         }
       })
     )
 
-    // Calculate summary statistics
-    const totalWorkflows = enrichedWorkflows.length
-    const activeWorkflows = enrichedWorkflows.filter(w => w.isActive).length
-    const totalRuns = enrichedWorkflows.reduce((sum, w) => sum + w.totalRuns, 0)
-    const currentlyRunning = enrichedWorkflows.reduce((sum, w) => sum + w.runningCount, 0)
+    // Get overall statistics
+    const overallStats = enhancedWorkflows.reduce((acc, workflow) => {
+      const stats = workflow.runStatistics
+      return {
+        totalWorkflows: acc.totalWorkflows + 1,
+        activeWorkflows: acc.activeWorkflows + (workflow.is_active ? 1 : 0),
+        totalRuns: acc.totalRuns + stats.totalRuns,
+        runningRuns: acc.runningRuns + stats.runningRuns,
+        completedRuns: acc.completedRuns + stats.completedRuns,
+        failedRuns: acc.failedRuns + stats.failedRuns,
+        waitingApprovalRuns: acc.waitingApprovalRuns + stats.waitingApprovalRuns
+      }
+    }, {
+      totalWorkflows: 0,
+      activeWorkflows: 0,
+      totalRuns: 0,
+      runningRuns: 0,
+      completedRuns: 0,
+      failedRuns: 0,
+      waitingApprovalRuns: 0
+    })
 
-    console.log(`✅ Retrieved ${totalWorkflows} workflows (${activeWorkflows} active)`)
+    // Calculate overall success rate
+    const overallSuccessRate = overallStats.totalRuns > 0 
+      ? Math.round((overallStats.completedRuns / overallStats.totalRuns) * 100) 
+      : 0
+
+    // Log successful access
+    await logSecurityEvent(ip, 'workflows_accessed', 'info', {
+      requestorEmail: requestorInfo?.email,
+      requestorRole: requestorInfo?.role,
+      filters: { includeInactive, templateType, triggerType },
+      resultCount: enhancedWorkflows.length,
+      userAgent
+    })
 
     return NextResponse.json({
       success: true,
-      workflows: enrichedWorkflows,
-      summary: {
-        totalWorkflows,
-        activeWorkflows,
-        inactiveWorkflows: totalWorkflows - activeWorkflows,
-        totalRuns,
-        currentlyRunning
-      },
-      count: totalWorkflows
+      data: {
+        workflows: enhancedWorkflows,
+        pagination: {
+          limit,
+          offset,
+          total: count || enhancedWorkflows.length,
+          hasMore: (count || 0) > offset + limit
+        },
+        statistics: {
+          ...overallStats,
+          successRate: overallSuccessRate
+        },
+        filters: {
+          includeInactive,
+          templateType,
+          triggerType
+        }
+      }
     })
 
   } catch (error) {
     console.error('Workflows API error:', error)
-    return NextResponse.json({
-      success: false,
-      message: 'Internal server error',
-      error: error instanceof Error ? error.message : 'Unknown error'
-    }, { status: 500 })
-  }
-}
-
-export async function POST(req: NextRequest) {
-  try {
-    const workflowData = await req.json()
-
-    console.log('➕ Creating new workflow:', workflowData.name)
-
-    // Validate required fields
-    const requiredFields = ['name', 'template_type', 'trigger_type']
-    const missingFields = requiredFields.filter(field => !workflowData[field])
     
-    if (missingFields.length > 0) {
-      return NextResponse.json({
-        success: false,
-        message: `Missing required fields: ${missingFields.join(', ')}`
-      }, { status: 400 })
-    }
-
-    // Create workflow
-    const { data: workflow, error: createError } = await supabase
-      .from('workflows')
-      .insert({
-        name: workflowData.name,
-        description: workflowData.description || null,
-        template_type: workflowData.template_type,
-        trigger_type: workflowData.trigger_type,
-        schedule: workflowData.schedule || null,
-        is_active: workflowData.is_active || false,
-        config: workflowData.config || {}
-      })
-      .select()
-      .single()
-
-    if (createError) {
-      console.error('Error creating workflow:', createError)
-      return NextResponse.json({
-        success: false,
-        message: 'Failed to create workflow',
-        error: createError.message
-      }, { status: 500 })
-    }
-
-    console.log(`✅ Created workflow: ${workflow.id}`)
-
-    return NextResponse.json({
-      success: true,
-      message: 'Workflow created successfully',
-      workflow
+    await logSecurityEvent(ip, 'workflows_api_system_error', 'critical', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+      userAgent,
+      queryParams: Object.fromEntries(url.searchParams),
+      timestamp: new Date().toISOString()
     })
 
-  } catch (error) {
-    console.error('Create workflow API error:', error)
-    return NextResponse.json({
-      success: false,
-      message: 'Internal server error',
-      error: error instanceof Error ? error.message : 'Unknown error'
-    }, { status: 500 })
+    return NextResponse.json(
+      { success: false, message: 'Internal server error' },
+      { status: 500 }
+    )
   }
 }
 
-export async function PATCH(req: NextRequest) {
-  try {
-    const { id, ...updates } = await req.json()
+/**
+ * POST /api/workflows
+ * Create a new workflow (placeholder for future implementation)
+ */
+export async function POST(req: NextRequest) {
+  return NextResponse.json(
+    { success: false, message: 'Workflow creation not yet implemented' },
+    { status: 501 }
+  )
+}
 
-    if (!id) {
-      return NextResponse.json({
-        success: false,
-        message: 'Workflow ID is required'
-      }, { status: 400 })
-    }
-
-    console.log(`🔄 Updating workflow: ${id}`)
-
-    // Update workflow
-    const { data: workflow, error: updateError } = await supabase
-      .from('workflows')
-      .update(updates)
-      .eq('id', id)
-      .select()
-      .single()
-
-    if (updateError) {
-      console.error('Error updating workflow:', updateError)
-      return NextResponse.json({
-        success: false,
-        message: 'Failed to update workflow',
-        error: updateError.message
-      }, { status: 500 })
-    }
-
-    console.log(`✅ Updated workflow: ${workflow.id}`)
-
-    return NextResponse.json({
-      success: true,
-      message: 'Workflow updated successfully',
-      workflow
-    })
-
-  } catch (error) {
-    console.error('Update workflow API error:', error)
-    return NextResponse.json({
-      success: false,
-      message: 'Internal server error',
-      error: error instanceof Error ? error.message : 'Unknown error'
-    }, { status: 500 })
-  }
+/**
+ * PUT /api/workflows
+ * Update workflow settings (placeholder for future implementation)  
+ */
+export async function PUT(req: NextRequest) {
+  return NextResponse.json(
+    { success: false, message: 'Workflow updates not yet implemented' },
+    { status: 501 }
+  )
 }
