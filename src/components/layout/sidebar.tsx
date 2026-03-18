@@ -42,6 +42,7 @@ const navigation = [
       { name: 'Memory', href: '/dashboard/memory', icon: Brain },
       { name: 'Cron Jobs', href: '/dashboard/cron', icon: Clock },
       { name: 'Projects', href: '/dashboard/projects', icon: Folder },
+      { name: 'Automations', href: '/dashboard/automations', icon: Zap, badge: 'Active: 3' }, // Task 7-23: Add automations to sidebar
     ]
   },
   {
