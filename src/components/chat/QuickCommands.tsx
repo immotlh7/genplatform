@@ -16,7 +16,8 @@ import {
   Globe,
   Zap,
   Languages,
-  RefreshCw
+  RefreshCw,
+  AlertCircle
 } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 
