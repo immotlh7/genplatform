@@ -7,16 +7,34 @@ if (!supabaseUrl || !supabaseAnonKey) {
   console.warn('Missing Supabase configuration. Please set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY environment variables.')
 }
 
+// Main Supabase client with auth enabled
 export const supabase = createClient(
   supabaseUrl || 'https://placeholder.supabase.co',
   supabaseAnonKey || 'placeholder-anon-key',
   {
     auth: {
-      persistSession: false,
-      autoRefreshToken: false
+      persistSession: true,
+      autoRefreshToken: true,
+      detectSessionInUrl: true
     }
   }
 )
+
+// Service role client for admin operations
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+
+export const supabaseAdmin = supabaseServiceKey 
+  ? createClient(
+      supabaseUrl || 'https://placeholder.supabase.co',
+      supabaseServiceKey,
+      {
+        auth: {
+          autoRefreshToken: false,
+          persistSession: false
+        }
+      }
+    )
+  : null
 
 // Database types (to be generated from Supabase)
 export interface Project {
@@ -50,6 +68,26 @@ export interface ProjectTask {
   completed_at?: string
   review_notes?: string
   created_at: string
+}
+
+export interface TeamMember {
+  id: string
+  email: string
+  full_name: string
+  role: 'OWNER' | 'ADMIN' | 'MANAGER' | 'VIEWER'
+  status: 'active' | 'invited' | 'disabled'
+  invited_by?: string
+  joined_at?: string
+  last_active?: string
+  created_at: string
+}
+
+export interface ProjectAssignment {
+  id: string
+  project_id: string
+  team_member_id: string
+  role: 'lead' | 'member' | 'viewer'
+  assigned_at: string
 }
 
 export interface SecurityEvent {
@@ -95,6 +133,68 @@ export interface ImprovementProposal {
   implementation_notes?: string
   created_at: string
   resolved_at?: string
+}
+
+// Auth helper functions
+export const authHelpers = {
+  // Sign up new user
+  async signUp(email: string, password: string, userData?: { full_name?: string }) {
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: userData
+      }
+    })
+    return { user: data.user, session: data.session, error }
+  },
+
+  // Sign in user
+  async signIn(email: string, password: string) {
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password
+    })
+    return { user: data.user, session: data.session, error }
+  },
+
+  // Sign out user
+  async signOut() {
+    const { error } = await supabase.auth.signOut()
+    return { error }
+  },
+
+  // Get current user
+  async getCurrentUser() {
+    const { data: { user } } = await supabase.auth.getUser()
+    return user
+  },
+
+  // Get current session
+  async getCurrentSession() {
+    const { data: { session } } = await supabase.auth.getSession()
+    return session
+  },
+
+  // Reset password
+  async resetPassword(email: string) {
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/auth/reset-password`
+    })
+    return { error }
+  },
+
+  // Update password
+  async updatePassword(password: string) {
+    const { error } = await supabase.auth.updateUser({ password })
+    return { error }
+  },
+
+  // Check if user is authenticated
+  async isAuthenticated(): Promise<boolean> {
+    const session = await this.getCurrentSession()
+    return !!session
+  }
 }
 
 // Helper functions for common queries
@@ -195,6 +295,39 @@ export const supabaseHelpers = {
       return data
     } catch (error) {
       console.error('Error fetching latest system metrics:', error)
+      return null
+    }
+  },
+
+  // Team member helpers
+  async getTeamMembers(): Promise<TeamMember[]> {
+    try {
+      const { data, error } = await supabase
+        .from('team_members')
+        .select('*')
+        .order('created_at', { ascending: false })
+      
+      if (error) throw error
+      return data || []
+    } catch (error) {
+      console.error('Error fetching team members:', error)
+      return []
+    }
+  },
+
+  // Get team member by email
+  async getTeamMemberByEmail(email: string): Promise<TeamMember | null> {
+    try {
+      const { data, error } = await supabase
+        .from('team_members')
+        .select('*')
+        .eq('email', email)
+        .single()
+      
+      if (error) throw error
+      return data
+    } catch (error) {
+      console.error('Error fetching team member by email:', error)
       return null
     }
   }
