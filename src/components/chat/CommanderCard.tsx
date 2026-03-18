@@ -29,7 +29,7 @@ interface CommanderCardProps {
   onRetranslate: () => void;
 }
 
-export default function CommanderCard({
+export function CommanderCard({
   originalMessage,
   translatedCommand,
   isLoading = false,

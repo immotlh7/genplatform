@@ -19,7 +19,7 @@ import { NotificationBell } from '@/components/layout/NotificationBell'
 import { getCurrentUserClient } from '@/lib/access-control'
 import type { User as UserType } from '@/lib/access-control'
 import { logout } from '@/lib/auth'
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import { createBrowserClient } from '@supabase/ssr'
 
 export function Header() {
   const [currentUser, setCurrentUser] = useState<UserType | null>(null)
