@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { NotificationBell } from '@/components/notifications/notification-system'
+import { ProjectSwitcher } from '@/components/layout/project-switcher'
 import { 
   Search, 
   Settings, 
@@ -123,6 +124,11 @@ export function Navbar() {
           {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
         </Button>
 
+        {/* Project Switcher - positioned on left side */}
+        <div className="hidden lg:block">
+          <ProjectSwitcher />
+        </div>
+
         {/* Search */}
         <div className="flex-1 max-w-md mx-4">
           <form onSubmit={handleSearch} className="relative">
@@ -213,6 +219,12 @@ export function Navbar() {
                 >
                   <X className="h-5 w-5" />
                 </Button>
+              </div>
+
+              {/* Mobile Project Switcher */}
+              <div className="mb-6 pb-6 border-b">
+                <label className="text-sm font-medium mb-2 block">Current Project</label>
+                <ProjectSwitcher className="w-full" />
               </div>
               
               {/* Mobile user info */}
