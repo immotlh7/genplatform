@@ -356,11 +356,158 @@ INSERT INTO workflows (
     }'::jsonb
 );
 
+-- Task 7-08: "Deploy Pipeline" Template
+INSERT INTO workflows (
+    id,
+    name,
+    description,
+    template_type,
+    is_active,
+    trigger_type,
+    config
+) VALUES (
+    'deploy-pipeline-template',
+    'Deploy Pipeline',
+    'Build, test, and deploy with approval gates',
+    'deploy_pipeline',
+    false, -- Start inactive, user can activate
+    'task_complete',
+    '{
+        "steps": [
+            {
+                "id": "build_project",
+                "name": "🔨 Build Project",
+                "type": "action",
+                "description": "Build the project and prepare artifacts",
+                "role": "build_engineer",
+                "command": "Build the project using the configured build system. Compile code, bundle assets, and prepare deployment artifacts.",
+                "estimated_duration": "5-10 minutes",
+                "outputs": ["build_artifacts", "build_logs", "version_info"],
+                "success_criteria": "Build completes successfully without errors"
+            },
+            {
+                "id": "run_tests",
+                "name": "✅ Run Tests",
+                "type": "action",
+                "description": "Execute comprehensive test suite",
+                "role": "qa_automation",
+                "command": "Run the full test suite including: unit tests, integration tests, and end-to-end tests. Generate test reports and coverage analysis.",
+                "estimated_duration": "10-15 minutes",
+                "outputs": ["test_results", "coverage_report", "test_logs"],
+                "dependencies": ["build_project"],
+                "success_criteria": "All tests pass with acceptable coverage threshold"
+            },
+            {
+                "id": "security_scan",
+                "name": "🛡️ Security Scan",
+                "type": "action",
+                "description": "Perform security analysis and vulnerability scanning",
+                "role": "security_scanner",
+                "command": "Run comprehensive security scans including: dependency vulnerabilities, static analysis, and security best practices validation.",
+                "estimated_duration": "5-10 minutes",
+                "outputs": ["security_report", "vulnerability_list", "compliance_status"],
+                "dependencies": ["run_tests"],
+                "success_criteria": "No critical security issues found"
+            },
+            {
+                "id": "staging_approval",
+                "name": "⏸️ Approval: Deploy to Staging?",
+                "type": "approval",
+                "description": "Get approval before staging deployment",
+                "approval_message": "Build and tests completed successfully. Deploy to staging environment?",
+                "required_role": "ADMIN",
+                "dependencies": ["security_scan"],
+                "include_outputs": ["build_summary", "test_results", "security_report"]
+            },
+            {
+                "id": "deploy_staging",
+                "name": "🚀 Deploy to Staging",
+                "type": "action",
+                "description": "Deploy application to staging environment",
+                "role": "devops",
+                "command": "Deploy the approved build to staging environment. Configure environment variables, run migrations, and verify deployment health.",
+                "estimated_duration": "10-15 minutes",
+                "outputs": ["staging_url", "deployment_logs", "health_check_results"],
+                "dependencies": ["staging_approval"],
+                "success_criteria": "Application successfully deployed and accessible in staging"
+            },
+            {
+                "id": "production_approval",
+                "name": "⏸️ Final Approval: Deploy to Production?",
+                "type": "approval",
+                "description": "Final approval gate before production deployment",
+                "approval_message": "Staging deployment successful and verified. Proceed with production deployment?",
+                "required_role": "OWNER",
+                "dependencies": ["deploy_staging"],
+                "include_outputs": ["staging_verification", "performance_metrics", "final_checklist"]
+            },
+            {
+                "id": "deploy_production",
+                "name": "🚀 Deploy to Production",
+                "type": "action",
+                "description": "Deploy application to production environment",
+                "role": "devops",
+                "command": "Deploy to production environment with zero-downtime strategy. Monitor deployment progress and verify all services are healthy.",
+                "estimated_duration": "15-20 minutes",
+                "outputs": ["production_url", "deployment_metrics", "monitoring_status"],
+                "dependencies": ["production_approval"],
+                "success_criteria": "Production deployment successful with all health checks passing"
+            },
+            {
+                "id": "notify_deployment_complete",
+                "name": "🔔 Notify: Deployed to Production!",
+                "type": "notification",
+                "description": "Notify team of successful production deployment",
+                "message": "🚀 ✅ Application successfully deployed to production!",
+                "notification_channels": ["dashboard", "email", "slack", "operations"],
+                "include_outputs": ["production_url", "deployment_summary", "release_notes"],
+                "dependencies": ["deploy_production"]
+            }
+        ],
+        "estimated_total_duration": "45-75 minutes",
+        "success_criteria": [
+            "Build completed successfully",
+            "All tests passing",
+            "Security scan clear",
+            "Staging deployment verified",
+            "Production deployment successful",
+            "All health checks passing"
+        ],
+        "failure_handling": {
+            "max_retries": 1,
+            "retry_steps": ["build_project", "run_tests", "deploy_staging", "deploy_production"],
+            "escalation_roles": ["OWNER", "ADMIN"],
+            "rollback_on_failure": true,
+            "notification_on_failure": true,
+            "emergency_contacts": ["devops", "oncall"]
+        },
+        "quality_gates": {
+            "test_coverage_threshold": 75,
+            "security_scan_required": true,
+            "performance_benchmark_required": true,
+            "staging_verification_required": true
+        },
+        "environments": {
+            "staging": {
+                "auto_deploy": true,
+                "health_check_timeout": 300,
+                "rollback_enabled": true
+            },
+            "production": {
+                "manual_approval_required": true,
+                "blue_green_deployment": true,
+                "monitoring_enabled": true
+            }
+        },
+        "tags": ["deployment", "pipeline", "production", "cicd"]
+    }'::jsonb
+);
+
 -- Add workflow metadata and tracking
 UPDATE workflows SET 
     created_at = now(),
     updated_at = now()
-WHERE id IN ('idea-to-mvp-template', 'bug-fix-template', 'new-feature-template');
+WHERE id IN ('idea-to-mvp-template', 'bug-fix-template', 'new-feature-template', 'deploy-pipeline-template');
 
 -- Create index for quick template lookup
 CREATE INDEX IF NOT EXISTS idx_workflows_template_lookup ON workflows(template_type, is_active);
@@ -372,4 +519,4 @@ COMMENT ON TABLE workflows IS 'Pre-built workflow templates for common automatio
 -- SELECT name, template_type, trigger_type, is_active, 
 --        jsonb_array_length(config->'steps') as step_count
 -- FROM workflows 
--- WHERE template_type IN ('idea_to_mvp', 'bug_fix', 'new_feature');
+-- WHERE template_type IN ('idea_to_mvp', 'bug_fix', 'new_feature', 'deploy_pipeline');
