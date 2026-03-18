@@ -24,6 +24,7 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import { TaskTracker } from '@/components/dashboard/TaskTracker'
+import { ActivityStream } from '@/components/dashboard/ActivityStream'
 
 interface DashboardStats {
   skills: { total: number; active: number; executions: number }
@@ -269,7 +270,7 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* Quick Actions & Recent Activity */}
+      {/* Main Content Grid: Quick Actions + Activity Stream */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Quick Actions */}
         <Card className="lg:col-span-1">
@@ -299,63 +300,10 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
 
-        {/* Recent Activity */}
-        <Card className="lg:col-span-2">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0">
-            <CardTitle className="flex items-center space-x-2">
-              <Activity className="h-5 w-5" />
-              <span>Recent Activity</span>
-            </CardTitle>
-            <Link href="/dashboard/analytics">
-              <Button variant="ghost" size="sm">
-                <BarChart3 className="h-4 w-4 mr-1" />
-                View Analytics
-              </Button>
-            </Link>
-          </CardHeader>
-          <CardContent>
-            {loading ? (
-              <div className="space-y-4">
-                {[1, 2, 3, 4].map(i => (
-                  <div key={i} className="animate-pulse flex items-center space-x-3">
-                    <div className="w-8 h-8 bg-muted rounded-lg"></div>
-                    <div className="flex-1 space-y-2">
-                      <div className="h-4 bg-muted rounded w-3/4"></div>
-                      <div className="h-3 bg-muted rounded w-1/2"></div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : recentActivity.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                <Activity className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                <p>No recent activity</p>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {recentActivity.map((activity) => (
-                  <div key={activity.id} className="flex items-start space-x-3 p-3 border rounded-lg">
-                    <div className="flex-shrink-0 mt-0.5">
-                      {getStatusIcon(activity.status)}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="font-medium text-sm">{activity.title}</div>
-                      <div className="text-xs text-muted-foreground mb-1">
-                        {activity.description}
-                      </div>
-                      <div className="text-xs text-muted-foreground">
-                        {formatTimeAgo(activity.timestamp)}
-                      </div>
-                    </div>
-                    <Badge variant="outline" className="ml-2 capitalize text-xs">
-                      {activity.type}
-                    </Badge>
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+        {/* Activity Stream - Taking up 2/3 of the space */}
+        <div className="lg:col-span-2">
+          <ActivityStream refreshInterval={30000} maxEvents={20} />
+        </div>
       </div>
 
       {/* Performance Overview */}
