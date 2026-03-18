@@ -1,345 +1,312 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabase } from '@/lib/supabase'
+import { supabaseAdmin } from '@/lib/supabase'
+import { requirePermission, checkOwnerAuth } from '@/lib/rbac'
+import { logSecurityEvent } from '@/lib/security-logger'
+import { resumeWorkflow } from '../../../../../engine/workflow-runner.js'
 
+interface ApproveWorkflowRequest {
+  runId: string
+  approvalNotes?: string
+}
+
+/**
+ * POST /api/workflows/approve
+ * Approve a workflow that is waiting for approval
+ */
 export async function POST(req: NextRequest) {
-  try {
-    const { runId, approved = true } = await req.json()
+  const ip = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'unknown'
+  const userAgent = req.headers.get('user-agent') || 'unknown'
 
-    // Validate required parameters
-    if (!runId) {
-      return NextResponse.json({
-        success: false,
-        message: 'runId is required'
-      }, { status: 400 })
+  try {
+    // Check authentication and permissions (only OWNER/ADMIN can approve)
+    const authCookie = req.cookies.get('auth-token')?.value
+    let authorized = false
+    let approverInfo = null
+
+    // Check owner authentication first
+    const ownerAuth = checkOwnerAuth(authCookie)
+    if (ownerAuth.isOwner) {
+      authorized = true
+      approverInfo = ownerAuth.user
+    } else {
+      // Check team member permissions (ADMIN can approve workflows)
+      const permissionCheck = await requirePermission('system:health') // Using system:health as proxy for ADMIN
+      if (permissionCheck.authorized && permissionCheck.user?.role === 'ADMIN') {
+        authorized = true
+        approverInfo = permissionCheck.user
+      }
     }
 
-    console.log(`⚖️ Processing workflow approval: ${runId} - ${approved ? 'APPROVED' : 'REJECTED'}`)
+    if (!authorized) {
+      await logSecurityEvent(ip, 'unauthorized_workflow_approval_attempt', 'warning', {
+        userAgent,
+        timestamp: new Date().toISOString()
+      })
 
-    // Fetch workflow run to validate it exists and is waiting for approval
-    const { data: workflowRun, error: runError } = await supabase
+      return NextResponse.json(
+        { success: false, message: 'Only OWNER/ADMIN can approve workflows' },
+        { status: 403 }
+      )
+    }
+
+    // Parse request body
+    const body: ApproveWorkflowRequest = await req.json()
+    const { runId, approvalNotes } = body
+
+    // Validate required fields
+    if (!runId) {
+      return NextResponse.json(
+        { success: false, message: 'runId is required' },
+        { status: 400 }
+      )
+    }
+
+    if (!supabaseAdmin) {
+      return NextResponse.json(
+        { success: false, message: 'Workflow service unavailable' },
+        { status: 503 }
+      )
+    }
+
+    // Get workflow run and verify it's waiting for approval
+    const { data: workflowRun, error: runError } = await supabaseAdmin
       .from('workflow_runs')
       .select(`
         *,
         workflows (
           id,
           name,
-          config
+          template_type
         )
       `)
       .eq('id', runId)
       .single()
 
     if (runError || !workflowRun) {
-      console.error('Workflow run not found:', runError)
-      return NextResponse.json({
-        success: false,
-        message: 'Workflow run not found'
-      }, { status: 404 })
+      return NextResponse.json(
+        { success: false, message: 'Workflow run not found' },
+        { status: 404 }
+      )
     }
 
     if (workflowRun.status !== 'waiting_approval') {
-      return NextResponse.json({
-        success: false,
-        message: 'Workflow is not waiting for approval',
-        currentStatus: workflowRun.status
-      }, { status: 400 })
+      return NextResponse.json(
+        { success: false, message: `Workflow is not waiting for approval (current status: ${workflowRun.status})` },
+        { status: 400 }
+      )
     }
 
-    // Validate user has permission to approve workflows
-    // TODO: Add proper authentication and role checking
-    // For now, check if user is OWNER or ADMIN based on the step requirements
+    // Update workflow run with approval information
+    const approvalTime = new Date().toISOString()
     
-    const workflow = workflowRun.workflows
-    const steps = workflow?.config?.steps || []
-    const currentStep = steps[workflowRun.steps_completed]
-    
-    if (!currentStep || currentStep.type !== 'approval') {
-      return NextResponse.json({
-        success: false,
-        message: 'Current step is not an approval step'
-      }, { status: 400 })
+    // Get current logs and add approval log
+    const logs = workflowRun.logs || []
+    logs.push({
+      type: 'approval',
+      status: 'approved',
+      timestamp: approvalTime,
+      approved_by: approverInfo?.email,
+      approver_role: approverInfo?.role,
+      approval_notes: approvalNotes,
+      step_name: workflowRun.current_step
+    })
+
+    const { error: updateError } = await supabaseAdmin
+      .from('workflow_runs')
+      .update({
+        approved_by: approverInfo?.email,
+        approved_at: approvalTime,
+        logs: logs
+      })
+      .eq('id', runId)
+
+    if (updateError) {
+      console.error('Error updating workflow run:', updateError)
+      return NextResponse.json(
+        { success: false, message: 'Failed to record approval' },
+        { status: 500 }
+      )
     }
 
-    const requiredApprover = currentStep.config?.approver || 'owner'
-    
-    // TODO: Validate user role matches required approver
-    // if (userRole !== 'OWNER' && userRole !== 'ADMIN') {
-    //   return NextResponse.json({
-    //     success: false,
-    //     message: 'Insufficient permissions to approve workflows'
-    //   }, { status: 403 })
-    // }
-
-    // Create approval log entry
-    const approvalLog = {
-      level: approved ? 'success' : 'warning',
-      message: approved 
-        ? `Workflow approved by ${requiredApprover}, continuing to next step`
-        : `Workflow rejected by ${requiredApprover}, stopping execution`,
-      step: currentStep.name,
-      timestamp: new Date().toISOString(),
-      approver: requiredApprover,
-      decision: approved ? 'approved' : 'rejected'
-    }
-
-    // Update workflow run based on approval decision
-    if (approved) {
-      // Approval granted - continue workflow
-      const updatedLogs = [...(workflowRun.logs || []), approvalLog]
+    // Resume workflow execution
+    try {
+      console.log(`▶️ Resuming workflow after approval: ${runId}`)
       
-      // Update run to continue
-      const { error: updateError } = await supabase
-        .from('workflow_runs')
-        .update({
-          status: 'running',
-          steps_completed: workflowRun.steps_completed + 1,
-          logs: updatedLogs
-        })
-        .eq('id', runId)
-
-      if (updateError) {
-        console.error('Failed to update workflow run:', updateError)
-        return NextResponse.json({
-          success: false,
-          message: 'Failed to update workflow run',
-          error: updateError.message
-        }, { status: 500 })
-      }
-
-      // In a real implementation, this would notify the workflow engine to continue
-      try {
-        await continueWorkflowExecution(runId, workflowRun, workflow)
-      } catch (engineError) {
-        console.error('Failed to continue workflow:', engineError)
-        // Don't fail the approval, but log the error
-      }
-
-      console.log(`✅ Workflow approved and continuing: ${runId}`)
-
-      return NextResponse.json({
-        success: true,
-        message: 'Workflow approved and continuing',
-        runId,
-        decision: 'approved',
-        nextStep: steps[workflowRun.steps_completed + 1]?.name || 'Final step'
+      // Use dynamic import to handle potential module loading issues
+      const { resumeWorkflow: resumeFunc } = await import('../../../../../engine/workflow-runner.js')
+      
+      // Resume workflow execution asynchronously
+      setImmediate(async () => {
+        try {
+          await resumeFunc(runId)
+        } catch (resumeError) {
+          console.error(`Failed to resume workflow ${runId}:`, resumeError)
+          
+          // Update run status to failed
+          await supabaseAdmin
+            .from('workflow_runs')
+            .update({
+              status: 'failed',
+              error_message: `Failed to resume after approval: ${resumeError.message}`
+            })
+            .eq('id', runId)
+        }
       })
 
-    } else {
-      // Approval rejected - stop workflow
-      const updatedLogs = [...(workflowRun.logs || []), approvalLog]
+      console.log(`✅ Workflow approval processed and execution resumed: ${runId}`)
       
-      // Update run to failed/rejected status
-      const { error: updateError } = await supabase
+    } catch (resumeError) {
+      console.error('Failed to resume workflow:', resumeError)
+      
+      // Update status but don't fail the approval - manual intervention may be needed
+      await supabaseAdmin
         .from('workflow_runs')
         .update({
           status: 'failed',
-          completed_at: new Date().toISOString(),
-          logs: updatedLogs
+          error_message: `Approved but failed to resume execution: ${resumeError.message}`
         })
         .eq('id', runId)
 
-      if (updateError) {
-        console.error('Failed to update workflow run:', updateError)
-        return NextResponse.json({
-          success: false,
-          message: 'Failed to update workflow run',
-          error: updateError.message
-        }, { status: 500 })
-      }
-
-      // Update workflow's last run status
-      await supabase
-        .from('workflows')
-        .update({
-          last_run_at: new Date().toISOString(),
-          last_run_status: 'failed'
-        })
-        .eq('id', workflow.id)
-
-      console.log(`❌ Workflow rejected and stopped: ${runId}`)
-
-      return NextResponse.json({
-        success: true,
-        message: 'Workflow rejected and stopped',
-        runId,
-        decision: 'rejected'
-      })
+      // Still return success since approval was recorded
     }
 
-  } catch (error) {
-    console.error('Workflow approval API error:', error)
+    // Log security event
+    await logSecurityEvent(ip, 'workflow_approved', 'info', {
+      runId,
+      workflowId: workflowRun.workflow_id,
+      workflowName: workflowRun.workflows?.name,
+      approvedBy: approverInfo?.email,
+      approverRole: approverInfo?.role,
+      approvalNotes,
+      userAgent
+    })
+
+    // Log to security_events table
+    await supabaseAdmin
+      .from('security_events')
+      .insert({
+        event_type: 'audit',
+        severity: 'info',
+        description: `Workflow approved: ${workflowRun.workflows?.name || workflowRun.workflow_id}`,
+        details: {
+          run_id: runId,
+          workflow_id: workflowRun.workflow_id,
+          workflow_name: workflowRun.workflows?.name,
+          approved_by: approverInfo?.email,
+          approver_role: approverInfo?.role,
+          approval_notes: approvalNotes,
+          current_step: workflowRun.current_step,
+          steps_completed: workflowRun.steps_completed,
+          steps_total: workflowRun.steps_total
+        },
+        resolved: true
+      })
+
     return NextResponse.json({
-      success: false,
-      message: 'Internal server error',
-      error: error instanceof Error ? error.message : 'Unknown error'
-    }, { status: 500 })
-  }
-}
-
-/**
- * Continue workflow execution after approval
- */
-async function continueWorkflowExecution(runId: string, workflowRun: any, workflow: any) {
-  try {
-    console.log(`⚙️ Continuing workflow execution: ${runId}`)
-
-    // In a real implementation, this would:
-    // 1. Send continuation signal to Bridge API workflow engine
-    // 2. Engine resumes from the next step
-    // 3. Updates database with progress
-
-    // For demonstration, simulate next step execution
-    const steps = workflow?.config?.steps || []
-    const nextStepIndex = workflowRun.steps_completed + 1
-
-    if (nextStepIndex < steps.length) {
-      const nextStep = steps[nextStepIndex]
-      
-      setTimeout(async () => {
-        try {
-          await simulateStepExecution(runId, nextStep, nextStepIndex)
-        } catch (error) {
-          console.error('Error in step simulation:', error)
-        }
-      }, 1000) // Continue after 1 second
-    } else {
-      // All steps completed
-      setTimeout(async () => {
-        try {
-          await completeWorkflow(runId, workflow.id)
-        } catch (error) {
-          console.error('Error completing workflow:', error)
-        }
-      }, 1000)
-    }
-
-  } catch (error) {
-    console.error('Error continuing workflow execution:', error)
-    throw error
-  }
-}
-
-/**
- * Simulate step execution
- */
-async function simulateStepExecution(runId: string, step: any, stepIndex: number) {
-  try {
-    console.log(`🔧 Simulating step ${stepIndex + 1}: ${step.name}`)
-
-    // Update current step
-    await supabase
-      .from('workflow_runs')
-      .update({
-        current_step: step.name
-      })
-      .eq('id', runId)
-
-    // Add step start log
-    const currentRun = await supabase
-      .from('workflow_runs')
-      .select('logs')
-      .eq('id', runId)
-      .single()
-
-    if (currentRun.data) {
-      const startLog = {
-        level: 'info',
-        message: `Starting step: ${step.name}`,
-        step: step.name,
-        timestamp: new Date().toISOString()
+      success: true,
+      message: 'Workflow approved and execution resumed',
+      data: {
+        runId: runId,
+        workflowId: workflowRun.workflow_id,
+        workflowName: workflowRun.workflows?.name,
+        approvedBy: approverInfo?.email,
+        approvedAt: approvalTime,
+        status: 'running',
+        nextStep: 'Resuming execution...'
       }
-
-      const updatedLogs = [...(currentRun.data.logs || []), startLog]
-
-      await supabase
-        .from('workflow_runs')
-        .update({ logs: updatedLogs })
-        .eq('id', runId)
-
-      // Simulate execution time
-      const executionTime = Math.min((step.estimatedMinutes || 1) * 1000, 8000) // Cap at 8 seconds
-
-      setTimeout(async () => {
-        // Complete step
-        const latestRun = await supabase
-          .from('workflow_runs')
-          .select('logs, steps_completed')
-          .eq('id', runId)
-          .single()
-
-        if (latestRun.data) {
-          const completionLog = {
-            level: 'success',
-            message: `Completed step: ${step.name}`,
-            step: step.name,
-            timestamp: new Date().toISOString(),
-            duration: executionTime
-          }
-
-          const finalLogs = [...(latestRun.data.logs || []), completionLog]
-
-          await supabase
-            .from('workflow_runs')
-            .update({
-              steps_completed: stepIndex + 1,
-              logs: finalLogs
-            })
-            .eq('id', runId)
-
-          console.log(`✅ Step completed: ${step.name}`)
-        }
-      }, executionTime)
-    }
+    })
 
   } catch (error) {
-    console.error('Error simulating step execution:', error)
+    console.error('Workflow approval error:', error)
+    
+    await logSecurityEvent(ip, 'workflow_approval_system_error', 'critical', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+      userAgent,
+      timestamp: new Date().toISOString()
+    })
+
+    return NextResponse.json(
+      { success: false, message: 'Internal server error' },
+      { status: 500 }
+    )
   }
 }
 
 /**
- * Complete workflow
+ * GET /api/workflows/approve
+ * Get pending approvals for the current user
  */
-async function completeWorkflow(runId: string, workflowId: string) {
+export async function GET(req: NextRequest) {
+  const ip = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'unknown'
+
   try {
-    const completedAt = new Date().toISOString()
+    // Check authentication and permissions
+    const authCookie = req.cookies.get('auth-token')?.value
+    let authorized = false
+    let requestorInfo = null
 
-    // Get current logs
-    const currentRun = await supabase
-      .from('workflow_runs')
-      .select('logs')
-      .eq('id', runId)
-      .single()
-
-    const completionLog = {
-      level: 'success',
-      message: 'Workflow completed successfully',
-      timestamp: completedAt
+    const ownerAuth = checkOwnerAuth(authCookie)
+    if (ownerAuth.isOwner) {
+      authorized = true
+      requestorInfo = ownerAuth.user
+    } else {
+      const permissionCheck = await requirePermission('system:health')
+      if (permissionCheck.authorized) {
+        authorized = true
+        requestorInfo = permissionCheck.user
+      }
     }
 
-    const finalLogs = [...(currentRun.data?.logs || []), completionLog]
+    if (!authorized) {
+      return NextResponse.json(
+        { success: false, message: 'Insufficient permissions' },
+        { status: 403 }
+      )
+    }
 
-    // Update workflow run
-    await supabase
+    if (!supabaseAdmin) {
+      return NextResponse.json(
+        { success: false, message: 'Service unavailable' },
+        { status: 503 }
+      )
+    }
+
+    // Get all workflow runs waiting for approval
+    const { data: pendingRuns, error } = await supabaseAdmin
       .from('workflow_runs')
-      .update({
-        status: 'completed',
-        completed_at: completedAt,
-        logs: finalLogs
-      })
-      .eq('id', runId)
+      .select(`
+        *,
+        workflows (
+          id,
+          name,
+          template_type,
+          config
+        )
+      `)
+      .eq('status', 'waiting_approval')
+      .order('started_at', { ascending: true })
 
-    // Update workflow
-    await supabase
-      .from('workflows')
-      .update({
-        last_run_at: completedAt,
-        last_run_status: 'completed'
-      })
-      .eq('id', workflowId)
+    if (error) {
+      console.error('Error fetching pending approvals:', error)
+      return NextResponse.json(
+        { success: false, message: 'Failed to fetch pending approvals' },
+        { status: 500 }
+      )
+    }
 
-    console.log(`🎉 Workflow completed: ${runId}`)
+    return NextResponse.json({
+      success: true,
+      data: {
+        pendingApprovals: pendingRuns || [],
+        count: pendingRuns?.length || 0
+      }
+    })
 
   } catch (error) {
-    console.error('Error completing workflow:', error)
+    console.error('Get approvals error:', error)
+    return NextResponse.json(
+      { success: false, message: 'Internal server error' },
+      { status: 500 }
+    )
   }
 }
