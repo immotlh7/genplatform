@@ -135,8 +135,8 @@ export function NotificationBell() {
         {
           id: '1',
           type: 'task_complete',
-          title: 'Task 0D-19 Completed',
-          description: 'Dashboard stats updated with real Supabase data',
+          title: 'Task 0D-24 Completed',
+          description: 'Final deployment and verification completed',
           read: false,
           created_at: new Date(now.getTime() - 5 * 60 * 1000).toISOString(),
           source: 'task_events'
@@ -155,7 +155,7 @@ export function NotificationBell() {
           id: '3',
           type: 'improvement',
           title: 'New Improvement Suggested',
-          description: 'API caching optimization proposed',
+          description: 'Bridge API response optimization proposed',
           read: false,
           created_at: new Date(now.getTime() - 25 * 60 * 1000).toISOString(),
           source: 'improvement_proposals'
@@ -163,8 +163,8 @@ export function NotificationBell() {
         {
           id: '4',
           type: 'task_complete',
-          title: 'Task 0D-18 Completed',
-          description: 'Activity stream added to Dashboard',
+          title: 'Sprint 0D Completed',
+          description: 'Live monitoring system fully implemented',
           read: true,
           created_at: new Date(now.getTime() - 35 * 60 * 1000).toISOString(),
           source: 'task_events'
@@ -266,7 +266,7 @@ export function NotificationBell() {
 
   return (
     <DropdownMenu open={open} onOpenChange={setOpen}>
-      <DropdownMenuTrigger asChild>
+      <DropdownMenuTrigger>
         <Button variant="ghost" size="sm" className="relative">
           <Bell className="h-5 w-5" />
           {unreadCount > 0 && (
