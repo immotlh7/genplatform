@@ -1,30 +1,40 @@
 import { NextRequest, NextResponse } from 'next/server'
-import jwt from 'jsonwebtoken'
-import { config } from '@/lib/config'
+import { cookies } from 'next/headers'
 
-export async function POST(request: NextRequest) {
+export async function GET(request: NextRequest) {
   try {
-    const { token } = await request.json()
+    const cookieStore = cookies()
+    const sessionCookie = cookieStore.get('session')
 
-    if (!token) {
-      return NextResponse.json(
-        { error: 'Token is required' },
-        { status: 400 }
-      )
+    // Check owner authentication (cookie-based)
+    if (sessionCookie && sessionCookie.value === 'authenticated') {
+      return NextResponse.json({
+        authenticated: true,
+        user: {
+          id: 'owner',
+          email: 'medtlh1@example.com', // Replace with actual owner email
+          displayName: 'Med', // Replace with actual owner name
+          role: 'OWNER',
+          isOwner: true,
+          authMethod: 'cookie'
+        }
+      })
     }
 
-    // Verify JWT token
-    const decoded = jwt.verify(token, config.jwtSecret) as any
-
+    // No valid authentication found
     return NextResponse.json({
-      valid: true,
-      decoded
+      authenticated: false,
+      user: null
     })
-
   } catch (error) {
+    console.error('Auth verification error:', error)
     return NextResponse.json(
-      { valid: false, error: 'Invalid token' },
-      { status: 401 }
+      { 
+        authenticated: false, 
+        user: null,
+        error: 'Verification failed'
+      },
+      { status: 500 }
     )
   }
 }
