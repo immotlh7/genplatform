@@ -20,7 +20,11 @@ import {
   Zap,
   Shield,
   Briefcase,
-  Search as SearchIcon
+  Search as SearchIcon,
+  Eye,
+  Lock,
+  Edit,
+  AlertCircle
 } from 'lucide-react'
 import {
   DropdownMenu,
@@ -37,8 +41,11 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { skillsData, getSkillsStats, type Skill } from '@/lib/skills-data'
+import { getCurrentUserClient } from '@/lib/access-control'
+import type { User } from '@/lib/access-control'
 
 export default function SkillsPage() {
+  const [currentUser, setCurrentUser] = useState<User | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedCategory, setSelectedCategory] = useState<string>('all')
   const [selectedStatus, setSelectedStatus] = useState<string>('all')
@@ -49,12 +56,40 @@ export default function SkillsPage() {
   const stats = useMemo(() => getSkillsStats(), [])
 
   useEffect(() => {
-    // Simulate loading
-    setTimeout(() => {
-      setSkills(skillsData)
-      setIsLoading(false)
-    }, 500)
+    loadUserAndSkills()
   }, [])
+
+  const loadUserAndSkills = async () => {
+    try {
+      // Get current user
+      const user = await getCurrentUserClient()
+      setCurrentUser(user)
+
+      // Load skills (simulate delay)
+      setTimeout(() => {
+        setSkills(skillsData)
+        setIsLoading(false)
+      }, 500)
+    } catch (error) {
+      console.error('Error loading user and skills:', error)
+      setIsLoading(false)
+    }
+  }
+
+  const canUserModify = () => {
+    if (!currentUser) return false
+    return currentUser.role === 'OWNER' || currentUser.role === 'ADMIN' || currentUser.role === 'MANAGER'
+  }
+
+  const canUserInstall = () => {
+    if (!currentUser) return false
+    return currentUser.role === 'OWNER' || currentUser.role === 'ADMIN'
+  }
+
+  const canUserDelete = () => {
+    if (!currentUser) return false
+    return currentUser.role === 'OWNER'
+  }
 
   const filteredSkills = useMemo(() => {
     return skills.filter(skill => {
@@ -88,6 +123,11 @@ export default function SkillsPage() {
   }
 
   const handleSkillToggle = async (skillId: string, currentStatus: string) => {
+    if (!canUserModify()) {
+      alert('You do not have permission to modify skills')
+      return
+    }
+
     try {
       const newStatus = currentStatus === 'active' ? 'inactive' : 'active'
       
@@ -118,6 +158,11 @@ export default function SkillsPage() {
   }
 
   const handleBulkAction = async (action: string) => {
+    if (!canUserModify()) {
+      alert('You do not have permission to modify skills')
+      return
+    }
+
     if (selectedSkills.length === 0) return
 
     try {
@@ -143,12 +188,16 @@ export default function SkillsPage() {
   }
 
   const toggleSkillSelection = (skillId: string) => {
+    if (!canUserModify()) return
+    
     setSelectedSkills(prev => 
       prev.includes(skillId) 
         ? prev.filter(id => id !== skillId)
         : [...prev, skillId]
     )
   }
+
+  const isReadOnly = !canUserModify()
 
   if (isLoading) {
     return (
@@ -175,20 +224,68 @@ export default function SkillsPage() {
         <div>
           <h1 className="text-2xl md:text-3xl font-bold">Skills</h1>
           <p className="text-muted-foreground">
-            Manage your AI agent capabilities and automations.
+            {currentUser?.role === 'OWNER' || currentUser?.role === 'ADMIN' 
+              ? 'Manage your AI agent capabilities and automations'
+              : currentUser?.role === 'MANAGER' 
+                ? 'Configure skills for your projects'
+                : 'View available AI agent capabilities'
+            }
           </p>
         </div>
         <div className="flex items-center space-x-2">
-          <Button variant="outline">
-            <Download className="h-4 w-4 mr-2" />
-            Import
-          </Button>
-          <Button>
-            <Plus className="h-4 w-4 mr-2" />
-            Install Skill
-          </Button>
+          {canUserInstall() && (
+            <>
+              <Button variant="outline">
+                <Download className="h-4 w-4 mr-2" />
+                Import
+              </Button>
+              <Button>
+                <Plus className="h-4 w-4 mr-2" />
+                Install Skill
+              </Button>
+            </>
+          )}
+          {isReadOnly && (
+            <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+              <Eye className="h-3 w-3 mr-1" />
+              View Only
+            </Badge>
+          )}
         </div>
       </div>
+
+      {/* Access level indicator for non-owners */}
+      {currentUser && currentUser.role !== 'OWNER' && (
+        <div className={`border rounded-lg p-4 ${
+          currentUser.role === 'VIEWER' 
+            ? 'bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800'
+            : 'bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-800'
+        }`}>
+          <div className="flex items-center space-x-2">
+            <Badge className={
+              currentUser.role === 'VIEWER' 
+                ? 'bg-blue-500 text-white' 
+                : currentUser.role === 'MANAGER'
+                  ? 'bg-green-500 text-white'
+                  : 'bg-orange-500 text-white'
+            }>
+              {currentUser.role}
+            </Badge>
+            <span className={`text-sm ${
+              currentUser.role === 'VIEWER' 
+                ? 'text-blue-900 dark:text-blue-100'
+                : 'text-green-900 dark:text-green-100'
+            }`}>
+              {currentUser.role === 'VIEWER' 
+                ? 'You can view skills but cannot modify them'
+                : currentUser.role === 'MANAGER'
+                  ? 'You can configure skills but cannot install/uninstall'
+                  : 'You have administrative access to skills'
+              }
+            </span>
+          </div>
+        </div>
+      )}
 
       {/* Stats Overview */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -282,8 +379,8 @@ export default function SkillsPage() {
         </Select>
       </div>
 
-      {/* Bulk Actions */}
-      {selectedSkills.length > 0 && (
+      {/* Bulk Actions - Only for users with modify permissions */}
+      {selectedSkills.length > 0 && canUserModify() && (
         <Card className="border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-950/20">
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
@@ -322,6 +419,21 @@ export default function SkillsPage() {
         </Card>
       )}
 
+      {/* Read-only notice for viewers */}
+      {isReadOnly && (
+        <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+          <div className="flex items-center space-x-2">
+            <Eye className="h-5 w-5 text-blue-600" />
+            <div>
+              <h3 className="font-medium text-blue-900 dark:text-blue-100">View-Only Mode</h3>
+              <p className="text-sm text-blue-700 dark:text-blue-300">
+                You can browse skills but cannot enable, disable, or install them. Contact your admin for modifications.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Skills Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredSkills.map((skill) => (
@@ -329,23 +441,28 @@ export default function SkillsPage() {
             key={skill.id} 
             className={`transition-all hover:shadow-md ${
               selectedSkills.includes(skill.id) ? 'ring-2 ring-blue-500' : ''
-            }`}
+            } ${isReadOnly ? 'bg-gray-50/50 dark:bg-gray-950/50' : ''}`}
           >
             <CardHeader className="pb-3">
               <div className="flex items-start justify-between">
                 <div className="flex items-center space-x-3">
-                  <input
-                    type="checkbox"
-                    checked={selectedSkills.includes(skill.id)}
-                    onChange={() => toggleSkillSelection(skill.id)}
-                    className="rounded"
-                  />
-                  <div className={`p-2 rounded-lg text-white ${getCategoryColor(skill.category)}`}>
+                  {canUserModify() && (
+                    <input
+                      type="checkbox"
+                      checked={selectedSkills.includes(skill.id)}
+                      onChange={() => toggleSkillSelection(skill.id)}
+                      className="rounded"
+                    />
+                  )}
+                  <div className={`p-2 rounded-lg text-white ${getCategoryColor(skill.category)} ${
+                    isReadOnly ? 'opacity-70' : ''
+                  }`}>
                     {getCategoryIcon(skill.category)}
                   </div>
                   <div className="flex-1 min-w-0">
                     <CardTitle className="text-base font-semibold truncate">
                       {skill.name}
+                      {isReadOnly && <Lock className="h-3 w-3 ml-1 inline" />}
                     </CardTitle>
                     <div className="flex items-center space-x-2 mt-1">
                       <Badge variant={skill.status === 'active' ? 'default' : 'secondary'}>
@@ -357,39 +474,45 @@ export default function SkillsPage() {
                     </div>
                   </div>
                 </div>
-                <DropdownMenu>
-                  <DropdownMenuTrigger>
-                    <Button variant="ghost" size="sm">
-                      <MoreHorizontal className="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem 
-                      onClick={() => handleSkillToggle(skill.id, skill.status)}
-                    >
-                      {skill.status === 'active' ? (
+                {!isReadOnly && (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger>
+                      <Button variant="ghost" size="sm">
+                        <MoreHorizontal className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem 
+                        onClick={() => handleSkillToggle(skill.id, skill.status)}
+                      >
+                        {skill.status === 'active' ? (
+                          <>
+                            <Square className="h-4 w-4 mr-2" />
+                            Disable
+                          </>
+                        ) : (
+                          <>
+                            <Play className="h-4 w-4 mr-2" />
+                            Enable
+                          </>
+                        )}
+                      </DropdownMenuItem>
+                      <DropdownMenuItem>
+                        <Settings className="h-4 w-4 mr-2" />
+                        Configure
+                      </DropdownMenuItem>
+                      {canUserDelete() && (
                         <>
-                          <Square className="h-4 w-4 mr-2" />
-                          Disable
-                        </>
-                      ) : (
-                        <>
-                          <Play className="h-4 w-4 mr-2" />
-                          Enable
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem className="text-red-600">
+                            <Trash className="h-4 w-4 mr-2" />
+                            Uninstall
+                          </DropdownMenuItem>
                         </>
                       )}
-                    </DropdownMenuItem>
-                    <DropdownMenuItem>
-                      <Settings className="h-4 w-4 mr-2" />
-                      Configure
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem className="text-red-600">
-                      <Trash className="h-4 w-4 mr-2" />
-                      Uninstall
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                )}
               </div>
             </CardHeader>
             <CardContent className="pt-0">
@@ -400,6 +523,12 @@ export default function SkillsPage() {
                 <span>v{skill.version || '1.0.0'}</span>
                 <span>Used {skill.lastUsed || 'never'}</span>
               </div>
+              {isReadOnly && (
+                <div className="mt-2 text-xs text-blue-600 bg-blue-50 dark:bg-blue-950/30 p-2 rounded border border-blue-200 dark:border-blue-800">
+                  <Eye className="h-3 w-3 inline mr-1" />
+                  View-only access
+                </div>
+              )}
             </CardContent>
           </Card>
         ))}
@@ -430,10 +559,12 @@ export default function SkillsPage() {
                   Clear Filters
                 </Button>
               )}
-              <Button>
-                <Plus className="h-4 w-4 mr-2" />
-                Browse Skills
-              </Button>
+              {canUserInstall() && (
+                <Button>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Browse Skills
+                </Button>
+              )}
             </div>
           </CardContent>
         </Card>
