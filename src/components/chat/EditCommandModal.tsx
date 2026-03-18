@@ -1,369 +1,443 @@
 "use client"
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
-import { Separator } from '@/components/ui/separator'
+import { Label } from '@/components/ui/label'
+import { Badge } from '@/components/ui/badge'
 import { 
-  Edit,
-  Languages,
+  Edit, 
+  Save, 
+  X, 
+  RefreshCw, 
+  Languages, 
   CheckCircle,
   AlertTriangle,
-  RefreshCw,
-  Save,
-  RotateCcw,
-  Lightbulb,
-  Send,
-  Wand2,
   Copy,
-  Volume2
+  Undo,
+  RotateCcw
 } from 'lucide-react'
+import { useToast } from '@/hooks/use-toast'
+import { detectArabicText, getTextDirection, getLocalizedPlaceholder } from '@/lib/arabic-detection'
 
 interface EditCommandModalProps {
-  isOpen: boolean
+  open: boolean
   onClose: () => void
-  originalText?: string
-  translatedText: string
-  confidence?: number
-  onSave?: (editedText: string, metadata?: any) => void
-  onSendToProject?: (text: string) => void
+  originalArabic?: string
+  currentEnglish?: string
+  originalConfidence?: number
+  onSave?: (editedArabic: string, newTranslation?: string) => void
+  onRetranslate?: (editedText: string) => void
 }
 
-interface EditSuggestion {
-  id: string
-  text: string
-  reason: string
-  confidence: number
-  type: 'grammar' | 'clarity' | 'context' | 'terminology'
-}
-
-export function EditCommandModal({ 
-  isOpen, 
-  onClose, 
-  originalText, 
-  translatedText, 
-  confidence = 0.8,
+export function EditCommandModal({
+  open,
+  onClose,
+  originalArabic = '',
+  currentEnglish = '',
+  originalConfidence = 0,
   onSave,
-  onSendToProject
+  onRetranslate
 }: EditCommandModalProps) {
-  const [editedText, setEditedText] = useState(translatedText)
-  const [isModified, setIsModified] = useState(false)
-  const [suggestions, setSuggestions] = useState<EditSuggestion[]>([])
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
+  const { toast } = useToast()
+  const [editedArabic, setEditedArabic] = useState(originalArabic)
+  const [editedEnglish, setEditedEnglish] = useState(currentEnglish)
+  const [isRetranslating, setIsRetranslating] = useState(false)
+  const [hasChanges, setHasChanges] = useState(false)
+  const [arabicDetection, setArabicDetection] = useState<any>(null)
+  const [editMode, setEditMode] = useState<'arabic' | 'english' | 'both'>('arabic')
+  const [validationErrors, setValidationErrors] = useState<string[]>([])
+  
+  const arabicTextareaRef = useRef<HTMLTextAreaElement>(null)
+  const englishTextareaRef = useRef<HTMLTextAreaElement>(null)
 
+  // Initialize state when modal opens
   useEffect(() => {
-    if (isOpen) {
-      setEditedText(translatedText)
-      setIsModified(false)
-      setError('')
-      generateSuggestions()
+    if (open) {
+      setEditedArabic(originalArabic)
+      setEditedEnglish(currentEnglish)
+      setHasChanges(false)
+      setValidationErrors([])
+      setEditMode('arabic')
     }
-  }, [isOpen, translatedText])
+  }, [open, originalArabic, currentEnglish])
 
+  // Detect Arabic text changes in real-time
   useEffect(() => {
-    setIsModified(editedText !== translatedText)
-  }, [editedText, translatedText])
-
-  const generateSuggestions = async () => {
-    setLoading(true)
-    try {
-      // Mock AI-powered suggestions generation
-      await new Promise(resolve => setTimeout(resolve, 800))
+    if (editedArabic) {
+      const detection = detectArabicText(editedArabic)
+      setArabicDetection(detection)
       
-      const mockSuggestions: EditSuggestion[] = [
-        {
-          id: '1',
-          text: translatedText.replace(/new/gi, 'fresh'),
-          reason: 'More specific terminology',
-          confidence: 0.85,
-          type: 'terminology'
-        },
-        {
-          id: '2', 
-          text: translatedText.replace(/create/gi, 'establish'),
-          reason: 'Professional tone improvement',
-          confidence: 0.78,
-          type: 'clarity'
-        },
-        {
-          id: '3',
-          text: `Please ${translatedText.toLowerCase()}`,
-          reason: 'Added politeness marker',
-          confidence: 0.72,
-          type: 'context'
-        }
-      ].filter(s => s.text !== translatedText) // Only show different suggestions
+      // Validate and set errors
+      const errors: string[] = []
+      if (!detection.isArabic && editedArabic.trim().length > 0) {
+        errors.push('Text does not appear to be Arabic')
+      }
+      if (detection.confidence < 0.3 && detection.isArabic) {
+        errors.push('Low confidence Arabic detection')
+      }
+      if (editedArabic.length > 2000) {
+        errors.push('Text too long (max 2000 characters)')
+      }
+      
+      setValidationErrors(errors)
+    }
+  }, [editedArabic])
 
-      setSuggestions(mockSuggestions)
-    } catch (err) {
-      console.error('Error generating suggestions:', err)
+  // Track changes
+  useEffect(() => {
+    const arabicChanged = editedArabic !== originalArabic
+    const englishChanged = editedEnglish !== currentEnglish
+    setHasChanges(arabicChanged || englishChanged)
+  }, [editedArabic, editedEnglish, originalArabic, currentEnglish])
+
+  const handleRetranslate = async () => {
+    if (!editedArabic.trim()) {
+      toast({
+        title: "Validation Error",
+        description: "Please enter Arabic text to translate.",
+        variant: "destructive",
+      })
+      return
+    }
+
+    if (validationErrors.length > 0) {
+      toast({
+        title: "Validation Error",
+        description: validationErrors.join(', '),
+        variant: "destructive",
+      })
+      return
+    }
+
+    setIsRetranslating(true)
+
+    try {
+      const response = await fetch('/api/commander', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          arabicText: editedArabic,
+          context: 'edit_retranslation'
+        })
+      })
+
+      if (!response.ok) {
+        throw new Error(`Translation failed: ${response.statusText}`)
+      }
+
+      const data = await response.json()
+      
+      if (data.success && data.data.englishCommand) {
+        setEditedEnglish(data.data.englishCommand)
+        toast({
+          title: "Translation Updated",
+          description: `New translation with ${Math.round(data.data.confidence * 100)}% confidence`,
+        })
+        
+        onRetranslate?.(editedArabic)
+      } else {
+        throw new Error(data.message || 'Translation failed')
+      }
+
+    } catch (error) {
+      console.error('Retranslation error:', error)
+      toast({
+        title: "Translation Error",
+        description: error instanceof Error ? error.message : 'Failed to retranslate text',
+        variant: "destructive",
+      })
     } finally {
-      setLoading(false)
+      setIsRetranslating(false)
     }
   }
 
   const handleSave = () => {
-    if (editedText.trim()) {
-      onSave?.(editedText.trim(), {
-        originalText,
-        translatedText,
-        editedText: editedText.trim(),
-        confidence,
-        isModified,
-        timestamp: new Date().toISOString()
+    if (!editedArabic.trim() && !editedEnglish.trim()) {
+      toast({
+        title: "Validation Error",
+        description: "Please provide either Arabic text or English translation.",
+        variant: "destructive",
       })
-      onClose()
+      return
     }
+
+    if (validationErrors.length > 0) {
+      toast({
+        title: "Validation Error",
+        description: validationErrors.join(', '),
+        variant: "destructive",
+      })
+      return
+    }
+
+    onSave?.(editedArabic, editedEnglish)
+    
+    toast({
+      title: "Changes Saved",
+      description: "Command has been updated successfully.",
+    })
+    
+    onClose()
   }
 
   const handleReset = () => {
-    setEditedText(translatedText)
+    setEditedArabic(originalArabic)
+    setEditedEnglish(currentEnglish)
+    setHasChanges(false)
   }
 
-  const applySuggestion = (suggestion: EditSuggestion) => {
-    setEditedText(suggestion.text)
+  const handleCopy = (text: string, label: string) => {
+    navigator.clipboard.writeText(text)
+    toast({
+      title: "Copied!",
+      description: `${label} copied to clipboard.`,
+    })
   }
 
-  const handleCopy = async () => {
-    try {
-      await navigator.clipboard.writeText(editedText)
-    } catch (error) {
-      console.error('Failed to copy text:', error)
-    }
-  }
-
-  const handlePlayAudio = () => {
-    if ('speechSynthesis' in window) {
-      const utterance = new SpeechSynthesisUtterance(editedText)
-      utterance.lang = 'en-US'
-      speechSynthesis.speak(utterance)
-    }
-  }
-
-  const getSuggestionIcon = (type: string) => {
-    switch (type) {
-      case 'grammar': return <CheckCircle className="h-3 w-3 text-green-600" />
-      case 'clarity': return <Lightbulb className="h-3 w-3 text-blue-600" />
-      case 'context': return <AlertTriangle className="h-3 w-3 text-orange-600" />
-      case 'terminology': return <Wand2 className="h-3 w-3 text-purple-600" />
-      default: return <Edit className="h-3 w-3 text-gray-600" />
-    }
-  }
-
-  const getSuggestionColor = (type: string) => {
-    switch (type) {
-      case 'grammar': return 'border-green-200 bg-green-50 hover:bg-green-100'
-      case 'clarity': return 'border-blue-200 bg-blue-50 hover:bg-blue-100'
-      case 'context': return 'border-orange-200 bg-orange-50 hover:bg-orange-100'
-      case 'terminology': return 'border-purple-200 bg-purple-50 hover:bg-purple-100'
-      default: return 'border-gray-200 bg-gray-50 hover:bg-gray-100'
-    }
+  const getConfidenceDisplay = () => {
+    if (!arabicDetection) return null
+    
+    const confidence = arabicDetection.confidence
+    const color = confidence >= 0.8 ? 'green' : confidence >= 0.6 ? 'yellow' : 'red'
+    
+    return (
+      <Badge className={`text-xs ${
+        color === 'green' ? 'bg-green-100 text-green-800' :
+        color === 'yellow' ? 'bg-yellow-100 text-yellow-800' :
+        'bg-red-100 text-red-800'
+      }`}>
+        Arabic: {Math.round(confidence * 100)}%
+      </Badge>
+    )
   }
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+    <Dialog open={open} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-[700px] max-h-[80vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center space-x-2">
-            <Edit className="h-5 w-5" />
+            <Edit className="h-5 w-5 text-blue-600" />
             <span>Edit Command</span>
-            {isModified && (
-              <Badge variant="outline" className="bg-blue-50 text-blue-700">
-                Modified
-              </Badge>
-            )}
           </DialogTitle>
           <DialogDescription>
-            Review and edit the translated command before executing
+            Edit the Arabic text or English translation. Changes will update the command in chat.
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-6">
-          {/* Original Translation Context */}
-          <Card className="bg-blue-50/50 border-blue-200">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base flex items-center space-x-2">
-                <Languages className="h-4 w-4 text-blue-600" />
-                <span>Original Translation</span>
-                <Badge className="bg-blue-100 text-blue-800">
-                  <CheckCircle className="h-3 w-3 mr-1" />
-                  {Math.round(confidence * 100)}% confident
-                </Badge>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {originalText && (
-                <div className="space-y-1">
-                  <Label className="text-xs text-muted-foreground">Original (Arabic):</Label>
-                  <div className="p-2 bg-orange-50 rounded text-right font-arabic" dir="rtl">
-                    {originalText}
-                  </div>
-                </div>
-              )}
-              <div className="space-y-1">
-                <Label className="text-xs text-muted-foreground">Translation (English):</Label>
-                <div className="p-2 bg-white rounded">
-                  {translatedText}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          {/* Edit Mode Selector */}
+          <div className="flex items-center space-x-2">
+            <Label className="text-sm font-medium">Edit Mode:</Label>
+            <div className="flex space-x-1">
+              <Button
+                variant={editMode === 'arabic' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setEditMode('arabic')}
+              >
+                Arabic Only
+              </Button>
+              <Button
+                variant={editMode === 'english' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setEditMode('english')}
+              >
+                English Only
+              </Button>
+              <Button
+                variant={editMode === 'both' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setEditMode('both')}
+              >
+                Both
+              </Button>
+            </div>
+          </div>
 
-          {/* Edit Area */}
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <Label htmlFor="edited-text" className="flex items-center space-x-2">
-                <Edit className="h-4 w-4" />
-                <span>Edit Translation</span>
-              </Label>
-              <div className="flex items-center space-x-2">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleCopy}
-                  className="h-7 px-2"
-                >
-                  <Copy className="h-3 w-3" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handlePlayAudio}
-                  className="h-7 px-2"
-                >
-                  <Volume2 className="h-3 w-3" />
-                </Button>
-                {isModified && (
+          {/* Arabic Text Editing */}
+          {(editMode === 'arabic' || editMode === 'both') && (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <Label className="text-sm font-medium flex items-center space-x-1">
+                  <Languages className="h-3 w-3" />
+                  <span>Arabic Text:</span>
+                </Label>
+                <div className="flex items-center space-x-2">
+                  {getConfidenceDisplay()}
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={handleReset}
-                    className="h-7 px-2 text-orange-600 hover:text-orange-700"
+                    onClick={() => handleCopy(editedArabic, 'Arabic text')}
+                    disabled={!editedArabic.trim()}
                   >
-                    <RotateCcw className="h-3 w-3 mr-1" />
-                    Reset
+                    <Copy className="h-3 w-3" />
                   </Button>
-                )}
+                </div>
               </div>
-            </div>
-            
-            <Textarea
-              id="edited-text"
-              value={editedText}
-              onChange={(e) => setEditedText(e.target.value)}
-              placeholder="Edit your command here..."
-              rows={4}
-              className="resize-none"
-            />
-            
-            <div className="text-xs text-muted-foreground">
-              Characters: {editedText.length} • Words: {editedText.split(/\s+/).filter(w => w).length}
-            </div>
-          </div>
-
-          {/* AI Suggestions */}
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <Label className="flex items-center space-x-2">
-                <Lightbulb className="h-4 w-4 text-amber-500" />
-                <span>AI Suggestions</span>
-              </Label>
-              {loading && (
-                <RefreshCw className="h-3 w-3 animate-spin text-muted-foreground" />
+              
+              <Textarea
+                ref={arabicTextareaRef}
+                value={editedArabic}
+                onChange={(e) => setEditedArabic(e.target.value)}
+                placeholder={getLocalizedPlaceholder(true, 'command')}
+                className="min-h-[120px] font-mono text-right"
+                dir="rtl"
+              />
+              
+              {/* Arabic Detection Info */}
+              {arabicDetection && (
+                <div className="text-xs text-muted-foreground bg-muted/30 p-2 rounded">
+                  <div className="grid grid-cols-2 gap-2">
+                    <span>Arabic chars: {arabicDetection.metrics.arabicChars}/{arabicDetection.metrics.totalChars}</span>
+                    <span>Words: {arabicDetection.metrics.arabicWords}/{arabicDetection.metrics.wordCount}</span>
+                  </div>
+                </div>
               )}
             </div>
+          )}
 
-            {loading ? (
-              <div className="grid grid-cols-1 gap-2">
-                {[1, 2, 3].map(i => (
-                  <div key={i} className="animate-pulse p-3 bg-muted/30 rounded-lg">
-                    <div className="h-3 bg-muted rounded w-3/4 mb-2"></div>
-                    <div className="h-2 bg-muted rounded w-1/2"></div>
-                  </div>
-                ))}
-              </div>
-            ) : suggestions.length > 0 ? (
-              <div className="grid grid-cols-1 gap-2">
-                {suggestions.map((suggestion) => (
-                  <div 
-                    key={suggestion.id}
-                    className={`p-3 border rounded-lg cursor-pointer transition-colors ${getSuggestionColor(suggestion.type)}`}
-                    onClick={() => applySuggestion(suggestion)}
-                  >
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1 space-y-1">
-                        <div className="flex items-center space-x-2">
-                          {getSuggestionIcon(suggestion.type)}
-                          <span className="text-sm font-medium capitalize">{suggestion.type}</span>
-                          <Badge variant="outline" className="text-xs">
-                            {Math.round(suggestion.confidence * 100)}%
-                          </Badge>
-                        </div>
-                        <p className="text-sm">{suggestion.text}</p>
-                        <p className="text-xs text-muted-foreground">{suggestion.reason}</p>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-4 text-muted-foreground text-sm">
-                <Lightbulb className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                <p>No suggestions available for this translation</p>
-              </div>
-            )}
-          </div>
-
-          {/* Character/Word Limits Info */}
-          {editedText.length > 200 && (
-            <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg">
+          {/* Translation Actions */}
+          {(editMode === 'arabic' || editMode === 'both') && (
+            <div className="flex items-center justify-between p-3 bg-blue-50 border border-blue-200 rounded-lg">
               <div className="flex items-center space-x-2">
-                <AlertTriangle className="h-4 w-4 text-amber-600" />
-                <span className="text-sm text-amber-800">
-                  Long commands may be harder to execute. Consider breaking into smaller parts.
-                </span>
+                <RefreshCw className="h-4 w-4 text-blue-600" />
+                <span className="text-sm font-medium text-blue-900">Translation</span>
+                <Badge variant="outline" className="text-xs">
+                  Auto-update available
+                </Badge>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleRetranslate}
+                disabled={isRetranslating || !editedArabic.trim() || validationErrors.length > 0}
+              >
+                {isRetranslating ? (
+                  <>
+                    <RefreshCw className="h-3 w-3 mr-1 animate-spin" />
+                    Translating...
+                  </>
+                ) : (
+                  <>
+                    <RefreshCw className="h-3 w-3 mr-1" />
+                    Retranslate
+                  </>
+                )}
+              </Button>
+            </div>
+          )}
+
+          {/* English Text Editing */}
+          {(editMode === 'english' || editMode === 'both') && (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <Label className="text-sm font-medium flex items-center space-x-1">
+                  <Languages className="h-3 w-3" />
+                  <span>English Translation:</span>
+                </Label>
+                <div className="flex items-center space-x-2">
+                  {originalConfidence > 0 && (
+                    <Badge className="text-xs bg-gray-100 text-gray-800">
+                      Original: {Math.round(originalConfidence * 100)}%
+                    </Badge>
+                  )}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleCopy(editedEnglish, 'English translation')}
+                    disabled={!editedEnglish.trim()}
+                  >
+                    <Copy className="h-3 w-3" />
+                  </Button>
+                </div>
+              </div>
+              
+              <Textarea
+                ref={englishTextareaRef}
+                value={editedEnglish}
+                onChange={(e) => setEditedEnglish(e.target.value)}
+                placeholder={getLocalizedPlaceholder(false, 'command')}
+                className="min-h-[120px] font-mono"
+                dir="ltr"
+              />
+              
+              <div className="text-xs text-muted-foreground">
+                💡 Tip: You can manually edit the English translation or use "Retranslate" to generate a new one.
               </div>
             </div>
           )}
-        </div>
 
-        <Separator />
+          {/* Validation Errors */}
+          {validationErrors.length > 0 && (
+            <div className="space-y-2">
+              {validationErrors.map((error, index) => (
+                <div key={index} className="flex items-start space-x-2 p-3 border border-red-200 rounded-lg bg-red-50">
+                  <AlertTriangle className="h-4 w-4 text-red-600 mt-0.5" />
+                  <div>
+                    <p className="text-sm font-medium text-red-800">Validation Error</p>
+                    <p className="text-sm text-red-700">{error}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
 
-        <div className="flex justify-between">
-          <Button variant="outline" onClick={onClose}>
-            Cancel
-          </Button>
-          <div className="flex space-x-2">
-            <Button 
-              variant="outline" 
-              onClick={() => onSendToProject?.(editedText)}
-              disabled={!editedText.trim()}
-            >
-              <Send className="h-4 w-4 mr-2" />
-              Send to Project
-            </Button>
-            <Button 
-              onClick={handleSave}
-              disabled={!editedText.trim()}
-            >
-              <Save className="h-4 w-4 mr-2" />
-              {isModified ? 'Save Changes' : 'Use Command'}
-            </Button>
+          {/* Change Indicator */}
+          {hasChanges && (
+            <div className="flex items-center space-x-2 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+              <CheckCircle className="h-4 w-4 text-yellow-600" />
+              <span className="text-sm font-medium text-yellow-900">
+                Changes detected. Remember to save your edits.
+              </span>
+            </div>
+          )}
+
+          {/* Action Buttons */}
+          <div className="flex items-center justify-between pt-4 border-t">
+            <div className="flex space-x-2">
+              {hasChanges && (
+                <Button variant="outline" size="sm" onClick={handleReset}>
+                  <RotateCcw className="h-3 w-3 mr-1" />
+                  Reset
+                </Button>
+              )}
+            </div>
+            
+            <div className="flex space-x-2">
+              <Button variant="outline" onClick={onClose}>
+                <X className="h-3 w-3 mr-1" />
+                Cancel
+              </Button>
+              <Button 
+                onClick={handleSave} 
+                disabled={!hasChanges || validationErrors.length > 0}
+                className="bg-blue-600 hover:bg-blue-700"
+              >
+                <Save className="h-3 w-3 mr-1" />
+                Save Changes
+              </Button>
+            </div>
+          </div>
+
+          {/* Tips */}
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <h4 className="font-medium text-blue-900 mb-2">💡 Editing Tips:</h4>
+            <ul className="text-sm text-blue-800 space-y-1">
+              <li>• Edit Arabic text to improve translation accuracy</li>
+              <li>• Use "Retranslate" to generate new English translation</li>
+              <li>• Manually adjust English text for better clarity</li>
+              <li>• Higher confidence scores indicate better translations</li>
+              <li>• Common Arabic development terms work best</li>
+            </ul>
           </div>
         </div>
       </DialogContent>
     </Dialog>
   )
 }
+
+export default EditCommandModal
