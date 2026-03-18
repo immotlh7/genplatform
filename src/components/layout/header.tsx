@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { ThemeToggle } from '@/components/ui/theme-toggle'
 import { MobileNav } from '@/components/layout/mobile-nav'
+import { NotificationBell } from '@/components/layout/NotificationBell'
 import { logout } from '@/lib/auth'
 
 export function Header() {
@@ -21,6 +22,9 @@ export function Header() {
         </div>
         
         <div className="ml-auto flex items-center space-x-2 md:space-x-4">
+          {/* Notification Bell */}
+          <NotificationBell />
+
           {/* Theme Toggle */}
           <ThemeToggle />
 
