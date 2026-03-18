@@ -148,7 +148,7 @@ export async function GET(request: NextRequest) {
         })
 
       default: // alerts
-        const alerts = await getAlerts(acknowledged, severity)
+        const alerts = await getAlerts(acknowledged || undefined, severity || undefined)
         return NextResponse.json({
           alerts,
           total: alerts.length,
