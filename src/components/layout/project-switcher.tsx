@@ -5,6 +5,7 @@ import { Check, ChevronsUpDown, FolderOpen, Plus, Settings, Archive } from 'luci
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { PriorityBadge, PriorityIndicator } from '@/components/ui/priority-badge'
+import { CreateProjectDialog } from '@/components/project/create-project-dialog'
 import {
   Command,
   CommandEmpty,
@@ -26,7 +27,7 @@ interface ProjectSwitcherProps {
 
 export function ProjectSwitcher({ className }: ProjectSwitcherProps) {
   const [open, setOpen] = useState(false)
-  const { currentProject, projects, setCurrentProject, loading } = useProject()
+  const { currentProject, projects, setCurrentProject, loading, refreshProjects } = useProject()
 
   // Sort projects by priority (high -> medium -> low), then by name
   const priorityOrder = { high: 0, medium: 1, low: 2 }
@@ -41,6 +42,11 @@ export function ProjectSwitcher({ className }: ProjectSwitcherProps) {
 
   const handleSelectProject = (project: Project) => {
     setCurrentProject(project)
+    setOpen(false)
+  }
+
+  const handleProjectCreated = async () => {
+    await refreshProjects()
     setOpen(false)
   }
 
@@ -159,17 +165,15 @@ export function ProjectSwitcher({ className }: ProjectSwitcherProps) {
 
             <CommandSeparator />
             <CommandGroup>
-              <CommandItem
-                onSelect={() => {
-                  setOpen(false)
-                  // TODO: Open new project dialog
-                  console.log('Create new project')
-                }}
-                className="text-sm"
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                Create Project
-              </CommandItem>
+              <CreateProjectDialog onSuccess={handleProjectCreated}>
+                <CommandItem
+                  onSelect={(e) => e.preventDefault()}
+                  className="text-sm cursor-pointer"
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Create Project
+                </CommandItem>
+              </CreateProjectDialog>
               <CommandItem
                 onSelect={() => {
                   setOpen(false)
