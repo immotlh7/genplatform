@@ -21,7 +21,7 @@ function getClientIP(req: NextRequest): string {
     return realIP.trim()
   }
   
-  return req.ip || 'unknown'
+  return (req as any).ip || 'unknown'
 }
 
 export async function POST(req: NextRequest) {
@@ -172,7 +172,7 @@ export async function POST(req: NextRequest) {
     // Record failed attempt on error
     recordLoginAttempt(ip, false, 'owner', { 
       userAgent, 
-      error: error instanceof Error ? error.message : 'unknown_error'
+      email: error instanceof Error ? error.message : 'unknown_error'
     })
     
     // Log security event

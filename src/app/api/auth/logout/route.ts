@@ -3,12 +3,15 @@ import { cookies } from 'next/headers'
 
 export async function POST() {
   try {
+    // Get the cookies instance
+    const cookieStore = await cookies()
+    
     // Clear the auth session cookie
-    cookies().delete('auth-session')
+    cookieStore.delete('auth-session')
     
     // Clear any other auth-related cookies
-    cookies().delete('sb-access-token')
-    cookies().delete('sb-refresh-token')
+    cookieStore.delete('sb-access-token')
+    cookieStore.delete('sb-refresh-token')
 
     return NextResponse.json({ 
       success: true, 

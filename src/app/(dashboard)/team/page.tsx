@@ -322,7 +322,7 @@ export default function TeamPage() {
                       
                       {canManageTeam && member.role !== 'OWNER' && (
                         <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
+                          <DropdownMenuTrigger>
                             <Button variant="ghost" size="sm">
                               <MoreVertical className="h-4 w-4" />
                             </Button>
