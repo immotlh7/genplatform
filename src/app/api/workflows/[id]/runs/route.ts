@@ -1,36 +1,95 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabase } from '@/lib/supabase'
+import { supabaseAdmin } from '@/lib/supabase'
+import { requirePermission, checkOwnerAuth } from '@/lib/rbac'
+import { logSecurityEvent } from '@/lib/security-logger'
 
-export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
+interface RouteParams {
+  params: {
+    id: string
+  }
+}
+
+/**
+ * GET /api/workflows/[id]/runs
+ * Get run history for a specific workflow
+ */
+export async function GET(req: NextRequest, { params }: RouteParams) {
+  const { id: workflowId } = params
+  const ip = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'unknown'
+  const userAgent = req.headers.get('user-agent') || 'unknown'
+  const url = new URL(req.url)
+
+  // Parse query parameters
+  const status = url.searchParams.get('status')
+  const limit = parseInt(url.searchParams.get('limit') || '20')
+  const offset = parseInt(url.searchParams.get('offset') || '0')
+  const includeDetails = url.searchParams.get('include_details') === 'true'
+
   try {
-    const workflowId = params.id
-    const { searchParams } = new URL(req.url)
-    
-    // Query parameters
-    const page = parseInt(searchParams.get('page') || '1')
-    const limit = parseInt(searchParams.get('limit') || '20')
-    const status = searchParams.get('status') // Filter by status
-    const offset = (page - 1) * limit
+    // Validate workflow ID
+    if (!workflowId || workflowId === 'undefined') {
+      return NextResponse.json(
+        { success: false, message: 'Workflow ID is required' },
+        { status: 400 }
+      )
+    }
 
-    console.log(`📊 Fetching runs for workflow: ${workflowId}`)
+    // Check authentication and permissions (only ADMIN+ can view workflow runs)
+    const authCookie = req.cookies.get('auth-token')?.value
+    let authorized = false
+    let requestorInfo = null
 
-    // Validate workflow exists
-    const { data: workflow, error: workflowError } = await supabase
+    // Check owner authentication first
+    const ownerAuth = checkOwnerAuth(authCookie)
+    if (ownerAuth.isOwner) {
+      authorized = true
+      requestorInfo = ownerAuth.user
+    } else {
+      // Check team member permissions (ADMIN can view workflow runs)
+      const permissionCheck = await requirePermission('system:health') // Using system:health as proxy for ADMIN
+      if (permissionCheck.authorized) {
+        authorized = true
+        requestorInfo = permissionCheck.user
+      }
+    }
+
+    if (!authorized) {
+      await logSecurityEvent(ip, 'unauthorized_workflow_runs_access_attempt', 'warning', {
+        workflowId,
+        userAgent,
+        queryParams: Object.fromEntries(url.searchParams),
+        timestamp: new Date().toISOString()
+      })
+
+      return NextResponse.json(
+        { success: false, message: 'Insufficient permissions to view workflow runs' },
+        { status: 403 }
+      )
+    }
+
+    if (!supabaseAdmin) {
+      return NextResponse.json(
+        { success: false, message: 'Workflow service unavailable' },
+        { status: 503 }
+      )
+    }
+
+    // Verify workflow exists
+    const { data: workflow, error: workflowError } = await supabaseAdmin
       .from('workflows')
-      .select('id, name, config')
+      .select('id, name, template_type, is_active')
       .eq('id', workflowId)
       .single()
 
     if (workflowError || !workflow) {
-      console.error('Workflow not found:', workflowError)
-      return NextResponse.json({
-        success: false,
-        message: 'Workflow not found'
-      }, { status: 404 })
+      return NextResponse.json(
+        { success: false, message: 'Workflow not found' },
+        { status: 404 }
+      )
     }
 
     // Build query for workflow runs
-    let query = supabase
+    let query = supabaseAdmin
       .from('workflow_runs')
       .select(`
         id,
@@ -42,192 +101,183 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
         steps_total,
         started_at,
         completed_at,
-        logs
+        started_by,
+        approved_by,
+        approved_at,
+        error_message,
+        ${includeDetails ? 'logs,' : ''}
+        projects (
+          id,
+          name
+        )
       `)
       .eq('workflow_id', workflowId)
 
-    // Apply status filter if provided
-    if (status && ['running', 'completed', 'failed', 'waiting_approval'].includes(status)) {
+    // Apply status filter
+    if (status) {
       query = query.eq('status', status)
     }
 
-    // Get total count for pagination
-    const { count: totalCount, error: countError } = await supabase
-      .from('workflow_runs')
-      .select('*', { count: 'exact', head: true })
-      .eq('workflow_id', workflowId)
+    // Apply pagination
+    query = query.range(offset, offset + limit - 1)
 
-    if (countError) {
-      console.error('Error getting runs count:', countError)
-      return NextResponse.json({
-        success: false,
-        message: 'Failed to get runs count',
-        error: countError.message
-      }, { status: 500 })
-    }
+    // Order by start date (newest first)
+    query = query.order('started_at', { ascending: false })
 
-    // Fetch workflow runs with pagination
-    const { data: runs, error: runsError } = await query
-      .order('started_at', { ascending: false })
-      .range(offset, offset + limit - 1)
+    const { data: runs, error: runsError, count } = await query
 
     if (runsError) {
       console.error('Error fetching workflow runs:', runsError)
-      return NextResponse.json({
-        success: false,
-        message: 'Failed to fetch workflow runs',
-        error: runsError.message
-      }, { status: 500 })
+      return NextResponse.json(
+        { success: false, message: 'Failed to fetch workflow runs' },
+        { status: 500 }
+      )
     }
 
-    // Enrich runs with additional calculated fields
-    const enrichedRuns = (runs || []).map(run => {
-      const duration = run.completed_at 
-        ? new Date(run.completed_at).getTime() - new Date(run.started_at).getTime()
-        : new Date().getTime() - new Date(run.started_at).getTime()
+    // Enhance runs with calculated fields
+    const enhancedRuns = (runs || []).map(run => {
+      const startTime = new Date(run.started_at)
+      const endTime = run.completed_at ? new Date(run.completed_at) : new Date()
+      const durationMs = endTime.getTime() - startTime.getTime()
+      
+      // Calculate duration in human-readable format
+      const durationMinutes = Math.floor(durationMs / (1000 * 60))
+      const durationSeconds = Math.floor((durationMs % (1000 * 60)) / 1000)
+      const duration = durationMinutes > 0 
+        ? `${durationMinutes}m ${durationSeconds}s`
+        : `${durationSeconds}s`
 
+      // Calculate progress percentage
       const progress = run.steps_total > 0 
         ? Math.round((run.steps_completed / run.steps_total) * 100)
         : 0
 
-      // Get step information from workflow config
-      const steps = workflow.config?.steps || []
-      const currentStepInfo = steps[run.steps_completed] || null
-
-      // Calculate step durations from logs
-      const stepDurations = calculateStepDurations(run.logs || [], steps)
-
-      // Get error information for failed runs
-      const errorInfo = run.status === 'failed' 
-        ? getErrorInfo(run.logs || [])
+      // Get last log entry for additional context
+      const lastLog = includeDetails && run.logs && Array.isArray(run.logs) 
+        ? run.logs[run.logs.length - 1] 
         : null
 
       return {
         id: run.id,
-        workflowId: run.workflow_id,
-        projectId: run.project_id,
         status: run.status,
         currentStep: run.current_step,
         stepsCompleted: run.steps_completed,
         stepsTotal: run.steps_total,
-        progress,
+        progress: progress,
         startedAt: run.started_at,
         completedAt: run.completed_at,
-        duration: Math.round(duration / 1000), // Duration in seconds
-        
-        // Additional computed fields
-        isRunning: ['running', 'waiting_approval'].includes(run.status),
-        isCompleted: run.status === 'completed',
-        isFailed: run.status === 'failed',
-        
-        // Step information
-        currentStepInfo,
-        stepDurations,
-        
-        // Error information for failed runs
-        errorInfo,
-        
-        // Logs summary
-        logCount: run.logs?.length || 0,
-        hasLogs: (run.logs?.length || 0) > 0
+        duration: duration,
+        durationMs: durationMs,
+        startedBy: run.started_by,
+        approvedBy: run.approved_by,
+        approvedAt: run.approved_at,
+        errorMessage: run.error_message,
+        project: run.projects ? {
+          id: run.projects.id,
+          name: run.projects.name
+        } : null,
+        ...(includeDetails && {
+          logs: run.logs || [],
+          lastLog: lastLog
+        })
       }
     })
 
-    // Calculate statistics
-    const statusCounts = enrichedRuns.reduce((counts, run) => {
-      counts[run.status] = (counts[run.status] || 0) + 1
-      return counts
-    }, {} as Record<string, number>)
+    // Calculate run statistics
+    const runStats = enhancedRuns.reduce((stats, run) => {
+      stats.total++
+      switch (run.status) {
+        case 'running':
+          stats.running++
+          break
+        case 'completed':
+          stats.completed++
+          break
+        case 'failed':
+          stats.failed++
+          break
+        case 'waiting_approval':
+          stats.waitingApproval++
+          break
+      }
+      return stats
+    }, {
+      total: 0,
+      running: 0,
+      completed: 0,
+      failed: 0,
+      waitingApproval: 0
+    })
 
-    const averageDuration = enrichedRuns
-      .filter(run => run.isCompleted && run.duration > 0)
-      .reduce((sum, run, _, arr) => {
-        return arr.length > 0 ? sum + run.duration / arr.length : 0
-      }, 0)
+    // Calculate success rate
+    const successRate = runStats.total > 0 
+      ? Math.round((runStats.completed / runStats.total) * 100)
+      : 0
 
-    console.log(`✅ Retrieved ${enrichedRuns.length} runs for workflow ${workflowId}`)
+    // Calculate average duration for completed runs
+    const completedRuns = enhancedRuns.filter(run => run.status === 'completed')
+    const averageDuration = completedRuns.length > 0
+      ? completedRuns.reduce((sum, run) => sum + run.durationMs, 0) / completedRuns.length
+      : 0
+
+    const averageDurationFormatted = averageDuration > 0
+      ? `${Math.floor(averageDuration / (1000 * 60))}m ${Math.floor((averageDuration % (1000 * 60)) / 1000)}s`
+      : 'N/A'
+
+    // Log successful access
+    await logSecurityEvent(ip, 'workflow_runs_accessed', 'info', {
+      workflowId,
+      workflowName: workflow.name,
+      requestorEmail: requestorInfo?.email,
+      requestorRole: requestorInfo?.role,
+      filters: { status, includeDetails },
+      resultCount: enhancedRuns.length,
+      userAgent
+    })
 
     return NextResponse.json({
       success: true,
-      runs: enrichedRuns,
-      workflow: {
-        id: workflow.id,
-        name: workflow.name,
-        stepsCount: workflow.config?.steps?.length || 0
-      },
-      pagination: {
-        page,
-        limit,
-        total: totalCount || 0,
-        totalPages: Math.ceil((totalCount || 0) / limit),
-        hasMore: (offset + limit) < (totalCount || 0)
-      },
-      statistics: {
-        totalRuns: totalCount || 0,
-        statusCounts,
-        averageDuration: Math.round(averageDuration),
-        successRate: totalCount && statusCounts.completed 
-          ? Math.round((statusCounts.completed / totalCount) * 100)
-          : 0
+      data: {
+        workflow: {
+          id: workflow.id,
+          name: workflow.name,
+          templateType: workflow.template_type,
+          isActive: workflow.is_active
+        },
+        runs: enhancedRuns,
+        pagination: {
+          limit,
+          offset,
+          total: count || enhancedRuns.length,
+          hasMore: (count || 0) > offset + limit
+        },
+        statistics: {
+          ...runStats,
+          successRate,
+          averageDuration: averageDurationFormatted,
+          averageDurationMs: Math.round(averageDuration)
+        },
+        filters: {
+          status,
+          includeDetails
+        }
       }
     })
 
   } catch (error) {
     console.error('Workflow runs API error:', error)
-    return NextResponse.json({
-      success: false,
-      message: 'Internal server error',
-      error: error instanceof Error ? error.message : 'Unknown error'
-    }, { status: 500 })
-  }
-}
+    
+    await logSecurityEvent(ip, 'workflow_runs_api_system_error', 'critical', {
+      workflowId,
+      error: error instanceof Error ? error.message : 'Unknown error',
+      userAgent,
+      queryParams: Object.fromEntries(url.searchParams),
+      timestamp: new Date().toISOString()
+    })
 
-/**
- * Calculate duration for each step based on logs
- */
-function calculateStepDurations(logs: any[], steps: any[]): Record<string, number> {
-  const stepDurations: Record<string, number> = {}
-  
-  // Group logs by step
-  const stepLogs = logs.reduce((groups, log) => {
-    if (log.step) {
-      if (!groups[log.step]) groups[log.step] = []
-      groups[log.step].push(log)
-    }
-    return groups
-  }, {} as Record<string, any[]>)
-
-  // Calculate duration for each step
-  Object.entries(stepLogs).forEach(([stepName, stepLogEntries]) => {
-    const startLog = stepLogEntries.find(log => 
-      log.message?.includes('Starting') || log.level === 'info'
+    return NextResponse.json(
+      { success: false, message: 'Internal server error' },
+      { status: 500 }
     )
-    const endLog = stepLogEntries.find(log => 
-      log.message?.includes('Completed') || log.level === 'success'
-    )
-
-    if (startLog && endLog && startLog.timestamp && endLog.timestamp) {
-      const duration = new Date(endLog.timestamp).getTime() - new Date(startLog.timestamp).getTime()
-      stepDurations[stepName] = Math.round(duration / 1000) // Convert to seconds
-    }
-  })
-
-  return stepDurations
-}
-
-/**
- * Extract error information from logs
- */
-function getErrorInfo(logs: any[]): { message: string; step?: string; timestamp: string } | null {
-  const errorLog = logs
-    .filter(log => log.level === 'error')
-    .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())[0]
-
-  if (!errorLog) return null
-
-  return {
-    message: errorLog.message || 'Unknown error',
-    step: errorLog.step || undefined,
-    timestamp: errorLog.timestamp
   }
 }
