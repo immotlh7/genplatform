@@ -1,317 +1,333 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getCurrentUser } from '@/lib/access-control'
-import { supabase } from '@/lib/supabase'
+import { supabaseAdmin } from '@/lib/supabase'
+import { requirePermission, checkOwnerAuth, Role } from '@/lib/rbac'
+import { logSecurityEvent } from '@/lib/security-logger'
 
-interface UpdateMemberRequest {
-  role?: 'ADMIN' | 'MANAGER' | 'VIEWER'
-  displayName?: string
-  isActive?: boolean
+interface UpdateTeamMemberRequest {
+  full_name?: string
+  role?: Role
+  status?: 'active' | 'disabled'
 }
 
-export async function PUT(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+interface RouteParams {
+  params: {
+    id: string
+  }
+}
+
+/**
+ * PUT /api/team/[id]
+ * Update team member information (role, status, name)
+ */
+export async function PUT(req: NextRequest, { params }: RouteParams) {
+  const { id } = params
+  const ip = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'unknown'
+  const userAgent = req.headers.get('user-agent') || 'unknown'
+
   try {
-    // Only OWNER can update team members (with some exceptions)
-    const currentUser = getCurrentUser()
-    if (!currentUser) {
+    // Validate team member ID
+    if (!id || id === 'undefined') {
       return NextResponse.json(
-        { success: false, error: 'Authentication required' },
-        { status: 401 }
-      )
-    }
-
-    const memberId = params.id
-    const body: UpdateMemberRequest = await request.json()
-    const { role, displayName, isActive } = body
-
-    // Get the target member
-    const { data: targetMember, error: fetchError } = await supabase
-      .from('team_members')
-      .select('*')
-      .eq('id', memberId)
-      .single()
-
-    if (fetchError || !targetMember) {
-      return NextResponse.json(
-        { success: false, error: 'Team member not found' },
-        { status: 404 }
-      )
-    }
-
-    // Permission checks
-    if (role && currentUser.role !== 'OWNER') {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized: Only platform owner can change roles' },
-        { status: 403 }
-      )
-    }
-
-    // Users can update their own display name
-    const canUpdateDisplayName = currentUser.role === 'OWNER' || currentUser.id === memberId
-    if (displayName && !canUpdateDisplayName) {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized: You can only update your own display name' },
-        { status: 403 }
-      )
-    }
-
-    // Only OWNER can change active status
-    if (isActive !== undefined && currentUser.role !== 'OWNER') {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized: Only platform owner can activate/deactivate members' },
-        { status: 403 }
-      )
-    }
-
-    // Cannot change OWNER role or deactivate OWNER
-    if (targetMember.role === 'OWNER') {
-      if (role && role !== 'OWNER') {
-        return NextResponse.json(
-          { success: false, error: 'Cannot change platform owner role' },
-          { status: 400 }
-        )
-      }
-      if (isActive === false) {
-        return NextResponse.json(
-          { success: false, error: 'Cannot deactivate platform owner' },
-          { status: 400 }
-        )
-      }
-    }
-
-    // Validate role if provided
-    if (role && !['ADMIN', 'MANAGER', 'VIEWER'].includes(role)) {
-      return NextResponse.json(
-        { success: false, error: 'Invalid role. Must be ADMIN, MANAGER, or VIEWER' },
+        { success: false, message: 'Team member ID is required' },
         { status: 400 }
       )
     }
 
-    // Prepare update data
-    const updateData: any = {
-      updated_at: new Date().toISOString()
+    // Check authentication and permissions
+    const authCookie = req.cookies.get('auth-token')?.value
+    let authorized = false
+    let requestorInfo = null
+    let requiredPermission: string
+
+    // Parse request body to determine required permission
+    const body: UpdateTeamMemberRequest = await req.json()
+    const { full_name, role, status } = body
+
+    // Determine required permission based on what's being updated
+    if (role && role !== undefined) {
+      requiredPermission = 'team:update_roles'  // Only owner can change roles
+    } else {
+      requiredPermission = 'team:invite'  // Admins can update other fields
     }
 
-    if (role) updateData.role = role
-    if (displayName) updateData.display_name = displayName
-    if (isActive !== undefined) updateData.is_active = isActive
+    // Check owner authentication first
+    const ownerAuth = checkOwnerAuth(authCookie)
+    if (ownerAuth.isOwner) {
+      authorized = true
+      requestorInfo = ownerAuth.user
+    } else if (requiredPermission === 'team:invite') {
+      // Check team member permissions for non-role updates
+      const permissionCheck = await requirePermission('team:invite')
+      if (permissionCheck.authorized) {
+        authorized = true
+        requestorInfo = permissionCheck.user
+      }
+    }
 
-    // Update the team member
-    const { data: updatedMember, error: updateError } = await supabase
+    if (!authorized) {
+      await logSecurityEvent(ip, 'unauthorized_team_update_attempt', 'warning', {
+        targetMemberId: id,
+        attemptedChanges: Object.keys(body),
+        userAgent,
+        timestamp: new Date().toISOString()
+      })
+
+      return NextResponse.json(
+        { success: false, message: 'Insufficient permissions to update team members' },
+        { status: 403 }
+      )
+    }
+
+    if (!supabaseAdmin) {
+      return NextResponse.json(
+        { success: false, message: 'Team service unavailable' },
+        { status: 503 }
+      )
+    }
+
+    // Get current team member data
+    const { data: currentMember, error: fetchError } = await supabaseAdmin
+      .from('team_members')
+      .select('*')
+      .eq('id', id)
+      .single()
+
+    if (fetchError || !currentMember) {
+      return NextResponse.json(
+        { success: false, message: 'Team member not found' },
+        { status: 404 }
+      )
+    }
+
+    // Prevent updating owner role or status (unless requestor is owner)
+    if (currentMember.role === 'OWNER' && !ownerAuth.isOwner) {
+      return NextResponse.json(
+        { success: false, message: 'Cannot modify owner account' },
+        { status: 403 }
+      )
+    }
+
+    // Validate role if being updated
+    if (role && !['ADMIN', 'MANAGER', 'VIEWER'].includes(role)) {
+      return NextResponse.json(
+        { success: false, message: 'Invalid role. Must be ADMIN, MANAGER, or VIEWER' },
+        { status: 400 }
+      )
+    }
+
+    // Validate status if being updated
+    if (status && !['active', 'disabled'].includes(status)) {
+      return NextResponse.json(
+        { success: false, message: 'Invalid status. Must be active or disabled' },
+        { status: 400 }
+      )
+    }
+
+    // Build update object
+    const updateData: any = {}
+    const changes: string[] = []
+
+    if (full_name && full_name !== currentMember.full_name) {
+      updateData.full_name = full_name.trim()
+      changes.push(`name: ${currentMember.full_name} → ${full_name}`)
+    }
+
+    if (role && role !== currentMember.role) {
+      updateData.role = role
+      changes.push(`role: ${currentMember.role} → ${role}`)
+    }
+
+    if (status && status !== currentMember.status) {
+      updateData.status = status
+      changes.push(`status: ${currentMember.status} → ${status}`)
+
+      // Update last_active if activating account
+      if (status === 'active') {
+        updateData.last_active = new Date().toISOString()
+      }
+    }
+
+    // Check if there are any changes
+    if (Object.keys(updateData).length === 0) {
+      return NextResponse.json(
+        { success: false, message: 'No changes detected' },
+        { status: 400 }
+      )
+    }
+
+    // Perform update
+    const { data: updatedMember, error: updateError } = await supabaseAdmin
       .from('team_members')
       .update(updateData)
-      .eq('id', memberId)
+      .eq('id', id)
       .select()
       .single()
 
     if (updateError) {
       console.error('Error updating team member:', updateError)
       return NextResponse.json(
-        { success: false, error: 'Failed to update team member' },
+        { success: false, message: 'Failed to update team member' },
         { status: 500 }
       )
     }
 
-    // If role changed, update all project assignments accordingly
-    if (role && role !== targetMember.role) {
-      // For role changes, we might need to adjust project access levels
-      // ADMIN gets ADMIN access to all assigned projects
-      // MANAGER and VIEWER keep their existing project access levels
-      
-      if (role === 'ADMIN') {
-        // Upgrade all project assignments to ADMIN level
-        const { error: upgradeError } = await supabase
-          .from('project_assignments')
-          .update({ 
-            access_level: 'ADMIN',
-            updated_at: new Date().toISOString()
-          })
-          .eq('member_id', memberId)
-
-        if (upgradeError) {
-          console.error('Error upgrading project access levels:', upgradeError)
-        }
-      }
-      // For MANAGER and VIEWER, we keep existing project access levels
-    }
-
-    // Log the change as a security event
-    const changes = []
-    if (role) changes.push(`role: ${targetMember.role} → ${role}`)
-    if (displayName) changes.push(`name: ${targetMember.display_name} → ${displayName}`)
-    if (isActive !== undefined) changes.push(`status: ${targetMember.is_active ? 'active' : 'inactive'} → ${isActive ? 'active' : 'inactive'}`)
-
-    await supabase
+    // Log the update in security events
+    await supabaseAdmin
       .from('security_events')
       .insert({
         event_type: 'audit',
         severity: 'info',
-        description: `Team member updated: ${targetMember.display_name} (${targetMember.email})`,
+        description: `Team member updated: ${currentMember.email}`,
         details: {
-          target_member: targetMember.email,
+          target_member_id: id,
+          target_member_email: currentMember.email,
           changes: changes,
-          updated_by: currentUser.email
-        }
+          updated_by: requestorInfo?.email,
+          updater_role: requestorInfo?.role,
+          timestamp: new Date().toISOString()
+        },
+        resolved: true
       })
+
+    // Log security event
+    await logSecurityEvent(ip, 'team_member_updated', 'info', {
+      targetMemberEmail: currentMember.email,
+      targetMemberId: id,
+      changes: changes,
+      updaterEmail: requestorInfo?.email,
+      updaterRole: requestorInfo?.role,
+      userAgent
+    })
 
     return NextResponse.json({
       success: true,
-      member: updatedMember,
-      changes: changes,
-      message: `Team member updated successfully`
+      message: 'Team member updated successfully',
+      data: {
+        member: {
+          id: updatedMember.id,
+          email: updatedMember.email,
+          full_name: updatedMember.full_name,
+          role: updatedMember.role,
+          status: updatedMember.status,
+          last_active: updatedMember.last_active,
+          created_at: updatedMember.created_at
+        },
+        changes: changes
+      }
     })
 
   } catch (error) {
-    console.error('Team member update error:', error)
+    console.error('Team update error:', error)
+    
+    await logSecurityEvent(ip, 'team_update_system_error', 'critical', {
+      targetMemberId: id,
+      error: error instanceof Error ? error.message : 'Unknown error',
+      userAgent,
+      timestamp: new Date().toISOString()
+    })
+
     return NextResponse.json(
-      { 
-        success: false, 
-        error: 'Internal server error',
-        details: error instanceof Error ? error.message : 'Unknown error'
-      },
+      { success: false, message: 'Internal server error' },
       { status: 500 }
     )
   }
 }
 
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+/**
+ * GET /api/team/[id]
+ * Get individual team member details
+ */
+export async function GET(req: NextRequest, { params }: RouteParams) {
+  const { id } = params
+  const ip = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'unknown'
+  const userAgent = req.headers.get('user-agent') || 'unknown'
+
   try {
-    // Only OWNER can delete team members
-    const currentUser = getCurrentUser()
-    if (!currentUser || currentUser.role !== 'OWNER') {
+    // Validate team member ID
+    if (!id || id === 'undefined') {
       return NextResponse.json(
-        { success: false, error: 'Unauthorized: Only platform owner can remove team members' },
+        { success: false, message: 'Team member ID is required' },
+        { status: 400 }
+      )
+    }
+
+    // Check authentication and permissions
+    const authCookie = req.cookies.get('auth-token')?.value
+    let authorized = false
+    let requestorInfo = null
+
+    // Check owner authentication first
+    const ownerAuth = checkOwnerAuth(authCookie)
+    if (ownerAuth.isOwner) {
+      authorized = true
+      requestorInfo = ownerAuth.user
+    } else {
+      // Check team member permissions
+      const permissionCheck = await requirePermission('team:read')
+      if (permissionCheck.authorized) {
+        authorized = true
+        requestorInfo = permissionCheck.user
+      }
+    }
+
+    if (!authorized) {
+      return NextResponse.json(
+        { success: false, message: 'Insufficient permissions' },
         { status: 403 }
       )
     }
 
-    const memberId = params.id
+    if (!supabaseAdmin) {
+      return NextResponse.json(
+        { success: false, message: 'Team service unavailable' },
+        { status: 503 }
+      )
+    }
 
-    // Get the target member
-    const { data: targetMember, error: fetchError } = await supabase
+    // Get team member details with project assignments
+    const { data: member, error: fetchError } = await supabaseAdmin
       .from('team_members')
-      .select('*')
-      .eq('id', memberId)
+      .select(`
+        id,
+        email,
+        full_name,
+        role,
+        status,
+        invited_by,
+        joined_at,
+        last_active,
+        created_at,
+        project_assignments (
+          id,
+          role,
+          assigned_at,
+          projects (
+            id,
+            name,
+            status,
+            progress
+          )
+        )
+      `)
+      .eq('id', id)
       .single()
 
-    if (fetchError || !targetMember) {
+    if (fetchError || !member) {
       return NextResponse.json(
-        { success: false, error: 'Team member not found' },
+        { success: false, message: 'Team member not found' },
         { status: 404 }
       )
     }
 
-    // Cannot delete OWNER
-    if (targetMember.role === 'OWNER') {
-      return NextResponse.json(
-        { success: false, error: 'Cannot delete platform owner' },
-        { status: 400 }
-      )
-    }
-
-    // Cannot delete yourself
-    if (currentUser.id === memberId) {
-      return NextResponse.json(
-        { success: false, error: 'Cannot delete your own account' },
-        { status: 400 }
-      )
-    }
-
-    // Soft delete: set is_active=false instead of hard delete to preserve data integrity
-    const { data: deactivatedMember, error: updateError } = await supabase
-      .from('team_members')
-      .update({ 
-        is_active: false,
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', memberId)
-      .select()
-      .single()
-
-    if (updateError) {
-      console.error('Error deactivating team member:', updateError)
-      return NextResponse.json(
-        { success: false, error: 'Failed to remove team member' },
-        { status: 500 }
-      )
-    }
-
-    // Remove all project assignments for this member
-    const { error: assignmentError } = await supabase
-      .from('project_assignments')
-      .delete()
-      .eq('member_id', memberId)
-
-    if (assignmentError) {
-      console.error('Error removing project assignments:', assignmentError)
-      // Don't fail the operation, but log the error
-    }
-
-    // Try to revoke Supabase Auth session
-    try {
-      // Get the user's auth ID from Supabase Auth
-      const { data: authUsers, error: authError } = await supabase.auth.admin.listUsers()
-      
-      if (!authError && authUsers.users) {
-        const authUser = authUsers.users.find(user => user.email === targetMember.email)
-        
-        if (authUser) {
-          // Delete the auth user to revoke all sessions
-          const { error: deleteError } = await supabase.auth.admin.deleteUser(authUser.id)
-          
-          if (deleteError) {
-            console.error('Error deleting auth user:', deleteError)
-            // Don't fail the operation, but log the error
-          }
-        }
-      }
-    } catch (authError) {
-      console.error('Error revoking auth session:', authError)
-      // Don't fail the operation
-    }
-
-    // Log the removal as a security event
-    await supabase
-      .from('security_events')
-      .insert({
-        event_type: 'audit',
-        severity: 'warning',
-        description: `Team member removed: ${targetMember.display_name} (${targetMember.email})`,
-        details: {
-          removed_member: {
-            email: targetMember.email,
-            name: targetMember.display_name,
-            role: targetMember.role
-          },
-          removed_by: currentUser.email,
-          action: 'team_member_removal'
-        }
-      })
-
     return NextResponse.json({
       success: true,
-      message: `Team member ${targetMember.display_name} has been removed`,
-      details: {
-        email: targetMember.email,
-        displayName: targetMember.display_name,
-        role: targetMember.role,
-        removedAt: new Date().toISOString()
-      }
+      data: { member }
     })
 
   } catch (error) {
-    console.error('Team member deletion error:', error)
+    console.error('Team member fetch error:', error)
     return NextResponse.json(
-      { 
-        success: false, 
-        error: 'Internal server error',
-        details: error instanceof Error ? error.message : 'Unknown error'
-      },
+      { success: false, message: 'Internal server error' },
       { status: 500 }
     )
   }
