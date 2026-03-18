@@ -12,6 +12,7 @@ app.use(express.json());
 // Routes
 app.use('/api/tasks', require('./routes/tasks'));
 app.use('/api/live-status', require('./routes/live-status'));
+app.use('/api/health', require('./routes/health'));
 
 // Health check
 app.get('/health', (req, res) => {
@@ -19,7 +20,8 @@ app.get('/health', (req, res) => {
     status: 'healthy',
     timestamp: new Date().toISOString(),
     service: 'GenPlatform Bridge API',
-    version: '1.0.0'
+    version: '1.0.0',
+    uptime: process.uptime()
   });
 });
 
@@ -42,4 +44,6 @@ app.use((req, res) => {
 
 app.listen(PORT, () => {
   console.log(`🌉 GenPlatform Bridge API running on port ${PORT}`);
+  console.log(`📊 Health metrics endpoint: http://localhost:${PORT}/api/health/collect`);
+  console.log(`🔍 Live status endpoint: http://localhost:${PORT}/api/live-status`);
 });
