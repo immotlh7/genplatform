@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from 'react'
+import Link from 'next/link'
 import { 
   FolderOpen, 
   Brain, 
@@ -141,22 +142,30 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 gap-4">
-              <Button variant="outline" className="h-20 flex-col">
-                <FolderOpen className="h-6 w-6 mb-2" />
-                <span className="text-sm">Projects</span>
-              </Button>
-              <Button variant="outline" className="h-20 flex-col">
-                <Brain className="h-6 w-6 mb-2" />
-                <span className="text-sm">Skills</span>
-              </Button>
-              <Button variant="outline" className="h-20 flex-col">
-                <Database className="h-6 w-6 mb-2" />
-                <span className="text-sm">Memory</span>
-              </Button>
-              <Button variant="outline" className="h-20 flex-col">
-                <Clock className="h-6 w-6 mb-2" />
-                <span className="text-sm">Cron Jobs</span>
-              </Button>
+              <Link href="/projects">
+                <Button variant="outline" className="h-20 flex-col w-full">
+                  <FolderOpen className="h-6 w-6 mb-2" />
+                  <span className="text-sm">Projects</span>
+                </Button>
+              </Link>
+              <Link href="/skills">
+                <Button variant="outline" className="h-20 flex-col w-full">
+                  <Brain className="h-6 w-6 mb-2" />
+                  <span className="text-sm">Skills</span>
+                </Button>
+              </Link>
+              <Link href="/memory">
+                <Button variant="outline" className="h-20 flex-col w-full">
+                  <Database className="h-6 w-6 mb-2" />
+                  <span className="text-sm">Memory</span>
+                </Button>
+              </Link>
+              <Link href="/cron">
+                <Button variant="outline" className="h-20 flex-col w-full">
+                  <Clock className="h-6 w-6 mb-2" />
+                  <span className="text-sm">Cron Jobs</span>
+                </Button>
+              </Link>
             </div>
           </CardContent>
         </Card>
