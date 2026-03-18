@@ -17,9 +17,14 @@ import {
   RefreshCw,
   Mic,
   MicOff,
-  Globe
+  Globe,
+  Lock,
+  AlertCircle,
+  Shield
 } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
+import { getCurrentUserClient, getUserPermissionSummary } from '@/lib/access-control'
+import type { User } from '@/lib/access-control'
 
 interface Message {
   id: string
@@ -27,6 +32,7 @@ interface Message {
   role: 'user' | 'assistant' | 'system'
   timestamp: string
   type?: 'message' | 'command' | 'commander'
+  projectId?: string
   metadata?: {
     language?: string
     isArabic?: boolean
@@ -34,6 +40,8 @@ interface Message {
     translatedText?: string
     projectId?: string
     confidence?: number
+    userId?: string
+    userRole?: string
   }
 }
 
@@ -55,14 +63,30 @@ const ARABIC_REGEX = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE7
 
 export default function ChatPage() {
   const { toast } = useToast()
+  const [currentUser, setCurrentUser] = useState<User | null>(null)
+  const [userPermissions, setUserPermissions] = useState<any>(null)
+  const [authLoading, setAuthLoading] = useState(true)
   const [messages, setMessages] = useState<Message[]>([])
   const [inputValue, setInputValue] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [isArabicDetected, setIsArabicDetected] = useState(false)
   const [arabicConfidence, setArabicConfidence] = useState(0)
   const [isListening, setIsListening] = useState(false)
+  const [selectedProjectId, setSelectedProjectId] = useState<string>('')
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
+
+  // Authentication and authorization check
+  useEffect(() => {
+    checkUserAccess()
+  }, [])
+
+  // Load initial messages if user has access
+  useEffect(() => {
+    if (currentUser && userPermissions?.canRead) {
+      loadChatHistory()
+    }
+  }, [currentUser, userPermissions])
 
   // Scroll to bottom when messages change
   useEffect(() => {
@@ -85,6 +109,58 @@ export default function ChatPage() {
     }
   }, [inputValue])
 
+  const checkUserAccess = async () => {
+    setAuthLoading(true)
+    try {
+      const user = await getCurrentUserClient()
+      setCurrentUser(user)
+
+      if (user) {
+        const permissions = getUserPermissionSummary(user)
+        setUserPermissions({
+          canRead: permissions.isManager || permissions.isAdmin, // Chat read requires MANAGER+
+          canWrite: permissions.isManager || permissions.isAdmin, // Chat write requires MANAGER+
+          canModerate: permissions.isAdmin, // Chat moderation requires ADMIN+
+          canUseCommander: permissions.isManager || permissions.isAdmin // Commander requires MANAGER+
+        })
+      }
+    } catch (error) {
+      console.error('Error checking user access:', error)
+      toast({
+        title: "Authentication Error",
+        description: "Failed to verify access permissions.",
+        variant: "destructive",
+      })
+    } finally {
+      setAuthLoading(false)
+    }
+  }
+
+  const loadChatHistory = async () => {
+    try {
+      const response = await fetch('/api/chat/messages', {
+        method: 'GET',
+        credentials: 'include'
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        if (data.messages) {
+          setMessages(data.messages)
+        }
+      } else if (response.status === 403) {
+        toast({
+          title: "Access Denied",
+          description: "You don't have permission to view chat history.",
+          variant: "destructive",
+        })
+      }
+    } catch (error) {
+      console.error('Failed to load chat history:', error)
+      // Silently fail - user can still send new messages
+    }
+  }
+
   const detectArabic = (text: string): boolean => {
     return ARABIC_REGEX.test(text)
   }
@@ -97,7 +173,7 @@ export default function ChatPage() {
   }
 
   const sendMessage = async () => {
-    if (!inputValue.trim()) return
+    if (!inputValue.trim() || !userPermissions?.canWrite) return
 
     const newMessage: Message = {
       id: Date.now().toString(),
@@ -105,10 +181,13 @@ export default function ChatPage() {
       role: 'user',
       timestamp: new Date().toISOString(),
       type: isArabicDetected ? 'commander' : 'message',
+      projectId: selectedProjectId || undefined,
       metadata: {
         language: isArabicDetected ? 'ar' : 'en',
         isArabic: isArabicDetected,
-        confidence: arabicConfidence
+        confidence: arabicConfidence,
+        userId: currentUser?.id,
+        userRole: currentUser?.role
       }
     }
 
@@ -117,20 +196,34 @@ export default function ChatPage() {
     setIsLoading(true)
 
     try {
-      const response = await fetch('/api/bridge', {
+      const endpoint = isArabicDetected && userPermissions?.canUseCommander 
+        ? '/api/chat/commander'
+        : '/api/chat/send'
+
+      const response = await fetch(endpoint, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'X-User-Role': currentUser?.role || '',
+          'X-User-ID': currentUser?.id || ''
+        },
+        credentials: 'include',
         body: JSON.stringify({
           message: newMessage,
           context: {
-            sessionId: 'chat-session-1',
-            previousMessages: messages.slice(-5) // Last 5 messages for context
+            sessionId: `chat-${currentUser?.id}-${Date.now()}`,
+            previousMessages: messages.slice(-5),
+            projectId: selectedProjectId,
+            userPermissions
           }
         })
       })
 
       if (!response.ok) {
-        throw new Error(`Bridge API error: ${response.status}`)
+        if (response.status === 403) {
+          throw new Error('You don\'t have permission to send messages')
+        }
+        throw new Error(`Server error: ${response.status}`)
       }
 
       const data = await response.json()
@@ -139,18 +232,36 @@ export default function ChatPage() {
         setMessages(prev => [...prev, data.message])
       }
 
+      // Handle Commander-specific response
+      if (data.commanderResponse && isArabicDetected) {
+        const commanderMessage: Message = {
+          id: (Date.now() + 1).toString(),
+          content: data.commanderResponse.translation,
+          role: 'assistant',
+          timestamp: new Date().toISOString(),
+          type: 'commander',
+          metadata: {
+            originalText: newMessage.content,
+            translatedText: data.commanderResponse.translation,
+            confidence: data.commanderResponse.confidence,
+            language: 'en'
+          }
+        }
+        setMessages(prev => [...prev, commanderMessage])
+      }
+
     } catch (error) {
       console.error('Failed to send message:', error)
       toast({
         title: "Error",
-        description: "Failed to send message. Please try again.",
+        description: error instanceof Error ? error.message : "Failed to send message. Please try again.",
         variant: "destructive",
       })
 
       // Add error message
       const errorMessage: Message = {
         id: Date.now().toString(),
-        content: "Sorry, I couldn't process your message. Please try again.",
+        content: "Sorry, I couldn't process your message. Please check your permissions and try again.",
         role: 'assistant',
         timestamp: new Date().toISOString(),
         type: 'message'
@@ -169,6 +280,15 @@ export default function ChatPage() {
   }
 
   const handleCommanderAction = (action: any) => {
+    if (!userPermissions?.canUseCommander) {
+      toast({
+        title: "Access Denied",
+        description: "You don't have permission to use Commander actions.",
+        variant: "destructive",
+      })
+      return
+    }
+
     toast({
       title: "Action triggered",
       description: `Executing: ${action.label}`,
@@ -177,11 +297,29 @@ export default function ChatPage() {
   }
 
   const handleEditCommand = (text: string) => {
+    if (!userPermissions?.canWrite) {
+      toast({
+        title: "Access Denied",
+        description: "You don't have permission to edit commands.",
+        variant: "destructive",
+      })
+      return
+    }
+
     setInputValue(text)
     inputRef.current?.focus()
   }
 
   const handleSendToProject = (text: string) => {
+    if (!userPermissions?.canUseCommander) {
+      toast({
+        title: "Access Denied",
+        description: "You don't have permission to send commands to projects.",
+        variant: "destructive",
+      })
+      return
+    }
+
     toast({
       title: "Sent to project",
       description: `Command: "${text}" has been added to the current project.`,
@@ -189,6 +327,15 @@ export default function ChatPage() {
   }
 
   const startVoiceInput = () => {
+    if (!userPermissions?.canWrite) {
+      toast({
+        title: "Access Denied",
+        description: "You don't have permission to use voice input.",
+        variant: "destructive",
+      })
+      return
+    }
+
     if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
       const SpeechRecognition = (window as any).webkitSpeechRecognition || (window as any).SpeechRecognition
       const recognition = new SpeechRecognition()
@@ -234,40 +381,129 @@ export default function ChatPage() {
     )
   }
 
+  // Show loading state during auth check
+  if (authLoading) {
+    return (
+      <div className="flex flex-col h-screen p-4 md:p-6">
+        <div className="flex items-center justify-center h-full">
+          <div className="animate-pulse space-y-4 text-center">
+            <MessageCircle className="h-12 w-12 mx-auto text-muted-foreground" />
+            <div>Checking access permissions...</div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // Show access denied state
+  if (!currentUser || !userPermissions?.canRead) {
+    return (
+      <div className="flex flex-col h-screen p-4 md:p-6">
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h1 className="text-2xl md:text-3xl font-bold">Chat</h1>
+            <p className="text-muted-foreground">AI assistant with command translation</p>
+          </div>
+        </div>
+
+        <Card className="flex-1 flex items-center justify-center">
+          <CardContent className="text-center space-y-6 max-w-md">
+            <div className="w-16 h-16 mx-auto rounded-full bg-red-100 flex items-center justify-center">
+              <Lock className="h-8 w-8 text-red-600" />
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold mb-2">Access Denied</h3>
+              <p className="text-muted-foreground mb-4">
+                You need MANAGER level access or higher to use the chat feature.
+              </p>
+              {currentUser ? (
+                <div className="space-y-2">
+                  <Badge variant="outline" className="mb-2">
+                    Current Role: {currentUser.role}
+                  </Badge>
+                  <p className="text-sm text-muted-foreground">
+                    Contact the platform owner to request elevated permissions.
+                  </p>
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">
+                  Please sign in to access the chat feature.
+                </p>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
+
   return (
     <div className="flex flex-col h-screen p-4 md:p-6">
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold">Chat</h1>
-          <p className="text-muted-foreground">
-            AI assistant with Arabic command translation support
-          </p>
+          <div className="flex items-center space-x-2">
+            <p className="text-muted-foreground">
+              AI assistant with Arabic command translation support
+            </p>
+            <Badge className="bg-green-500 text-white">
+              <Shield className="h-3 w-3 mr-1" />
+              {currentUser.role}
+            </Badge>
+          </div>
         </div>
         <div className="flex items-center space-x-2">
-          <Button variant="outline" size="sm">
-            <Settings className="h-4 w-4 mr-2" />
-            Settings
-          </Button>
-          <Button size="sm">
-            <Plus className="h-4 w-4 mr-2" />
-            New Chat
-          </Button>
+          {userPermissions?.canModerate && (
+            <Button variant="outline" size="sm">
+              <Settings className="h-4 w-4 mr-2" />
+              Moderate
+            </Button>
+          )}
+          {userPermissions?.canWrite && (
+            <Button size="sm">
+              <Plus className="h-4 w-4 mr-2" />
+              New Chat
+            </Button>
+          )}
+        </div>
+      </div>
+
+      {/* Permission indicator */}
+      <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3 mb-4">
+        <div className="flex items-center justify-between text-sm">
+          <div className="flex items-center space-x-2">
+            <MessageCircle className="h-4 w-4 text-blue-600" />
+            <span className="font-medium">Chat Permissions:</span>
+            <Badge variant="outline" className={userPermissions?.canWrite ? "bg-green-50 text-green-700" : "bg-gray-50 text-gray-700"}>
+              {userPermissions?.canWrite ? 'Read/Write' : 'Read Only'}
+            </Badge>
+            {userPermissions?.canUseCommander && (
+              <Badge variant="outline" className="bg-orange-50 text-orange-700">
+                Commander Enabled
+              </Badge>
+            )}
+          </div>
         </div>
       </div>
 
       {/* Messages Area */}
       <Card className="flex-1 flex flex-col min-h-0">
         <CardHeader className="flex-none">
-          <CardTitle className="flex items-center space-x-2">
-            <MessageCircle className="h-5 w-5" />
-            <span>Conversation</span>
-            {isArabicDetected && (
-              <Badge className="bg-orange-500 text-white">
-                <Languages className="h-3 w-3 mr-1" />
-                Commander Mode
-              </Badge>
-            )}
+          <CardTitle className="flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <MessageCircle className="h-5 w-5" />
+              <span>Conversation</span>
+              {isArabicDetected && userPermissions?.canUseCommander && (
+                <Badge className="bg-orange-500 text-white">
+                  <Languages className="h-3 w-3 mr-1" />
+                  Commander Mode
+                </Badge>
+              )}
+            </div>
+            <div className="text-sm text-muted-foreground">
+              {currentUser.displayName}
+            </div>
           </CardTitle>
         </CardHeader>
         
@@ -279,11 +515,16 @@ export default function ChatPage() {
                 <MessageCircle className="h-12 w-12 text-muted-foreground mb-4 opacity-50" />
                 <h3 className="text-lg font-semibold mb-2">Start a conversation</h3>
                 <p className="text-muted-foreground mb-4 max-w-md">
-                  Type in English or Arabic. Arabic commands will be automatically translated using Commander.
+                  {userPermissions?.canUseCommander 
+                    ? "Type in English or Arabic. Arabic commands will be automatically translated using Commander."
+                    : "Type your messages in English."
+                  }
                 </p>
                 <div className="flex items-center space-x-2 text-sm text-muted-foreground">
                   <Languages className="h-4 w-4" />
-                  <span>Supports: English, Arabic (العربية)</span>
+                  <span>
+                    Supports: English{userPermissions?.canUseCommander ? ', Arabic (العربية)' : ''}
+                  </span>
                 </div>
               </div>
             ) : (
@@ -308,6 +549,9 @@ export default function ChatPage() {
                             Arabic
                           </Badge>
                         )}
+                        <Badge variant="outline" className="text-xs">
+                          {message.metadata?.userRole || 'Unknown'}
+                        </Badge>
                       </div>
                       <div className={`p-3 rounded-lg ${
                         message.role === 'user' 
@@ -323,7 +567,7 @@ export default function ChatPage() {
                   </div>
 
                   {/* Commander Card for Arabic messages */}
-                  {message.type === 'commander' && message.metadata?.isArabic && (
+                  {message.type === 'commander' && message.metadata?.isArabic && userPermissions?.canUseCommander && (
                     <CommanderCard
                       originalText={message.content}
                       translatedText={message.metadata.translatedText || message.content}
@@ -349,63 +593,88 @@ export default function ChatPage() {
             <div ref={messagesEndRef} />
           </div>
 
-          {/* Input Area */}
-          <div className="space-y-3 border-t pt-4">
-            {/* Language Detection Indicator */}
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-2">
-                {getLanguageIndicator()}
-                {isArabicDetected && (
-                  <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">
-                    <Bot className="h-3 w-3 mr-1" />
-                    Commander Ready
-                  </Badge>
+          {/* Input Area - Only show if user has write permission */}
+          {userPermissions?.canWrite ? (
+            <div className="space-y-3 border-t pt-4">
+              {/* Language Detection Indicator */}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  {getLanguageIndicator()}
+                  {isArabicDetected && userPermissions?.canUseCommander && (
+                    <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">
+                      <Bot className="h-3 w-3 mr-1" />
+                      Commander Ready
+                    </Badge>
+                  )}
+                  {isArabicDetected && !userPermissions?.canUseCommander && (
+                    <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">
+                      <AlertCircle className="h-3 w-3 mr-1" />
+                      Commander Disabled
+                    </Badge>
+                  )}
+                </div>
+                {isLoading && (
+                  <div className="flex items-center space-x-2 text-sm text-muted-foreground">
+                    <RefreshCw className="h-3 w-3 animate-spin" />
+                    <span>Processing...</span>
+                  </div>
                 )}
               </div>
-              {isLoading && (
-                <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-                  <RefreshCw className="h-3 w-3 animate-spin" />
-                  <span>Processing...</span>
+
+              {/* Input Row */}
+              <div className="flex items-center space-x-2">
+                <div className="flex-1 relative">
+                  <Input
+                    ref={inputRef}
+                    value={inputValue}
+                    onChange={(e) => setInputValue(e.target.value)}
+                    onKeyPress={handleKeyPress}
+                    placeholder={
+                      isArabicDetected && userPermissions?.canUseCommander 
+                        ? "اكتب أمرك بالعربية..." 
+                        : "Type your message..."
+                    }
+                    className={`pr-12 ${isArabicDetected ? 'text-right' : 'text-left'}`}
+                    dir={isArabicDetected ? 'rtl' : 'ltr'}
+                    disabled={isLoading}
+                  />
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="absolute right-2 top-1/2 transform -translate-y-1/2 h-6 w-6 p-0"
+                    onClick={startVoiceInput}
+                    disabled={isLoading}
+                  >
+                    {isListening ? (
+                      <MicOff className="h-3 w-3" />
+                    ) : (
+                      <Mic className="h-3 w-3" />
+                    )}
+                  </Button>
+                </div>
+                <Button 
+                  onClick={sendMessage} 
+                  disabled={!inputValue.trim() || isLoading}
+                  className="px-4"
+                >
+                  <Send className="h-4 w-4" />
+                </Button>
+              </div>
+
+              {/* Permission hints */}
+              {isArabicDetected && !userPermissions?.canUseCommander && (
+                <div className="text-xs text-amber-600 bg-amber-50 dark:bg-amber-950/30 p-2 rounded border border-amber-200 dark:border-amber-800">
+                  💡 Arabic detected, but Commander is disabled for your role. Contact admin for access.
                 </div>
               )}
             </div>
-
-            {/* Input Row */}
-            <div className="flex items-center space-x-2">
-              <div className="flex-1 relative">
-                <Input
-                  ref={inputRef}
-                  value={inputValue}
-                  onChange={(e) => setInputValue(e.target.value)}
-                  onKeyPress={handleKeyPress}
-                  placeholder={isArabicDetected ? "اكتب أمرك بالعربية..." : "Type your message..."}
-                  className={`pr-12 ${isArabicDetected ? 'text-right' : 'text-left'}`}
-                  dir={isArabicDetected ? 'rtl' : 'ltr'}
-                  disabled={isLoading}
-                />
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="absolute right-2 top-1/2 transform -translate-y-1/2 h-6 w-6 p-0"
-                  onClick={startVoiceInput}
-                  disabled={isLoading}
-                >
-                  {isListening ? (
-                    <MicOff className="h-3 w-3" />
-                  ) : (
-                    <Mic className="h-3 w-3" />
-                  )}
-                </Button>
+          ) : (
+            <div className="border-t pt-4 text-center">
+              <div className="text-sm text-muted-foreground p-3 bg-muted/30 rounded">
+                👁️ Read-only access. You can view messages but cannot send new ones.
               </div>
-              <Button 
-                onClick={sendMessage} 
-                disabled={!inputValue.trim() || isLoading}
-                className="px-4"
-              >
-                <Send className="h-4 w-4" />
-              </Button>
             </div>
-          </div>
+          )}
         </CardContent>
       </Card>
     </div>
