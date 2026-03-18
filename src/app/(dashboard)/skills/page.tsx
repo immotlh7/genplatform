@@ -209,14 +209,12 @@ export default function SkillsPage() {
                       {skill.category}
                     </Badge>
                   </div>
-                  <Switch 
-                    checked={skill.active}
-                    onCheckedChange={(e) => {
-                      e.stopPropagation()
-                      toggleSkill(skill.name)
-                    }}
-                    onClick={(e) => e.stopPropagation()}
-                  />
+                  <div onClick={(e) => e.stopPropagation()}>
+                    <Switch 
+                      checked={skill.active}
+                      onCheckedChange={() => toggleSkill(skill.name)}
+                    />
+                  </div>
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">
