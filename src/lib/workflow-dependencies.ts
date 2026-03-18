@@ -1,660 +1,581 @@
-import { supabase } from './supabase'
+/**
+ * Workflow Dependency Management System
+ * Handles workflow prerequisites, dependency graphs, conflict resolution, and chain execution planning
+ */
 
 export interface WorkflowDependency {
-  id: string
-  workflow_id: string
-  depends_on_workflow_id: string
-  dependency_type: 'prerequisite' | 'trigger' | 'data' | 'resource'
-  condition: {
-    type: 'success' | 'completion' | 'status' | 'data_available' | 'resource_free'
-    value?: any
-    timeout_minutes?: number
-  }
-  is_blocking: boolean
-  created_at: string
-  updated_at: string
+  id: string;
+  workflowId: string;
+  dependsOnWorkflowId: string;
+  dependencyType: 'sequential' | 'data' | 'resource' | 'conditional';
+  isRequired: boolean;
+  condition?: string; // JavaScript expression for conditional dependencies
+  metadata: {
+    description: string;
+    createdAt: Date;
+    createdBy: string;
+  };
 }
 
 export interface DependencyNode {
-  id: string
-  workflow_id: string
-  workflow_name: string
-  status: 'pending' | 'running' | 'completed' | 'failed' | 'blocked'
-  dependencies: string[]
-  dependents: string[]
-  level: number
-  position: { x: number; y: number }
+  workflowId: string;
+  workflowName: string;
+  dependencies: string[]; // Array of workflow IDs this depends on
+  dependents: string[]; // Array of workflow IDs that depend on this
+  level: number; // Execution level (0 = no dependencies, 1 = depends on level 0, etc.)
+  status: 'ready' | 'waiting' | 'running' | 'completed' | 'failed' | 'blocked';
+  estimatedDuration?: number;
+  lastRun?: Date;
 }
 
-export interface DependencyGraph {
-  nodes: DependencyNode[]
-  edges: {
-    from: string
-    to: string
-    type: string
-    condition: string
-  }[]
-  cycles: string[][]
-  execution_order: string[]
+export interface ExecutionPlan {
+  id: string;
+  name: string;
+  levels: DependencyNode[][]; // Array of levels, each containing workflows that can run in parallel
+  totalEstimatedTime: number;
+  criticalPath: string[]; // Workflow IDs in the critical path
+  conflicts: DependencyConflict[];
+  createdAt: Date;
 }
 
-export interface ConflictResolution {
-  conflict_id: string
-  type: 'circular_dependency' | 'resource_conflict' | 'timing_conflict'
-  affected_workflows: string[]
-  description: string
-  resolution_options: {
-    id: string
-    description: string
-    action: 'remove_dependency' | 'add_delay' | 'change_condition' | 'split_workflow'
-    impact: 'low' | 'medium' | 'high'
-  }[]
+export interface DependencyConflict {
+  id: string;
+  type: 'circular' | 'resource' | 'timing' | 'version';
+  description: string;
+  affectedWorkflows: string[];
+  severity: 'low' | 'medium' | 'high' | 'blocking';
+  resolution?: string;
+  resolvedAt?: Date;
 }
 
-export class WorkflowDependencyManager {
+export interface ResourceRequirement {
+  workflowId: string;
+  resourceType: 'cpu' | 'memory' | 'disk' | 'network' | 'database' | 'api_quota';
+  amount: number;
+  unit: string;
+  isExclusive: boolean; // Whether this resource cannot be shared
+}
+
+class WorkflowDependencyManager {
+  private dependencies: Map<string, WorkflowDependency> = new Map();
+  private resourceRequirements: Map<string, ResourceRequirement[]> = new Map();
+  private executionHistory: Map<string, Date> = new Map();
+
   /**
    * Add a dependency between workflows
    */
-  static async addDependency(dependency: Omit<WorkflowDependency, 'id' | 'created_at' | 'updated_at'>): Promise<{ success: boolean; error?: string; dependency?: WorkflowDependency }> {
-    try {
-      // Check for circular dependencies before adding
-      const wouldCreateCycle = await this.wouldCreateCircularDependency(
-        dependency.workflow_id,
-        dependency.depends_on_workflow_id
-      )
-
-      if (wouldCreateCycle) {
-        return {
-          success: false,
-          error: 'Adding this dependency would create a circular dependency'
-        }
+  addDependency(dependency: Omit<WorkflowDependency, 'id'>): string {
+    const id = `dep_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    
+    const fullDependency: WorkflowDependency = {
+      id,
+      ...dependency,
+      metadata: {
+        ...dependency.metadata,
+        createdAt: new Date()
       }
+    };
 
-      const { data, error } = await supabase
-        .from('workflow_dependencies')
-        .insert({
-          workflow_id: dependency.workflow_id,
-          depends_on_workflow_id: dependency.depends_on_workflow_id,
-          dependency_type: dependency.dependency_type,
-          condition: dependency.condition,
-          is_blocking: dependency.is_blocking
-        })
-        .select()
-        .single()
-
-      if (error) throw error
-
-      return { success: true, dependency: data }
-    } catch (error) {
-      console.error('Failed to add workflow dependency:', error)
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : 'Unknown error'
-      }
-    }
+    this.dependencies.set(id, fullDependency);
+    console.log(`➕ Added dependency: ${dependency.workflowId} depends on ${dependency.dependsOnWorkflowId}`);
+    
+    return id;
   }
 
   /**
    * Remove a dependency
    */
-  static async removeDependency(dependencyId: string): Promise<{ success: boolean; error?: string }> {
-    try {
-      const { error } = await supabase
-        .from('workflow_dependencies')
-        .delete()
-        .eq('id', dependencyId)
+  removeDependency(dependencyId: string): boolean {
+    const removed = this.dependencies.delete(dependencyId);
+    if (removed) {
+      console.log(`➖ Removed dependency: ${dependencyId}`);
+    }
+    return removed;
+  }
 
-      if (error) throw error
+  /**
+   * Get all dependencies for a specific workflow
+   */
+  getWorkflowDependencies(workflowId: string): WorkflowDependency[] {
+    return Array.from(this.dependencies.values())
+      .filter(dep => dep.workflowId === workflowId);
+  }
 
-      return { success: true }
-    } catch (error) {
-      console.error('Failed to remove workflow dependency:', error)
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : 'Unknown error'
+  /**
+   * Get all workflows that depend on a specific workflow
+   */
+  getWorkflowDependents(workflowId: string): WorkflowDependency[] {
+    return Array.from(this.dependencies.values())
+      .filter(dep => dep.dependsOnWorkflowId === workflowId);
+  }
+
+  /**
+   * Build dependency graph for visualization
+   */
+  buildDependencyGraph(workflowIds: string[]): DependencyNode[] {
+    const nodes: DependencyNode[] = [];
+    const nodeMap = new Map<string, DependencyNode>();
+
+    // Create nodes for all workflows
+    workflowIds.forEach(workflowId => {
+      const node: DependencyNode = {
+        workflowId,
+        workflowName: `Workflow ${workflowId}`, // In real implementation, fetch from database
+        dependencies: [],
+        dependents: [],
+        level: 0,
+        status: 'ready',
+        estimatedDuration: 60000, // Default 1 minute
+        lastRun: this.executionHistory.get(workflowId)
+      };
+      
+      nodes.push(node);
+      nodeMap.set(workflowId, node);
+    });
+
+    // Populate dependencies and dependents
+    this.dependencies.forEach(dep => {
+      const dependentNode = nodeMap.get(dep.workflowId);
+      const dependsOnNode = nodeMap.get(dep.dependsOnWorkflowId);
+
+      if (dependentNode && dependsOnNode) {
+        dependentNode.dependencies.push(dep.dependsOnWorkflowId);
+        dependsOnNode.dependents.push(dep.workflowId);
       }
+    });
+
+    // Calculate execution levels using topological sort
+    this.calculateExecutionLevels(nodes);
+
+    return nodes;
+  }
+
+  /**
+   * Calculate execution levels for workflows using topological sorting
+   */
+  private calculateExecutionLevels(nodes: DependencyNode[]): void {
+    const visited = new Set<string>();
+    const visiting = new Set<string>();
+
+    const calculateLevel = (node: DependencyNode): number => {
+      if (visiting.has(node.workflowId)) {
+        throw new Error(`Circular dependency detected involving workflow ${node.workflowId}`);
+      }
+
+      if (visited.has(node.workflowId)) {
+        return node.level;
+      }
+
+      visiting.add(node.workflowId);
+
+      if (node.dependencies.length === 0) {
+        node.level = 0;
+      } else {
+        const dependencyLevels = node.dependencies.map(depId => {
+          const depNode = nodes.find(n => n.workflowId === depId);
+          return depNode ? calculateLevel(depNode) : 0;
+        });
+        node.level = Math.max(...dependencyLevels) + 1;
+      }
+
+      visiting.delete(node.workflowId);
+      visited.add(node.workflowId);
+
+      return node.level;
+    };
+
+    nodes.forEach(node => {
+      if (!visited.has(node.workflowId)) {
+        calculateLevel(node);
+      }
+    });
+  }
+
+  /**
+   * Create execution plan with conflict detection
+   */
+  createExecutionPlan(workflowIds: string[], planName: string = 'Execution Plan'): ExecutionPlan {
+    try {
+      const nodes = this.buildDependencyGraph(workflowIds);
+      const conflicts = this.detectConflicts(nodes);
+
+      // Group workflows by execution level
+      const maxLevel = Math.max(...nodes.map(n => n.level));
+      const levels: DependencyNode[][] = [];
+
+      for (let level = 0; level <= maxLevel; level++) {
+        levels.push(nodes.filter(n => n.level === level));
+      }
+
+      // Calculate total estimated time and critical path
+      const { totalTime, criticalPath } = this.calculateCriticalPath(nodes);
+
+      const plan: ExecutionPlan = {
+        id: `plan_${Date.now()}`,
+        name: planName,
+        levels,
+        totalEstimatedTime: totalTime,
+        criticalPath,
+        conflicts,
+        createdAt: new Date()
+      };
+
+      console.log(`📋 Created execution plan with ${levels.length} levels and ${conflicts.length} conflicts`);
+      return plan;
+
+    } catch (error) {
+      console.error('Error creating execution plan:', error);
+      throw error;
     }
   }
 
   /**
-   * Get all dependencies for a workflow
+   * Detect conflicts in dependency graph
    */
-  static async getWorkflowDependencies(workflowId: string): Promise<WorkflowDependency[]> {
-    try {
-      const { data, error } = await supabase
-        .from('workflow_dependencies')
-        .select('*')
-        .or(`workflow_id.eq.${workflowId},depends_on_workflow_id.eq.${workflowId}`)
-        .order('created_at', { ascending: false })
+  detectConflicts(nodes: DependencyNode[]): DependencyConflict[] {
+    const conflicts: DependencyConflict[] = [];
 
-      if (error) throw error
+    // Check for circular dependencies (should be caught in level calculation)
+    const circularConflicts = this.detectCircularDependencies(nodes);
+    conflicts.push(...circularConflicts);
 
-      return data || []
-    } catch (error) {
-      console.error('Failed to get workflow dependencies:', error)
-      return []
-    }
-  }
+    // Check for resource conflicts
+    const resourceConflicts = this.detectResourceConflicts(nodes);
+    conflicts.push(...resourceConflicts);
 
-  /**
-   * Check if a workflow's dependencies are satisfied
-   */
-  static async checkDependencies(workflowId: string): Promise<{
-    satisfied: boolean
-    pending_dependencies: {
-      workflow_id: string
-      workflow_name: string
-      condition: any
-      status: string
-      blocking: boolean
-    }[]
-    estimated_wait_time?: number
-  }> {
-    try {
-      // Get all dependencies for this workflow
-      const { data: dependencies, error } = await supabase
-        .from('workflow_dependencies')
-        .select(`
-          *,
-          dependency_workflow:workflows!workflow_dependencies_depends_on_workflow_id_fkey(id, name),
-          runs:workflow_runs!workflow_runs_workflow_id_fkey(status, completed_at, created_at)
-        `)
-        .eq('workflow_id', workflowId)
-        .order('created_at', { ascending: false })
+    // Check for timing conflicts
+    const timingConflicts = this.detectTimingConflicts(nodes);
+    conflicts.push(...timingConflicts);
 
-      if (error) throw error
-
-      if (!dependencies || dependencies.length === 0) {
-        return { satisfied: true, pending_dependencies: [] }
-      }
-
-      const pendingDependencies = []
-      let totalWaitTime = 0
-
-      for (const dep of dependencies) {
-        const depStatus = await this.checkSingleDependency(dep)
-        
-        if (!depStatus.satisfied) {
-          pendingDependencies.push({
-            workflow_id: dep.depends_on_workflow_id,
-            workflow_name: dep.dependency_workflow?.name || 'Unknown',
-            condition: dep.condition,
-            status: depStatus.current_status,
-            blocking: dep.is_blocking
-          })
-
-          if (depStatus.estimated_wait_time && dep.is_blocking) {
-            totalWaitTime = Math.max(totalWaitTime, depStatus.estimated_wait_time)
-          }
-        }
-      }
-
-      const blockingDependencies = pendingDependencies.filter(dep => dep.blocking)
-
-      return {
-        satisfied: blockingDependencies.length === 0,
-        pending_dependencies: pendingDependencies,
-        estimated_wait_time: totalWaitTime > 0 ? totalWaitTime : undefined
-      }
-    } catch (error) {
-      console.error('Failed to check workflow dependencies:', error)
-      return { satisfied: false, pending_dependencies: [] }
-    }
-  }
-
-  /**
-   * Generate a dependency graph for visualization
-   */
-  static async generateDependencyGraph(workflowIds?: string[]): Promise<DependencyGraph> {
-    try {
-      let query = supabase
-        .from('workflow_dependencies')
-        .select(`
-          *,
-          workflow:workflows!workflow_dependencies_workflow_id_fkey(id, name),
-          dependency_workflow:workflows!workflow_dependencies_depends_on_workflow_id_fkey(id, name)
-        `)
-
-      if (workflowIds && workflowIds.length > 0) {
-        query = query.in('workflow_id', workflowIds)
-      }
-
-      const { data: dependencies, error } = await query
-
-      if (error) throw error
-
-      // Get all unique workflows involved
-      const workflowMap = new Map<string, { id: string; name: string }>()
-      
-      dependencies?.forEach(dep => {
-        if (dep.workflow) {
-          workflowMap.set(dep.workflow.id, { id: dep.workflow.id, name: dep.workflow.name })
-        }
-        if (dep.dependency_workflow) {
-          workflowMap.set(dep.dependency_workflow.id, { 
-            id: dep.dependency_workflow.id, 
-            name: dep.dependency_workflow.name 
-          })
-        }
-      })
-
-      // Build adjacency map
-      const dependencyMap = new Map<string, string[]>()
-      const dependentMap = new Map<string, string[]>()
-
-      dependencies?.forEach(dep => {
-        const workflowId = dep.workflow_id
-        const dependsOnId = dep.depends_on_workflow_id
-
-        if (!dependencyMap.has(workflowId)) {
-          dependencyMap.set(workflowId, [])
-        }
-        dependencyMap.get(workflowId)!.push(dependsOnId)
-
-        if (!dependentMap.has(dependsOnId)) {
-          dependentMap.set(dependsOnId, [])
-        }
-        dependentMap.get(dependsOnId)!.push(workflowId)
-      })
-
-      // Create nodes with levels (topological sort)
-      const nodes = await this.createGraphNodes(workflowMap, dependencyMap, dependentMap)
-      
-      // Create edges
-      const edges = dependencies?.map(dep => ({
-        from: dep.depends_on_workflow_id,
-        to: dep.workflow_id,
-        type: dep.dependency_type,
-        condition: this.formatCondition(dep.condition)
-      })) || []
-
-      // Detect cycles
-      const cycles = this.detectCycles(dependencyMap)
-
-      // Calculate execution order
-      const executionOrder = this.calculateExecutionOrder(nodes, dependencyMap)
-
-      return { nodes, edges, cycles, execution_order: executionOrder }
-    } catch (error) {
-      console.error('Failed to generate dependency graph:', error)
-      return { nodes: [], edges: [], cycles: [], execution_order: [] }
-    }
-  }
-
-  /**
-   * Plan execution order for a set of workflows
-   */
-  static async planExecution(workflowIds: string[]): Promise<{
-    execution_plan: {
-      level: number
-      workflows: string[]
-      estimated_time: number
-    }[]
-    total_estimated_time: number
-    potential_parallelism: number
-    conflicts: ConflictResolution[]
-  }> {
-    try {
-      const graph = await this.generateDependencyGraph(workflowIds)
-      const conflicts = await this.detectConflicts(workflowIds)
-      
-      // Group workflows by level for parallel execution
-      const levelMap = new Map<number, string[]>()
-      graph.nodes.forEach(node => {
-        if (!levelMap.has(node.level)) {
-          levelMap.set(node.level, [])
-        }
-        levelMap.get(node.level)!.push(node.workflow_id)
-      })
-
-      // Calculate estimated times (mock data for now)
-      const executionPlan = Array.from(levelMap.entries())
-        .sort(([a], [b]) => a - b)
-        .map(([level, workflows]) => ({
-          level,
-          workflows,
-          estimated_time: workflows.length * 300 // 5 minutes per workflow (mock)
-        }))
-
-      const totalTime = executionPlan.reduce((sum, plan) => sum + plan.estimated_time, 0)
-      const parallelism = Math.max(...executionPlan.map(plan => plan.workflows.length))
-
-      return {
-        execution_plan: executionPlan,
-        total_estimated_time: totalTime,
-        potential_parallelism: parallelism,
-        conflicts
-      }
-    } catch (error) {
-      console.error('Failed to plan workflow execution:', error)
-      return {
-        execution_plan: [],
-        total_estimated_time: 0,
-        potential_parallelism: 0,
-        conflicts: []
-      }
-    }
-  }
-
-  /**
-   * Check if adding a dependency would create a circular dependency
-   */
-  private static async wouldCreateCircularDependency(
-    workflowId: string, 
-    dependsOnWorkflowId: string
-  ): Promise<boolean> {
-    try {
-      // Get all existing dependencies
-      const { data: dependencies } = await supabase
-        .from('workflow_dependencies')
-        .select('workflow_id, depends_on_workflow_id')
-
-      if (!dependencies) return false
-
-      // Build adjacency map
-      const adjacencyMap = new Map<string, string[]>()
-      
-      dependencies.forEach(dep => {
-        if (!adjacencyMap.has(dep.workflow_id)) {
-          adjacencyMap.set(dep.workflow_id, [])
-        }
-        adjacencyMap.get(dep.workflow_id)!.push(dep.depends_on_workflow_id)
-      })
-
-      // Add the proposed new dependency
-      if (!adjacencyMap.has(workflowId)) {
-        adjacencyMap.set(workflowId, [])
-      }
-      adjacencyMap.get(workflowId)!.push(dependsOnWorkflowId)
-
-      // Check for cycles using DFS
-      return this.hasCycleDFS(adjacencyMap, workflowId, new Set(), new Set())
-    } catch (error) {
-      console.error('Error checking for circular dependency:', error)
-      return false
-    }
-  }
-
-  /**
-   * Check a single dependency condition
-   */
-  private static async checkSingleDependency(dependency: any): Promise<{
-    satisfied: boolean
-    current_status: string
-    estimated_wait_time?: number
-  }> {
-    const { condition, depends_on_workflow_id } = dependency
-
-    try {
-      // Get the latest run of the dependency workflow
-      const { data: runs } = await supabase
-        .from('workflow_runs')
-        .select('status, completed_at, created_at')
-        .eq('workflow_id', depends_on_workflow_id)
-        .order('created_at', { ascending: false })
-        .limit(1)
-
-      const latestRun = runs?.[0]
-
-      if (!latestRun) {
-        return {
-          satisfied: false,
-          current_status: 'never_run',
-          estimated_wait_time: 600 // 10 minutes default
-        }
-      }
-
-      switch (condition.type) {
-        case 'success':
-          return {
-            satisfied: latestRun.status === 'completed',
-            current_status: latestRun.status,
-            estimated_wait_time: latestRun.status === 'running' ? 300 : undefined
-          }
-
-        case 'completion':
-          return {
-            satisfied: ['completed', 'failed'].includes(latestRun.status),
-            current_status: latestRun.status,
-            estimated_wait_time: latestRun.status === 'running' ? 300 : undefined
-          }
-
-        case 'status':
-          return {
-            satisfied: latestRun.status === condition.value,
-            current_status: latestRun.status
-          }
-
-        default:
-          return {
-            satisfied: true,
-            current_status: latestRun.status
-          }
-      }
-    } catch (error) {
-      console.error('Error checking dependency condition:', error)
-      return {
-        satisfied: false,
-        current_status: 'error'
-      }
-    }
-  }
-
-  /**
-   * Create graph nodes with proper positioning
-   */
-  private static async createGraphNodes(
-    workflowMap: Map<string, { id: string; name: string }>,
-    dependencyMap: Map<string, string[]>,
-    dependentMap: Map<string, string[]>
-  ): Promise<DependencyNode[]> {
-    const nodes: DependencyNode[] = []
-    const levelMap = new Map<string, number>()
-
-    // Calculate levels using topological sort
-    const calculateLevel = (workflowId: string, visited: Set<string> = new Set()): number => {
-      if (visited.has(workflowId)) return 0 // Circular dependency
-      if (levelMap.has(workflowId)) return levelMap.get(workflowId)!
-
-      visited.add(workflowId)
-      
-      const dependencies = dependencyMap.get(workflowId) || []
-      const maxDepLevel = dependencies.length > 0 
-        ? Math.max(...dependencies.map(depId => calculateLevel(depId, new Set(visited))))
-        : 0
-
-      const level = maxDepLevel + 1
-      levelMap.set(workflowId, level)
-      visited.delete(workflowId)
-      
-      return level
-    }
-
-    // Calculate levels for all workflows
-    for (const [workflowId] of workflowMap) {
-      calculateLevel(workflowId)
-    }
-
-    // Create nodes with positions
-    const levelGroups = new Map<number, string[]>()
-    for (const [workflowId, level] of levelMap) {
-      if (!levelGroups.has(level)) {
-        levelGroups.set(level, [])
-      }
-      levelGroups.get(level)!.push(workflowId)
-    }
-
-    // Position nodes
-    for (const [workflowId, workflow] of workflowMap) {
-      const level = levelMap.get(workflowId) || 0
-      const levelWorkflows = levelGroups.get(level) || []
-      const indexInLevel = levelWorkflows.indexOf(workflowId)
-      
-      nodes.push({
-        id: workflowId,
-        workflow_id: workflowId,
-        workflow_name: workflow.name,
-        status: 'pending', // Would be fetched from actual runs
-        dependencies: dependencyMap.get(workflowId) || [],
-        dependents: dependentMap.get(workflowId) || [],
-        level,
-        position: {
-          x: level * 200,
-          y: indexInLevel * 100
-        }
-      })
-    }
-
-    return nodes
+    return conflicts;
   }
 
   /**
    * Detect circular dependencies
    */
-  private static detectCycles(adjacencyMap: Map<string, string[]>): string[][] {
-    const cycles: string[][] = []
-    const visited = new Set<string>()
-    const recursionStack = new Set<string>()
+  private detectCircularDependencies(nodes: DependencyNode[]): DependencyConflict[] {
+    const conflicts: DependencyConflict[] = [];
+    const visited = new Set<string>();
+    const recursionStack = new Set<string>();
 
-    const dfs = (node: string, path: string[]): void => {
-      visited.add(node)
-      recursionStack.add(node)
-      path.push(node)
+    const dfsCheck = (nodeId: string, path: string[]): boolean => {
+      if (recursionStack.has(nodeId)) {
+        const cycleStart = path.indexOf(nodeId);
+        const cycle = path.slice(cycleStart).concat([nodeId]);
+        
+        conflicts.push({
+          id: `circular_${Date.now()}`,
+          type: 'circular',
+          description: `Circular dependency detected: ${cycle.join(' → ')}`,
+          affectedWorkflows: cycle,
+          severity: 'blocking'
+        });
+        
+        return true;
+      }
 
-      const neighbors = adjacencyMap.get(node) || []
-      for (const neighbor of neighbors) {
-        if (recursionStack.has(neighbor)) {
-          // Found a cycle
-          const cycleStart = path.indexOf(neighbor)
-          cycles.push([...path.slice(cycleStart), neighbor])
-        } else if (!visited.has(neighbor)) {
-          dfs(neighbor, [...path])
+      if (visited.has(nodeId)) {
+        return false;
+      }
+
+      visited.add(nodeId);
+      recursionStack.add(nodeId);
+
+      const node = nodes.find(n => n.workflowId === nodeId);
+      if (node) {
+        for (const depId of node.dependencies) {
+          if (dfsCheck(depId, [...path, nodeId])) {
+            return true;
+          }
         }
       }
 
-      recursionStack.delete(node)
-    }
-
-    for (const [node] of adjacencyMap) {
-      if (!visited.has(node)) {
-        dfs(node, [])
-      }
-    }
-
-    return cycles
-  }
-
-  /**
-   * Calculate execution order
-   */
-  private static calculateExecutionOrder(
-    nodes: DependencyNode[],
-    dependencyMap: Map<string, string[]>
-  ): string[] {
-    const sorted: string[] = []
-    const visited = new Set<string>()
-    const temp = new Set<string>()
-
-    const visit = (nodeId: string): void => {
-      if (temp.has(nodeId)) return // Circular dependency
-      if (visited.has(nodeId)) return
-
-      temp.add(nodeId)
-      
-      const dependencies = dependencyMap.get(nodeId) || []
-      dependencies.forEach(depId => visit(depId))
-      
-      temp.delete(nodeId)
-      visited.add(nodeId)
-      sorted.push(nodeId)
-    }
+      recursionStack.delete(nodeId);
+      return false;
+    };
 
     nodes.forEach(node => {
-      if (!visited.has(node.workflow_id)) {
-        visit(node.workflow_id)
+      if (!visited.has(node.workflowId)) {
+        dfsCheck(node.workflowId, []);
       }
-    })
+    });
 
-    return sorted.reverse()
+    return conflicts;
   }
 
   /**
-   * Detect conflicts in workflow execution
+   * Detect resource conflicts
    */
-  private static async detectConflicts(workflowIds: string[]): Promise<ConflictResolution[]> {
-    // This would analyze resource conflicts, timing issues, etc.
-    // For now, return empty array
-    return []
+  private detectResourceConflicts(nodes: DependencyNode[]): DependencyConflict[] {
+    const conflicts: DependencyConflict[] = [];
+    
+    // Group nodes by execution level to check for resource conflicts within same level
+    const levelGroups = new Map<number, DependencyNode[]>();
+    nodes.forEach(node => {
+      if (!levelGroups.has(node.level)) {
+        levelGroups.set(node.level, []);
+      }
+      levelGroups.get(node.level)!.push(node);
+    });
+
+    levelGroups.forEach((levelNodes, level) => {
+      const resourceUsage = new Map<string, string[]>();
+
+      levelNodes.forEach(node => {
+        const requirements = this.resourceRequirements.get(node.workflowId) || [];
+        
+        requirements.forEach(req => {
+          if (req.isExclusive) {
+            const resourceKey = `${req.resourceType}_${req.amount}_${req.unit}`;
+            
+            if (!resourceUsage.has(resourceKey)) {
+              resourceUsage.set(resourceKey, []);
+            }
+            resourceUsage.get(resourceKey)!.push(node.workflowId);
+          }
+        });
+      });
+
+      // Check for conflicts (multiple workflows needing same exclusive resource)
+      resourceUsage.forEach((workflowIds, resourceKey) => {
+        if (workflowIds.length > 1) {
+          conflicts.push({
+            id: `resource_${Date.now()}_${resourceKey}`,
+            type: 'resource',
+            description: `Resource conflict: Multiple workflows require exclusive access to ${resourceKey}`,
+            affectedWorkflows: workflowIds,
+            severity: 'high',
+            resolution: 'Consider running these workflows sequentially or increasing resource capacity'
+          });
+        }
+      });
+    });
+
+    return conflicts;
   }
 
   /**
-   * Format condition for display
+   * Detect timing conflicts
    */
-  private static formatCondition(condition: any): string {
-    switch (condition.type) {
-      case 'success':
-        return 'Must complete successfully'
-      case 'completion':
-        return 'Must complete (any status)'
-      case 'status':
-        return `Must have status: ${condition.value}`
-      case 'data_available':
-        return 'Data must be available'
-      case 'resource_free':
-        return 'Resource must be free'
-      default:
-        return 'Custom condition'
+  private detectTimingConflicts(nodes: DependencyNode[]): DependencyConflict[] {
+    const conflicts: DependencyConflict[] = [];
+
+    // Check for workflows that have scheduling constraints
+    // This is a simplified example - real implementation would check actual schedules
+    const scheduledWorkflows = nodes.filter(n => n.lastRun && 
+      (Date.now() - n.lastRun.getTime()) < 3600000); // Ran within last hour
+
+    if (scheduledWorkflows.length > 0) {
+      conflicts.push({
+        id: `timing_${Date.now()}`,
+        type: 'timing',
+        description: `Some workflows were recently executed and may need cooldown period`,
+        affectedWorkflows: scheduledWorkflows.map(w => w.workflowId),
+        severity: 'low',
+        resolution: 'Consider workflow scheduling constraints and cooldown periods'
+      });
+    }
+
+    return conflicts;
+  }
+
+  /**
+   * Calculate critical path and total execution time
+   */
+  private calculateCriticalPath(nodes: DependencyNode[]): { totalTime: number; criticalPath: string[] } {
+    const nodeMap = new Map(nodes.map(n => [n.workflowId, n]));
+    const pathTimes = new Map<string, number>();
+    const pathWorkflows = new Map<string, string[]>();
+
+    const calculatePath = (nodeId: string, visited: Set<string>): { time: number; path: string[] } => {
+      if (visited.has(nodeId)) {
+        return { time: 0, path: [] };
+      }
+
+      if (pathTimes.has(nodeId)) {
+        return { 
+          time: pathTimes.get(nodeId)!, 
+          path: pathWorkflows.get(nodeId)! 
+        };
+      }
+
+      visited.add(nodeId);
+      const node = nodeMap.get(nodeId);
+      
+      if (!node) {
+        return { time: 0, path: [] };
+      }
+
+      if (node.dependencies.length === 0) {
+        const time = node.estimatedDuration || 0;
+        const path = [nodeId];
+        pathTimes.set(nodeId, time);
+        pathWorkflows.set(nodeId, path);
+        visited.delete(nodeId);
+        return { time, path };
+      }
+
+      let maxTime = 0;
+      let maxPath: string[] = [];
+
+      for (const depId of node.dependencies) {
+        const { time: depTime, path: depPath } = calculatePath(depId, visited);
+        if (depTime > maxTime) {
+          maxTime = depTime;
+          maxPath = depPath;
+        }
+      }
+
+      const totalTime = maxTime + (node.estimatedDuration || 0);
+      const totalPath = [...maxPath, nodeId];
+      
+      pathTimes.set(nodeId, totalTime);
+      pathWorkflows.set(nodeId, totalPath);
+      visited.delete(nodeId);
+
+      return { time: totalTime, path: totalPath };
+    };
+
+    let longestTime = 0;
+    let longestPath: string[] = [];
+
+    // Find the longest path among all end nodes (nodes with no dependents)
+    const endNodes = nodes.filter(n => n.dependents.length === 0);
+    
+    endNodes.forEach(node => {
+      const { time, path } = calculatePath(node.workflowId, new Set());
+      if (time > longestTime) {
+        longestTime = time;
+        longestPath = path;
+      }
+    });
+
+    return {
+      totalTime: longestTime,
+      criticalPath: longestPath
+    };
+  }
+
+  /**
+   * Check if a workflow can be executed (all dependencies met)
+   */
+  canExecuteWorkflow(workflowId: string): { canExecute: boolean; blockers: string[] } {
+    const dependencies = this.getWorkflowDependencies(workflowId);
+    const blockers: string[] = [];
+
+    dependencies.forEach(dep => {
+      if (dep.isRequired) {
+        // Check if dependency has been satisfied
+        const lastRun = this.executionHistory.get(dep.dependsOnWorkflowId);
+        
+        if (!lastRun) {
+          blockers.push(`Workflow ${dep.dependsOnWorkflowId} has never been executed`);
+        } else if (dep.condition) {
+          // Evaluate conditional dependency
+          try {
+            const conditionMet = this.evaluateCondition(dep.condition, {
+              lastRun,
+              workflowId: dep.dependsOnWorkflowId
+            });
+            
+            if (!conditionMet) {
+              blockers.push(`Conditional dependency not met: ${dep.condition}`);
+            }
+          } catch (error) {
+            blockers.push(`Error evaluating condition: ${dep.condition}`);
+          }
+        }
+      }
+    });
+
+    return {
+      canExecute: blockers.length === 0,
+      blockers
+    };
+  }
+
+  /**
+   * Simple condition evaluation (in real implementation, use a proper expression evaluator)
+   */
+  private evaluateCondition(condition: string, context: any): boolean {
+    try {
+      // This is a simplified example - in production, use a safe expression evaluator
+      const func = new Function('context', `with(context) { return ${condition}; }`);
+      return Boolean(func(context));
+    } catch (error) {
+      console.error('Error evaluating condition:', error);
+      return false;
     }
   }
 
   /**
-   * DFS cycle detection helper
+   * Record workflow execution for dependency tracking
    */
-  private static hasCycleDFS(
-    adjacencyMap: Map<string, string[]>,
-    node: string,
-    visited: Set<string>,
-    recursionStack: Set<string>
-  ): boolean {
-    visited.add(node)
-    recursionStack.add(node)
+  recordExecution(workflowId: string, executionTime: Date = new Date()): void {
+    this.executionHistory.set(workflowId, executionTime);
+    console.log(`📝 Recorded execution of workflow ${workflowId} at ${executionTime.toISOString()}`);
+  }
 
-    const neighbors = adjacencyMap.get(node) || []
-    for (const neighbor of neighbors) {
-      if (recursionStack.has(neighbor)) {
-        return true // Cycle found
-      }
-      if (!visited.has(neighbor) && this.hasCycleDFS(adjacencyMap, neighbor, visited, recursionStack)) {
-        return true
-      }
+  /**
+   * Add resource requirements for a workflow
+   */
+  addResourceRequirement(workflowId: string, requirement: Omit<ResourceRequirement, 'workflowId'>): void {
+    if (!this.resourceRequirements.has(workflowId)) {
+      this.resourceRequirements.set(workflowId, []);
     }
+    
+    this.resourceRequirements.get(workflowId)!.push({
+      workflowId,
+      ...requirement
+    });
 
-    recursionStack.delete(node)
-    return false
+    console.log(`📊 Added resource requirement for ${workflowId}: ${requirement.amount} ${requirement.unit} of ${requirement.resourceType}`);
+  }
+
+  /**
+   * Get execution plan summary
+   */
+  getExecutionPlanSummary(plan: ExecutionPlan): string {
+    const totalWorkflows = plan.levels.reduce((sum, level) => sum + level.length, 0);
+    const conflictSummary = plan.conflicts.length > 0 
+      ? `⚠️ ${plan.conflicts.length} conflicts detected`
+      : '✅ No conflicts';
+
+    return `
+📋 Execution Plan: ${plan.name}
+├── Workflows: ${totalWorkflows}
+├── Execution Levels: ${plan.levels.length}
+├── Estimated Duration: ${Math.round(plan.totalEstimatedTime / 1000 / 60)} minutes
+├── Critical Path: ${plan.criticalPath.join(' → ')}
+└── Status: ${conflictSummary}
+    `.trim();
   }
 }
 
-/**
- * Database schema for workflow dependencies
- */
-export const workflowDependenciesTableSchema = `
-CREATE TABLE IF NOT EXISTS workflow_dependencies (
-  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  workflow_id VARCHAR(255) NOT NULL,
-  depends_on_workflow_id VARCHAR(255) NOT NULL,
-  dependency_type VARCHAR(50) NOT NULL DEFAULT 'prerequisite',
-  condition JSONB NOT NULL DEFAULT '{"type": "success"}',
-  is_blocking BOOLEAN NOT NULL DEFAULT true,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  
-  INDEX idx_workflow_dependencies_workflow_id (workflow_id),
-  INDEX idx_workflow_dependencies_depends_on (depends_on_workflow_id),
-  INDEX idx_workflow_dependencies_type (dependency_type),
-  
-  FOREIGN KEY (workflow_id) REFERENCES workflows(id) ON DELETE CASCADE,
-  FOREIGN KEY (depends_on_workflow_id) REFERENCES workflows(id) ON DELETE CASCADE,
-  
-  UNIQUE(workflow_id, depends_on_workflow_id, dependency_type)
-);
-`
+// Singleton instance
+export const workflowDependencies = new WorkflowDependencyManager();
+
+// Convenience functions
+export const addDependency = (dependency: Omit<WorkflowDependency, 'id'>) => 
+  workflowDependencies.addDependency(dependency);
+
+export const removeDependency = (dependencyId: string) => 
+  workflowDependencies.removeDependency(dependencyId);
+
+export const buildDependencyGraph = (workflowIds: string[]) => 
+  workflowDependencies.buildDependencyGraph(workflowIds);
+
+export const createExecutionPlan = (workflowIds: string[], planName?: string) => 
+  workflowDependencies.createExecutionPlan(workflowIds, planName);
+
+export const canExecuteWorkflow = (workflowId: string) => 
+  workflowDependencies.canExecuteWorkflow(workflowId);
+
+export const recordExecution = (workflowId: string, executionTime?: Date) => 
+  workflowDependencies.recordExecution(workflowId, executionTime);
+
+export const addResourceRequirement = (workflowId: string, requirement: Omit<ResourceRequirement, 'workflowId'>) => 
+  workflowDependencies.addResourceRequirement(workflowId, requirement);
+
+// Export types
+export type { WorkflowDependency, DependencyNode, ExecutionPlan, DependencyConflict, ResourceRequirement };

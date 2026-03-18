@@ -1,628 +1,491 @@
-'use client'
+'use client';
 
-import { useState, useEffect } from 'react'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { Alert, AlertDescription } from '@/components/ui/alert'
+import React, { useState, useEffect } from 'react';
+import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { 
-  Lightbulb, 
-  TrendingUp, 
-  Clock, 
-  Zap, 
-  DollarSign, 
-  AlertTriangle, 
-  CheckCircle,
-  Target,
-  BarChart3,
-  RefreshCw,
-  ChevronRight,
-  Info
-} from 'lucide-react'
+  LightBulbIcon,
+  ExclamationTriangleIcon,
+  ClockIcon,
+  CpuChipIcon,
+  CurrencyDollarIcon,
+  SparklesIcon,
+  CheckCircleIcon,
+  XMarkIcon,
+  ChevronRightIcon
+} from '@heroicons/react/24/outline';
+import { WorkflowPerformanceStats } from '@/lib/workflow-metrics';
 
 interface OptimizationSuggestion {
-  id: string
-  type: 'performance' | 'cost' | 'reliability' | 'security'
-  priority: 'high' | 'medium' | 'low'
-  title: string
-  description: string
+  id: string;
+  type: 'performance' | 'cost' | 'reliability' | 'efficiency';
+  severity: 'low' | 'medium' | 'high' | 'critical';
+  title: string;
+  description: string;
   impact: {
-    performance_gain?: string
-    cost_savings?: string
-    reliability_improvement?: string
-    time_savings?: string
-  }
+    timeReduction?: number; // percentage
+    costReduction?: number; // percentage
+    reliabilityImprovement?: number; // percentage
+  };
+  effort: 'low' | 'medium' | 'high';
+  recommendation: string;
   implementation: {
-    effort: 'low' | 'medium' | 'high'
-    steps: string[]
-    estimated_time: string
-  }
+    steps: string[];
+    estimatedTime: string;
+    requiredSkills: string[];
+  };
   metrics: {
-    current_value: number
-    potential_value: number
-    unit: string
-  }
-  workflow_id?: string
-  workflow_name?: string
+    currentValue: number;
+    targetValue: number;
+    unit: string;
+    metric: string;
+  };
+  applicable: boolean;
+  dismissed: boolean;
+  implementedAt?: Date;
 }
 
-interface WorkflowAnalysis {
-  workflow_id: string
-  workflow_name: string
-  current_metrics: {
-    avg_execution_time: number
-    success_rate: number
-    resource_usage: number
-    cost_per_run: number
-  }
-  bottlenecks: {
-    step_id: string
-    step_name: string
-    avg_duration: number
-    failure_rate: number
-    resource_usage: number
-  }[]
-  trends: {
-    execution_time_trend: 'improving' | 'degrading' | 'stable'
-    success_rate_trend: 'improving' | 'degrading' | 'stable'
-    usage_trend: 'increasing' | 'decreasing' | 'stable'
-  }
+interface Props {
+  workflowId: string;
+  performanceStats?: WorkflowPerformanceStats;
+  onImplementSuggestion?: (suggestionId: string) => void;
+  onDismissSuggestion?: (suggestionId: string) => void;
 }
 
 export default function OptimizationSuggestions({ 
   workflowId, 
-  onApplySuggestion 
-}: { 
-  workflowId?: string
-  onApplySuggestion?: (suggestionId: string) => void 
-}) {
-  const [suggestions, setSuggestions] = useState<OptimizationSuggestion[]>([])
-  const [analysis, setAnalysis] = useState<WorkflowAnalysis[]>([])
-  const [loading, setLoading] = useState(true)
-  const [selectedType, setSelectedType] = useState<string>('all')
-  const [selectedPriority, setSelectedPriority] = useState<string>('all')
+  performanceStats, 
+  onImplementSuggestion,
+  onDismissSuggestion 
+}: Props) {
+  const [suggestions, setSuggestions] = useState<OptimizationSuggestion[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedType, setSelectedType] = useState<string>('all');
+  const [selectedSeverity, setSelectedSeverity] = useState<string>('all');
+  const [expandedSuggestion, setExpandedSuggestion] = useState<string | null>(null);
 
   useEffect(() => {
-    generateOptimizationSuggestions()
-  }, [workflowId])
+    generateSuggestions();
+  }, [workflowId, performanceStats]);
 
-  const generateOptimizationSuggestions = async () => {
-    setLoading(true)
+  const generateSuggestions = async () => {
     try {
-      // Fetch workflow analytics data
-      const response = await fetch(`/api/workflows/analytics/optimization${workflowId ? `?workflow=${workflowId}` : ''}`)
-      
-      if (response.ok) {
-        const data = await response.json()
-        setSuggestions(data.suggestions || [])
-        setAnalysis(data.analysis || [])
-      } else {
-        // Generate mock suggestions for development
-        const mockSuggestions = generateMockSuggestions()
-        setSuggestions(mockSuggestions)
-        setAnalysis(generateMockAnalysis())
-      }
-    } catch (error) {
-      console.error('Error fetching optimization data:', error)
-      setSuggestions(generateMockSuggestions())
-      setAnalysis(generateMockAnalysis())
-    }
-    setLoading(false)
-  }
+      setLoading(true);
 
-  const generateMockSuggestions = (): OptimizationSuggestion[] => {
-    return [
-      {
-        id: 'parallel-execution',
-        type: 'performance',
-        priority: 'high',
-        title: 'Enable Parallel Step Execution',
-        description: 'Several workflow steps can run concurrently instead of sequentially, reducing total execution time significantly.',
-        impact: {
-          performance_gain: '45-60%',
-          time_savings: '3-5 minutes per run'
-        },
-        implementation: {
-          effort: 'medium',
-          estimated_time: '2-3 hours',
-          steps: [
-            'Analyze step dependencies to identify parallelizable steps',
-            'Update workflow template to enable parallel execution',
-            'Configure resource allocation for concurrent steps',
-            'Test parallel execution with sample data',
-            'Monitor performance improvements'
-          ]
-        },
-        metrics: {
-          current_value: 8.5,
-          potential_value: 4.2,
-          unit: 'minutes'
-        },
-        workflow_id: 'idea-to-mvp',
-        workflow_name: 'Idea to MVP'
-      },
-      {
-        id: 'api-call-optimization',
-        type: 'performance',
-        priority: 'medium',
-        title: 'Optimize API Call Patterns',
-        description: 'Batch multiple API calls together and implement caching to reduce network overhead and improve response times.',
-        impact: {
-          performance_gain: '25-35%',
-          cost_savings: '$12-18 per month'
-        },
-        implementation: {
-          effort: 'low',
-          estimated_time: '1-2 hours',
-          steps: [
-            'Identify repetitive API calls in workflows',
-            'Implement request batching where possible',
-            'Add intelligent caching layer',
-            'Configure cache TTL based on data freshness requirements',
-            'Monitor API usage reduction'
-          ]
-        },
-        metrics: {
-          current_value: 245,
-          potential_value: 150,
-          unit: 'API calls/day'
-        },
-        workflow_id: 'bug-fix',
-        workflow_name: 'Bug Fix'
-      },
-      {
-        id: 'error-handling-improvement',
-        type: 'reliability',
-        priority: 'high',
-        title: 'Enhanced Error Handling & Retry Logic',
-        description: 'Implement smart retry mechanisms and better error classification to improve workflow success rates.',
-        impact: {
-          reliability_improvement: '12-15%',
-          performance_gain: 'Reduced manual interventions'
-        },
-        implementation: {
-          effort: 'medium',
-          estimated_time: '3-4 hours',
-          steps: [
-            'Analyze common failure patterns',
-            'Implement exponential backoff retry logic',
-            'Add circuit breaker patterns for external services',
-            'Create detailed error classification system',
-            'Set up automated recovery procedures'
-          ]
-        },
-        metrics: {
-          current_value: 87.5,
-          potential_value: 96.2,
-          unit: '% success rate'
-        },
-        workflow_id: 'new-feature',
-        workflow_name: 'New Feature'
-      },
-      {
-        id: 'resource-optimization',
-        type: 'cost',
-        priority: 'medium',
-        title: 'Optimize Resource Allocation',
-        description: 'Right-size compute resources based on actual usage patterns to reduce infrastructure costs.',
-        impact: {
-          cost_savings: '30-40%',
-          performance_gain: 'Better resource utilization'
-        },
-        implementation: {
-          effort: 'low',
-          estimated_time: '1 hour',
-          steps: [
-            'Analyze current resource usage patterns',
-            'Identify over-provisioned resources',
-            'Implement auto-scaling based on demand',
-            'Configure resource limits per workflow type',
-            'Monitor cost reduction'
-          ]
-        },
-        metrics: {
-          current_value: 156,
-          potential_value: 98,
-          unit: '$/month'
-        }
-      },
-      {
-        id: 'data-preprocessing',
-        type: 'performance',
-        priority: 'low',
-        title: 'Pre-process Workflow Data',
-        description: 'Pre-process and cache frequently used data to reduce processing time in subsequent workflow runs.',
-        impact: {
-          performance_gain: '15-20%',
-          time_savings: '30-60 seconds per run'
-        },
-        implementation: {
-          effort: 'high',
-          estimated_time: '6-8 hours',
-          steps: [
-            'Identify data processing bottlenecks',
-            'Design data preprocessing pipeline',
-            'Implement data caching strategy',
-            'Create data invalidation rules',
-            'Set up monitoring for cache hit rates'
-          ]
-        },
-        metrics: {
-          current_value: 3.2,
-          potential_value: 2.6,
-          unit: 'minutes'
-        },
-        workflow_id: 'deploy-pipeline',
-        workflow_name: 'Deploy Pipeline'
-      },
-      {
-        id: 'security-hardening',
-        type: 'security',
-        priority: 'high',
-        title: 'Implement Security Best Practices',
-        description: 'Add security scanning, secrets management, and access control to improve workflow security posture.',
-        impact: {
-          reliability_improvement: 'Reduced security risks',
-          performance_gain: 'Better compliance'
-        },
-        implementation: {
-          effort: 'high',
-          estimated_time: '4-6 hours',
-          steps: [
-            'Audit current security practices',
-            'Implement secrets management integration',
-            'Add security scanning to workflow steps',
-            'Configure role-based access controls',
-            'Set up security monitoring and alerts'
-          ]
-        },
-        metrics: {
-          current_value: 3,
-          potential_value: 9,
-          unit: 'security score'
-        }
-      }
-    ]
-  }
-
-  const generateMockAnalysis = (): WorkflowAnalysis[] => {
-    return [
-      {
-        workflow_id: 'idea-to-mvp',
-        workflow_name: 'Idea to MVP',
-        current_metrics: {
-          avg_execution_time: 8.5,
-          success_rate: 93.3,
-          resource_usage: 67.2,
-          cost_per_run: 2.45
-        },
-        bottlenecks: [
-          {
-            step_id: 'code-generation',
-            step_name: 'Code Generation',
-            avg_duration: 4.2,
-            failure_rate: 5.2,
-            resource_usage: 78.5
+      // Simulate AI-powered analysis with realistic suggestions
+      const mockSuggestions: OptimizationSuggestion[] = [
+        {
+          id: '1',
+          type: 'performance',
+          severity: 'high',
+          title: 'Optimize Database Query Execution',
+          description: 'Multiple database queries are executing sequentially, causing significant delays. Consider implementing query batching or parallel execution.',
+          impact: {
+            timeReduction: 35,
+            reliabilityImprovement: 15
           },
-          {
-            step_id: 'testing',
-            step_name: 'Testing & Validation',
-            avg_duration: 2.8,
-            failure_rate: 3.1,
-            resource_usage: 45.3
-          }
-        ],
-        trends: {
-          execution_time_trend: 'degrading',
-          success_rate_trend: 'stable',
-          usage_trend: 'increasing'
+          effort: 'medium',
+          recommendation: 'Implement batch processing for database operations and add query result caching.',
+          implementation: {
+            steps: [
+              'Identify sequential database calls in workflow',
+              'Implement batch query functionality',
+              'Add Redis caching layer for frequently accessed data',
+              'Update workflow to use batched operations',
+              'Monitor performance improvement'
+            ],
+            estimatedTime: '2-3 hours',
+            requiredSkills: ['Database Optimization', 'Caching', 'Performance Tuning']
+          },
+          metrics: {
+            currentValue: 45,
+            targetValue: 29,
+            unit: 'seconds',
+            metric: 'Average Execution Time'
+          },
+          applicable: true,
+          dismissed: false
+        },
+        {
+          id: '2',
+          type: 'cost',
+          severity: 'medium',
+          title: 'Reduce API Call Frequency',
+          description: 'Workflow makes redundant API calls for the same data. Implementing intelligent caching could significantly reduce costs.',
+          impact: {
+            costReduction: 42,
+            timeReduction: 18
+          },
+          effort: 'low',
+          recommendation: 'Add TTL-based caching for API responses and implement request deduplication.',
+          implementation: {
+            steps: [
+              'Analyze API call patterns to identify duplicates',
+              'Implement response caching with appropriate TTL',
+              'Add request deduplication logic',
+              'Monitor cost savings and cache hit rates'
+            ],
+            estimatedTime: '1-2 hours',
+            requiredSkills: ['API Integration', 'Caching', 'Cost Optimization']
+          },
+          metrics: {
+            currentValue: 150,
+            targetValue: 87,
+            unit: 'API calls/hour',
+            metric: 'API Usage Rate'
+          },
+          applicable: true,
+          dismissed: false
+        },
+        {
+          id: '3',
+          type: 'reliability',
+          severity: 'critical',
+          title: 'Implement Robust Error Handling',
+          description: 'Workflow fails completely when encountering minor errors. Adding retry logic and graceful degradation would improve reliability.',
+          impact: {
+            reliabilityImprovement: 60,
+            timeReduction: 25
+          },
+          effort: 'high',
+          recommendation: 'Implement exponential backoff retry logic and circuit breaker pattern for external services.',
+          implementation: {
+            steps: [
+              'Categorize error types and determine retry strategies',
+              'Implement exponential backoff retry mechanism',
+              'Add circuit breaker for external service calls',
+              'Create fallback mechanisms for non-critical operations',
+              'Add comprehensive error logging and alerting'
+            ],
+            estimatedTime: '4-6 hours',
+            requiredSkills: ['Error Handling', 'Resilience Patterns', 'Monitoring']
+          },
+          metrics: {
+            currentValue: 87.6,
+            targetValue: 99.2,
+            unit: '%',
+            metric: 'Success Rate'
+          },
+          applicable: true,
+          dismissed: false
+        },
+        {
+          id: '4',
+          type: 'efficiency',
+          severity: 'medium',
+          title: 'Parallel Step Execution',
+          description: 'Several workflow steps are independent and could run in parallel, reducing overall execution time.',
+          impact: {
+            timeReduction: 28,
+            reliabilityImprovement: 8
+          },
+          effort: 'medium',
+          recommendation: 'Refactor workflow to execute independent steps in parallel using worker pools.',
+          implementation: {
+            steps: [
+              'Analyze step dependencies and identify parallel opportunities',
+              'Implement worker pool for parallel execution',
+              'Update workflow engine to support parallel branches',
+              'Add synchronization points for dependent steps',
+              'Test and monitor parallel execution performance'
+            ],
+            estimatedTime: '3-4 hours',
+            requiredSkills: ['Workflow Design', 'Parallel Processing', 'Concurrency']
+          },
+          metrics: {
+            currentValue: 128,
+            targetValue: 92,
+            unit: 'seconds',
+            metric: 'Total Execution Time'
+          },
+          applicable: true,
+          dismissed: false
+        },
+        {
+          id: '5',
+          type: 'cost',
+          severity: 'low',
+          title: 'Optimize Resource Allocation',
+          description: 'Workflow is over-provisioned for most executions. Dynamic resource scaling could reduce costs.',
+          impact: {
+            costReduction: 23,
+            timeReduction: 5
+          },
+          effort: 'low',
+          recommendation: 'Implement auto-scaling based on workload characteristics and historical patterns.',
+          implementation: {
+            steps: [
+              'Analyze resource usage patterns',
+              'Implement workload-based scaling rules',
+              'Add monitoring for resource utilization',
+              'Test scaling behavior under various loads'
+            ],
+            estimatedTime: '1-2 hours',
+            requiredSkills: ['Resource Management', 'Auto-scaling', 'Monitoring']
+          },
+          metrics: {
+            currentValue: 2.5,
+            targetValue: 1.9,
+            unit: 'GB',
+            metric: 'Peak Memory Usage'
+          },
+          applicable: true,
+          dismissed: false
         }
-      }
-    ]
-  }
+      ];
 
-  const getTypeIcon = (type: string) => {
+      // Simulate AI analysis delay
+      await new Promise(resolve => setTimeout(resolve, 1200));
+      
+      setSuggestions(mockSuggestions);
+    } catch (error) {
+      console.error('Failed to generate optimization suggestions:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getSeverityColor = (severity: OptimizationSuggestion['severity']) => {
+    switch (severity) {
+      case 'critical': return 'text-red-700 bg-red-100 border-red-200';
+      case 'high': return 'text-orange-700 bg-orange-100 border-orange-200';
+      case 'medium': return 'text-yellow-700 bg-yellow-100 border-yellow-200';
+      case 'low': return 'text-blue-700 bg-blue-100 border-blue-200';
+      default: return 'text-gray-700 bg-gray-100 border-gray-200';
+    }
+  };
+
+  const getTypeIcon = (type: OptimizationSuggestion['type']) => {
     switch (type) {
-      case 'performance': return <Zap className="h-4 w-4" />
-      case 'cost': return <DollarSign className="h-4 w-4" />
-      case 'reliability': return <CheckCircle className="h-4 w-4" />
-      case 'security': return <Target className="h-4 w-4" />
-      default: return <Lightbulb className="h-4 w-4" />
+      case 'performance': return <ClockIcon className="h-5 w-5" />;
+      case 'cost': return <CurrencyDollarIcon className="h-5 w-5" />;
+      case 'reliability': return <ExclamationTriangleIcon className="h-5 w-5" />;
+      case 'efficiency': return <CpuChipIcon className="h-5 w-5" />;
+      default: return <LightBulbIcon className="h-5 w-5" />;
     }
-  }
+  };
 
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case 'high': return 'destructive'
-      case 'medium': return 'secondary'
-      case 'low': return 'outline'
-      default: return 'outline'
+  const getEffortColor = (effort: OptimizationSuggestion['effort']) => {
+    switch (effort) {
+      case 'low': return 'bg-green-100 text-green-800';
+      case 'medium': return 'bg-yellow-100 text-yellow-800';
+      case 'high': return 'bg-red-100 text-red-800';
+      default: return 'bg-gray-100 text-gray-800';
     }
-  }
-
-  const getTypeColor = (type: string) => {
-    switch (type) {
-      case 'performance': return 'text-blue-600 bg-blue-50'
-      case 'cost': return 'text-green-600 bg-green-50'
-      case 'reliability': return 'text-purple-600 bg-purple-50'
-      case 'security': return 'text-red-600 bg-red-50'
-      default: return 'text-gray-600 bg-gray-50'
-    }
-  }
+  };
 
   const filteredSuggestions = suggestions.filter(suggestion => {
-    const typeMatch = selectedType === 'all' || suggestion.type === selectedType
-    const priorityMatch = selectedPriority === 'all' || suggestion.priority === selectedPriority
-    const workflowMatch = !workflowId || suggestion.workflow_id === workflowId
-    return typeMatch && priorityMatch && workflowMatch
-  })
+    if (suggestion.dismissed) return false;
+    if (selectedType !== 'all' && suggestion.type !== selectedType) return false;
+    if (selectedSeverity !== 'all' && suggestion.severity !== selectedSeverity) return false;
+    return suggestion.applicable;
+  });
 
-  const calculatePotentialImpact = () => {
-    const performanceGains = filteredSuggestions
-      .filter(s => s.impact.performance_gain)
-      .map(s => parseFloat(s.impact.performance_gain!.split('-')[0]))
-    
-    const costSavings = filteredSuggestions
-      .filter(s => s.impact.cost_savings)
-      .map(s => parseFloat(s.impact.cost_savings!.replace(/[^0-9.-]/g, '')))
+  const handleImplement = (suggestionId: string) => {
+    setSuggestions(prev => prev.map(s => 
+      s.id === suggestionId 
+        ? { ...s, implementedAt: new Date() }
+        : s
+    ));
+    onImplementSuggestion?.(suggestionId);
+  };
 
-    return {
-      avgPerformanceGain: performanceGains.length > 0 
-        ? Math.round(performanceGains.reduce((a, b) => a + b, 0) / performanceGains.length) 
-        : 0,
-      totalCostSavings: costSavings.reduce((a, b) => a + b, 0)
-    }
-  }
-
-  const impact = calculatePotentialImpact()
+  const handleDismiss = (suggestionId: string) => {
+    setSuggestions(prev => prev.map(s => 
+      s.id === suggestionId 
+        ? { ...s, dismissed: true }
+        : s
+    ));
+    onDismissSuggestion?.(suggestionId);
+  };
 
   if (loading) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <RefreshCw className="h-5 w-5 animate-spin" />
-            Analyzing Workflows...
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p>Generating optimization suggestions based on workflow performance data...</p>
-        </CardContent>
+      <Card className="p-6">
+        <div className="flex items-center justify-center h-32">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          <span className="ml-3 text-gray-600">Analyzing workflow for optimization opportunities...</span>
+        </div>
       </Card>
-    )
+    );
   }
 
   return (
     <div className="space-y-6">
-      {/* Summary Card */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Lightbulb className="h-5 w-5" />
-            Optimization Overview
-          </CardTitle>
-          <CardDescription>
-            AI-powered recommendations to improve your workflows
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="text-center p-4 border rounded-lg">
-              <div className="text-2xl font-bold text-blue-600">{filteredSuggestions.length}</div>
-              <p className="text-sm text-gray-600">Active Suggestions</p>
-            </div>
-            <div className="text-center p-4 border rounded-lg">
-              <div className="text-2xl font-bold text-green-600">{impact.avgPerformanceGain}%</div>
-              <p className="text-sm text-gray-600">Avg Performance Gain</p>
-            </div>
-            <div className="text-center p-4 border rounded-lg">
-              <div className="text-2xl font-bold text-purple-600">${impact.totalCostSavings}</div>
-              <p className="text-sm text-gray-600">Potential Monthly Savings</p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Filters */}
-      <div className="flex gap-4 items-center">
-        <div className="flex gap-2">
+      <div className="flex justify-between items-center">
+        <h2 className="text-2xl font-bold flex items-center gap-2">
+          <SparklesIcon className="h-6 w-6 text-purple-600" />
+          AI Optimization Suggestions
+        </h2>
+        
+        <div className="flex gap-4">
           <select
             value={selectedType}
             onChange={(e) => setSelectedType(e.target.value)}
-            className="px-3 py-2 border rounded-md"
+            className="px-3 py-2 border border-gray-300 rounded-md"
           >
             <option value="all">All Types</option>
             <option value="performance">Performance</option>
             <option value="cost">Cost</option>
             <option value="reliability">Reliability</option>
-            <option value="security">Security</option>
+            <option value="efficiency">Efficiency</option>
           </select>
-
+          
           <select
-            value={selectedPriority}
-            onChange={(e) => setSelectedPriority(e.target.value)}
-            className="px-3 py-2 border rounded-md"
+            value={selectedSeverity}
+            onChange={(e) => setSelectedSeverity(e.target.value)}
+            className="px-3 py-2 border border-gray-300 rounded-md"
           >
-            <option value="all">All Priorities</option>
-            <option value="high">High Priority</option>
-            <option value="medium">Medium Priority</option>
-            <option value="low">Low Priority</option>
+            <option value="all">All Severities</option>
+            <option value="critical">Critical</option>
+            <option value="high">High</option>
+            <option value="medium">Medium</option>
+            <option value="low">Low</option>
           </select>
         </div>
-
-        <Button onClick={generateOptimizationSuggestions} variant="outline" size="sm">
-          <RefreshCw className="h-4 w-4 mr-1" />
-          Refresh
-        </Button>
-      </div>
-
-      {/* Suggestions List */}
-      <div className="space-y-4">
-        {filteredSuggestions.map((suggestion) => (
-          <Card key={suggestion.id} className="hover:shadow-md transition-shadow">
-            <CardHeader>
-              <div className="flex items-start justify-between">
-                <div className="flex items-start gap-3">
-                  <div className={`p-2 rounded-lg ${getTypeColor(suggestion.type)}`}>
-                    {getTypeIcon(suggestion.type)}
-                  </div>
-                  <div>
-                    <CardTitle className="text-lg">{suggestion.title}</CardTitle>
-                    <CardDescription className="mt-1">
-                      {suggestion.description}
-                    </CardDescription>
-                    {suggestion.workflow_name && (
-                      <Badge variant="outline" className="mt-2">
-                        {suggestion.workflow_name}
-                      </Badge>
-                    )}
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Badge variant={getPriorityColor(suggestion.priority)}>
-                    {suggestion.priority.toUpperCase()}
-                  </Badge>
-                  <Badge variant="outline" className={getTypeColor(suggestion.type)}>
-                    {suggestion.type}
-                  </Badge>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-                {/* Impact Metrics */}
-                <div>
-                  <h4 className="font-semibold mb-2 flex items-center gap-1">
-                    <TrendingUp className="h-4 w-4" />
-                    Expected Impact
-                  </h4>
-                  <div className="space-y-2 text-sm">
-                    {suggestion.impact.performance_gain && (
-                      <div className="flex justify-between">
-                        <span>Performance:</span>
-                        <span className="font-medium text-blue-600">
-                          +{suggestion.impact.performance_gain}
-                        </span>
-                      </div>
-                    )}
-                    {suggestion.impact.cost_savings && (
-                      <div className="flex justify-between">
-                        <span>Cost Savings:</span>
-                        <span className="font-medium text-green-600">
-                          {suggestion.impact.cost_savings}
-                        </span>
-                      </div>
-                    )}
-                    {suggestion.impact.time_savings && (
-                      <div className="flex justify-between">
-                        <span>Time Savings:</span>
-                        <span className="font-medium text-purple-600">
-                          {suggestion.impact.time_savings}
-                        </span>
-                      </div>
-                    )}
-                    {suggestion.impact.reliability_improvement && (
-                      <div className="flex justify-between">
-                        <span>Reliability:</span>
-                        <span className="font-medium text-orange-600">
-                          +{suggestion.impact.reliability_improvement}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* Current vs Potential */}
-                <div>
-                  <h4 className="font-semibold mb-2 flex items-center gap-1">
-                    <BarChart3 className="h-4 w-4" />
-                    Metrics Comparison
-                  </h4>
-                  <div className="space-y-2 text-sm">
-                    <div className="flex justify-between">
-                      <span>Current:</span>
-                      <span>{suggestion.metrics.current_value} {suggestion.metrics.unit}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>Potential:</span>
-                      <span className="font-medium text-green-600">
-                        {suggestion.metrics.potential_value} {suggestion.metrics.unit}
-                      </span>
-                    </div>
-                    <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
-                      <div
-                        className="bg-green-600 h-2 rounded-full"
-                        style={{
-                          width: `${(suggestion.metrics.potential_value / suggestion.metrics.current_value) * 100}%`
-                        }}
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Implementation Details */}
-                <div>
-                  <h4 className="font-semibold mb-2 flex items-center gap-1">
-                    <Clock className="h-4 w-4" />
-                    Implementation
-                  </h4>
-                  <div className="space-y-2 text-sm">
-                    <div className="flex justify-between">
-                      <span>Effort:</span>
-                      <Badge variant="outline" size="sm">
-                        {suggestion.implementation.effort}
-                      </Badge>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>Time:</span>
-                      <span>{suggestion.implementation.estimated_time}</span>
-                    </div>
-                    <div className="mt-2">
-                      <p className="text-gray-600 mb-1">Steps:</p>
-                      <div className="max-h-20 overflow-y-auto">
-                        {suggestion.implementation.steps.slice(0, 2).map((step, index) => (
-                          <div key={index} className="flex items-start gap-1 text-xs">
-                            <ChevronRight className="h-3 w-3 mt-0.5 flex-shrink-0" />
-                            <span>{step}</span>
-                          </div>
-                        ))}
-                        {suggestion.implementation.steps.length > 2 && (
-                          <div className="text-xs text-gray-500 mt-1">
-                            +{suggestion.implementation.steps.length - 2} more steps...
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex justify-end gap-2 mt-4 pt-4 border-t">
-                <Button variant="outline" size="sm">
-                  <Info className="h-4 w-4 mr-1" />
-                  View Details
-                </Button>
-                <Button 
-                  size="sm"
-                  onClick={() => onApplySuggestion?.(suggestion.id)}
-                >
-                  Apply Suggestion
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
       </div>
 
       {filteredSuggestions.length === 0 && (
-        <Alert>
-          <Info className="h-4 w-4" />
-          <AlertDescription>
-            No optimization suggestions found for the selected criteria. 
-            Try adjusting your filters or check back later as we analyze more workflow data.
-          </AlertDescription>
-        </Alert>
+        <Card className="p-8 text-center">
+          <CheckCircleIcon className="h-16 w-16 text-green-500 mx-auto mb-4" />
+          <h3 className="text-xl font-semibold text-gray-900 mb-2">All Optimized!</h3>
+          <p className="text-gray-600">No optimization suggestions available. Your workflow is performing efficiently.</p>
+        </Card>
       )}
+
+      <div className="space-y-4">
+        {filteredSuggestions.map((suggestion) => (
+          <Card key={suggestion.id} className={`overflow-hidden border-l-4 ${getSeverityColor(suggestion.severity).includes('red') ? 'border-l-red-500' : 
+            getSeverityColor(suggestion.severity).includes('orange') ? 'border-l-orange-500' :
+            getSeverityColor(suggestion.severity).includes('yellow') ? 'border-l-yellow-500' : 'border-l-blue-500'
+          }`}>
+            <div className="p-6">
+              <div className="flex items-start justify-between">
+                <div className="flex items-start gap-4 flex-1">
+                  <div className="flex-shrink-0">
+                    {getTypeIcon(suggestion.type)}
+                  </div>
+                  
+                  <div className="flex-1">
+                    <div className="flex items-center gap-3 mb-2">
+                      <h3 className="text-lg font-semibold text-gray-900">{suggestion.title}</h3>
+                      <span className={`px-2 py-1 text-xs font-medium rounded-full ${getSeverityColor(suggestion.severity)}`}>
+                        {suggestion.severity.toUpperCase()}
+                      </span>
+                      <span className={`px-2 py-1 text-xs font-medium rounded-full ${getEffortColor(suggestion.effort)}`}>
+                        {suggestion.effort.toUpperCase()} EFFORT
+                      </span>
+                    </div>
+                    
+                    <p className="text-gray-600 mb-4">{suggestion.description}</p>
+                    
+                    {/* Impact Metrics */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                      {suggestion.impact.timeReduction && (
+                        <div className="bg-blue-50 p-3 rounded-lg">
+                          <div className="text-sm text-blue-600 font-medium">Time Reduction</div>
+                          <div className="text-2xl font-bold text-blue-700">{suggestion.impact.timeReduction}%</div>
+                        </div>
+                      )}
+                      
+                      {suggestion.impact.costReduction && (
+                        <div className="bg-green-50 p-3 rounded-lg">
+                          <div className="text-sm text-green-600 font-medium">Cost Reduction</div>
+                          <div className="text-2xl font-bold text-green-700">{suggestion.impact.costReduction}%</div>
+                        </div>
+                      )}
+                      
+                      {suggestion.impact.reliabilityImprovement && (
+                        <div className="bg-purple-50 p-3 rounded-lg">
+                          <div className="text-sm text-purple-600 font-medium">Reliability Improvement</div>
+                          <div className="text-2xl font-bold text-purple-700">{suggestion.impact.reliabilityImprovement}%</div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Metric Improvement */}
+                    <div className="bg-gray-50 p-4 rounded-lg mb-4">
+                      <div className="text-sm font-medium text-gray-700 mb-2">{suggestion.metrics.metric}</div>
+                      <div className="flex items-center justify-between">
+                        <div className="text-sm">
+                          Current: <span className="font-bold">{suggestion.metrics.currentValue} {suggestion.metrics.unit}</span>
+                        </div>
+                        <ChevronRightIcon className="h-4 w-4 text-gray-400" />
+                        <div className="text-sm">
+                          Target: <span className="font-bold text-green-600">{suggestion.metrics.targetValue} {suggestion.metrics.unit}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setExpandedSuggestion(expandedSuggestion === suggestion.id ? null : suggestion.id)}
+                  >
+                    {expandedSuggestion === suggestion.id ? 'Hide Details' : 'View Details'}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleDismiss(suggestion.id)}
+                  >
+                    <XMarkIcon className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    size="sm"
+                    onClick={() => handleImplement(suggestion.id)}
+                  >
+                    Implement
+                  </Button>
+                </div>
+              </div>
+
+              {/* Expanded Details */}
+              {expandedSuggestion === suggestion.id && (
+                <div className="mt-6 pt-6 border-t border-gray-200">
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div>
+                      <h4 className="font-semibold text-gray-900 mb-3">Recommendation</h4>
+                      <p className="text-gray-600 mb-4">{suggestion.recommendation}</p>
+                      
+                      <h4 className="font-semibold text-gray-900 mb-3">Implementation Steps</h4>
+                      <ol className="list-decimal list-inside space-y-2">
+                        {suggestion.implementation.steps.map((step, index) => (
+                          <li key={index} className="text-sm text-gray-600">{step}</li>
+                        ))}
+                      </ol>
+                    </div>
+                    
+                    <div>
+                      <h4 className="font-semibold text-gray-900 mb-3">Implementation Details</h4>
+                      <div className="space-y-3">
+                        <div>
+                          <span className="text-sm font-medium text-gray-700">Estimated Time:</span>
+                          <span className="text-sm text-gray-600 ml-2">{suggestion.implementation.estimatedTime}</span>
+                        </div>
+                        
+                        <div>
+                          <span className="text-sm font-medium text-gray-700">Required Skills:</span>
+                          <div className="flex flex-wrap gap-1 mt-1">
+                            {suggestion.implementation.requiredSkills.map((skill, index) => (
+                              <span key={index} className="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded-md">
+                                {skill}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </Card>
+        ))}
+      </div>
     </div>
-  )
+  );
 }

@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { CommanderCard } from '@/components/chat/CommanderCard'
+import { ProjectSelector } from '@/components/chat/ProjectSelector'
 import { 
   MessageCircle, 
   Send, 
@@ -20,7 +21,8 @@ import {
   Globe,
   Lock,
   AlertCircle,
-  Shield
+  Shield,
+  Target
 } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { getCurrentUserClient, getUserPermissionSummary } from '@/lib/access-control'
@@ -58,6 +60,19 @@ interface CommanderResponse {
   }>
 }
 
+interface Project {
+  id: string
+  name: string
+  description?: string
+  status: 'active' | 'paused' | 'completed' | 'archived'
+  priority: 'HIGH' | 'MEDIUM' | 'LOW'
+  tasksCount: number
+  completedTasks: number
+  lastActivity: string
+  isStarred?: boolean
+  color?: string
+}
+
 // Arabic detection regex - covers Arabic and Arabic-Indic script ranges
 const ARABIC_REGEX = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/
 
@@ -72,7 +87,7 @@ export default function ChatPage() {
   const [isArabicDetected, setIsArabicDetected] = useState(false)
   const [arabicConfidence, setArabicConfidence] = useState(0)
   const [isListening, setIsListening] = useState(false)
-  const [selectedProjectId, setSelectedProjectId] = useState<string>('')
+  const [selectedProject, setSelectedProject] = useState<Project | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
@@ -181,13 +196,14 @@ export default function ChatPage() {
       role: 'user',
       timestamp: new Date().toISOString(),
       type: isArabicDetected ? 'commander' : 'message',
-      projectId: selectedProjectId || undefined,
+      projectId: selectedProject?.id || undefined,
       metadata: {
         language: isArabicDetected ? 'ar' : 'en',
         isArabic: isArabicDetected,
         confidence: arabicConfidence,
         userId: currentUser?.id,
-        userRole: currentUser?.role
+        userRole: currentUser?.role,
+        projectId: selectedProject?.id
       }
     }
 
@@ -213,7 +229,7 @@ export default function ChatPage() {
           context: {
             sessionId: `chat-${currentUser?.id}-${Date.now()}`,
             previousMessages: messages.slice(-5),
-            projectId: selectedProjectId,
+            projectId: selectedProject?.id,
             userPermissions
           }
         })
@@ -320,9 +336,18 @@ export default function ChatPage() {
       return
     }
 
+    if (!selectedProject) {
+      toast({
+        title: "No Project Selected",
+        description: "Please select a project first to send commands.",
+        variant: "destructive",
+      })
+      return
+    }
+
     toast({
       title: "Sent to project",
-      description: `Command: "${text}" has been added to the current project.`,
+      description: `Command: "${text}" has been added to ${selectedProject.name}.`,
     })
   }
 
@@ -399,75 +424,94 @@ export default function ChatPage() {
   if (!currentUser || !userPermissions?.canRead) {
     return (
       <div className="flex flex-col h-screen p-4 md:p-6">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h1 className="text-2xl md:text-3xl font-bold">Chat</h1>
-            <p className="text-muted-foreground">AI assistant with command translation</p>
-          </div>
-        </div>
-
-        <Card className="flex-1 flex items-center justify-center">
-          <CardContent className="text-center space-y-6 max-w-md">
-            <div className="w-16 h-16 mx-auto rounded-full bg-red-100 flex items-center justify-center">
-              <Lock className="h-8 w-8 text-red-600" />
-            </div>
-            <div>
-              <h3 className="text-lg font-semibold mb-2">Access Denied</h3>
-              <p className="text-muted-foreground mb-4">
-                You need MANAGER level access or higher to use the chat feature.
-              </p>
-              {currentUser ? (
-                <div className="space-y-2">
-                  <Badge variant="outline" className="mb-2">
-                    Current Role: {currentUser.role}
-                  </Badge>
-                  <p className="text-sm text-muted-foreground">
-                    Contact the platform owner to request elevated permissions.
+        <div className="flex items-center justify-center h-full">
+          <Card className="w-full max-w-md">
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2 text-red-600">
+                <Shield className="h-5 w-5" />
+                <span>Access Denied</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-start space-x-3">
+                <AlertCircle className="h-5 w-5 text-orange-500 mt-0.5" />
+                <div>
+                  <p className="font-medium">Chat access requires MANAGER level permissions or higher.</p>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    {!currentUser 
+                      ? "Please sign in to access the chat system."
+                      : `Your current role (${currentUser.role}) doesn't have chat access. Contact your administrator to request permissions.`
+                    }
                   </p>
                 </div>
-              ) : (
-                <p className="text-sm text-muted-foreground">
-                  Please sign in to access the chat feature.
-                </p>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+              </div>
+
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                <h4 className="font-medium text-blue-900 text-sm mb-2">What you can do:</h4>
+                <ul className="text-sm text-blue-800 space-y-1">
+                  <li>• Visit the Dashboard to see available projects</li>
+                  <li>• Access Ideas Lab to submit suggestions</li>
+                  <li>• Contact your administrator for chat access</li>
+                </ul>
+              </div>
+
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" onClick={() => window.location.href = '/dashboard'}>
+                  Go to Dashboard
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => window.location.href = '/dashboard/ideas'}>
+                  Ideas Lab
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     )
   }
 
   return (
     <div className="flex flex-col h-screen p-4 md:p-6">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-2xl md:text-3xl font-bold">Chat</h1>
+      {/* Page Header */}
+      <div className="mb-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-4">
+            <div>
+              <h1 className="text-2xl font-bold">AI Chat</h1>
+              <p className="text-muted-foreground">
+                Communicate with your AI assistant{userPermissions?.canUseCommander ? ', with Arabic command support' : ''}
+              </p>
+            </div>
+          </div>
           <div className="flex items-center space-x-2">
-            <p className="text-muted-foreground">
-              AI assistant with Arabic command translation support
-            </p>
-            <Badge className="bg-green-500 text-white">
-              <Shield className="h-3 w-3 mr-1" />
-              {currentUser.role}
+            <Badge variant="outline" className={userPermissions?.canWrite ? "bg-green-50 text-green-700" : "bg-gray-50 text-gray-700"}>
+              {userPermissions?.canWrite ? 'Read/Write' : 'Read Only'}
             </Badge>
+            {userPermissions?.canUseCommander && (
+              <Badge variant="outline" className="bg-orange-50 text-orange-700">
+                Commander Enabled
+              </Badge>
+            )}
           </div>
         </div>
-        <div className="flex items-center space-x-2">
-          {userPermissions?.canModerate && (
-            <Button variant="outline" size="sm">
-              <Settings className="h-4 w-4 mr-2" />
-              Moderate
-            </Button>
-          )}
-          {userPermissions?.canWrite && (
-            <Button size="sm">
-              <Plus className="h-4 w-4 mr-2" />
-              New Chat
-            </Button>
-          )}
-        </div>
       </div>
+
+      {/* Project Context Selector */}
+      {userPermissions?.canWrite && (
+        <div className="mb-4">
+          <div className="flex items-center space-x-2 mb-2">
+            <Target className="h-4 w-4 text-blue-600" />
+            <span className="text-sm font-medium">Project Context</span>
+            <span className="text-xs text-muted-foreground">(Optional - for project-specific commands)</span>
+          </div>
+          <ProjectSelector
+            selectedProject={selectedProject}
+            onProjectChange={setSelectedProject}
+            variant="compact"
+            className="max-w-64"
+          />
+        </div>
+      )}
 
       {/* Permission indicator */}
       <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3 mb-4">
@@ -484,6 +528,14 @@ export default function ChatPage() {
               </Badge>
             )}
           </div>
+          {selectedProject && (
+            <div className="flex items-center space-x-2">
+              <span className="text-xs text-muted-foreground">Context:</span>
+              <Badge variant="outline" className="text-xs">
+                {selectedProject.name}
+              </Badge>
+            </div>
+          )}
         </div>
       </div>
 
@@ -526,27 +578,29 @@ export default function ChatPage() {
                     Supports: English{userPermissions?.canUseCommander ? ', Arabic (العربية)' : ''}
                   </span>
                 </div>
+                {selectedProject && (
+                  <div className="mt-2 flex items-center space-x-2 text-sm text-blue-600">
+                    <Target className="h-4 w-4" />
+                    <span>Context: {selectedProject.name}</span>
+                  </div>
+                )}
               </div>
             ) : (
               messages.map((message) => (
-                <div key={message.id} className="space-y-3">
-                  {/* Regular Message */}
+                <div key={message.id} className="space-y-2">
                   <div className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                    <div className={`max-w-md lg:max-w-lg xl:max-w-xl space-y-2 ${
-                      message.role === 'user' ? 'items-end' : 'items-start'
-                    }`}>
-                      <div className="flex items-center space-x-2">
+                    <div className="max-w-[70%] space-y-2">
+                      <div className="flex items-center space-x-2 text-xs text-muted-foreground">
                         {message.role === 'user' ? (
-                          <User className="h-4 w-4 text-blue-600" />
+                          <User className="h-3 w-3" />
                         ) : (
-                          <Bot className="h-4 w-4 text-green-600" />
+                          <Bot className="h-3 w-3" />
                         )}
-                        <span className="text-xs text-muted-foreground">
-                          {new Date(message.timestamp).toLocaleTimeString()}
-                        </span>
-                        {message.metadata?.isArabic && (
+                        <span>{message.role === 'user' ? 'You' : 'Assistant'}</span>
+                        <span>{new Date(message.timestamp).toLocaleTimeString()}</span>
+                        {message.metadata?.language && (
                           <Badge variant="outline" className="text-xs">
-                            Arabic
+                            {message.metadata.language.toUpperCase()}
                           </Badge>
                         )}
                         <Badge variant="outline" className="text-xs">
@@ -632,6 +686,8 @@ export default function ChatPage() {
                     placeholder={
                       isArabicDetected && userPermissions?.canUseCommander 
                         ? "اكتب أمرك بالعربية..." 
+                        : selectedProject
+                        ? `Type your message (Context: ${selectedProject.name})...`
                         : "Type your message..."
                     }
                     className={`pr-12 ${isArabicDetected ? 'text-right' : 'text-left'}`}
@@ -655,23 +711,25 @@ export default function ChatPage() {
                 <Button 
                   onClick={sendMessage} 
                   disabled={!inputValue.trim() || isLoading}
-                  className="px-4"
+                  size="sm"
                 >
                   <Send className="h-4 w-4" />
                 </Button>
               </div>
 
-              {/* Permission hints */}
-              {isArabicDetected && !userPermissions?.canUseCommander && (
-                <div className="text-xs text-amber-600 bg-amber-50 dark:bg-amber-950/30 p-2 rounded border border-amber-200 dark:border-amber-800">
-                  💡 Arabic detected, but Commander is disabled for your role. Contact admin for access.
+              {/* Context Info */}
+              {selectedProject && (
+                <div className="text-xs text-muted-foreground flex items-center space-x-2">
+                  <Target className="h-3 w-3" />
+                  <span>Commands will be sent to: <strong>{selectedProject.name}</strong></span>
                 </div>
               )}
             </div>
           ) : (
             <div className="border-t pt-4 text-center">
-              <div className="text-sm text-muted-foreground p-3 bg-muted/30 rounded">
-                👁️ Read-only access. You can view messages but cannot send new ones.
+              <div className="flex items-center justify-center space-x-2 text-sm text-muted-foreground">
+                <Lock className="h-4 w-4" />
+                <span>Read-only access. You cannot send messages.</span>
               </div>
             </div>
           )}

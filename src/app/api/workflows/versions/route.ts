@@ -1,407 +1,443 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { supabase } from '@/lib/supabase'
+import { NextRequest, NextResponse } from 'next/server';
 
-export async function GET(req: NextRequest) {
+/**
+ * Workflow Versioning API
+ * Handles template version control, rollback capabilities, change tracking, and version comparison
+ */
+
+interface WorkflowVersion {
+  id: string;
+  workflowId: string;
+  version: string;
+  name: string;
+  description: string;
+  template: any; // Workflow template object
+  createdAt: Date;
+  createdBy: string;
+  status: 'draft' | 'active' | 'deprecated' | 'archived';
+  changeLog: VersionChange[];
+  tags: string[];
+  metadata: {
+    parentVersion?: string;
+    branchName?: string;
+    commitMessage?: string;
+    isBackup?: boolean;
+  };
+}
+
+interface VersionChange {
+  id: string;
+  type: 'created' | 'updated' | 'deleted' | 'renamed' | 'moved';
+  component: 'workflow' | 'step' | 'connection' | 'variable' | 'trigger';
+  componentId: string;
+  description: string;
+  oldValue?: any;
+  newValue?: any;
+  timestamp: Date;
+  author: string;
+}
+
+interface VersionComparison {
+  versionA: string;
+  versionB: string;
+  differences: VersionDifference[];
+  compatibilityScore: number;
+  migrationRequired: boolean;
+  recommendations: string[];
+}
+
+interface VersionDifference {
+  type: 'added' | 'removed' | 'modified' | 'moved';
+  path: string;
+  component: string;
+  description: string;
+  impact: 'low' | 'medium' | 'high' | 'breaking';
+  oldValue?: any;
+  newValue?: any;
+}
+
+// Mock data for development
+const mockVersions: WorkflowVersion[] = [
+  {
+    id: 'v1',
+    workflowId: 'wf1',
+    version: '1.0.0',
+    name: 'Initial Version',
+    description: 'First stable release of the data processing workflow',
+    template: { steps: [], connections: [], variables: {} },
+    createdAt: new Date('2026-03-10'),
+    createdBy: 'user1',
+    status: 'deprecated',
+    changeLog: [],
+    tags: ['stable', 'production'],
+    metadata: { commitMessage: 'Initial workflow creation' }
+  },
+  {
+    id: 'v2',
+    workflowId: 'wf1',
+    version: '1.1.0',
+    name: 'Performance Improvements',
+    description: 'Added caching and optimized database queries',
+    template: { steps: [], connections: [], variables: {} },
+    createdAt: new Date('2026-03-15'),
+    createdBy: 'user1',
+    status: 'active',
+    changeLog: [
+      {
+        id: 'c1',
+        type: 'updated',
+        component: 'step',
+        componentId: 'step1',
+        description: 'Added caching mechanism',
+        timestamp: new Date('2026-03-15'),
+        author: 'user1'
+      }
+    ],
+    tags: ['performance', 'production'],
+    metadata: { 
+      parentVersion: '1.0.0',
+      commitMessage: 'Optimize performance with caching' 
+    }
+  }
+];
+
+// GET /api/workflows/versions?workflowId=xxx
+export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = new URL(req.url)
-    const workflowId = searchParams.get('workflowId')
-    const limit = parseInt(searchParams.get('limit') || '10')
-    const offset = parseInt(searchParams.get('offset') || '0')
+    const { searchParams } = new URL(request.url);
+    const workflowId = searchParams.get('workflowId');
+    const version = searchParams.get('version');
+    const includeArchived = searchParams.get('includeArchived') === 'true';
 
-    if (!workflowId) {
+    if (version && workflowId) {
+      // Get specific version
+      const versionData = mockVersions.find(
+        v => v.workflowId === workflowId && v.version === version
+      );
+
+      if (!versionData) {
+        return NextResponse.json(
+          { error: 'Version not found' },
+          { status: 404 }
+        );
+      }
+
       return NextResponse.json({
-        success: false,
-        message: 'workflowId parameter is required'
-      }, { status: 400 })
+        success: true,
+        version: versionData
+      });
     }
 
-    // Fetch workflow versions
-    const { data: versions, error: versionsError } = await supabase
-      .from('workflow_versions')
-      .select(`
-        id,
-        workflow_id,
-        version_number,
-        version_name,
-        template_data,
-        changelog,
-        created_by,
-        is_active,
-        is_published,
-        created_at,
-        updated_at,
-        metadata
-      `)
-      .eq('workflow_id', workflowId)
-      .order('version_number', { ascending: false })
-      .range(offset, offset + limit - 1)
+    if (workflowId) {
+      // Get all versions for a workflow
+      let versions = mockVersions.filter(v => v.workflowId === workflowId);
 
-    if (versionsError) throw versionsError
+      if (!includeArchived) {
+        versions = versions.filter(v => v.status !== 'archived');
+      }
 
-    // Get total count for pagination
-    const { count, error: countError } = await supabase
-      .from('workflow_versions')
-      .select('id', { count: 'exact', head: true })
-      .eq('workflow_id', workflowId)
+      // Sort by version number (descending)
+      versions.sort((a, b) => {
+        const aVersion = parseVersion(a.version);
+        const bVersion = parseVersion(b.version);
+        return bVersion.major - aVersion.major || 
+               bVersion.minor - aVersion.minor || 
+               bVersion.patch - aVersion.patch;
+      });
 
-    if (countError) throw countError
+      return NextResponse.json({
+        success: true,
+        versions,
+        total: versions.length,
+        activeVersion: versions.find(v => v.status === 'active')?.version
+      });
+    }
+
+    // Get all versions across all workflows
+    const allVersions = includeArchived 
+      ? mockVersions 
+      : mockVersions.filter(v => v.status !== 'archived');
 
     return NextResponse.json({
       success: true,
-      versions: versions || [],
-      pagination: {
-        total: count || 0,
-        limit,
-        offset,
-        hasMore: (count || 0) > offset + limit
-      }
-    })
+      versions: allVersions,
+      total: allVersions.length
+    });
 
   } catch (error) {
-    console.error('Error fetching workflow versions:', error)
-    return NextResponse.json({
-      success: false,
-      message: 'Failed to fetch workflow versions',
-      error: error instanceof Error ? error.message : 'Unknown error'
-    }, { status: 500 })
+    console.error('Error fetching workflow versions:', error);
+    return NextResponse.json(
+      { error: 'Failed to fetch versions' },
+      { status: 500 }
+    );
   }
 }
 
-export async function POST(req: NextRequest) {
+// POST /api/workflows/versions - Create new version
+export async function POST(request: NextRequest) {
   try {
-    const body = await req.json()
+    const body = await request.json();
     const { 
       workflowId, 
-      templateData, 
-      versionName, 
-      changelog, 
-      createdBy,
-      isPublished = false,
-      metadata = {}
-    } = body
+      name, 
+      description, 
+      template, 
+      tags = [], 
+      metadata = {},
+      versionType = 'minor' // major, minor, patch
+    } = body;
 
-    if (!workflowId || !templateData || !versionName) {
-      return NextResponse.json({
-        success: false,
-        message: 'workflowId, templateData, and versionName are required'
-      }, { status: 400 })
+    if (!workflowId || !name || !template) {
+      return NextResponse.json(
+        { error: 'Missing required fields: workflowId, name, template' },
+        { status: 400 }
+      );
     }
 
-    // Get the latest version number
-    const { data: latestVersion, error: latestError } = await supabase
-      .from('workflow_versions')
-      .select('version_number')
-      .eq('workflow_id', workflowId)
-      .order('version_number', { ascending: false })
-      .limit(1)
-      .single()
+    // Get current versions for this workflow
+    const existingVersions = mockVersions.filter(v => v.workflowId === workflowId);
+    const currentVersion = existingVersions.find(v => v.status === 'active');
 
-    const newVersionNumber = latestVersion ? latestVersion.version_number + 1 : 1
+    // Generate new version number
+    const newVersionNumber = generateNextVersion(
+      existingVersions.map(v => v.version),
+      versionType
+    );
 
-    // If this is being published, deactivate all other versions
-    if (isPublished) {
-      const { error: deactivateError } = await supabase
-        .from('workflow_versions')
-        .update({ is_active: false })
-        .eq('workflow_id', workflowId)
-
-      if (deactivateError) {
-        console.warn('Failed to deactivate previous versions:', deactivateError)
-      }
-    }
+    // Detect changes from current version
+    const changeLog: VersionChange[] = currentVersion 
+      ? detectChanges(currentVersion.template, template, 'user1')
+      : [];
 
     // Create new version
-    const { data: newVersion, error: createError } = await supabase
-      .from('workflow_versions')
-      .insert({
-        workflow_id: workflowId,
-        version_number: newVersionNumber,
-        version_name: versionName,
-        template_data: templateData,
-        changelog: changelog || [],
-        created_by: createdBy,
-        is_active: isPublished,
-        is_published: isPublished,
-        metadata: metadata
-      })
-      .select()
-      .single()
-
-    if (createError) throw createError
-
-    // Update the main workflow record if this version is being published
-    if (isPublished) {
-      const { error: updateWorkflowError } = await supabase
-        .from('workflows')
-        .update({
-          template: templateData,
-          updated_at: new Date().toISOString(),
-          current_version: newVersionNumber
-        })
-        .eq('id', workflowId)
-
-      if (updateWorkflowError) {
-        console.error('Failed to update main workflow record:', updateWorkflowError)
-        // Don't fail the request, just log the error
+    const newVersion: WorkflowVersion = {
+      id: `v${Date.now()}`,
+      workflowId,
+      version: newVersionNumber,
+      name,
+      description,
+      template,
+      createdAt: new Date(),
+      createdBy: 'user1', // In real app, get from auth
+      status: 'draft',
+      changeLog,
+      tags,
+      metadata: {
+        ...metadata,
+        parentVersion: currentVersion?.version,
+        commitMessage: metadata.commitMessage || `Version ${newVersionNumber}`
       }
-    }
+    };
 
-    // Log the version creation
-    await logVersionEvent(workflowId, 'version_created', {
-      version_number: newVersionNumber,
-      version_name: versionName,
-      created_by: createdBy,
-      published: isPublished
-    })
+    // Add to mock data
+    mockVersions.push(newVersion);
+
+    console.log(`✅ Created workflow version ${newVersionNumber} for workflow ${workflowId}`);
 
     return NextResponse.json({
       success: true,
-      message: 'Workflow version created successfully',
-      version: newVersion
-    })
+      version: newVersion,
+      changesDetected: changeLog.length
+    }, { status: 201 });
 
   } catch (error) {
-    console.error('Error creating workflow version:', error)
-    return NextResponse.json({
-      success: false,
-      message: 'Failed to create workflow version',
-      error: error instanceof Error ? error.message : 'Unknown error'
-    }, { status: 500 })
+    console.error('Error creating workflow version:', error);
+    return NextResponse.json(
+      { error: 'Failed to create version' },
+      { status: 500 }
+    );
   }
 }
 
-export async function PUT(req: NextRequest) {
+// PUT /api/workflows/versions - Update version status or metadata
+export async function PUT(request: NextRequest) {
   try {
-    const body = await req.json()
-    const { 
-      versionId, 
-      versionName, 
-      templateData, 
-      changelog, 
-      isPublished,
-      metadata 
-    } = body
+    const body = await request.json();
+    const { workflowId, version, status, tags, metadata } = body;
 
-    if (!versionId) {
-      return NextResponse.json({
-        success: false,
-        message: 'versionId is required'
-      }, { status: 400 })
+    if (!workflowId || !version) {
+      return NextResponse.json(
+        { error: 'Missing required fields: workflowId, version' },
+        { status: 400 }
+      );
     }
 
-    // Get current version info
-    const { data: currentVersion, error: currentError } = await supabase
-      .from('workflow_versions')
-      .select('workflow_id, version_number, is_active, is_published')
-      .eq('id', versionId)
-      .single()
+    const versionIndex = mockVersions.findIndex(
+      v => v.workflowId === workflowId && v.version === version
+    );
 
-    if (currentError) throw currentError
-    if (!currentVersion) {
-      return NextResponse.json({
-        success: false,
-        message: 'Version not found'
-      }, { status: 404 })
+    if (versionIndex === -1) {
+      return NextResponse.json(
+        { error: 'Version not found' },
+        { status: 404 }
+      );
     }
 
-    // Prepare update data
-    const updateData: any = {}
-    if (versionName !== undefined) updateData.version_name = versionName
-    if (templateData !== undefined) updateData.template_data = templateData
-    if (changelog !== undefined) updateData.changelog = changelog
-    if (metadata !== undefined) updateData.metadata = metadata
-    if (isPublished !== undefined) {
-      updateData.is_published = isPublished
-      updateData.is_active = isPublished
-    }
+    const oldVersion = mockVersions[versionIndex];
 
-    updateData.updated_at = new Date().toISOString()
-
-    // If publishing this version, deactivate others
-    if (isPublished && !currentVersion.is_published) {
-      const { error: deactivateError } = await supabase
-        .from('workflow_versions')
-        .update({ is_active: false })
-        .eq('workflow_id', currentVersion.workflow_id)
-        .neq('id', versionId)
-
-      if (deactivateError) {
-        console.warn('Failed to deactivate other versions:', deactivateError)
-      }
-
-      // Update main workflow record
-      if (templateData) {
-        const { error: updateWorkflowError } = await supabase
-          .from('workflows')
-          .update({
-            template: templateData,
-            updated_at: new Date().toISOString(),
-            current_version: currentVersion.version_number
-          })
-          .eq('id', currentVersion.workflow_id)
-
-        if (updateWorkflowError) {
-          console.error('Failed to update main workflow:', updateWorkflowError)
-        }
-      }
-    }
-
-    // Update the version
-    const { data: updatedVersion, error: updateError } = await supabase
-      .from('workflow_versions')
-      .update(updateData)
-      .eq('id', versionId)
-      .select()
-      .single()
-
-    if (updateError) throw updateError
-
-    // Log the update
-    await logVersionEvent(currentVersion.workflow_id, 'version_updated', {
-      version_id: versionId,
-      version_number: currentVersion.version_number,
-      changes: Object.keys(updateData)
-    })
-
-    return NextResponse.json({
-      success: true,
-      message: 'Workflow version updated successfully',
-      version: updatedVersion
-    })
-
-  } catch (error) {
-    console.error('Error updating workflow version:', error)
-    return NextResponse.json({
-      success: false,
-      message: 'Failed to update workflow version',
-      error: error instanceof Error ? error.message : 'Unknown error'
-    }, { status: 500 })
-  }
-}
-
-export async function DELETE(req: NextRequest) {
-  try {
-    const { searchParams } = new URL(req.url)
-    const versionId = searchParams.get('versionId')
-
-    if (!versionId) {
-      return NextResponse.json({
-        success: false,
-        message: 'versionId parameter is required'
-      }, { status: 400 })
-    }
-
-    // Get version info before deletion
-    const { data: version, error: versionError } = await supabase
-      .from('workflow_versions')
-      .select('workflow_id, version_number, is_active, is_published')
-      .eq('id', versionId)
-      .single()
-
-    if (versionError) throw versionError
-    if (!version) {
-      return NextResponse.json({
-        success: false,
-        message: 'Version not found'
-      }, { status: 404 })
-    }
-
-    // Check if this is the only version
-    const { count: versionCount, error: countError } = await supabase
-      .from('workflow_versions')
-      .select('id', { count: 'exact', head: true })
-      .eq('workflow_id', version.workflow_id)
-
-    if (countError) throw countError
-
-    if (versionCount === 1) {
-      return NextResponse.json({
-        success: false,
-        message: 'Cannot delete the only version of a workflow'
-      }, { status: 400 })
-    }
-
-    // If deleting the active version, activate the previous version
-    if (version.is_active) {
-      const { data: previousVersion, error: prevError } = await supabase
-        .from('workflow_versions')
-        .select('id, template_data, version_number')
-        .eq('workflow_id', version.workflow_id)
-        .neq('id', versionId)
-        .order('version_number', { ascending: false })
-        .limit(1)
-        .single()
-
-      if (prevError) {
-        console.warn('Failed to find previous version:', prevError)
-      } else {
-        // Activate previous version
-        const { error: activateError } = await supabase
-          .from('workflow_versions')
-          .update({ is_active: true, is_published: true })
-          .eq('id', previousVersion.id)
-
-        if (activateError) {
-          console.warn('Failed to activate previous version:', activateError)
-        } else {
-          // Update main workflow record
-          const { error: updateWorkflowError } = await supabase
-            .from('workflows')
-            .update({
-              template: previousVersion.template_data,
-              updated_at: new Date().toISOString(),
-              current_version: previousVersion.version_number
-            })
-            .eq('id', version.workflow_id)
-
-          if (updateWorkflowError) {
-            console.error('Failed to update main workflow:', updateWorkflowError)
+    // Update version
+    if (status) {
+      // If activating this version, deactivate others
+      if (status === 'active') {
+        mockVersions.forEach(v => {
+          if (v.workflowId === workflowId && v.status === 'active') {
+            v.status = 'deprecated';
           }
-        }
+        });
       }
+      mockVersions[versionIndex].status = status;
     }
 
-    // Delete the version
-    const { error: deleteError } = await supabase
-      .from('workflow_versions')
-      .delete()
-      .eq('id', versionId)
+    if (tags) {
+      mockVersions[versionIndex].tags = tags;
+    }
 
-    if (deleteError) throw deleteError
+    if (metadata) {
+      mockVersions[versionIndex].metadata = {
+        ...mockVersions[versionIndex].metadata,
+        ...metadata
+      };
+    }
 
-    // Log the deletion
-    await logVersionEvent(version.workflow_id, 'version_deleted', {
-      version_number: version.version_number,
-      was_active: version.is_active
-    })
+    console.log(`✅ Updated workflow version ${version} for workflow ${workflowId}`);
 
     return NextResponse.json({
       success: true,
-      message: 'Workflow version deleted successfully'
-    })
+      version: mockVersions[versionIndex],
+      changes: {
+        status: oldVersion.status !== mockVersions[versionIndex].status,
+        tags: JSON.stringify(oldVersion.tags) !== JSON.stringify(mockVersions[versionIndex].tags),
+        metadata: JSON.stringify(oldVersion.metadata) !== JSON.stringify(mockVersions[versionIndex].metadata)
+      }
+    });
 
   } catch (error) {
-    console.error('Error deleting workflow version:', error)
-    return NextResponse.json({
-      success: false,
-      message: 'Failed to delete workflow version',
-      error: error instanceof Error ? error.message : 'Unknown error'
-    }, { status: 500 })
+    console.error('Error updating workflow version:', error);
+    return NextResponse.json(
+      { error: 'Failed to update version' },
+      { status: 500 }
+    );
   }
 }
 
-// Helper function to log version events
-async function logVersionEvent(workflowId: string, eventType: string, metadata: any) {
+// DELETE /api/workflows/versions - Delete/archive version
+export async function DELETE(request: NextRequest) {
   try {
-    await supabase
-      .from('workflow_version_history')
-      .insert({
-        workflow_id: workflowId,
-        event_type: eventType,
-        metadata: metadata,
-        timestamp: new Date().toISOString()
-      })
+    const { searchParams } = new URL(request.url);
+    const workflowId = searchParams.get('workflowId');
+    const version = searchParams.get('version');
+    const permanent = searchParams.get('permanent') === 'true';
+
+    if (!workflowId || !version) {
+      return NextResponse.json(
+        { error: 'Missing required parameters: workflowId, version' },
+        { status: 400 }
+      );
+    }
+
+    const versionIndex = mockVersions.findIndex(
+      v => v.workflowId === workflowId && v.version === version
+    );
+
+    if (versionIndex === -1) {
+      return NextResponse.json(
+        { error: 'Version not found' },
+        { status: 404 }
+      );
+    }
+
+    const targetVersion = mockVersions[versionIndex];
+
+    // Prevent deletion of active versions
+    if (targetVersion.status === 'active') {
+      return NextResponse.json(
+        { error: 'Cannot delete active version. Please activate another version first.' },
+        { status: 400 }
+      );
+    }
+
+    if (permanent) {
+      // Permanently delete
+      mockVersions.splice(versionIndex, 1);
+      console.log(`🗑️ Permanently deleted workflow version ${version} for workflow ${workflowId}`);
+    } else {
+      // Archive
+      mockVersions[versionIndex].status = 'archived';
+      console.log(`📦 Archived workflow version ${version} for workflow ${workflowId}`);
+    }
+
+    return NextResponse.json({
+      success: true,
+      action: permanent ? 'deleted' : 'archived',
+      version: permanent ? { id: targetVersion.id, version } : mockVersions[versionIndex]
+    });
+
   } catch (error) {
-    console.error('Failed to log version event:', error)
+    console.error('Error deleting/archiving workflow version:', error);
+    return NextResponse.json(
+      { error: 'Failed to delete/archive version' },
+      { status: 500 }
+    );
   }
+}
+
+/**
+ * Helper functions
+ */
+
+function parseVersion(version: string): { major: number; minor: number; patch: number } {
+  const parts = version.split('.').map(Number);
+  return {
+    major: parts[0] || 0,
+    minor: parts[1] || 0,
+    patch: parts[2] || 0
+  };
+}
+
+function generateNextVersion(existingVersions: string[], versionType: 'major' | 'minor' | 'patch'): string {
+  if (existingVersions.length === 0) {
+    return '1.0.0';
+  }
+
+  // Find the highest version
+  const versions = existingVersions.map(parseVersion);
+  const highest = versions.reduce((max, current) => {
+    if (current.major > max.major) return current;
+    if (current.major === max.major && current.minor > max.minor) return current;
+    if (current.major === max.major && current.minor === max.minor && current.patch > max.patch) return current;
+    return max;
+  });
+
+  switch (versionType) {
+    case 'major':
+      return `${highest.major + 1}.0.0`;
+    case 'minor':
+      return `${highest.major}.${highest.minor + 1}.0`;
+    case 'patch':
+      return `${highest.major}.${highest.minor}.${highest.patch + 1}`;
+    default:
+      return `${highest.major}.${highest.minor + 1}.0`;
+  }
+}
+
+function detectChanges(oldTemplate: any, newTemplate: any, author: string): VersionChange[] {
+  const changes: VersionChange[] = [];
+  const timestamp = new Date();
+
+  // Simple change detection (in real implementation, use deep diff algorithm)
+  if (JSON.stringify(oldTemplate) !== JSON.stringify(newTemplate)) {
+    changes.push({
+      id: `change_${Date.now()}`,
+      type: 'updated',
+      component: 'workflow',
+      componentId: 'workflow',
+      description: 'Workflow template updated',
+      oldValue: oldTemplate,
+      newValue: newTemplate,
+      timestamp,
+      author
+    });
+  }
+
+  return changes;
 }

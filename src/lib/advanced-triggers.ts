@@ -1,777 +1,684 @@
-import { supabase } from './supabase'
-import { startWorkflowExecution } from './workflow-triggers'
+/**
+ * Advanced Workflow Triggers System
+ * Handles time-based conditional triggers, external API webhook integration,
+ * multi-condition logic gates, and custom trigger expressions
+ */
 
-export interface AdvancedTrigger {
-  id: string
-  workflow_id: string
-  name: string
-  type: 'time_based' | 'webhook' | 'condition_group' | 'file_watcher' | 'database_event' | 'api_monitor'
-  config: {
-    // Time-based triggers
-    schedule?: {
-      type: 'cron' | 'interval' | 'once'
-      expression: string
-      timezone: string
-      conditions?: {
-        date_range?: { start: string; end: string }
-        day_of_week?: number[]
-        day_of_month?: number[]
-        business_hours_only?: boolean
-      }
-    }
-    
-    // Webhook triggers
-    webhook?: {
-      endpoint_id: string
-      secret: string
-      allowed_sources?: string[]
-      payload_validation?: {
-        schema: any
-        required_fields: string[]
-      }
-      response_config?: {
-        success_response: any
-        error_response: any
-      }
-    }
-    
-    // Condition group triggers
-    condition_group?: {
-      logic: 'AND' | 'OR' | 'NOT'
-      conditions: {
-        id: string
-        type: 'api_check' | 'file_exists' | 'database_query' | 'metric_threshold' | 'time_window'
-        config: any
-        weight?: number
-      }[]
-      evaluation_interval: number
-      timeout_minutes: number
-    }
-    
-    // File watcher triggers
-    file_watcher?: {
-      path: string
-      pattern: string
-      events: ('create' | 'modify' | 'delete')[]
-      debounce_ms: number
-    }
-    
-    // Database event triggers
-    database_event?: {
-      table: string
-      operation: ('INSERT' | 'UPDATE' | 'DELETE')[]
-      filter?: any
-      batch_size?: number
-      batch_timeout_ms?: number
-    }
-    
-    // API monitoring triggers
-    api_monitor?: {
-      url: string
-      method: string
-      headers?: Record<string, string>
-      expected_status?: number[]
-      expected_response?: any
-      check_interval: number
-      failure_threshold: number
-      success_threshold: number
-    }
-  }
-  is_active: boolean
-  last_triggered: string | null
-  next_trigger: string | null
-  trigger_count: number
-  failure_count: number
+export interface WorkflowTrigger {
+  id: string;
+  workflowId: string;
+  name: string;
+  description: string;
+  type: 'time' | 'webhook' | 'event' | 'condition' | 'composite';
+  enabled: boolean;
+  config: TriggerConfig;
+  conditions: TriggerCondition[];
+  actions: TriggerAction[];
   metadata: {
-    created_by: string
-    description?: string
-    tags?: string[]
-  }
-  created_at: string
-  updated_at: string
+    createdAt: Date;
+    createdBy: string;
+    lastTriggered?: Date;
+    triggerCount: number;
+    successCount: number;
+    failureCount: number;
+  };
 }
 
-export interface TriggerExecution {
-  id: string
-  trigger_id: string
-  workflow_id: string
-  status: 'pending' | 'running' | 'completed' | 'failed' | 'skipped'
-  trigger_data: any
-  execution_time: number
-  error_message?: string
-  created_at: string
-  completed_at?: string
+export interface TriggerConfig {
+  // Time-based triggers
+  schedule?: {
+    cron?: string;
+    timezone?: string;
+    startDate?: Date;
+    endDate?: Date;
+    intervals?: {
+      every: number;
+      unit: 'minutes' | 'hours' | 'days' | 'weeks' | 'months';
+    };
+  };
+
+  // Webhook triggers
+  webhook?: {
+    url: string;
+    method: 'GET' | 'POST' | 'PUT' | 'DELETE';
+    headers: Record<string, string>;
+    authentication?: {
+      type: 'bearer' | 'basic' | 'apikey';
+      credentials: Record<string, string>;
+    };
+    retries: number;
+    timeout: number;
+  };
+
+  // Event triggers
+  event?: {
+    source: string;
+    eventType: string;
+    filters: Record<string, any>;
+  };
+
+  // Condition-based triggers
+  condition?: {
+    expression: string;
+    variables: Record<string, any>;
+    evaluationInterval: number; // milliseconds
+  };
+
+  // Composite triggers
+  composite?: {
+    logic: 'AND' | 'OR' | 'NOT' | 'XOR';
+    subTriggers: string[]; // IDs of other triggers
+    requireAll?: boolean;
+    timeWindow?: number; // milliseconds - all conditions must be met within this window
+  };
 }
 
-export class AdvancedTriggerManager {
-  private static activeJobs = new Map<string, any>()
+export interface TriggerCondition {
+  id: string;
+  type: 'time' | 'data' | 'system' | 'custom';
+  operator: 'equals' | 'not_equals' | 'greater_than' | 'less_than' | 'contains' | 'matches' | 'exists' | 'custom';
+  field: string;
+  value: any;
+  expression?: string; // For custom conditions
+}
+
+export interface TriggerAction {
+  id: string;
+  type: 'start_workflow' | 'send_notification' | 'update_data' | 'call_webhook' | 'custom';
+  config: Record<string, any>;
+  retryPolicy?: {
+    maxRetries: number;
+    backoffStrategy: 'linear' | 'exponential';
+    initialDelay: number;
+  };
+}
+
+export interface TriggerEvent {
+  id: string;
+  triggerId: string;
+  workflowId: string;
+  timestamp: Date;
+  eventType: string;
+  payload: any;
+  source: string;
+  processed: boolean;
+  result?: 'success' | 'failure' | 'skipped';
+  error?: string;
+}
+
+class AdvancedTriggerManager {
+  private triggers: Map<string, WorkflowTrigger> = new Map();
+  private activeTimers: Map<string, NodeJS.Timeout> = new Map();
+  private eventQueue: TriggerEvent[] = [];
+  private webhookEndpoints: Map<string, string> = new Map();
+  private conditionEvaluators: Map<string, NodeJS.Timeout> = new Map();
 
   /**
-   * Create a new advanced trigger
+   * Register a new trigger
    */
-  static async createTrigger(trigger: Omit<AdvancedTrigger, 'id' | 'created_at' | 'updated_at' | 'last_triggered' | 'next_trigger' | 'trigger_count' | 'failure_count'>): Promise<{ success: boolean; trigger?: AdvancedTrigger; error?: string }> {
+  registerTrigger(trigger: Omit<WorkflowTrigger, 'id' | 'metadata'>): string {
+    const id = `trigger_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    
+    const fullTrigger: WorkflowTrigger = {
+      id,
+      ...trigger,
+      metadata: {
+        createdAt: new Date(),
+        createdBy: 'system', // In real implementation, get from auth context
+        triggerCount: 0,
+        successCount: 0,
+        failureCount: 0
+      }
+    };
+
+    this.triggers.set(id, fullTrigger);
+    
+    if (trigger.enabled) {
+      this.activateTrigger(id);
+    }
+
+    console.log(`🎯 Registered trigger: ${trigger.name} (${trigger.type})`);
+    return id;
+  }
+
+  /**
+   * Activate a trigger
+   */
+  activateTrigger(triggerId: string): void {
+    const trigger = this.triggers.get(triggerId);
+    if (!trigger) {
+      console.error(`Trigger ${triggerId} not found`);
+      return;
+    }
+
+    if (!trigger.enabled) {
+      trigger.enabled = true;
+    }
+
+    switch (trigger.type) {
+      case 'time':
+        this.setupTimeTrigger(trigger);
+        break;
+      case 'webhook':
+        this.setupWebhookTrigger(trigger);
+        break;
+      case 'condition':
+        this.setupConditionTrigger(trigger);
+        break;
+      case 'composite':
+        this.setupCompositeTrigger(trigger);
+        break;
+      case 'event':
+        // Event triggers are passive - they respond to incoming events
+        break;
+    }
+
+    console.log(`✅ Activated trigger: ${trigger.name}`);
+  }
+
+  /**
+   * Deactivate a trigger
+   */
+  deactivateTrigger(triggerId: string): void {
+    const trigger = this.triggers.get(triggerId);
+    if (!trigger) return;
+
+    trigger.enabled = false;
+
+    // Clear any active timers
+    const timer = this.activeTimers.get(triggerId);
+    if (timer) {
+      clearTimeout(timer);
+      this.activeTimers.delete(triggerId);
+    }
+
+    const evaluator = this.conditionEvaluators.get(triggerId);
+    if (evaluator) {
+      clearInterval(evaluator);
+      this.conditionEvaluators.delete(evaluator);
+    }
+
+    console.log(`⏹️ Deactivated trigger: ${trigger.name}`);
+  }
+
+  /**
+   * Setup time-based trigger
+   */
+  private setupTimeTrigger(trigger: WorkflowTrigger): void {
+    const { schedule } = trigger.config;
+    if (!schedule) return;
+
+    if (schedule.cron) {
+      // Setup cron-based scheduling
+      this.setupCronTrigger(trigger, schedule.cron, schedule.timezone);
+    } else if (schedule.intervals) {
+      // Setup interval-based scheduling
+      this.setupIntervalTrigger(trigger, schedule.intervals);
+    }
+  }
+
+  /**
+   * Setup cron trigger
+   */
+  private setupCronTrigger(trigger: WorkflowTrigger, cronExpression: string, timezone?: string): void {
     try {
-      // Validate trigger configuration
-      const validation = this.validateTriggerConfig(trigger.type, trigger.config)
-      if (!validation.valid) {
-        return { success: false, error: validation.error }
+      // Parse cron expression and calculate next execution time
+      const nextExecution = this.parseCronExpression(cronExpression, timezone);
+      const delay = nextExecution.getTime() - Date.now();
+
+      if (delay > 0) {
+        const timer = setTimeout(() => {
+          this.executeTrigger(trigger.id, {
+            source: 'cron',
+            eventType: 'scheduled',
+            payload: { cronExpression, nextExecution }
+          });
+
+          // Schedule the next execution
+          this.setupCronTrigger(trigger, cronExpression, timezone);
+        }, delay);
+
+        this.activeTimers.set(trigger.id, timer);
+        console.log(`⏰ Scheduled cron trigger ${trigger.name} for ${nextExecution.toISOString()}`);
       }
-
-      // Calculate next trigger time for scheduled triggers
-      let nextTrigger = null
-      if (trigger.type === 'time_based' && trigger.config.schedule) {
-        nextTrigger = this.calculateNextTriggerTime(trigger.config.schedule)
-      }
-
-      const { data, error } = await supabase
-        .from('advanced_triggers')
-        .insert({
-          workflow_id: trigger.workflow_id,
-          name: trigger.name,
-          type: trigger.type,
-          config: trigger.config,
-          is_active: trigger.is_active,
-          next_trigger: nextTrigger,
-          trigger_count: 0,
-          failure_count: 0,
-          metadata: trigger.metadata
-        })
-        .select()
-        .single()
-
-      if (error) throw error
-
-      // Start monitoring if active
-      if (trigger.is_active) {
-        await this.startTriggerMonitoring(data.id)
-      }
-
-      return { success: true, trigger: data }
     } catch (error) {
-      console.error('Failed to create advanced trigger:', error)
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : 'Unknown error'
-      }
+      console.error(`Error setting up cron trigger for ${trigger.name}:`, error);
     }
   }
 
   /**
-   * Update an existing trigger
+   * Setup interval trigger
    */
-  static async updateTrigger(triggerId: string, updates: Partial<AdvancedTrigger>): Promise<{ success: boolean; trigger?: AdvancedTrigger; error?: string }> {
-    try {
-      const { data: currentTrigger, error: fetchError } = await supabase
-        .from('advanced_triggers')
-        .select('*')
-        .eq('id', triggerId)
-        .single()
-
-      if (fetchError) throw fetchError
-
-      // Stop current monitoring
-      if (this.activeJobs.has(triggerId)) {
-        this.stopTriggerMonitoring(triggerId)
-      }
-
-      // Update next trigger time if schedule changed
-      let nextTrigger = updates.next_trigger
-      if (updates.config?.schedule) {
-        nextTrigger = this.calculateNextTriggerTime(updates.config.schedule)
-      }
-
-      const { data, error } = await supabase
-        .from('advanced_triggers')
-        .update({
-          ...updates,
-          next_trigger: nextTrigger,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', triggerId)
-        .select()
-        .single()
-
-      if (error) throw error
-
-      // Restart monitoring if active
-      if (data.is_active) {
-        await this.startTriggerMonitoring(triggerId)
-      }
-
-      return { success: true, trigger: data }
-    } catch (error) {
-      console.error('Failed to update advanced trigger:', error)
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : 'Unknown error'
-      }
-    }
-  }
-
-  /**
-   * Delete a trigger
-   */
-  static async deleteTrigger(triggerId: string): Promise<{ success: boolean; error?: string }> {
-    try {
-      // Stop monitoring
-      this.stopTriggerMonitoring(triggerId)
-
-      const { error } = await supabase
-        .from('advanced_triggers')
-        .delete()
-        .eq('id', triggerId)
-
-      if (error) throw error
-
-      return { success: true }
-    } catch (error) {
-      console.error('Failed to delete advanced trigger:', error)
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : 'Unknown error'
-      }
-    }
-  }
-
-  /**
-   * Start monitoring all active triggers
-   */
-  static async startAllTriggerMonitoring(): Promise<void> {
-    try {
-      const { data: triggers, error } = await supabase
-        .from('advanced_triggers')
-        .select('*')
-        .eq('is_active', true)
-
-      if (error) throw error
-
-      for (const trigger of triggers || []) {
-        await this.startTriggerMonitoring(trigger.id)
-      }
-
-      console.log(`🚀 Started monitoring ${triggers?.length || 0} advanced triggers`)
-    } catch (error) {
-      console.error('Failed to start trigger monitoring:', error)
-    }
-  }
-
-  /**
-   * Start monitoring a specific trigger
-   */
-  static async startTriggerMonitoring(triggerId: string): Promise<void> {
-    try {
-      const { data: trigger, error } = await supabase
-        .from('advanced_triggers')
-        .select('*')
-        .eq('id', triggerId)
-        .single()
-
-      if (error) throw error
-      if (!trigger || !trigger.is_active) return
-
-      switch (trigger.type) {
-        case 'time_based':
-          this.setupTimeBasedTrigger(trigger)
-          break
-        case 'condition_group':
-          this.setupConditionGroupTrigger(trigger)
-          break
-        case 'api_monitor':
-          this.setupApiMonitorTrigger(trigger)
-          break
-        case 'webhook':
-          this.setupWebhookTrigger(trigger)
-          break
-        case 'file_watcher':
-          this.setupFileWatcherTrigger(trigger)
-          break
-        case 'database_event':
-          this.setupDatabaseEventTrigger(trigger)
-          break
-      }
-
-      console.log(`✅ Started monitoring trigger ${trigger.name} (${trigger.type})`)
-    } catch (error) {
-      console.error(`Failed to start monitoring trigger ${triggerId}:`, error)
-    }
-  }
-
-  /**
-   * Stop monitoring a specific trigger
-   */
-  static stopTriggerMonitoring(triggerId: string): void {
-    const job = this.activeJobs.get(triggerId)
-    if (job) {
-      if (job.destroy) {
-        job.destroy()
-      } else if (job.cancel) {
-        job.cancel()
-      } else if (typeof job === 'function') {
-        clearInterval(job)
-      }
-      this.activeJobs.delete(triggerId)
-      console.log(`⏹️ Stopped monitoring trigger ${triggerId}`)
-    }
-  }
-
-  /**
-   * Execute a trigger
-   */
-  static async executeTrigger(triggerId: string, triggerData: any = {}): Promise<{ success: boolean; execution?: TriggerExecution; error?: string }> {
-    const startTime = Date.now()
-    let executionRecord: any = null
-
-    try {
-      // Get trigger details
-      const { data: trigger, error: triggerError } = await supabase
-        .from('advanced_triggers')
-        .select('*')
-        .eq('id', triggerId)
-        .single()
-
-      if (triggerError) throw triggerError
-      if (!trigger) throw new Error('Trigger not found')
-
-      // Create execution record
-      const { data: execution, error: execError } = await supabase
-        .from('trigger_executions')
-        .insert({
-          trigger_id: triggerId,
-          workflow_id: trigger.workflow_id,
-          status: 'running',
-          trigger_data: triggerData
-        })
-        .select()
-        .single()
-
-      if (execError) throw execError
-      executionRecord = execution
-
-      // Execute the workflow
-      const workflowResult = await startWorkflowExecution(trigger.workflow_id, null, {
-        triggered_by: 'advanced_trigger',
-        trigger_id: triggerId,
-        trigger_data: triggerData
-      })
-
-      if (!workflowResult.success) {
-        throw new Error(workflowResult.error || 'Workflow execution failed')
-      }
-
-      const executionTime = Date.now() - startTime
-
-      // Update execution record
-      const { data: completedExecution, error: updateError } = await supabase
-        .from('trigger_executions')
-        .update({
-          status: 'completed',
-          execution_time: executionTime,
-          completed_at: new Date().toISOString()
-        })
-        .eq('id', execution.id)
-        .select()
-        .single()
-
-      if (updateError) throw updateError
-
-      // Update trigger statistics
-      await supabase
-        .from('advanced_triggers')
-        .update({
-          last_triggered: new Date().toISOString(),
-          trigger_count: trigger.trigger_count + 1,
-          next_trigger: trigger.type === 'time_based' ? this.calculateNextTriggerTime(trigger.config.schedule) : trigger.next_trigger
-        })
-        .eq('id', triggerId)
-
-      console.log(`✅ Trigger ${trigger.name} executed successfully in ${executionTime}ms`)
-
-      return { success: true, execution: completedExecution }
-    } catch (error) {
-      console.error(`Failed to execute trigger ${triggerId}:`, error)
-
-      const executionTime = Date.now() - startTime
-
-      // Update execution record with error
-      if (executionRecord) {
-        await supabase
-          .from('trigger_executions')
-          .update({
-            status: 'failed',
-            execution_time: executionTime,
-            error_message: error instanceof Error ? error.message : 'Unknown error',
-            completed_at: new Date().toISOString()
-          })
-          .eq('id', executionRecord.id)
-      }
-
-      // Update trigger failure count
-      await supabase
-        .from('advanced_triggers')
-        .update({
-          failure_count: supabase.rpc('increment_failure_count', { trigger_id: triggerId })
-        })
-        .eq('id', triggerId)
-
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : 'Unknown error'
-      }
-    }
-  }
-
-  /**
-   * Setup time-based trigger monitoring
-   */
-  private static setupTimeBasedTrigger(trigger: AdvancedTrigger): void {
-    if (!trigger.config.schedule) return
-
-    const { schedule } = trigger.config
-    let interval: any = null
-
-    switch (schedule.type) {
-      case 'cron':
-        // Use a lightweight cron parser/scheduler
-        interval = this.setupCronTrigger(trigger)
-        break
-      case 'interval':
-        // Parse interval expression (e.g., "5m", "1h", "30s")
-        const ms = this.parseInterval(schedule.expression)
-        if (ms > 0) {
-          interval = setInterval(() => {
-            if (this.shouldTriggerNow(trigger)) {
-              this.executeTrigger(trigger.id)
-            }
-          }, ms)
-        }
-        break
-      case 'once':
-        // Schedule one-time execution
-        const executeAt = new Date(schedule.expression).getTime()
-        const delay = executeAt - Date.now()
-        if (delay > 0) {
-          interval = setTimeout(() => {
-            this.executeTrigger(trigger.id)
-            this.stopTriggerMonitoring(trigger.id)
-          }, delay)
-        }
-        break
-    }
-
-    if (interval) {
-      this.activeJobs.set(trigger.id, interval)
-    }
-  }
-
-  /**
-   * Setup condition group trigger monitoring
-   */
-  private static setupConditionGroupTrigger(trigger: AdvancedTrigger): void {
-    if (!trigger.config.condition_group) return
-
-    const { condition_group } = trigger.config
-    const interval = setInterval(async () => {
-      try {
-        const conditionResults = await Promise.all(
-          condition_group.conditions.map(condition => 
-            this.evaluateCondition(condition)
-          )
-        )
-
-        const shouldTrigger = this.evaluateLogic(condition_group.logic, conditionResults)
-
-        if (shouldTrigger) {
-          await this.executeTrigger(trigger.id, { condition_results: conditionResults })
-        }
-      } catch (error) {
-        console.error(`Error evaluating condition group for trigger ${trigger.id}:`, error)
-      }
-    }, condition_group.evaluation_interval * 1000)
-
-    this.activeJobs.set(trigger.id, interval)
-  }
-
-  /**
-   * Setup API monitor trigger
-   */
-  private static setupApiMonitorTrigger(trigger: AdvancedTrigger): void {
-    if (!trigger.config.api_monitor) return
-
-    const { api_monitor } = trigger.config
-    let failureCount = 0
-    let successCount = 0
-
-    const interval = setInterval(async () => {
-      try {
-        const response = await fetch(api_monitor.url, {
-          method: api_monitor.method,
-          headers: api_monitor.headers
-        })
-
-        const isSuccess = api_monitor.expected_status 
-          ? api_monitor.expected_status.includes(response.status)
-          : response.ok
-
-        if (isSuccess) {
-          successCount++
-          failureCount = 0
-
-          if (successCount >= api_monitor.success_threshold) {
-            await this.executeTrigger(trigger.id, { 
-              api_status: 'healthy',
-              response_status: response.status,
-              check_time: new Date().toISOString()
-            })
-            successCount = 0
-          }
-        } else {
-          failureCount++
-          successCount = 0
-
-          if (failureCount >= api_monitor.failure_threshold) {
-            await this.executeTrigger(trigger.id, {
-              api_status: 'unhealthy',
-              response_status: response.status,
-              failure_count: failureCount,
-              check_time: new Date().toISOString()
-            })
-            failureCount = 0
-          }
-        }
-      } catch (error) {
-        failureCount++
-        console.error(`API monitor error for trigger ${trigger.id}:`, error)
-
-        if (failureCount >= api_monitor.failure_threshold) {
-          await this.executeTrigger(trigger.id, {
-            api_status: 'error',
-            error_message: error instanceof Error ? error.message : 'Unknown error',
-            failure_count: failureCount,
-            check_time: new Date().toISOString()
-          })
-          failureCount = 0
-        }
-      }
-    }, api_monitor.check_interval * 1000)
-
-    this.activeJobs.set(trigger.id, interval)
-  }
-
-  /**
-   * Setup webhook trigger (placeholder - would integrate with webhook system)
-   */
-  private static setupWebhookTrigger(trigger: AdvancedTrigger): void {
-    // Webhook triggers are handled by the webhook endpoint
-    // Just register the trigger as active
-    console.log(`Webhook trigger ${trigger.id} registered and waiting for requests`)
-  }
-
-  /**
-   * Setup file watcher trigger (placeholder)
-   */
-  private static setupFileWatcherTrigger(trigger: AdvancedTrigger): void {
-    // Would use fs.watch or similar for file system monitoring
-    console.log(`File watcher trigger ${trigger.id} would monitor ${trigger.config.file_watcher?.path}`)
-  }
-
-  /**
-   * Setup database event trigger (placeholder)
-   */
-  private static setupDatabaseEventTrigger(trigger: AdvancedTrigger): void {
-    // Would use database triggers or CDC (Change Data Capture)
-    console.log(`Database event trigger ${trigger.id} would monitor ${trigger.config.database_event?.table}`)
-  }
-
-  /**
-   * Validate trigger configuration
-   */
-  private static validateTriggerConfig(type: string, config: any): { valid: boolean; error?: string } {
-    switch (type) {
-      case 'time_based':
-        if (!config.schedule) {
-          return { valid: false, error: 'Schedule configuration is required for time-based triggers' }
-        }
-        break
-      case 'condition_group':
-        if (!config.condition_group || !config.condition_group.conditions?.length) {
-          return { valid: false, error: 'Condition group configuration is required' }
-        }
-        break
-      case 'api_monitor':
-        if (!config.api_monitor || !config.api_monitor.url) {
-          return { valid: false, error: 'API monitor URL is required' }
-        }
-        break
-    }
-    return { valid: true }
-  }
-
-  /**
-   * Calculate next trigger time for scheduled triggers
-   */
-  private static calculateNextTriggerTime(schedule: any): string {
-    // Simple implementation - would use a proper cron library in production
-    const now = new Date()
-    switch (schedule.type) {
-      case 'interval':
-        const ms = this.parseInterval(schedule.expression)
-        return new Date(now.getTime() + ms).toISOString()
-      case 'cron':
-        // Would use cron parser to calculate next execution
-        return new Date(now.getTime() + 3600000).toISOString() // Default to 1 hour
-      case 'once':
-        return schedule.expression
-      default:
-        return new Date(now.getTime() + 3600000).toISOString()
-    }
-  }
-
-  /**
-   * Parse interval expressions like "5m", "1h", "30s"
-   */
-  private static parseInterval(expression: string): number {
-    const match = expression.match(/^(\d+)([smhd])$/)
-    if (!match) return 0
-
-    const value = parseInt(match[1])
-    const unit = match[2]
+  private setupIntervalTrigger(trigger: WorkflowTrigger, intervals: { every: number; unit: string }): void {
+    const { every, unit } = intervals;
+    let milliseconds = 0;
 
     switch (unit) {
-      case 's': return value * 1000
-      case 'm': return value * 60 * 1000
-      case 'h': return value * 60 * 60 * 1000
-      case 'd': return value * 24 * 60 * 60 * 1000
-      default: return 0
+      case 'minutes': milliseconds = every * 60 * 1000; break;
+      case 'hours': milliseconds = every * 60 * 60 * 1000; break;
+      case 'days': milliseconds = every * 24 * 60 * 60 * 1000; break;
+      case 'weeks': milliseconds = every * 7 * 24 * 60 * 60 * 1000; break;
+      case 'months': milliseconds = every * 30 * 24 * 60 * 60 * 1000; break; // Approximate
+    }
+
+    if (milliseconds > 0) {
+      const timer = setInterval(() => {
+        this.executeTrigger(trigger.id, {
+          source: 'interval',
+          eventType: 'scheduled',
+          payload: { interval: intervals }
+        });
+      }, milliseconds);
+
+      this.activeTimers.set(trigger.id, timer as any);
+      console.log(`⏰ Setup interval trigger ${trigger.name} every ${every} ${unit}`);
     }
   }
 
   /**
-   * Check if a time-based trigger should execute now
+   * Setup webhook trigger
    */
-  private static shouldTriggerNow(trigger: AdvancedTrigger): boolean {
-    if (!trigger.config.schedule?.conditions) return true
+  private setupWebhookTrigger(trigger: WorkflowTrigger): void {
+    const { webhook } = trigger.config;
+    if (!webhook) return;
 
-    const now = new Date()
-    const conditions = trigger.config.schedule.conditions
+    // Generate unique webhook endpoint
+    const webhookPath = `/webhooks/${trigger.id}`;
+    this.webhookEndpoints.set(webhookPath, trigger.id);
 
-    // Check business hours
-    if (conditions.business_hours_only) {
-      const hour = now.getHours()
-      if (hour < 9 || hour > 17) return false
-    }
-
-    // Check day of week
-    if (conditions.day_of_week && !conditions.day_of_week.includes(now.getDay())) {
-      return false
-    }
-
-    // Check day of month
-    if (conditions.day_of_month && !conditions.day_of_month.includes(now.getDate())) {
-      return false
-    }
-
-    return true
+    console.log(`🪝 Setup webhook trigger ${trigger.name} at ${webhookPath}`);
   }
 
   /**
-   * Setup cron trigger (simplified)
+   * Setup condition-based trigger
    */
-  private static setupCronTrigger(trigger: AdvancedTrigger): any {
-    // In production, use a proper cron library like node-cron
-    // For now, use a simple interval
-    return setInterval(() => {
-      if (this.shouldTriggerNow(trigger)) {
-        this.executeTrigger(trigger.id)
-      }
-    }, 60000) // Check every minute
-  }
+  private setupConditionTrigger(trigger: WorkflowTrigger): void {
+    const { condition } = trigger.config;
+    if (!condition) return;
 
-  /**
-   * Evaluate a single condition
-   */
-  private static async evaluateCondition(condition: any): Promise<boolean> {
-    switch (condition.type) {
-      case 'api_check':
-        try {
-          const response = await fetch(condition.config.url)
-          return response.ok
-        } catch {
-          return false
+    const evaluator = setInterval(async () => {
+      try {
+        const result = await this.evaluateCondition(condition.expression, condition.variables);
+        
+        if (result) {
+          this.executeTrigger(trigger.id, {
+            source: 'condition',
+            eventType: 'condition_met',
+            payload: { 
+              expression: condition.expression,
+              variables: condition.variables,
+              result 
+            }
+          });
         }
-      case 'file_exists':
-        // Would check if file exists
-        return true // Placeholder
-      case 'metric_threshold':
-        // Would check metric value against threshold
-        return Math.random() > 0.5 // Placeholder
-      default:
-        return false
+      } catch (error) {
+        console.error(`Error evaluating condition for trigger ${trigger.name}:`, error);
+      }
+    }, condition.evaluationInterval || 60000); // Default 1 minute
+
+    this.conditionEvaluators.set(trigger.id, evaluator);
+    console.log(`🔍 Setup condition trigger ${trigger.name} with expression: ${condition.expression}`);
+  }
+
+  /**
+   * Setup composite trigger
+   */
+  private setupCompositeTrigger(trigger: WorkflowTrigger): void {
+    const { composite } = trigger.config;
+    if (!composite) return;
+
+    // Composite triggers are evaluated when their sub-triggers fire
+    console.log(`🔗 Setup composite trigger ${trigger.name} with logic: ${composite.logic}`);
+  }
+
+  /**
+   * Execute trigger actions
+   */
+  private async executeTrigger(triggerId: string, eventData: any): Promise<void> {
+    const trigger = this.triggers.get(triggerId);
+    if (!trigger || !trigger.enabled) return;
+
+    // Check conditions
+    const conditionsMet = await this.checkTriggerConditions(trigger, eventData);
+    if (!conditionsMet) {
+      console.log(`⏭️ Trigger conditions not met for ${trigger.name}`);
+      return;
+    }
+
+    // Update metadata
+    trigger.metadata.triggerCount++;
+    trigger.metadata.lastTriggered = new Date();
+
+    // Create trigger event
+    const triggerEvent: TriggerEvent = {
+      id: `event_${Date.now()}`,
+      triggerId,
+      workflowId: trigger.workflowId,
+      timestamp: new Date(),
+      eventType: eventData.eventType || 'unknown',
+      payload: eventData.payload || eventData,
+      source: eventData.source || 'system',
+      processed: false
+    };
+
+    this.eventQueue.push(triggerEvent);
+
+    try {
+      // Execute trigger actions
+      for (const action of trigger.actions) {
+        await this.executeAction(action, triggerEvent);
+      }
+
+      triggerEvent.processed = true;
+      triggerEvent.result = 'success';
+      trigger.metadata.successCount++;
+
+      console.log(`✅ Executed trigger: ${trigger.name}`);
+    } catch (error) {
+      triggerEvent.processed = true;
+      triggerEvent.result = 'failure';
+      triggerEvent.error = error instanceof Error ? error.message : 'Unknown error';
+      trigger.metadata.failureCount++;
+
+      console.error(`❌ Failed to execute trigger ${trigger.name}:`, error);
     }
   }
 
   /**
-   * Evaluate logic for condition groups
+   * Check if trigger conditions are met
    */
-  private static evaluateLogic(logic: string, results: boolean[]): boolean {
-    switch (logic) {
-      case 'AND':
-        return results.every(r => r)
-      case 'OR':
-        return results.some(r => r)
-      case 'NOT':
-        return !results.every(r => r)
-      default:
-        return false
+  private async checkTriggerConditions(trigger: WorkflowTrigger, eventData: any): Promise<boolean> {
+    if (trigger.conditions.length === 0) return true;
+
+    for (const condition of trigger.conditions) {
+      const met = await this.evaluateTriggerCondition(condition, eventData);
+      if (!met) return false;
     }
+
+    return true;
+  }
+
+  /**
+   * Evaluate individual trigger condition
+   */
+  private async evaluateTriggerCondition(condition: TriggerCondition, eventData: any): Promise<boolean> {
+    try {
+      const fieldValue = this.extractFieldValue(condition.field, eventData);
+
+      switch (condition.operator) {
+        case 'equals':
+          return fieldValue === condition.value;
+        case 'not_equals':
+          return fieldValue !== condition.value;
+        case 'greater_than':
+          return Number(fieldValue) > Number(condition.value);
+        case 'less_than':
+          return Number(fieldValue) < Number(condition.value);
+        case 'contains':
+          return String(fieldValue).includes(String(condition.value));
+        case 'matches':
+          return new RegExp(condition.value).test(String(fieldValue));
+        case 'exists':
+          return fieldValue !== undefined && fieldValue !== null;
+        case 'custom':
+          if (condition.expression) {
+            return await this.evaluateCondition(condition.expression, { 
+              ...eventData, 
+              fieldValue, 
+              value: condition.value 
+            });
+          }
+          return false;
+        default:
+          return false;
+      }
+    } catch (error) {
+      console.error('Error evaluating trigger condition:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Execute trigger action
+   */
+  private async executeAction(action: TriggerAction, event: TriggerEvent): Promise<void> {
+    switch (action.type) {
+      case 'start_workflow':
+        await this.startWorkflow(event.workflowId, action.config, event);
+        break;
+      case 'send_notification':
+        await this.sendNotification(action.config, event);
+        break;
+      case 'update_data':
+        await this.updateData(action.config, event);
+        break;
+      case 'call_webhook':
+        await this.callWebhook(action.config, event);
+        break;
+      case 'custom':
+        await this.executeCustomAction(action.config, event);
+        break;
+    }
+  }
+
+  /**
+   * Start workflow action
+   */
+  private async startWorkflow(workflowId: string, config: any, event: TriggerEvent): Promise<void> {
+    console.log(`🚀 Starting workflow ${workflowId} from trigger ${event.triggerId}`);
+    
+    // In real implementation, this would call the workflow execution engine
+    const workflowData = {
+      workflowId,
+      triggeredBy: event.triggerId,
+      triggerEvent: event,
+      parameters: config.parameters || {},
+      priority: config.priority || 'normal'
+    };
+
+    // Mock workflow start
+    console.log(`📋 Workflow started with data:`, workflowData);
+  }
+
+  /**
+   * Send notification action
+   */
+  private async sendNotification(config: any, event: TriggerEvent): Promise<void> {
+    const notification = {
+      type: config.type || 'info',
+      title: config.title || 'Workflow Triggered',
+      message: config.message || `Trigger ${event.triggerId} executed`,
+      recipients: config.recipients || [],
+      channels: config.channels || ['email']
+    };
+
+    console.log(`📧 Sending notification:`, notification);
+  }
+
+  /**
+   * Update data action
+   */
+  private async updateData(config: any, event: TriggerEvent): Promise<void> {
+    console.log(`📊 Updating data:`, config);
+    // Implementation would update database/external system
+  }
+
+  /**
+   * Call webhook action
+   */
+  private async callWebhook(config: any, event: TriggerEvent): Promise<void> {
+    console.log(`🌐 Calling webhook:`, config.url);
+    
+    try {
+      const response = await fetch(config.url, {
+        method: config.method || 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...config.headers
+        },
+        body: JSON.stringify({
+          triggerEvent: event,
+          data: config.data
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`Webhook call failed: ${response.status} ${response.statusText}`);
+      }
+
+      console.log(`✅ Webhook called successfully`);
+    } catch (error) {
+      console.error(`❌ Webhook call failed:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Execute custom action
+   */
+  private async executeCustomAction(config: any, event: TriggerEvent): Promise<void> {
+    console.log(`⚙️ Executing custom action:`, config);
+    // Implementation would execute custom logic based on config
+  }
+
+  /**
+   * Process incoming webhook
+   */
+  processWebhook(path: string, method: string, headers: any, body: any): boolean {
+    const triggerId = this.webhookEndpoints.get(path);
+    if (!triggerId) return false;
+
+    this.executeTrigger(triggerId, {
+      source: 'webhook',
+      eventType: 'webhook_received',
+      payload: { method, headers, body }
+    });
+
+    return true;
+  }
+
+  /**
+   * Process incoming event
+   */
+  processEvent(eventType: string, source: string, payload: any): void {
+    // Find triggers that match this event
+    const matchingTriggers = Array.from(this.triggers.values()).filter(trigger => 
+      trigger.enabled && 
+      trigger.type === 'event' && 
+      trigger.config.event?.eventType === eventType &&
+      trigger.config.event?.source === source
+    );
+
+    matchingTriggers.forEach(trigger => {
+      this.executeTrigger(trigger.id, {
+        source,
+        eventType,
+        payload
+      });
+    });
+  }
+
+  /**
+   * Utility functions
+   */
+
+  private parseCronExpression(cron: string, timezone?: string): Date {
+    // Simplified cron parsing - in real implementation, use a cron library
+    const now = new Date();
+    const nextExecution = new Date(now.getTime() + 60000); // Default to 1 minute from now
+    
+    // TODO: Implement proper cron parsing
+    console.log(`⏰ Parsing cron expression: ${cron}`);
+    
+    return nextExecution;
+  }
+
+  private async evaluateCondition(expression: string, variables: any): Promise<boolean> {
+    try {
+      // Simple expression evaluation - in production, use a safe expression evaluator
+      const func = new Function('vars', `with(vars) { return ${expression}; }`);
+      return Boolean(func(variables));
+    } catch (error) {
+      console.error('Error evaluating condition:', error);
+      return false;
+    }
+  }
+
+  private extractFieldValue(fieldPath: string, data: any): any {
+    return fieldPath.split('.').reduce((obj, key) => obj?.[key], data);
+  }
+
+  /**
+   * Get trigger statistics
+   */
+  getTriggerStats(triggerId: string): any {
+    const trigger = this.triggers.get(triggerId);
+    if (!trigger) return null;
+
+    return {
+      id: triggerId,
+      name: trigger.name,
+      type: trigger.type,
+      enabled: trigger.enabled,
+      totalTriggers: trigger.metadata.triggerCount,
+      successfulTriggers: trigger.metadata.successCount,
+      failedTriggers: trigger.metadata.failureCount,
+      successRate: trigger.metadata.triggerCount > 0 
+        ? (trigger.metadata.successCount / trigger.metadata.triggerCount) * 100 
+        : 0,
+      lastTriggered: trigger.metadata.lastTriggered,
+      nextExecution: this.getNextExecutionTime(trigger)
+    };
+  }
+
+  private getNextExecutionTime(trigger: WorkflowTrigger): Date | null {
+    // Calculate next execution time based on trigger type
+    // This is simplified - real implementation would handle all trigger types
+    return null;
+  }
+
+  /**
+   * Get all triggers
+   */
+  getAllTriggers(): WorkflowTrigger[] {
+    return Array.from(this.triggers.values());
+  }
+
+  /**
+   * Get triggers for specific workflow
+   */
+  getWorkflowTriggers(workflowId: string): WorkflowTrigger[] {
+    return Array.from(this.triggers.values()).filter(t => t.workflowId === workflowId);
+  }
+
+  /**
+   * Get recent trigger events
+   */
+  getRecentEvents(limit: number = 50): TriggerEvent[] {
+    return this.eventQueue
+      .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())
+      .slice(0, limit);
   }
 }
 
-/**
- * Database schemas for advanced triggers
- */
-export const advancedTriggersTableSchemas = `
--- Advanced triggers table
-CREATE TABLE IF NOT EXISTS advanced_triggers (
-  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  workflow_id VARCHAR(255) NOT NULL,
-  name VARCHAR(255) NOT NULL,
-  type VARCHAR(50) NOT NULL,
-  config JSONB NOT NULL,
-  is_active BOOLEAN NOT NULL DEFAULT true,
-  last_triggered TIMESTAMPTZ,
-  next_trigger TIMESTAMPTZ,
-  trigger_count INTEGER NOT NULL DEFAULT 0,
-  failure_count INTEGER NOT NULL DEFAULT 0,
-  metadata JSONB DEFAULT '{}',
-  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  
-  INDEX idx_advanced_triggers_workflow_id (workflow_id),
-  INDEX idx_advanced_triggers_type (type),
-  INDEX idx_advanced_triggers_active (is_active),
-  INDEX idx_advanced_triggers_next_trigger (next_trigger),
-  
-  FOREIGN KEY (workflow_id) REFERENCES workflows(id) ON DELETE CASCADE
-);
+// Singleton instance
+export const advancedTriggers = new AdvancedTriggerManager();
 
--- Trigger executions table
-CREATE TABLE IF NOT EXISTS trigger_executions (
-  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  trigger_id UUID NOT NULL,
-  workflow_id VARCHAR(255) NOT NULL,
-  status VARCHAR(50) NOT NULL DEFAULT 'pending',
-  trigger_data JSONB DEFAULT '{}',
-  execution_time INTEGER,
-  error_message TEXT,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  completed_at TIMESTAMPTZ,
-  
-  INDEX idx_trigger_executions_trigger_id (trigger_id),
-  INDEX idx_trigger_executions_workflow_id (workflow_id),
-  INDEX idx_trigger_executions_status (status),
-  INDEX idx_trigger_executions_created_at (created_at),
-  
-  FOREIGN KEY (trigger_id) REFERENCES advanced_triggers(id) ON DELETE CASCADE,
-  FOREIGN KEY (workflow_id) REFERENCES workflows(id) ON DELETE CASCADE
-);
-`
+// Convenience functions
+export const registerTrigger = (trigger: Omit<WorkflowTrigger, 'id' | 'metadata'>) => 
+  advancedTriggers.registerTrigger(trigger);
+
+export const activateTrigger = (triggerId: string) => 
+  advancedTriggers.activateTrigger(triggerId);
+
+export const deactivateTrigger = (triggerId: string) => 
+  advancedTriggers.deactivateTrigger(triggerId);
+
+export const processWebhook = (path: string, method: string, headers: any, body: any) => 
+  advancedTriggers.processWebhook(path, method, headers, body);
+
+export const processEvent = (eventType: string, source: string, payload: any) => 
+  advancedTriggers.processEvent(eventType, source, payload);
+
+// Export types
+export type { WorkflowTrigger, TriggerConfig, TriggerCondition, TriggerAction, TriggerEvent };

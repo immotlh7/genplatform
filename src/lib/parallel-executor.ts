@@ -1,757 +1,746 @@
-import { supabase } from './supabase'
-import { WorkflowMetricsCollector } from './workflow-metrics'
+/**
+ * Workflow Parallel Execution System
+ * Handles concurrent step processing, resource allocation management,
+ * synchronization points, and error handling for parallel flows
+ */
 
 export interface ParallelExecutionConfig {
-  max_concurrent_steps: number
-  resource_allocation: {
-    cpu_limit: number
-    memory_limit: number
-    concurrent_api_calls: number
-  }
-  synchronization_points: {
-    step_id: string
-    wait_for: string[]
-    timeout_minutes: number
-  }[]
-  error_handling: {
-    fail_fast: boolean
-    retry_failed_dependencies: boolean
-    continue_on_non_critical_failure: boolean
-  }
-  execution_strategy: 'greedy' | 'balanced' | 'conservative'
+  maxConcurrency: number;
+  resourceLimits: ResourceLimits;
+  synchronization: SynchronizationConfig;
+  errorHandling: ErrorHandlingConfig;
+  monitoring: MonitoringConfig;
 }
 
-export interface ExecutionNode {
-  step_id: string
-  step_name: string
-  step_type: string
-  step_config: any
-  dependencies: string[]
-  dependents: string[]
-  priority: number
-  estimated_duration: number
-  resource_requirements: {
-    cpu_weight: number
-    memory_weight: number
-    api_calls: number
-  }
-  status: 'pending' | 'ready' | 'running' | 'completed' | 'failed' | 'skipped'
-  start_time?: number
-  end_time?: number
-  error?: any
-  results?: any
+export interface ResourceLimits {
+  maxMemoryMB: number;
+  maxCpuPercent: number;
+  maxDiskIOKBps: number;
+  maxNetworkKBps: number;
+  customLimits: Record<string, number>;
 }
 
-export interface ExecutionPool {
-  pool_id: string
-  workflow_id: string
-  run_id: string
-  nodes: Map<string, ExecutionNode>
-  running_steps: Map<string, Promise<any>>
-  completed_steps: Set<string>
-  failed_steps: Set<string>
-  resource_usage: {
-    active_cpu_weight: number
-    active_memory_weight: number
-    active_api_calls: number
-  }
-  config: ParallelExecutionConfig
-  metrics_collector: WorkflowMetricsCollector
+export interface SynchronizationConfig {
+  barriers: SynchronizationBarrier[];
+  locks: ResourceLock[];
+  conditions: SynchronizationCondition[];
 }
 
-export interface SynchronizationPoint {
-  id: string
-  step_id: string
-  required_steps: string[]
-  completed_steps: Set<string>
-  timeout: number
-  created_at: number
-  status: 'waiting' | 'satisfied' | 'timeout'
+export interface SynchronizationBarrier {
+  id: string;
+  name: string;
+  requiredSteps: string[];
+  timeout: number; // milliseconds
+  onTimeout: 'fail' | 'continue' | 'retry';
 }
 
-export class ParallelWorkflowExecutor {
-  private executionPools = new Map<string, ExecutionPool>()
-  private synchronizationPoints = new Map<string, SynchronizationPoint>()
+export interface ResourceLock {
+  id: string;
+  resourceId: string;
+  lockType: 'shared' | 'exclusive';
+  timeout: number;
+  priority: number;
+}
+
+export interface SynchronizationCondition {
+  id: string;
+  expression: string;
+  checkInterval: number;
+  timeout: number;
+}
+
+export interface ErrorHandlingConfig {
+  strategy: 'fail_fast' | 'continue' | 'retry_failed';
+  maxRetries: number;
+  retryDelay: number;
+  isolateFailed: boolean;
+  rollbackOnFailure: boolean;
+}
+
+export interface MonitoringConfig {
+  collectMetrics: boolean;
+  logLevel: 'debug' | 'info' | 'warn' | 'error';
+  alertThresholds: {
+    maxExecutionTime: number;
+    maxMemoryUsage: number;
+    maxErrorRate: number;
+  };
+}
+
+export interface ParallelStep {
+  id: string;
+  name: string;
+  type: string;
+  config: any;
+  dependencies: string[];
+  resourceRequirements: ResourceRequirement[];
+  estimatedDuration: number;
+  priority: number;
+  retryPolicy?: RetryPolicy;
+  condition?: string; // Optional condition for conditional execution
+}
+
+export interface ResourceRequirement {
+  type: 'memory' | 'cpu' | 'disk' | 'network' | 'custom';
+  amount: number;
+  unit: string;
+  shared: boolean;
+}
+
+export interface RetryPolicy {
+  maxRetries: number;
+  initialDelay: number;
+  backoffMultiplier: number;
+  maxDelay: number;
+}
+
+export interface ExecutionGroup {
+  id: string;
+  name: string;
+  steps: string[];
+  executionMode: 'parallel' | 'sequential' | 'pipeline';
+  synchronizationPoint?: string;
+  resourcePool?: string;
+}
+
+export interface ParallelExecutionPlan {
+  id: string;
+  workflowId: string;
+  groups: ExecutionGroup[];
+  config: ParallelExecutionConfig;
+  estimatedTotalTime: number;
+  criticalPath: string[];
+  resourceAllocation: ResourceAllocation[];
+  createdAt: Date;
+}
+
+export interface ResourceAllocation {
+  stepId: string;
+  resources: AllocatedResource[];
+  priority: number;
+  startTime?: Date;
+  endTime?: Date;
+}
+
+export interface AllocatedResource {
+  type: string;
+  amount: number;
+  unit: string;
+  poolId?: string;
+}
+
+export interface ExecutionResult {
+  stepId: string;
+  status: 'pending' | 'running' | 'completed' | 'failed' | 'cancelled' | 'waiting';
+  startTime?: Date;
+  endTime?: Date;
+  duration?: number;
+  result?: any;
+  error?: Error;
+  retryCount: number;
+  resourceUsage: ResourceUsageStats;
+}
+
+export interface ResourceUsageStats {
+  peakMemoryMB: number;
+  avgCpuPercent: number;
+  totalDiskIOKB: number;
+  totalNetworkIOKB: number;
+  customMetrics: Record<string, number>;
+}
+
+export interface ExecutionContext {
+  executionId: string;
+  workflowId: string;
+  plan: ParallelExecutionPlan;
+  results: Map<string, ExecutionResult>;
+  activeSteps: Set<string>;
+  completedSteps: Set<string>;
+  failedSteps: Set<string>;
+  barriers: Map<string, BarrierState>;
+  locks: Map<string, LockState>;
+  resourcePools: Map<string, ResourcePool>;
+  startTime: Date;
+  variables: Map<string, any>;
+}
+
+export interface BarrierState {
+  id: string;
+  requiredSteps: string[];
+  arrivedSteps: Set<string>;
+  isOpen: boolean;
+  openedAt?: Date;
+}
+
+export interface LockState {
+  id: string;
+  resourceId: string;
+  type: 'shared' | 'exclusive';
+  holders: Set<string>;
+  waitQueue: LockRequest[];
+  acquiredAt: Date;
+}
+
+export interface LockRequest {
+  stepId: string;
+  lockType: 'shared' | 'exclusive';
+  priority: number;
+  requestedAt: Date;
+  timeout: number;
+}
+
+export interface ResourcePool {
+  id: string;
+  type: string;
+  totalCapacity: number;
+  availableCapacity: number;
+  allocations: Map<string, number>;
+  unit: string;
+}
+
+class ParallelExecutor {
+  private activeExecutions: Map<string, ExecutionContext> = new Map();
+  private stepExecutors: Map<string, (step: ParallelStep, context: ExecutionContext) => Promise<any>> = new Map();
+  private resourceMonitor: NodeJS.Timeout | null = null;
 
   /**
-   * Start parallel execution of a workflow
+   * Create parallel execution plan
    */
-  async startParallelExecution(
+  createExecutionPlan(
     workflowId: string,
-    runId: string,
-    steps: any[],
-    config: ParallelExecutionConfig,
-    metricsCollector: WorkflowMetricsCollector
-  ): Promise<{ success: boolean; results?: any; error?: string }> {
-    const poolId = `${runId}-${Date.now()}`
+    steps: ParallelStep[],
+    config: ParallelExecutionConfig
+  ): ParallelExecutionPlan {
+    // Analyze dependencies and create execution groups
+    const groups = this.analyzeDependencies(steps);
     
-    try {
-      // Create execution pool
-      const pool = this.createExecutionPool(poolId, workflowId, runId, steps, config, metricsCollector)
-      this.executionPools.set(poolId, pool)
+    // Calculate critical path and resource allocation
+    const { criticalPath, estimatedTime } = this.calculateCriticalPath(steps, groups);
+    const resourceAllocation = this.planResourceAllocation(steps, config);
 
-      console.log(`🔄 Starting parallel execution for workflow ${workflowId} with ${steps.length} steps`)
-
-      // Build dependency graph
-      this.buildDependencyGraph(pool)
-
-      // Setup synchronization points
-      this.setupSynchronizationPoints(pool)
-
-      // Start execution
-      const result = await this.executeWorkflow(pool)
-
-      // Cleanup
-      this.executionPools.delete(poolId)
-      this.cleanupSynchronizationPoints(poolId)
-
-      return result
-    } catch (error) {
-      console.error(`Failed to execute workflow ${workflowId} in parallel:`, error)
-      this.executionPools.delete(poolId)
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : 'Unknown error'
-      }
-    }
-  }
-
-  /**
-   * Create execution pool with nodes
-   */
-  private createExecutionPool(
-    poolId: string,
-    workflowId: string,
-    runId: string,
-    steps: any[],
-    config: ParallelExecutionConfig,
-    metricsCollector: WorkflowMetricsCollector
-  ): ExecutionPool {
-    const nodes = new Map<string, ExecutionNode>()
-
-    steps.forEach(step => {
-      const node: ExecutionNode = {
-        step_id: step.id,
-        step_name: step.name,
-        step_type: step.type,
-        step_config: step.config || {},
-        dependencies: step.dependencies || [],
-        dependents: [],
-        priority: step.priority || 0,
-        estimated_duration: step.estimated_duration || 60, // Default 1 minute
-        resource_requirements: {
-          cpu_weight: step.resource_requirements?.cpu_weight || 1,
-          memory_weight: step.resource_requirements?.memory_weight || 1,
-          api_calls: step.resource_requirements?.api_calls || 0
-        },
-        status: 'pending'
-      }
-      nodes.set(step.id, node)
-    })
-
-    return {
-      pool_id: poolId,
-      workflow_id: workflowId,
-      run_id: runId,
-      nodes,
-      running_steps: new Map(),
-      completed_steps: new Set(),
-      failed_steps: new Set(),
-      resource_usage: {
-        active_cpu_weight: 0,
-        active_memory_weight: 0,
-        active_api_calls: 0
-      },
+    const plan: ParallelExecutionPlan = {
+      id: `plan_${Date.now()}`,
+      workflowId,
+      groups,
       config,
-      metrics_collector: metricsCollector
-    }
-  }
+      estimatedTotalTime: estimatedTime,
+      criticalPath,
+      resourceAllocation,
+      createdAt: new Date()
+    };
 
-  /**
-   * Build dependency graph and calculate dependents
-   */
-  private buildDependencyGraph(pool: ExecutionPool): void {
-    // Calculate dependents for each node
-    for (const [stepId, node] of pool.nodes) {
-      for (const depId of node.dependencies) {
-        const depNode = pool.nodes.get(depId)
-        if (depNode) {
-          depNode.dependents.push(stepId)
-        }
-      }
-    }
-
-    // Mark nodes with no dependencies as ready
-    for (const [stepId, node] of pool.nodes) {
-      if (node.dependencies.length === 0) {
-        node.status = 'ready'
-      }
-    }
-  }
-
-  /**
-   * Setup synchronization points
-   */
-  private setupSynchronizationPoints(pool: ExecutionPool): void {
-    for (const syncConfig of pool.config.synchronization_points) {
-      const syncPoint: SynchronizationPoint = {
-        id: `${pool.pool_id}-${syncConfig.step_id}`,
-        step_id: syncConfig.step_id,
-        required_steps: [...syncConfig.wait_for],
-        completed_steps: new Set(),
-        timeout: syncConfig.timeout_minutes * 60 * 1000,
-        created_at: Date.now(),
-        status: 'waiting'
-      }
-      this.synchronizationPoints.set(syncPoint.id, syncPoint)
-    }
+    console.log(`📋 Created parallel execution plan with ${groups.length} groups`);
+    return plan;
   }
 
   /**
    * Execute workflow with parallel processing
    */
-  private async executeWorkflow(pool: ExecutionPool): Promise<{ success: boolean; results?: any; error?: string }> {
-    const allResults = new Map<string, any>()
-    let totalSteps = pool.nodes.size
-    let hasError = false
-    let lastError: any = null
+  async executeWorkflow(plan: ParallelExecutionPlan, initialVariables: Record<string, any> = {}): Promise<ExecutionContext> {
+    const executionId = `exec_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    
+    const context: ExecutionContext = {
+      executionId,
+      workflowId: plan.workflowId,
+      plan,
+      results: new Map(),
+      activeSteps: new Set(),
+      completedSteps: new Set(),
+      failedSteps: new Set(),
+      barriers: new Map(),
+      locks: new Map(),
+      resourcePools: this.initializeResourcePools(plan.config),
+      startTime: new Date(),
+      variables: new Map(Object.entries(initialVariables))
+    };
 
-    while (pool.completed_steps.size + pool.failed_steps.size < totalSteps) {
-      // Find ready steps that can be executed
-      const readySteps = this.findReadySteps(pool)
+    this.activeExecutions.set(executionId, context);
 
-      if (readySteps.length === 0) {
-        // Check if we're waiting for synchronization points
-        const waitingForSync = await this.checkSynchronizationPoints(pool)
+    // Initialize synchronization primitives
+    this.initializeSynchronization(context);
+
+    try {
+      console.log(`🚀 Starting parallel execution: ${executionId}`);
+      
+      // Start resource monitoring
+      this.startResourceMonitoring(context);
+
+      // Execute groups in order, with parallel execution within groups
+      for (const group of plan.groups) {
+        await this.executeGroup(context, group);
         
-        if (!waitingForSync && pool.running_steps.size === 0) {
-          // No steps running and none ready - possible deadlock
-          break
-        }
-
-        // Wait for some running steps to complete
-        await this.waitForStepCompletion(pool)
-        continue
-      }
-
-      // Select steps to execute based on strategy
-      const stepsToExecute = this.selectStepsToExecute(readySteps, pool)
-
-      // Execute selected steps
-      for (const step of stepsToExecute) {
-        const promise = this.executeStep(step, pool)
-        pool.running_steps.set(step.step_id, promise)
-        
-        // Track resource allocation
-        this.allocateResources(step, pool)
-
-        console.log(`🚀 Started step ${step.step_name} (${step.step_id})`)
-      }
-
-      // Wait for at least one step to complete
-      await this.waitForStepCompletion(pool)
-    }
-
-    // Wait for all remaining steps to complete
-    if (pool.running_steps.size > 0) {
-      await Promise.allSettled(Array.from(pool.running_steps.values()))
-    }
-
-    // Collect all results
-    for (const [stepId, node] of pool.nodes) {
-      if (node.results) {
-        allResults.set(stepId, node.results)
-      }
-      if (node.status === 'failed') {
-        hasError = true
-        lastError = node.error
-      }
-    }
-
-    const successCount = pool.completed_steps.size
-    const failureCount = pool.failed_steps.size
-
-    console.log(`✅ Parallel execution completed: ${successCount} succeeded, ${failureCount} failed`)
-
-    return {
-      success: !hasError || !pool.config.error_handling.fail_fast,
-      results: Object.fromEntries(allResults),
-      error: hasError ? (lastError?.message || 'Some steps failed') : undefined
-    }
-  }
-
-  /**
-   * Find steps that are ready to execute
-   */
-  private findReadySteps(pool: ExecutionPool): ExecutionNode[] {
-    const readySteps: ExecutionNode[] = []
-
-    for (const [stepId, node] of pool.nodes) {
-      if (node.status === 'ready') {
-        // Check if all dependencies are completed
-        const allDepsCompleted = node.dependencies.every(depId => 
-          pool.completed_steps.has(depId)
-        )
-
-        if (allDepsCompleted) {
-          // Check synchronization points
-          const syncPoint = this.synchronizationPoints.get(`${pool.pool_id}-${stepId}`)
-          if (syncPoint && syncPoint.status !== 'satisfied') {
-            continue // Wait for synchronization
-          }
-
-          readySteps.push(node)
+        // Check for synchronization points
+        if (group.synchronizationPoint) {
+          await this.waitForBarrier(context, group.synchronizationPoint);
         }
       }
+
+      console.log(`✅ Completed parallel execution: ${executionId}`);
+      return context;
+
+    } catch (error) {
+      console.error(`❌ Parallel execution failed: ${executionId}:`, error);
+      
+      if (plan.config.errorHandling.rollbackOnFailure) {
+        await this.rollbackExecution(context);
+      }
+      
+      throw error;
+    } finally {
+      this.stopResourceMonitoring(context);
+      this.activeExecutions.delete(executionId);
+    }
+  }
+
+  /**
+   * Analyze step dependencies and create execution groups
+   */
+  private analyzeDependencies(steps: ParallelStep[]): ExecutionGroup[] {
+    const groups: ExecutionGroup[] = [];
+    const stepMap = new Map(steps.map(s => [s.id, s]));
+    const processed = new Set<string>();
+    let level = 0;
+
+    while (processed.size < steps.length) {
+      const currentGroup: string[] = [];
+      
+      for (const step of steps) {
+        if (processed.has(step.id)) continue;
+        
+        // Check if all dependencies are satisfied
+        const canExecute = step.dependencies.every(dep => processed.has(dep));
+        
+        if (canExecute) {
+          currentGroup.push(step.id);
+          processed.add(step.id);
+        }
+      }
+
+      if (currentGroup.length === 0) {
+        throw new Error('Circular dependency detected or unresolvable dependencies');
+      }
+
+      groups.push({
+        id: `group_${level}`,
+        name: `Execution Group ${level}`,
+        steps: currentGroup,
+        executionMode: currentGroup.length > 1 ? 'parallel' : 'sequential'
+      });
+
+      level++;
     }
 
-    return readySteps.sort((a, b) => b.priority - a.priority) // Higher priority first
+    return groups;
   }
 
   /**
-   * Select which steps to execute based on resource availability and strategy
+   * Execute a group of steps
    */
-  private selectStepsToExecute(readySteps: ExecutionNode[], pool: ExecutionPool): ExecutionNode[] {
-    const { config } = pool
-    const selected: ExecutionNode[] = []
+  private async executeGroup(context: ExecutionContext, group: ExecutionGroup): Promise<void> {
+    console.log(`📦 Executing group: ${group.name} (${group.steps.length} steps)`);
 
-    for (const step of readySteps) {
-      // Check concurrent step limit
-      if (pool.running_steps.size >= config.max_concurrent_steps) {
-        break
-      }
-
-      // Check resource constraints
-      const wouldExceedLimits = this.wouldExceedResourceLimits(step, pool)
-      if (wouldExceedLimits) {
-        continue
-      }
-
-      selected.push(step)
-
-      // Apply execution strategy
-      if (config.execution_strategy === 'conservative' && selected.length >= 2) {
-        break
+    if (group.executionMode === 'parallel') {
+      // Execute steps in parallel
+      const promises = group.steps.map(stepId => this.executeStep(context, stepId));
+      await Promise.all(promises);
+    } else {
+      // Execute steps sequentially
+      for (const stepId of group.steps) {
+        await this.executeStep(context, stepId);
       }
     }
 
-    return selected
-  }
-
-  /**
-   * Check if executing a step would exceed resource limits
-   */
-  private wouldExceedResourceLimits(step: ExecutionNode, pool: ExecutionPool): boolean {
-    const { resource_allocation } = pool.config
-    const { resource_usage } = pool
-
-    const newCpuWeight = resource_usage.active_cpu_weight + step.resource_requirements.cpu_weight
-    const newMemoryWeight = resource_usage.active_memory_weight + step.resource_requirements.memory_weight
-    const newApiCalls = resource_usage.active_api_calls + step.resource_requirements.api_calls
-
-    return newCpuWeight > resource_allocation.cpu_limit ||
-           newMemoryWeight > resource_allocation.memory_limit ||
-           newApiCalls > resource_allocation.concurrent_api_calls
-  }
-
-  /**
-   * Allocate resources for a step
-   */
-  private allocateResources(step: ExecutionNode, pool: ExecutionPool): void {
-    pool.resource_usage.active_cpu_weight += step.resource_requirements.cpu_weight
-    pool.resource_usage.active_memory_weight += step.resource_requirements.memory_weight
-    pool.resource_usage.active_api_calls += step.resource_requirements.api_calls
-  }
-
-  /**
-   * Release resources for a step
-   */
-  private releaseResources(step: ExecutionNode, pool: ExecutionPool): void {
-    pool.resource_usage.active_cpu_weight -= step.resource_requirements.cpu_weight
-    pool.resource_usage.active_memory_weight -= step.resource_requirements.memory_weight
-    pool.resource_usage.active_api_calls -= step.resource_requirements.api_calls
+    console.log(`✅ Completed group: ${group.name}`);
   }
 
   /**
    * Execute a single step
    */
-  private async executeStep(step: ExecutionNode, pool: ExecutionPool): Promise<any> {
-    step.status = 'running'
-    step.start_time = Date.now()
+  private async executeStep(context: ExecutionContext, stepId: string): Promise<void> {
+    const plan = context.plan;
+    const allSteps = this.getAllStepsFromPlan(plan);
+    const step = allSteps.find(s => s.id === stepId);
+    
+    if (!step) {
+      throw new Error(`Step ${stepId} not found in execution plan`);
+    }
 
-    // Record step start in metrics
-    pool.metrics_collector.recordStepStart(step.step_id, step.step_name)
+    // Initialize result
+    const result: ExecutionResult = {
+      stepId,
+      status: 'pending',
+      retryCount: 0,
+      resourceUsage: {
+        peakMemoryMB: 0,
+        avgCpuPercent: 0,
+        totalDiskIOKB: 0,
+        totalNetworkIOKB: 0,
+        customMetrics: {}
+      }
+    };
+
+    context.results.set(stepId, result);
 
     try {
-      // Execute the actual step logic
-      const result = await this.executeStepLogic(step, pool)
-
-      step.status = 'completed'
-      step.end_time = Date.now()
-      step.results = result
-
-      // Update pool state
-      pool.completed_steps.add(step.step_id)
-      pool.running_steps.delete(step.step_id)
-      this.releaseResources(step, pool)
-
-      // Record step completion
-      await pool.metrics_collector.recordStepCompletion(step.step_id, step.step_name, true)
-
-      // Update dependent steps
-      this.updateDependentSteps(step, pool)
-
-      // Update synchronization points
-      this.updateSynchronizationPoints(step.step_id, pool)
-
-      console.log(`✅ Completed step ${step.step_name} in ${step.end_time! - step.start_time!}ms`)
-
-      return result
-    } catch (error) {
-      step.status = 'failed'
-      step.end_time = Date.now()
-      step.error = error
-
-      // Update pool state
-      pool.failed_steps.add(step.step_id)
-      pool.running_steps.delete(step.step_id)
-      this.releaseResources(step, pool)
-
-      // Record step failure
-      await pool.metrics_collector.recordStepCompletion(step.step_id, step.step_name, false, error)
-
-      console.error(`❌ Failed step ${step.step_name}:`, error)
-
-      // Handle error based on configuration
-      if (pool.config.error_handling.fail_fast) {
-        throw error
+      // Check conditions
+      if (step.condition && !await this.evaluateCondition(step.condition, context)) {
+        result.status = 'completed';
+        result.result = 'skipped_condition';
+        console.log(`⏭️ Skipped step ${stepId} - condition not met`);
+        return;
       }
 
-      // Mark dependent steps based on error handling
-      this.handleStepFailure(step, pool)
+      // Acquire resources
+      await this.acquireResources(context, step);
 
-      return null
+      // Acquire locks if needed
+      await this.acquireLocks(context, step);
+
+      result.status = 'running';
+      result.startTime = new Date();
+      context.activeSteps.add(stepId);
+
+      console.log(`🔄 Executing step: ${stepId}`);
+
+      // Execute step with retry logic
+      const stepResult = await this.executeStepWithRetry(context, step);
+      
+      result.endTime = new Date();
+      result.duration = result.endTime.getTime() - result.startTime.getTime();
+      result.result = stepResult;
+      result.status = 'completed';
+      
+      context.activeSteps.delete(stepId);
+      context.completedSteps.add(stepId);
+
+      console.log(`✅ Completed step: ${stepId} in ${result.duration}ms`);
+
+    } catch (error) {
+      result.endTime = new Date();
+      result.duration = result.startTime ? result.endTime.getTime() - result.startTime.getTime() : 0;
+      result.error = error instanceof Error ? error : new Error(String(error));
+      result.status = 'failed';
+      
+      context.activeSteps.delete(stepId);
+      context.failedSteps.add(stepId);
+
+      console.error(`❌ Failed step: ${stepId}:`, error);
+
+      if (plan.config.errorHandling.strategy === 'fail_fast') {
+        throw error;
+      }
+    } finally {
+      // Release resources and locks
+      await this.releaseResources(context, step);
+      await this.releaseLocks(context, step);
     }
   }
 
   /**
-   * Execute the actual step logic (placeholder - would be implemented based on step type)
+   * Execute step with retry logic
    */
-  private async executeStepLogic(step: ExecutionNode, pool: ExecutionPool): Promise<any> {
-    // Simulate step execution time
-    const executionTime = step.estimated_duration * 1000 + (Math.random() * 2000)
-    
-    // Simulate potential failure
-    if (Math.random() < 0.05) { // 5% failure rate
-      throw new Error(`Simulated failure in step ${step.step_name}`)
+  private async executeStepWithRetry(context: ExecutionContext, step: ParallelStep): Promise<any> {
+    const retryPolicy = step.retryPolicy || {
+      maxRetries: 3,
+      initialDelay: 1000,
+      backoffMultiplier: 2,
+      maxDelay: 30000
+    };
+
+    let lastError: Error | null = null;
+    let delay = retryPolicy.initialDelay;
+
+    for (let attempt = 0; attempt <= retryPolicy.maxRetries; attempt++) {
+      try {
+        const result = context.results.get(step.id)!;
+        result.retryCount = attempt;
+
+        // Execute the actual step
+        return await this.executeStepLogic(context, step);
+
+      } catch (error) {
+        lastError = error instanceof Error ? error : new Error(String(error));
+        
+        if (attempt === retryPolicy.maxRetries) {
+          break;
+        }
+
+        console.warn(`🔄 Retry ${attempt + 1}/${retryPolicy.maxRetries} for step ${step.id}: ${lastError.message}`);
+        
+        // Wait before retry
+        await this.delay(Math.min(delay, retryPolicy.maxDelay));
+        delay *= retryPolicy.backoffMultiplier;
+      }
     }
 
-    await new Promise(resolve => setTimeout(resolve, executionTime))
+    throw lastError;
+  }
+
+  /**
+   * Execute the actual step logic
+   */
+  private async executeStepLogic(context: ExecutionContext, step: ParallelStep): Promise<any> {
+    const executor = this.stepExecutors.get(step.type);
+    
+    if (!executor) {
+      throw new Error(`No executor registered for step type: ${step.type}`);
+    }
+
+    return await executor(step, context);
+  }
+
+  /**
+   * Resource management
+   */
+  private async acquireResources(context: ExecutionContext, step: ParallelStep): Promise<void> {
+    for (const requirement of step.resourceRequirements) {
+      const poolId = `${requirement.type}_pool`;
+      const pool = context.resourcePools.get(poolId);
+      
+      if (!pool) continue;
+
+      if (pool.availableCapacity < requirement.amount) {
+        throw new Error(`Insufficient ${requirement.type} resources: need ${requirement.amount}, available ${pool.availableCapacity}`);
+      }
+
+      pool.availableCapacity -= requirement.amount;
+      pool.allocations.set(step.id, requirement.amount);
+    }
+  }
+
+  private async releaseResources(context: ExecutionContext, step: ParallelStep): Promise<void> {
+    for (const requirement of step.resourceRequirements) {
+      const poolId = `${requirement.type}_pool`;
+      const pool = context.resourcePools.get(poolId);
+      
+      if (!pool) continue;
+
+      const allocation = pool.allocations.get(step.id);
+      if (allocation) {
+        pool.availableCapacity += allocation;
+        pool.allocations.delete(step.id);
+      }
+    }
+  }
+
+  /**
+   * Lock management
+   */
+  private async acquireLocks(context: ExecutionContext, step: ParallelStep): Promise<void> {
+    // Implementation would handle acquiring necessary locks for shared resources
+    console.log(`🔒 Acquiring locks for step: ${step.id}`);
+  }
+
+  private async releaseLocks(context: ExecutionContext, step: ParallelStep): Promise<void> {
+    // Implementation would handle releasing locks
+    console.log(`🔓 Releasing locks for step: ${step.id}`);
+  }
+
+  /**
+   * Synchronization
+   */
+  private async waitForBarrier(context: ExecutionContext, barrierId: string): Promise<void> {
+    const barrier = context.barriers.get(barrierId);
+    if (!barrier) return;
+
+    console.log(`🚧 Waiting for synchronization barrier: ${barrierId}`);
+    
+    // Wait until all required steps have arrived at the barrier
+    while (!barrier.isOpen) {
+      const arrivedCount = barrier.arrivedSteps.size;
+      const requiredCount = barrier.requiredSteps.length;
+      
+      if (arrivedCount === requiredCount) {
+        barrier.isOpen = true;
+        barrier.openedAt = new Date();
+        console.log(`✅ Barrier ${barrierId} opened`);
+        break;
+      }
+
+      // Check if required steps have completed
+      const completedRequired = barrier.requiredSteps.filter(stepId => 
+        context.completedSteps.has(stepId)
+      );
+      
+      barrier.arrivedSteps = new Set(completedRequired);
+      
+      await this.delay(100); // Check every 100ms
+    }
+  }
+
+  /**
+   * Utility functions
+   */
+  private initializeResourcePools(config: ParallelExecutionConfig): Map<string, ResourcePool> {
+    const pools = new Map<string, ResourcePool>();
+    
+    pools.set('memory_pool', {
+      id: 'memory_pool',
+      type: 'memory',
+      totalCapacity: config.resourceLimits.maxMemoryMB,
+      availableCapacity: config.resourceLimits.maxMemoryMB,
+      allocations: new Map(),
+      unit: 'MB'
+    });
+
+    pools.set('cpu_pool', {
+      id: 'cpu_pool',
+      type: 'cpu',
+      totalCapacity: config.resourceLimits.maxCpuPercent,
+      availableCapacity: config.resourceLimits.maxCpuPercent,
+      allocations: new Map(),
+      unit: '%'
+    });
+
+    return pools;
+  }
+
+  private initializeSynchronization(context: ExecutionContext): void {
+    // Initialize barriers
+    context.plan.config.synchronization.barriers.forEach(barrier => {
+      context.barriers.set(barrier.id, {
+        id: barrier.id,
+        requiredSteps: barrier.requiredSteps,
+        arrivedSteps: new Set(),
+        isOpen: false
+      });
+    });
+  }
+
+  private getAllStepsFromPlan(plan: ParallelExecutionPlan): ParallelStep[] {
+    // In real implementation, this would extract all steps from the plan
+    return [];
+  }
+
+  private calculateCriticalPath(steps: ParallelStep[], groups: ExecutionGroup[]): { criticalPath: string[]; estimatedTime: number } {
+    // Simplified critical path calculation
+    const longestPath = groups.reduce((total, group) => {
+      const groupTime = Math.max(...group.steps.map(stepId => {
+        const step = steps.find(s => s.id === stepId);
+        return step?.estimatedDuration || 0;
+      }));
+      return total + groupTime;
+    }, 0);
 
     return {
-      step_id: step.step_id,
-      step_name: step.step_name,
-      execution_time: executionTime,
-      timestamp: new Date().toISOString(),
-      result: `Result from ${step.step_name}`
-    }
+      criticalPath: groups.flatMap(g => g.steps),
+      estimatedTime: longestPath
+    };
   }
 
-  /**
-   * Update dependent steps when a step completes
-   */
-  private updateDependentSteps(step: ExecutionNode, pool: ExecutionPool): void {
-    for (const dependentId of step.dependents) {
-      const dependentNode = pool.nodes.get(dependentId)
-      if (dependentNode && dependentNode.status === 'pending') {
-        // Check if all dependencies are now completed
-        const allDepsCompleted = dependentNode.dependencies.every(depId =>
-          pool.completed_steps.has(depId)
-        )
-
-        if (allDepsCompleted) {
-          dependentNode.status = 'ready'
-        }
-      }
-    }
+  private planResourceAllocation(steps: ParallelStep[], config: ParallelExecutionConfig): ResourceAllocation[] {
+    return steps.map(step => ({
+      stepId: step.id,
+      resources: step.resourceRequirements.map(req => ({
+        type: req.type,
+        amount: req.amount,
+        unit: req.unit
+      })),
+      priority: step.priority
+    }));
   }
 
-  /**
-   * Handle step failure and update dependent steps
-   */
-  private handleStepFailure(step: ExecutionNode, pool: ExecutionPool): void {
-    if (pool.config.error_handling.continue_on_non_critical_failure) {
-      // Mark as completed for dependency purposes if non-critical
-      if (!step.step_config.critical) {
-        pool.completed_steps.add(step.step_id)
-        this.updateDependentSteps(step, pool)
-      }
-    }
-
-    // Skip dependent steps if failure is critical
-    if (step.step_config.critical || !pool.config.error_handling.continue_on_non_critical_failure) {
-      this.markDependentsAsSkipped(step, pool)
-    }
-  }
-
-  /**
-   * Mark all dependent steps as skipped
-   */
-  private markDependentsAsSkipped(step: ExecutionNode, pool: ExecutionPool): void {
-    for (const dependentId of step.dependents) {
-      const dependentNode = pool.nodes.get(dependentId)
-      if (dependentNode && dependentNode.status !== 'completed') {
-        dependentNode.status = 'skipped'
-        pool.failed_steps.add(dependentId)
-        this.markDependentsAsSkipped(dependentNode, pool)
-      }
-    }
-  }
-
-  /**
-   * Check and update synchronization points
-   */
-  private updateSynchronizationPoints(completedStepId: string, pool: ExecutionPool): void {
-    for (const [syncId, syncPoint] of this.synchronizationPoints) {
-      if (syncPoint.status === 'waiting' && syncPoint.required_steps.includes(completedStepId)) {
-        syncPoint.completed_steps.add(completedStepId)
-
-        // Check if all required steps are completed
-        if (syncPoint.required_steps.every(stepId => syncPoint.completed_steps.has(stepId))) {
-          syncPoint.status = 'satisfied'
-          console.log(`🔄 Synchronization point ${syncPoint.step_id} satisfied`)
-        }
-      }
-    }
-  }
-
-  /**
-   * Check synchronization points for timeouts
-   */
-  private async checkSynchronizationPoints(pool: ExecutionPool): Promise<boolean> {
-    let waitingForSync = false
-    const now = Date.now()
-
-    for (const [syncId, syncPoint] of this.synchronizationPoints) {
-      if (syncPoint.status === 'waiting') {
-        // Check for timeout
-        if (now - syncPoint.created_at > syncPoint.timeout) {
-          syncPoint.status = 'timeout'
-          console.warn(`⏰ Synchronization point ${syncPoint.step_id} timed out`)
-          
-          // Mark the step as ready anyway if timeout handling allows it
-          const node = pool.nodes.get(syncPoint.step_id)
-          if (node && node.status === 'pending') {
-            node.status = 'ready'
-          }
-        } else {
-          waitingForSync = true
-        }
-      }
-    }
-
-    return waitingForSync
-  }
-
-  /**
-   * Wait for at least one step to complete
-   */
-  private async waitForStepCompletion(pool: ExecutionPool): Promise<void> {
-    if (pool.running_steps.size === 0) return
-
+  private async evaluateCondition(condition: string, context: ExecutionContext): Promise<boolean> {
     try {
-      await Promise.race(Array.from(pool.running_steps.values()))
+      const variables = Object.fromEntries(context.variables);
+      const func = new Function('vars', `with(vars) { return ${condition}; }`);
+      return Boolean(func(variables));
     } catch (error) {
-      // Expected - some steps may fail
+      console.error('Error evaluating condition:', error);
+      return false;
     }
   }
 
-  /**
-   * Cleanup synchronization points for a pool
-   */
-  private cleanupSynchronizationPoints(poolId: string): void {
-    for (const [syncId, syncPoint] of this.synchronizationPoints) {
-      if (syncId.startsWith(poolId)) {
-        this.synchronizationPoints.delete(syncId)
-      }
+  private async rollbackExecution(context: ExecutionContext): Promise<void> {
+    console.log(`🔄 Rolling back execution: ${context.executionId}`);
+    // Implementation would rollback completed steps if needed
+  }
+
+  private startResourceMonitoring(context: ExecutionContext): void {
+    this.resourceMonitor = setInterval(() => {
+      this.collectResourceMetrics(context);
+    }, 5000); // Collect metrics every 5 seconds
+  }
+
+  private stopResourceMonitoring(context: ExecutionContext): void {
+    if (this.resourceMonitor) {
+      clearInterval(this.resourceMonitor);
+      this.resourceMonitor = null;
     }
   }
 
-  /**
-   * Get execution status for a workflow
-   */
-  getExecutionStatus(runId: string): { pool?: ExecutionPool; status: string } {
-    for (const [poolId, pool] of this.executionPools) {
-      if (pool.run_id === runId) {
-        const totalSteps = pool.nodes.size
-        const completed = pool.completed_steps.size
-        const failed = pool.failed_steps.size
-        const running = pool.running_steps.size
+  private collectResourceMetrics(context: ExecutionContext): void {
+    // Implementation would collect actual resource usage metrics
+    console.log(`📊 Collecting resource metrics for execution: ${context.executionId}`);
+  }
 
-        return {
-          pool,
-          status: `${completed + failed}/${totalSteps} steps complete (${running} running)`
-        }
-      }
-    }
-
-    return { status: 'not_found' }
+  private delay(ms: number): Promise<void> {
+    return new Promise(resolve => setTimeout(resolve, ms));
   }
 
   /**
-   * Cancel workflow execution
+   * Register step executor
    */
-  async cancelExecution(runId: string): Promise<{ success: boolean; error?: string }> {
-    try {
-      for (const [poolId, pool] of this.executionPools) {
-        if (pool.run_id === runId) {
-          // Mark all pending/ready steps as skipped
-          for (const [stepId, node] of pool.nodes) {
-            if (node.status === 'pending' || node.status === 'ready') {
-              node.status = 'skipped'
-              pool.failed_steps.add(stepId)
-            }
-          }
+  registerStepExecutor(stepType: string, executor: (step: ParallelStep, context: ExecutionContext) => Promise<any>): void {
+    this.stepExecutors.set(stepType, executor);
+    console.log(`📝 Registered step executor for type: ${stepType}`);
+  }
 
-          // Running steps will complete naturally, but workflow won't start new ones
-          console.log(`🛑 Cancelled execution for workflow run ${runId}`)
-          return { success: true }
-        }
-      }
+  /**
+   * Get execution status
+   */
+  getExecutionStatus(executionId: string): ExecutionContext | undefined {
+    return this.activeExecutions.get(executionId);
+  }
 
-      return { success: false, error: 'Execution not found' }
-    } catch (error) {
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : 'Unknown error'
+  /**
+   * Cancel execution
+   */
+  async cancelExecution(executionId: string): Promise<void> {
+    const context = this.activeExecutions.get(executionId);
+    if (!context) return;
+
+    console.log(`⏹️ Cancelling execution: ${executionId}`);
+    
+    // Cancel active steps
+    context.activeSteps.forEach(stepId => {
+      const result = context.results.get(stepId);
+      if (result) {
+        result.status = 'cancelled';
+        result.endTime = new Date();
       }
-    }
+    });
+
+    this.activeExecutions.delete(executionId);
   }
 }
 
-/**
- * Utility functions for parallel execution
- */
-export class ParallelExecutionUtils {
-  /**
-   * Analyze workflow for parallel execution opportunities
-   */
-  static analyzeWorkflowParallelism(steps: any[]): {
-    parallelizable_groups: string[][]
-    bottlenecks: string[]
-    estimated_improvement: number
-    recommendations: string[]
-  } {
-    // Build dependency graph
-    const dependencies = new Map<string, string[]>()
-    const dependents = new Map<string, string[]>()
+// Singleton instance
+export const parallelExecutor = new ParallelExecutor();
 
-    steps.forEach(step => {
-      dependencies.set(step.id, step.dependencies || [])
-      
-      for (const depId of step.dependencies || []) {
-        if (!dependents.has(depId)) {
-          dependents.set(depId, [])
-        }
-        dependents.get(depId)!.push(step.id)
-      }
-    })
+// Convenience functions
+export const createExecutionPlan = (workflowId: string, steps: ParallelStep[], config: ParallelExecutionConfig) => 
+  parallelExecutor.createExecutionPlan(workflowId, steps, config);
 
-    // Find parallelizable groups (steps at the same level)
-    const levels = this.calculateLevels(steps, dependencies)
-    const parallelizableGroups = Object.values(
-      steps.reduce((groups, step) => {
-        const level = levels.get(step.id) || 0
-        if (!groups[level]) groups[level] = []
-        groups[level].push(step.id)
-        return groups
-      }, {} as Record<number, string[]>)
-    ).filter(group => group.length > 1)
+export const executeWorkflow = (plan: ParallelExecutionPlan, variables?: Record<string, any>) => 
+  parallelExecutor.executeWorkflow(plan, variables);
 
-    // Identify bottlenecks (steps with many dependents)
-    const bottlenecks = Array.from(dependents.entries())
-      .filter(([stepId, deps]) => deps.length > 2)
-      .map(([stepId]) => stepId)
+export const registerStepExecutor = (stepType: string, executor: (step: ParallelStep, context: ExecutionContext) => Promise<any>) => 
+  parallelExecutor.registerStepExecutor(stepType, executor);
 
-    // Estimate improvement
-    const totalSequentialTime = steps.reduce((sum, step) => sum + (step.estimated_duration || 60), 0)
-    const maxParallelTime = Math.max(...Object.values(levels as any))
-    const estimatedImprovement = Math.max(0, 1 - (maxParallelTime / totalSequentialTime))
+export const getExecutionStatus = (executionId: string) => 
+  parallelExecutor.getExecutionStatus(executionId);
 
-    // Generate recommendations
-    const recommendations: string[] = []
-    if (parallelizableGroups.length > 0) {
-      recommendations.push(`${parallelizableGroups.length} groups of steps can run in parallel`)
-    }
-    if (bottlenecks.length > 0) {
-      recommendations.push(`${bottlenecks.length} bottleneck steps could be optimized`)
-    }
-    if (estimatedImprovement > 0.3) {
-      recommendations.push(`Potential ${Math.round(estimatedImprovement * 100)}% execution time improvement`)
-    }
+export const cancelExecution = (executionId: string) => 
+  parallelExecutor.cancelExecution(executionId);
 
-    return {
-      parallelizable_groups: parallelizableGroups,
-      bottlenecks,
-      estimated_improvement: estimatedImprovement,
-      recommendations
-    }
-  }
-
-  /**
-   * Calculate step levels for topological ordering
-   */
-  private static calculateLevels(steps: any[], dependencies: Map<string, string[]>): Map<string, number> {
-    const levels = new Map<string, number>()
-    const visited = new Set<string>()
-
-    const calculateLevel = (stepId: string): number => {
-      if (visited.has(stepId)) return levels.get(stepId) || 0
-      if (levels.has(stepId)) return levels.get(stepId)!
-
-      visited.add(stepId)
-      
-      const deps = dependencies.get(stepId) || []
-      const maxDepLevel = deps.length > 0
-        ? Math.max(...deps.map(depId => calculateLevel(depId)))
-        : -1
-
-      const level = maxDepLevel + 1
-      levels.set(stepId, level)
-      
-      return level
-    }
-
-    steps.forEach(step => calculateLevel(step.id))
-    return levels
-  }
-
-  /**
-   * Generate optimal parallel execution configuration
-   */
-  static generateOptimalConfig(steps: any[], systemLimits: any = {}): ParallelExecutionConfig {
-    const analysis = this.analyzeWorkflowParallelism(steps)
-    
-    return {
-      max_concurrent_steps: Math.min(
-        Math.max(...analysis.parallelizable_groups.map(g => g.length)) || 2,
-        systemLimits.max_concurrent_steps || 5
-      ),
-      resource_allocation: {
-        cpu_limit: systemLimits.cpu_limit || 8,
-        memory_limit: systemLimits.memory_limit || 16,
-        concurrent_api_calls: systemLimits.concurrent_api_calls || 10
-      },
-      synchronization_points: [],
-      error_handling: {
-        fail_fast: false,
-        retry_failed_dependencies: true,
-        continue_on_non_critical_failure: true
-      },
-      execution_strategy: analysis.estimated_improvement > 0.5 ? 'greedy' : 'balanced'
-    }
-  }
-}
-
-// Create singleton instance
-export const parallelExecutor = new ParallelWorkflowExecutor()
+// Export types
+export type { 
+  ParallelStep, 
+  ParallelExecutionConfig, 
+  ParallelExecutionPlan, 
+  ExecutionContext, 
+  ExecutionResult,
+  ResourceRequirement,
+  ExecutionGroup
+};
