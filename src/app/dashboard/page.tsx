@@ -23,6 +23,7 @@ import {
   Settings
 } from 'lucide-react'
 import Link from 'next/link'
+import { TaskTracker } from '@/components/dashboard/TaskTracker'
 
 interface DashboardStats {
   skills: { total: number; active: number; executions: number }
@@ -191,6 +192,9 @@ export default function DashboardPage() {
           </Link>
         </div>
       </div>
+
+      {/* Live Task Tracker - Prominent position */}
+      <TaskTracker />
 
       {/* Stats Overview */}
       {stats && (
