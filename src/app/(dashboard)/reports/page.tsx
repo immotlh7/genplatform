@@ -317,12 +317,10 @@ export default function ReportsPage() {
             Refresh
           </Button>
           <Dialog open={newReportOpen} onOpenChange={setNewReportOpen}>
-            <DialogTrigger asChild>
-              <Button>
-                <Plus className="h-4 w-4 mr-2" />
-                New Report
-              </Button>
-            </DialogTrigger>
+            <Button onClick={() => setNewReportOpen(true)}>
+              <Plus className="h-4 w-4 mr-2" />
+              New Report
+            </Button>
             <DialogContent className="max-w-2xl">
               <DialogHeader>
                 <DialogTitle>Create New Report</DialogTitle>
