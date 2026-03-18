@@ -200,7 +200,6 @@ export default function SkillsPage() {
   }
 
   const activeSkillsCount = skills.filter(s => s.active).length
-  const filteredActiveCount = filteredSkills.filter(s => s.active).length
 
   return (
     <div className="space-y-6">
@@ -254,7 +253,7 @@ export default function SkillsPage() {
           />
         </div>
         
-        <Select value={selectedCategory} onValueChange={(value: string) => setSelectedCategory(value)}>
+        <Select value={selectedCategory} onValueChange={(value) => value && setSelectedCategory(value)}>
           <SelectTrigger>
             <SelectValue placeholder="Select category" />
           </SelectTrigger>
@@ -267,7 +266,7 @@ export default function SkillsPage() {
           </SelectContent>
         </Select>
 
-        <Select value={statusFilter} onValueChange={(value: string) => setStatusFilter(value)}>
+        <Select value={statusFilter} onValueChange={(value) => value && setStatusFilter(value)}>
           <SelectTrigger>
             <SelectValue placeholder="Filter by status" />
           </SelectTrigger>
