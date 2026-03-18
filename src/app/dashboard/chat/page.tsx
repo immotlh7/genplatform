@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge'
 import { CommanderCard } from '@/components/chat/CommanderCard'
 import { ProjectSelector } from '@/components/chat/ProjectSelector'
 import { NewIdeaModal } from '@/components/chat/NewIdeaModal'
+import { ChatNotifications, useChatNotifications } from '@/components/chat/ChatNotifications'
 import { 
   MessageCircle, 
   Send, 
@@ -80,6 +81,18 @@ const ARABIC_REGEX = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE7
 
 export default function ChatPage() {
   const { toast } = useToast()
+  const {
+    notifications,
+    removeNotification,
+    showSuccess,
+    showError,
+    showWarning,
+    showCommanderSuccess,
+    showTaskCreated,
+    showIdeaSaved,
+    showSystemUpdate
+  } = useChatNotifications()
+  
   const [currentUser, setCurrentUser] = useState<User | null>(null)
   const [userPermissions, setUserPermissions] = useState<any>(null)
   const [authLoading, setAuthLoading] = useState(true)
@@ -147,6 +160,11 @@ export default function ChatPage() {
           canUseCommander: permissions.isManager || permissions.isAdmin, // Commander requires MANAGER+
           canCreateIdeas: true // All users can create ideas
         })
+        
+        // Show welcome notification for new users
+        if (permissions.isManager || permissions.isAdmin) {
+          showSystemUpdate(`Welcome to chat, ${user.displayName}! Commander is ${permissions.isManager || permissions.isAdmin ? 'enabled' : 'disabled'}.`)
+        }
       }
     } catch (error) {
       console.error('Error checking user access:', error)
@@ -155,6 +173,7 @@ export default function ChatPage() {
         description: "Failed to verify access permissions.",
         variant: "destructive",
       })
+      showError("Authentication Failed", "Unable to verify your permissions. Please refresh and try again.")
     } finally {
       setAuthLoading(false)
     }
@@ -171,17 +190,14 @@ export default function ChatPage() {
         const data = await response.json()
         if (data.messages) {
           setMessages(data.messages)
+          showSystemUpdate(`Loaded ${data.messages.length} previous messages`)
         }
       } else if (response.status === 403) {
-        toast({
-          title: "Access Denied",
-          description: "You don't have permission to view chat history.",
-          variant: "destructive",
-        })
+        showError("Access Denied", "You don't have permission to view chat history.")
       }
     } catch (error) {
       console.error('Failed to load chat history:', error)
-      // Silently fail - user can still send new messages
+      showWarning("Chat History", "Could not load previous messages, but you can still chat.")
     }
   }
 
@@ -217,6 +233,7 @@ export default function ChatPage() {
     }
 
     setMessages(prev => [...prev, newMessage])
+    const originalInputValue = inputValue
     setInputValue('')
     setIsLoading(true)
 
@@ -255,6 +272,7 @@ export default function ChatPage() {
 
       if (data.success && data.message) {
         setMessages(prev => [...prev, data.message])
+        showSuccess("Message Sent", "Your message was processed successfully.")
       }
 
       // Handle Commander-specific response
@@ -273,25 +291,30 @@ export default function ChatPage() {
           }
         }
         setMessages(prev => [...prev, commanderMessage])
+        
+        // Show Commander success notification
+        showCommanderSuccess(
+          originalInputValue,
+          data.commanderResponse.translation,
+          selectedProject?.id
+        )
       }
 
     } catch (error) {
       console.error('Failed to send message:', error)
-      toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to send message. Please try again.",
-        variant: "destructive",
-      })
+      const errorMessage = error instanceof Error ? error.message : "Failed to send message. Please try again."
+      
+      showError("Message Failed", errorMessage)
 
-      // Add error message
-      const errorMessage: Message = {
+      // Add error message to chat
+      const errorChatMessage: Message = {
         id: Date.now().toString(),
         content: "Sorry, I couldn't process your message. Please check your permissions and try again.",
         role: 'assistant',
         timestamp: new Date().toISOString(),
         type: 'message'
       }
-      setMessages(prev => [...prev, errorMessage])
+      setMessages(prev => [...prev, errorChatMessage])
     } finally {
       setIsLoading(false)
     }
@@ -306,67 +329,48 @@ export default function ChatPage() {
 
   const handleCommanderAction = (action: any) => {
     if (!userPermissions?.canUseCommander) {
-      toast({
-        title: "Access Denied",
-        description: "You don't have permission to use Commander actions.",
-        variant: "destructive",
-      })
+      showError("Access Denied", "You don't have permission to use Commander actions.")
       return
     }
 
-    toast({
-      title: "Action triggered",
-      description: `Executing: ${action.label}`,
-    })
+    showSuccess("Action Triggered", `Executing: ${action.label}`)
     // Handle different action types here
   }
 
   const handleEditCommand = (text: string) => {
     if (!userPermissions?.canWrite) {
-      toast({
-        title: "Access Denied",
-        description: "You don't have permission to edit commands.",
-        variant: "destructive",
-      })
+      showError("Access Denied", "You don't have permission to edit commands.")
       return
     }
 
     setInputValue(text)
     inputRef.current?.focus()
+    showSystemUpdate("Command loaded into input field for editing.")
   }
 
   const handleSendToProject = (text: string) => {
     if (!userPermissions?.canUseCommander) {
-      toast({
-        title: "Access Denied",
-        description: "You don't have permission to send commands to projects.",
-        variant: "destructive",
-      })
+      showError("Access Denied", "You don't have permission to send commands to projects.")
       return
     }
 
     if (!selectedProject) {
-      toast({
-        title: "No Project Selected",
-        description: "Please select a project first to send commands.",
-        variant: "destructive",
-      })
+      showWarning("No Project Selected", "Please select a project first to send commands.")
       return
     }
 
-    toast({
-      title: "Sent to project",
-      description: `Command: "${text}" has been added to ${selectedProject.name}.`,
-    })
+    // Mock task creation
+    const taskId = `task-${Date.now()}`
+    showTaskCreated(
+      text.length > 50 ? text.substring(0, 47) + '...' : text,
+      selectedProject.name,
+      taskId
+    )
   }
 
   const handleCreateIdeaFromMessage = (message: Message) => {
     if (!userPermissions?.canCreateIdeas) {
-      toast({
-        title: "Access Denied",
-        description: "You don't have permission to create ideas.",
-        variant: "destructive",
-      })
+      showError("Access Denied", "You don't have permission to create ideas.")
       return
     }
 
@@ -380,11 +384,7 @@ export default function ChatPage() {
 
   const handleQuickCreateIdea = () => {
     if (!userPermissions?.canCreateIdeas) {
-      toast({
-        title: "Access Denied",
-        description: "You don't have permission to create ideas.",
-        variant: "destructive",
-      })
+      showError("Access Denied", "You don't have permission to create ideas.")
       return
     }
 
@@ -395,10 +395,7 @@ export default function ChatPage() {
   }
 
   const handleIdeaSuccess = (idea: any) => {
-    toast({
-      title: "Idea Created",
-      description: `"${idea.title}" has been saved to Ideas Lab.`,
-    })
+    showIdeaSaved(idea.title, idea.id)
     
     // Optionally clear input if it was used for the idea
     if (inputValue.trim() === idea.content) {
@@ -408,11 +405,7 @@ export default function ChatPage() {
 
   const startVoiceInput = () => {
     if (!userPermissions?.canWrite) {
-      toast({
-        title: "Access Denied",
-        description: "You don't have permission to use voice input.",
-        variant: "destructive",
-      })
+      showError("Access Denied", "You don't have permission to use voice input.")
       return
     }
 
@@ -424,20 +417,27 @@ export default function ChatPage() {
       recognition.continuous = false
       recognition.interimResults = false
       
-      recognition.onstart = () => setIsListening(true)
-      recognition.onend = () => setIsListening(false)
+      recognition.onstart = () => {
+        setIsListening(true)
+        showSystemUpdate("Voice input started. Speak now...")
+      }
+      recognition.onend = () => {
+        setIsListening(false)
+        showSystemUpdate("Voice input stopped.")
+      }
       recognition.onresult = (event: any) => {
         const transcript = event.results[0][0].transcript
         setInputValue(prev => prev + transcript)
+        showSuccess("Voice Input", `Captured: "${transcript}"`)
+      }
+      recognition.onerror = () => {
+        setIsListening(false)
+        showError("Voice Input Failed", "Could not capture audio. Please try again.")
       }
       
       recognition.start()
     } else {
-      toast({
-        title: "Speech recognition not supported",
-        description: "Your browser doesn't support voice input.",
-        variant: "destructive",
-      })
+      showError("Not Supported", "Your browser doesn't support voice input.")
     }
   }
 
@@ -527,6 +527,16 @@ export default function ChatPage() {
 
   return (
     <div className="flex flex-col h-screen p-4 md:p-6">
+      {/* Inline Notifications */}
+      <div className="mb-4">
+        <ChatNotifications
+          notifications={notifications}
+          onDismiss={removeNotification}
+          position="top"
+          maxVisible={3}
+        />
+      </div>
+
       {/* Page Header */}
       <div className="mb-4">
         <div className="flex items-center justify-between">
@@ -561,7 +571,14 @@ export default function ChatPage() {
           </div>
           <ProjectSelector
             selectedProject={selectedProject}
-            onProjectChange={setSelectedProject}
+            onProjectChange={(project) => {
+              setSelectedProject(project)
+              if (project) {
+                showSystemUpdate(`Project context set to: ${project.name}`)
+              } else {
+                showSystemUpdate("Project context cleared")
+              }
+            }}
             variant="compact"
             className="max-w-64"
           />
