@@ -370,3 +370,43 @@ export async function getActiveTriggers(): Promise<any[]> {
     return []
   }
 }
+
+// Additional trigger functions for specific workflow types
+export async function triggerNewIdeaWorkflows(ideaId: string, ideaData: any) {
+  // Find all workflows that have new_idea trigger
+  const { data: workflows } = await supabase
+    .from("automation_workflows")
+    .select("*")
+    .contains("trigger", { type: "new_idea" })
+    .eq("enabled", true)
+
+  if (workflows && workflows.length > 0) {
+    for (const workflow of workflows) {
+      await triggerWorkflow(workflow.id, {
+        triggerType: "new_idea",
+        ideaId,
+        ideaData
+      })
+    }
+  }
+}
+
+export async function triggerTaskCompleteWorkflows(taskId: string, taskData: any) {
+  // Find all workflows that have task_complete trigger
+  const { data: workflows } = await supabase
+    .from("automation_workflows")
+    .select("*")
+    .contains("trigger", { type: "task_complete" })
+    .eq("enabled", true)
+
+  if (workflows && workflows.length > 0) {
+    for (const workflow of workflows) {
+      await triggerWorkflow(workflow.id, {
+        triggerType: "task_complete",
+        taskId,
+        taskData
+      })
+    }
+  }
+}
+

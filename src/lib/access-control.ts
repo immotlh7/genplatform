@@ -423,3 +423,26 @@ export const authCheckApi = {
     }
   }
 }
+
+// Role comparison helper function
+export function isAtLeast(userRole: Role, requiredRole: Role): boolean {
+  const roleHierarchy: Record<Role, number> = {
+    OWNER: 4,
+    ADMIN: 3,
+    MANAGER: 2,
+    VIEWER: 1
+  }
+  return roleHierarchy[userRole] >= roleHierarchy[requiredRole]
+}
+
+// Role display helper
+export function getRoleDisplay(role: Role): string {
+  const displays: Record<Role, string> = {
+    OWNER: "Owner",
+    ADMIN: "Administrator",
+    MANAGER: "Manager",
+    VIEWER: "Viewer"
+  }
+  return displays[role] || role
+}
+

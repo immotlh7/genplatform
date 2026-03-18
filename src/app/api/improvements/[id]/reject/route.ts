@@ -65,7 +65,7 @@ const REJECTION_REASONS = {
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     // Check authentication
@@ -89,7 +89,7 @@ export async function PUT(
       )
     }
 
-    const improvementId = params.id
+    const improvementId = (await params).id
     if (!improvementId) {
       return NextResponse.json(
         { success: false, error: 'Improvement ID is required' },
@@ -289,7 +289,7 @@ export async function PUT(
 // GET endpoint to check rejection options and reasons
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const currentUser = await getCurrentUser()
@@ -300,7 +300,7 @@ export async function GET(
       )
     }
 
-    const improvementId = params.id
+    const improvementId = (await params).id
     if (!improvementId) {
       return NextResponse.json(
         { success: false, error: 'Improvement ID is required' },

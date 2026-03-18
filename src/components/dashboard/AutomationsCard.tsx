@@ -263,4 +263,4 @@ export default function AutomationsCard() {
       </CardContent>
     </Card>
   )
-}
+}export { AutomationsCard }
