@@ -21,12 +21,6 @@ import {
   Calendar,
   MoreHorizontal
 } from 'lucide-react'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
 
 interface CronJob {
   id: string
@@ -429,27 +423,9 @@ export default function CronPage() {
                   </div>
                   <div className="flex items-center space-x-2">
                     {getStatusBadge(job.status)}
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="sm">
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => openJobDetail(job)}>
-                          View Details
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => runJob(job.id)} disabled={!job.enabled}>
-                          Run Now
-                        </DropdownMenuItem>
-                        <DropdownMenuItem>
-                          Edit Job
-                        </DropdownMenuItem>
-                        <DropdownMenuItem className="text-red-600">
-                          Delete Job
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                    <Button variant="ghost" size="sm" onClick={() => openJobDetail(job)}>
+                      <MoreHorizontal className="h-4 w-4" />
+                    </Button>
                   </div>
                 </div>
 
