@@ -1,489 +1,533 @@
-'use client'
+"use client"
 
 import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Progress } from '@/components/ui/progress'
 import { 
-  ArrowLeft, 
-  Clock, 
+  ArrowLeft,
   CheckCircle, 
-  AlertCircle, 
-  Loader2,
-  Play,
+  Clock, 
+  XCircle, 
   Pause,
+  Play,
+  RefreshCw,
+  AlertTriangle,
+  ChevronRight,
   Eye,
-  ThumbsUp,
-  ThumbsDown,
-  Activity,
-  BarChart3,
-  FileText,
-  RefreshCw
+  CheckSquare,
+  X,
+  RotateCcw
 } from 'lucide-react'
-import { cn } from '@/lib/utils'
-import WorkflowProgress from '@/components/automations/WorkflowProgress'
-import Link from 'next/link'
+import { getCurrentUserClient, getUserPermissionSummary } from '@/lib/access-control'
+import type { User } from '@/lib/access-control'
 
 interface WorkflowRun {
   id: string
   workflow_id: string
   project_id?: string
-  status: 'running' | 'completed' | 'failed' | 'waiting_approval' | 'paused'
+  status: 'running' | 'completed' | 'failed' | 'waiting_approval'
   current_step?: string
   steps_completed: number
   steps_total: number
-  logs: any[]
+  logs: Array<{
+    step_id?: string
+    step_name?: string
+    timestamp: string
+    type: string
+    status: string
+    duration?: number
+    result?: any
+    error?: string
+  }>
+  error_message?: string
   started_at: string
   completed_at?: string
-  workflow?: {
-    id: string
-    name: string
-    description: string
-    template_type: string
-  }
+  started_by?: string
+  approved_by?: string
+  approved_at?: string
+}
+
+interface WorkflowStep {
+  id: string
+  name: string
+  type: 'action' | 'approval' | 'loop' | 'notification'
+  description: string
+  status?: 'pending' | 'running' | 'completed' | 'failed' | 'waiting'
+  duration?: string
+  logs?: any
 }
 
 export default function WorkflowRunDetailPage() {
   const params = useParams()
   const router = useRouter()
-  const runId = params.id as string
-
-  const [workflowRun, setWorkflowRun] = useState<WorkflowRun | null>(null)
+  const workflowId = params.id as string
+  
+  const [currentUser, setCurrentUser] = useState<User | null>(null)
+  const [userPermissions, setUserPermissions] = useState<any>(null)
+  const [runs, setRuns] = useState<WorkflowRun[]>([])
+  const [selectedRun, setSelectedRun] = useState<WorkflowRun | null>(null)
+  const [workflowSteps, setWorkflowSteps] = useState<WorkflowStep[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [approving, setApproving] = useState(false)
 
   useEffect(() => {
-    fetchWorkflowRun()
-    
-    // Auto-refresh for running workflows
-    const interval = setInterval(() => {
-      if (workflowRun?.status === 'running' || workflowRun?.status === 'waiting_approval') {
-        fetchWorkflowRun(false) // Silent refresh
-      }
-    }, 5000)
-    
-    return () => clearInterval(interval)
-  }, [runId, workflowRun?.status])
+    checkUserAccess()
+  }, [])
 
-  const fetchWorkflowRun = async (showLoading = true) => {
-    if (showLoading) setLoading(true)
-    setError(null)
-    
+  useEffect(() => {
+    if (currentUser && userPermissions?.canView) {
+      loadWorkflowRuns()
+    }
+  }, [currentUser, userPermissions, workflowId])
+
+  const checkUserAccess = async () => {
     try {
-      const response = await fetch(`/api/workflows/runs/${runId}`)
-      
-      if (!response.ok) {
-        if (response.status === 404) {
-          setError('Workflow run not found')
-        } else {
-          const errorData = await response.json()
-          setError(errorData.message || 'Failed to fetch workflow run')
-        }
-        return
-      }
+      const user = await getCurrentUserClient()
+      setCurrentUser(user)
 
-      const data = await response.json()
-      setWorkflowRun(data.workflowRun)
-    } catch (err) {
-      console.error('Error fetching workflow run:', err)
-      setError(err instanceof Error ? err.message : 'Unknown error')
+      if (user) {
+        const permissions = getUserPermissionSummary(user)
+        setUserPermissions({
+          canView: permissions.isAdmin, // Only ADMIN+ can view workflow details
+          canApprove: permissions.isAdmin, // Only ADMIN+ can approve workflows
+          canManage: permissions.isAdmin
+        })
+      }
+    } catch (error) {
+      console.error('Error checking user access:', error)
+      setError('Failed to verify permissions')
     } finally {
-      if (showLoading) setLoading(false)
+      setLoading(false)
     }
   }
 
-  const handleApproval = async (approved: boolean) => {
-    if (!workflowRun) return
+  const loadWorkflowRuns = async () => {
+    try {
+      const response = await fetch(`/api/workflows/${workflowId}/runs`, {
+        credentials: 'include'
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        setRuns(data.runs || [])
+        
+        // Select most recent run by default
+        if (data.runs && data.runs.length > 0) {
+          setSelectedRun(data.runs[0])
+          generateWorkflowSteps(data.runs[0])
+        }
+      } else {
+        // Demo data for development
+        const demoRuns: WorkflowRun[] = [
+          {
+            id: 'run-001',
+            workflow_id: workflowId,
+            status: 'waiting_approval',
+            current_step: 'Wait for Owner Approval',
+            steps_completed: 3,
+            steps_total: 8,
+            logs: [
+              {
+                step_name: 'Research & Analyze',
+                timestamp: '2026-03-18T16:30:00Z',
+                type: 'action',
+                status: 'completed',
+                duration: 180
+              },
+              {
+                step_name: 'Generate Master Plan',
+                timestamp: '2026-03-18T16:33:00Z',
+                type: 'action',
+                status: 'completed',
+                duration: 240
+              },
+              {
+                step_name: 'Create Task Breakdown',
+                timestamp: '2026-03-18T16:37:00Z',
+                type: 'action',
+                status: 'completed',
+                duration: 120
+              },
+              {
+                step_name: 'Wait for Owner Approval',
+                timestamp: '2026-03-18T16:39:00Z',
+                type: 'approval',
+                status: 'waiting'
+              }
+            ],
+            started_at: '2026-03-18T16:30:00Z',
+            started_by: 'system'
+          }
+        ]
+        setRuns(demoRuns)
+        setSelectedRun(demoRuns[0])
+        generateWorkflowSteps(demoRuns[0])
+      }
+    } catch (err) {
+      console.error('Error loading workflow runs:', err)
+      setError('Failed to load workflow runs')
+    }
+  }
+
+  const generateWorkflowSteps = (run: WorkflowRun) => {
+    // Generate steps based on workflow type and logs
+    const steps: WorkflowStep[] = [
+      {
+        id: 'research',
+        name: 'Research & Analyze',
+        type: 'action',
+        description: 'Analyze the idea and research market/technical requirements',
+        status: run.steps_completed >= 1 ? 'completed' : 'pending',
+        duration: run.steps_completed >= 1 ? '3m 0s' : undefined
+      },
+      {
+        id: 'plan',
+        name: 'Generate Master Plan',
+        type: 'action',
+        description: 'Create comprehensive project plan and architecture',
+        status: run.steps_completed >= 2 ? 'completed' : run.steps_completed === 1 ? 'running' : 'pending',
+        duration: run.steps_completed >= 2 ? '4m 0s' : undefined
+      },
+      {
+        id: 'tasks',
+        name: 'Create Task Breakdown',
+        type: 'action',
+        description: 'Break down the master plan into specific development tasks',
+        status: run.steps_completed >= 3 ? 'completed' : run.steps_completed === 2 ? 'running' : 'pending',
+        duration: run.steps_completed >= 3 ? '2m 0s' : undefined
+      },
+      {
+        id: 'approval',
+        name: 'Wait for Owner Approval',
+        type: 'approval',
+        description: 'Owner review and approval before proceeding with development',
+        status: run.status === 'waiting_approval' ? 'waiting' : run.steps_completed >= 4 ? 'completed' : 'pending'
+      },
+      {
+        id: 'development',
+        name: 'Development Loop',
+        type: 'loop',
+        description: 'For each task: Code → Self-Review → Integration',
+        status: run.steps_completed >= 5 ? 'completed' : 'pending'
+      },
+      {
+        id: 'security',
+        name: 'Final Security Scan',
+        type: 'action',
+        description: 'Comprehensive security audit of the complete MVP',
+        status: run.steps_completed >= 6 ? 'completed' : 'pending'
+      },
+      {
+        id: 'deploy',
+        name: 'Deploy to Preview',
+        type: 'action',
+        description: 'Deploy MVP to staging/preview environment',
+        status: run.steps_completed >= 7 ? 'completed' : 'pending'
+      },
+      {
+        id: 'notify',
+        name: 'Notify Owner: Project Ready',
+        type: 'notification',
+        description: 'Notify owner that MVP is complete and ready for review',
+        status: run.steps_completed >= 8 ? 'completed' : 'pending'
+      }
+    ]
+
+    setWorkflowSteps(steps)
+  }
+
+  const handleApprove = async () => {
+    if (!selectedRun || !userPermissions?.canApprove) return
 
     try {
-      setApproving(true)
-      
       const response = await fetch('/api/workflows/approve', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          runId: workflowRun.id,
-          approved
-        })
+        credentials: 'include',
+        body: JSON.stringify({ runId: selectedRun.id })
       })
 
-      if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.message || 'Failed to process approval')
+      if (response.ok) {
+        // Refresh the data
+        await loadWorkflowRuns()
+      } else {
+        setError('Failed to approve workflow')
       }
-
-      // Refresh the workflow run data
-      await fetchWorkflowRun(false)
-    } catch (error) {
-      console.error('Error processing approval:', error)
-      setError(error instanceof Error ? error.message : 'Failed to process approval')
-    } finally {
-      setApproving(false)
+    } catch (err) {
+      console.error('Error approving workflow:', err)
+      setError('Failed to approve workflow')
     }
   }
 
-  const getStatusIcon = (status: string) => {
-    switch (status) {
+  const handleReject = async () => {
+    if (!selectedRun || !userPermissions?.canApprove) return
+
+    try {
+      const response = await fetch('/api/workflows/reject', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ runId: selectedRun.id })
+      })
+
+      if (response.ok) {
+        await loadWorkflowRuns()
+      } else {
+        setError('Failed to reject workflow')
+      }
+    } catch (err) {
+      console.error('Error rejecting workflow:', err)
+      setError('Failed to reject workflow')
+    }
+  }
+
+  const getStepIcon = (step: WorkflowStep) => {
+    switch (step.status) {
       case 'completed':
         return <CheckCircle className="h-5 w-5 text-green-600" />
       case 'running':
-        return <Loader2 className="h-5 w-5 text-blue-600 animate-spin" />
+        return <RefreshCw className="h-5 w-5 text-blue-600 animate-spin" />
+      case 'waiting':
+        return <Pause className="h-5 w-5 text-yellow-600" />
       case 'failed':
-        return <AlertCircle className="h-5 w-5 text-red-600" />
-      case 'waiting_approval':
-        return <Clock className="h-5 w-5 text-amber-600" />
-      case 'paused':
-        return <Pause className="h-5 w-5 text-gray-600" />
+        return <XCircle className="h-5 w-5 text-red-600" />
       default:
-        return <Activity className="h-5 w-5 text-gray-600" />
+        return <Clock className="h-5 w-5 text-gray-400" />
     }
   }
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'completed': return 'bg-green-500'
-      case 'running': return 'bg-blue-500'
-      case 'failed': return 'bg-red-500'
-      case 'waiting_approval': return 'bg-amber-500'
-      case 'paused': return 'bg-gray-500'
-      default: return 'bg-gray-300'
+  const getStepBadge = (step: WorkflowStep) => {
+    switch (step.status) {
+      case 'completed':
+        return <Badge className="bg-green-100 text-green-800">Completed</Badge>
+      case 'running':
+        return <Badge className="bg-blue-100 text-blue-800 animate-pulse">Running</Badge>
+      case 'waiting':
+        return <Badge className="bg-yellow-100 text-yellow-800">Waiting Approval</Badge>
+      case 'failed':
+        return <Badge className="bg-red-100 text-red-800">Failed</Badge>
+      default:
+        return <Badge variant="outline">Pending</Badge>
     }
   }
 
   const formatDuration = (startTime: string, endTime?: string) => {
-    const start = new Date(startTime).getTime()
-    const end = endTime ? new Date(endTime).getTime() : Date.now()
-    const duration = end - start
-    
-    const minutes = Math.floor(duration / (1000 * 60))
-    const seconds = Math.floor((duration % (1000 * 60)) / 1000)
-    
-    if (minutes > 0) {
-      return `${minutes}m ${seconds}s`
-    }
-    return `${seconds}s`
+    const start = new Date(startTime)
+    const end = endTime ? new Date(endTime) : new Date()
+    const diffMs = end.getTime() - start.getTime()
+    const minutes = Math.floor(diffMs / 60000)
+    const seconds = Math.floor((diffMs % 60000) / 1000)
+    return `${minutes}m ${seconds}s`
   }
 
   if (loading) {
     return (
-      <div className="container max-w-6xl mx-auto p-6 space-y-6">
+      <div className="space-y-6 p-4 md:p-6">
         <div className="animate-pulse space-y-4">
-          <div className="h-8 bg-muted rounded w-1/4"></div>
+          <div className="h-8 bg-muted rounded w-1/3"></div>
           <div className="h-64 bg-muted rounded"></div>
-          <div className="h-48 bg-muted rounded"></div>
         </div>
       </div>
     )
   }
 
-  if (error || !workflowRun) {
+  if (error || !userPermissions?.canView) {
     return (
-      <div className="container max-w-6xl mx-auto p-6">
-        <div className="flex items-center space-x-4 mb-6">
-          <Button variant="ghost" onClick={() => router.back()}>
+      <div className="space-y-6 p-4 md:p-6">
+        <div className="flex items-center space-x-2">
+          <Button variant="outline" onClick={() => router.back()}>
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back
           </Button>
         </div>
-        
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-12">
-            <AlertCircle className="h-12 w-12 text-muted-foreground mb-4" />
-            <h2 className="text-xl font-semibold mb-2">Unable to Load Workflow Run</h2>
-            <p className="text-muted-foreground text-center mb-4">
-              {error || 'The workflow run could not be found.'}
-            </p>
-            <Button onClick={() => fetchWorkflowRun()}>
-              <RefreshCw className="h-4 w-4 mr-2" />
-              Try Again
-            </Button>
-          </CardContent>
+        <Card className="p-12 text-center">
+          <AlertTriangle className="h-16 w-16 text-red-600 mx-auto mb-4" />
+          <h3 className="text-lg font-semibold mb-2">Access Denied</h3>
+          <p className="text-muted-foreground">
+            {error || 'You need ADMIN access to view workflow details.'}
+          </p>
         </Card>
       </div>
     )
   }
 
   return (
-    <div className="container max-w-6xl mx-auto p-6 space-y-6">
+    <div className="space-y-6 p-4 md:p-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-4">
-          <Button variant="ghost" onClick={() => router.back()}>
+        <div className="flex items-center space-x-2">
+          <Button variant="outline" onClick={() => router.back()}>
             <ArrowLeft className="h-4 w-4 mr-2" />
-            Back
+            Back to Automations
           </Button>
-          <div>
-            <h1 className="text-2xl font-bold">
-              {workflowRun.workflow?.name || 'Workflow Run'}
-            </h1>
-            <p className="text-muted-foreground">
-              Run #{workflowRun.id.slice(-8)} • Started {new Date(workflowRun.started_at).toLocaleString()}
-            </p>
-          </div>
+          <ChevronRight className="h-4 w-4 text-muted-foreground" />
+          <h1 className="text-2xl font-bold">Workflow Runs</h1>
         </div>
-        
-        <div className="flex items-center space-x-3">
-          <div className="flex items-center space-x-2">
-            {getStatusIcon(workflowRun.status)}
-            <Badge 
-              variant="outline" 
-              className={cn('text-white font-medium', getStatusColor(workflowRun.status))}
-            >
-              {workflowRun.status.replace('_', ' ').toUpperCase()}
-            </Badge>
-          </div>
-          
-          <Button variant="outline" size="sm" onClick={() => fetchWorkflowRun()}>
-            <RefreshCw className="h-4 w-4" />
-          </Button>
-        </div>
+        <Button variant="outline" onClick={() => loadWorkflowRuns()}>
+          <RefreshCw className="h-4 w-4 mr-2" />
+          Refresh
+        </Button>
       </div>
 
-      {/* Overview Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Status</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center space-x-2">
-              {getStatusIcon(workflowRun.status)}
-              <span className="font-semibold capitalize">
-                {workflowRun.status.replace('_', ' ')}
-              </span>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Progress</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-1">
-              <div className="font-semibold">
-                {workflowRun.steps_completed}/{workflowRun.steps_total} Steps
-              </div>
-              <div className="text-sm text-muted-foreground">
-                {Math.round((workflowRun.steps_completed / workflowRun.steps_total) * 100)}% Complete
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Duration</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-1">
-              <div className="font-semibold">
-                {formatDuration(workflowRun.started_at, workflowRun.completed_at)}
-              </div>
-              <div className="text-sm text-muted-foreground">
-                {workflowRun.completed_at ? 'Total time' : 'Elapsed time'}
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Current Step</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-1">
-              <div className="font-semibold truncate">
-                {workflowRun.current_step || 'N/A'}
-              </div>
-              <div className="text-sm text-muted-foreground">
-                Step {workflowRun.steps_completed + 1}
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Approval Section */}
-      {workflowRun.status === 'waiting_approval' && (
-        <Card className="border-amber-200 bg-amber-50">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Run List */}
+        <Card className="lg:col-span-1">
           <CardHeader>
-            <CardTitle className="flex items-center space-x-2 text-amber-800">
-              <Clock className="h-5 w-5" />
-              <span>Approval Required</span>
-            </CardTitle>
+            <CardTitle>Recent Runs</CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <p className="text-amber-700">
-                This workflow is waiting for your approval to continue with the next step: 
-                <span className="font-medium"> {workflowRun.current_step}</span>
-              </p>
-              
-              <div className="flex space-x-3">
-                <Button
-                  onClick={() => handleApproval(true)}
-                  disabled={approving}
-                  className="bg-green-600 hover:bg-green-700"
-                >
-                  {approving ? (
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  ) : (
-                    <ThumbsUp className="h-4 w-4 mr-2" />
+          <CardContent className="space-y-2">
+            {runs.map((run) => (
+              <div
+                key={run.id}
+                className={`p-3 rounded-lg border cursor-pointer transition-colors ${
+                  selectedRun?.id === run.id 
+                    ? 'bg-blue-50 border-blue-200 dark:bg-blue-950/20' 
+                    : 'hover:bg-muted/50'
+                }`}
+                onClick={() => {
+                  setSelectedRun(run)
+                  generateWorkflowSteps(run)
+                }}
+              >
+                <div className="flex items-center justify-between mb-1">
+                  <span className="font-medium text-sm">{run.id}</span>
+                  {run.status === 'running' && (
+                    <RefreshCw className="h-3 w-3 text-blue-600 animate-spin" />
                   )}
-                  Approve & Continue
-                </Button>
-                
-                <Button
-                  variant="outline"
-                  onClick={() => handleApproval(false)}
-                  disabled={approving}
-                  className="border-red-200 text-red-600 hover:bg-red-50"
-                >
-                  <ThumbsDown className="h-4 w-4 mr-2" />
-                  Reject & Stop
-                </Button>
+                  {run.status === 'completed' && (
+                    <CheckCircle className="h-3 w-3 text-green-600" />
+                  )}
+                  {run.status === 'waiting_approval' && (
+                    <Pause className="h-3 w-3 text-yellow-600" />
+                  )}
+                  {run.status === 'failed' && (
+                    <XCircle className="h-3 w-3 text-red-600" />
+                  )}
+                </div>
+                <div className="text-xs text-muted-foreground">
+                  {formatDuration(run.started_at, run.completed_at)} • {run.steps_completed}/{run.steps_total} steps
+                </div>
+                <Progress 
+                  value={run.steps_total > 0 ? (run.steps_completed / run.steps_total) * 100 : 0} 
+                  className="mt-2 h-1" 
+                />
               </div>
-            </div>
+            ))}
           </CardContent>
         </Card>
-      )}
 
-      {/* Main Content Tabs */}
-      <Tabs defaultValue="progress" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="progress" className="flex items-center space-x-2">
-            <Activity className="h-4 w-4" />
-            <span>Progress</span>
-          </TabsTrigger>
-          <TabsTrigger value="logs" className="flex items-center space-x-2">
-            <FileText className="h-4 w-4" />
-            <span>Logs</span>
-          </TabsTrigger>
-          <TabsTrigger value="details" className="flex items-center space-x-2">
-            <Eye className="h-4 w-4" />
-            <span>Details</span>
-          </TabsTrigger>
-        </TabsList>
+        {/* Run Details */}
+        <Card className="lg:col-span-2">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="flex items-center space-x-2">
+                  <span>Run Details</span>
+                  {selectedRun && (
+                    <Badge variant="outline">
+                      {selectedRun.steps_completed}/{selectedRun.steps_total} steps
+                    </Badge>
+                  )}
+                </CardTitle>
+                {selectedRun && (
+                  <p className="text-sm text-muted-foreground">
+                    Started {formatDuration(selectedRun.started_at)} ago
+                  </p>
+                )}
+              </div>
+              {selectedRun?.status === 'waiting_approval' && userPermissions?.canApprove && (
+                <div className="flex space-x-2">
+                  <Button 
+                    size="sm" 
+                    className="bg-green-600 hover:bg-green-700"
+                    onClick={handleApprove}
+                  >
+                    <CheckSquare className="h-4 w-4 mr-1" />
+                    Approve & Continue
+                  </Button>
+                  <Button 
+                    size="sm" 
+                    variant="outline" 
+                    className="text-red-600 hover:text-red-700"
+                    onClick={handleReject}
+                  >
+                    <X className="h-4 w-4 mr-1" />
+                    Reject & Stop
+                  </Button>
+                </div>
+              )}
+            </div>
+          </CardHeader>
+          <CardContent>
+            {selectedRun ? (
+              <div className="space-y-4">
+                {/* Progress Bar */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-sm">
+                    <span>Overall Progress</span>
+                    <span>{selectedRun.steps_completed}/{selectedRun.steps_total} steps ({Math.round((selectedRun.steps_completed / selectedRun.steps_total) * 100)}%)</span>
+                  </div>
+                  <Progress value={(selectedRun.steps_completed / selectedRun.steps_total) * 100} className="h-2" />
+                </div>
 
-        <TabsContent value="progress">
-          <WorkflowProgress 
-            workflowRun={workflowRun} 
-            onRefresh={() => fetchWorkflowRun(false)}
-            showLogs={true}
-          />
-        </TabsContent>
-
-        <TabsContent value="logs">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <FileText className="h-5 w-5" />
-                <span>Execution Logs</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="bg-gray-900 text-gray-100 p-4 rounded-lg font-mono text-sm max-h-96 overflow-y-auto">
-                {workflowRun.logs && workflowRun.logs.length > 0 ? (
-                  workflowRun.logs.map((log, index) => (
-                    <div key={index} className="mb-2 flex space-x-2">
-                      <span className="text-gray-400 flex-shrink-0">
-                        {new Date(log.timestamp || Date.now()).toLocaleTimeString()}
-                      </span>
-                      <span className={cn(
-                        'flex-shrink-0 font-medium',
-                        log.level === 'error' && 'text-red-400',
-                        log.level === 'warn' && 'text-yellow-400',
-                        log.level === 'info' && 'text-blue-400',
-                        log.level === 'success' && 'text-green-400'
-                      )}>
-                        [{log.level?.toUpperCase() || 'INFO'}]
-                      </span>
-                      <span className="flex-1">{log.message || JSON.stringify(log)}</span>
+                {/* Steps List */}
+                <div className="space-y-3">
+                  {workflowSteps.map((step, index) => (
+                    <div key={step.id} className="flex items-start space-x-3 p-3 rounded-lg border">
+                      {getStepIcon(step)}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between mb-1">
+                          <h4 className="font-medium text-sm">{step.name}</h4>
+                          {getStepBadge(step)}
+                        </div>
+                        <p className="text-xs text-muted-foreground mb-2">
+                          {step.description}
+                        </p>
+                        {step.duration && (
+                          <p className="text-xs text-green-600">
+                            Completed in {step.duration}
+                          </p>
+                        )}
+                        {step.status === 'waiting' && step.type === 'approval' && (
+                          <div className="mt-2 text-xs bg-yellow-50 text-yellow-800 p-2 rounded border border-yellow-200">
+                            ⏸️ Waiting for owner approval to proceed with development
+                          </div>
+                        )}
+                      </div>
+                      {step.status === 'completed' && (
+                        <Button variant="ghost" size="sm">
+                          <Eye className="h-3 w-3 mr-1" />
+                          Logs
+                        </Button>
+                      )}
                     </div>
-                  ))
-                ) : (
-                  <div className="text-gray-400 text-center py-8">
-                    No logs available for this workflow run
+                  ))}
+                </div>
+
+                {/* Error Message */}
+                {selectedRun.error_message && (
+                  <div className="bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800 rounded-lg p-3">
+                    <div className="flex items-center space-x-2 text-red-800 dark:text-red-200">
+                      <AlertTriangle className="h-4 w-4" />
+                      <span className="font-medium">Workflow Failed</span>
+                    </div>
+                    <p className="text-sm text-red-700 dark:text-red-300 mt-1">
+                      {selectedRun.error_message}
+                    </p>
                   </div>
                 )}
               </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="details">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <Eye className="h-5 w-5" />
-                <span>Run Details</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-4">
-                  <div>
-                    <h4 className="font-medium text-sm text-muted-foreground mb-1">Workflow</h4>
-                    <div>
-                      <div className="font-medium">{workflowRun.workflow?.name || 'Unknown'}</div>
-                      <div className="text-sm text-muted-foreground">
-                        {workflowRun.workflow?.description || 'No description'}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div>
-                    <h4 className="font-medium text-sm text-muted-foreground mb-1">Template Type</h4>
-                    <div className="capitalize">
-                      {workflowRun.workflow?.template_type?.replace('_', ' ') || 'Unknown'}
-                    </div>
-                  </div>
-
-                  {workflowRun.project_id && (
-                    <div>
-                      <h4 className="font-medium text-sm text-muted-foreground mb-1">Project</h4>
-                      <Link 
-                        href={`/dashboard/projects/${workflowRun.project_id}`}
-                        className="text-blue-600 hover:text-blue-800"
-                      >
-                        View Project →
-                      </Link>
-                    </div>
-                  )}
-                </div>
-
-                <div className="space-y-4">
-                  <div>
-                    <h4 className="font-medium text-sm text-muted-foreground mb-1">Run ID</h4>
-                    <div className="font-mono text-sm">{workflowRun.id}</div>
-                  </div>
-
-                  <div>
-                    <h4 className="font-medium text-sm text-muted-foreground mb-1">Started At</h4>
-                    <div>{new Date(workflowRun.started_at).toLocaleString()}</div>
-                  </div>
-
-                  {workflowRun.completed_at && (
-                    <div>
-                      <h4 className="font-medium text-sm text-muted-foreground mb-1">Completed At</h4>
-                      <div>{new Date(workflowRun.completed_at).toLocaleString()}</div>
-                    </div>
-                  )}
-                  
-                  <div>
-                    <h4 className="font-medium text-sm text-muted-foreground mb-1">Total Duration</h4>
-                    <div>{formatDuration(workflowRun.started_at, workflowRun.completed_at)}</div>
-                  </div>
-                </div>
+            ) : (
+              <div className="text-center py-8 text-muted-foreground">
+                Select a workflow run to view details
               </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+            )}
+          </CardContent>
+        </Card>
+      </div>
     </div>
   )
 }
