@@ -34,6 +34,7 @@ import { ActivityStream } from '@/components/dashboard/ActivityStream'
 import { ImprovementsWidget } from '@/components/dashboard/ImprovementsWidget'
 import { ReportsNotifications } from '@/components/notifications/ReportsNotifications'
 import { AutomationsCard } from '@/components/dashboard/AutomationsCard'
+import { WorkflowStatusCard } from '@/components/dashboard/WorkflowStatusCard'
 import { supabaseHelpers } from '@/lib/supabase'
 import { getCurrentUserClient, getFilteredDashboardStats, getUserPermissionSummary, getAccessibleProjects } from '@/lib/access-control'
 import type { User } from '@/lib/access-control'
@@ -491,10 +492,17 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* Main Content Grid: Quick Actions + Activity Stream + Improvements */}
+      {/* Main Content Grid: Workflow Card + Quick Actions + Activity Stream */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Quick Actions - Role-based filtering */}
-        <Card className="lg:col-span-1">
+        {/* Workflow Status Card - For ADMIN users only */}
+        {permissions?.isAdmin && (
+          <div className="lg:col-span-1">
+            <WorkflowStatusCard />
+          </div>
+        )}
+
+        {/* Quick Actions - Adjusted grid based on workflow card presence */}
+        <Card className={permissions?.isAdmin ? "lg:col-span-1" : "lg:col-span-1"}>
           <CardHeader>
             <CardTitle className="flex items-center space-x-2">
               <Settings className="h-5 w-5" />
@@ -537,8 +545,8 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
 
-        {/* Activity Stream - Filtered for user's projects */}
-        <div className="lg:col-span-2">
+        {/* Activity Stream - Adjusted grid based on workflow card presence */}
+        <div className={permissions?.isAdmin ? "lg:col-span-1" : "lg:col-span-2"}>
           <ActivityStream 
             refreshInterval={30000} 
             maxEvents={20}
