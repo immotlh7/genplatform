@@ -1,80 +1,64 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { createCSRFMiddleware } from '@/lib/csrf'
 
-// Rate limiting store (in production, use Redis)
-const loginAttempts = new Map<string, { attempts: number; resetTime: number }>()
+// Create CSRF middleware
+const csrfMiddleware = createCSRFMiddleware()
 
-export function middleware(request: NextRequest) {
-  const pathname = request.nextUrl.pathname
-  
-  // Rate limiting for login endpoints
-  if (pathname.includes('/api/auth/login')) {
-    const ip = request.ip || request.headers.get('x-forwarded-for') || 'unknown'
-    const now = Date.now()
-    const rateLimitWindow = 15 * 60 * 1000 // 15 minutes
-    const maxAttempts = 5
-    
-    const record = loginAttempts.get(ip)
-    
-    if (record) {
-      if (now < record.resetTime) {
-        if (record.attempts >= maxAttempts) {
-          return NextResponse.json(
-            { 
-              error: `Too many login attempts. Try again in ${Math.ceil((record.resetTime - now) / 60000)} minutes.` 
-            },
-            { status: 429 }
-          )
-        }
-      } else {
-        // Reset window expired
-        loginAttempts.set(ip, { attempts: 1, resetTime: now + rateLimitWindow })
-      }
-    } else {
-      // First attempt
-      loginAttempts.set(ip, { attempts: 1, resetTime: now + rateLimitWindow })
-    }
-    
-    // Increment attempt count
-    const currentRecord = loginAttempts.get(ip)!
-    currentRecord.attempts++
-    
-    // Log failed attempts to security_events (will be implemented in Task 9-08)
-    if (currentRecord.attempts > 1) {
-      // Log suspicious activity
-      console.log(`Multiple login attempts from IP: ${ip}`)
+export async function middleware(req: NextRequest) {
+  const { pathname } = req.nextUrl
+
+  // Apply CSRF protection to all routes except excluded ones
+  const excludedPaths = [
+    '/_next',
+    '/api/_next',
+    '/favicon.ico',
+    '/robots.txt',
+    '/sitemap.xml',
+    '/api/webhooks', // Webhook endpoints use other auth methods
+    '/api/auth/callback', // OAuth callbacks
+    '/static',
+    '/images'
+  ]
+
+  const shouldApplyCSRF = !excludedPaths.some(path => pathname.startsWith(path))
+
+  if (shouldApplyCSRF) {
+    // Apply CSRF protection
+    const csrfResponse = await csrfMiddleware(req)
+    if (csrfResponse) {
+      return csrfResponse
     }
   }
 
-  // CSRF protection (Task 9-02)
-  if (['POST', 'PUT', 'DELETE'].includes(request.method)) {
-    const csrfToken = request.headers.get('x-csrf-token')
-    const csrfCookie = request.cookies.get('csrf-token')
-    
-    if (!csrfToken || !csrfCookie || csrfToken !== csrfCookie.value) {
-      // Allow API routes to handle their own CSRF if needed
-      if (!pathname.startsWith('/api/')) {
-        return NextResponse.json(
-          { error: 'Invalid CSRF token' },
-          { status: 403 }
-        )
-      }
-    }
-  }
-
-  // Security headers (Task 9-04)
+  // Add security headers to all responses
   const response = NextResponse.next()
-  
+
+  // Security headers (Task 9-04 preview)
   response.headers.set('X-Frame-Options', 'DENY')
   response.headers.set('X-Content-Type-Options', 'nosniff')
   response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin')
   response.headers.set('X-XSS-Protection', '1; mode=block')
   response.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()')
-  
+
+  // CSP header for additional XSS protection
+  response.headers.set(
+    'Content-Security-Policy',
+    "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https://api.supabase.co https://*.supabase.co"
+  )
+
   return response
 }
 
+// Configure which paths the middleware runs on
 export const config = {
   matcher: [
-    '/((?!_next/static|_next/image|favicon.ico).*)',
+    /*
+     * Match all request paths except for the ones starting with:
+     * - api/webhooks (webhook endpoints)
+     * - _next/static (static files)
+     * - _next/image (image optimization files)
+     * - favicon.ico (favicon file)
+     */
+    '/((?!_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml).*)',
   ],
 }
