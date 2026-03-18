@@ -1,27 +1,26 @@
 "use client"
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { Input } from '@/components/ui/input'
 import { 
-  Users,
-  UserPlus,
   Crown,
-  Shield,
-  Eye,
+  UserPlus,
   Settings,
   Mail,
   Calendar,
   MapPin,
   Activity,
   FolderOpen,
-  Zap,
-  Clock,
   CheckCircle,
-  AlertCircle,
-  MoreHorizontal
+  MoreHorizontal,
+  Edit,
+  Shield,
+  UserX,
+  Trash2
 } from 'lucide-react'
 import {
   DropdownMenu,
@@ -30,123 +29,124 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
+import { getCurrentUserClient, getRoleDisplay } from '@/lib/access-control'
+import type { User } from '@/lib/access-control'
 
 interface TeamMember {
   id: string
-  name: string
   email: string
-  role: 'ADMIN' | 'MANAGER' | 'VIEWER'
-  assignedProjects: string[]
-  avatar?: string
-  lastActive: string
-  joinedDate: string
-  status: 'active' | 'inactive' | 'pending'
+  display_name: string
+  role: 'OWNER' | 'ADMIN' | 'MANAGER' | 'VIEWER'
+  is_active: boolean
+  avatar_url?: string
+  invited_by?: string
+  invited_at: string
+  last_login_at?: string
+  project_count: number
 }
 
-interface AccessLevel {
-  level: 'ADMIN' | 'MANAGER' | 'VIEWER'
-  label: string
-  description: string
-  permissions: string[]
-  icon: React.ReactNode
-  color: string
-}
+export default function TeamManagementPage() {
+  const [currentUser, setCurrentUser] = useState<User | null>(null)
+  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([])
+  const [loading, setLoading] = useState(true)
+  const [editingProfile, setEditingProfile] = useState(false)
+  const [displayName, setDisplayName] = useState('')
+  const [showInviteModal, setShowInviteModal] = useState(false)
 
-const accessLevels: AccessLevel[] = [
-  {
-    level: 'ADMIN',
-    label: 'Admin',
-    description: 'Full access to everything',
-    permissions: [
-      'View all projects',
-      'Edit all projects',
-      'Create new projects',
-      'Send commands',
-      'Manage team members',
-      'Access system settings'
-    ],
-    icon: <Crown className="h-4 w-4" />,
-    color: 'bg-yellow-500'
-  },
-  {
-    level: 'MANAGER',
-    label: 'Manager', 
-    description: 'Can manage assigned projects',
-    permissions: [
-      'View all projects',
-      'Edit assigned projects',
-      'Send commands',
-      'Monitor project progress'
-    ],
-    icon: <Shield className="h-4 w-4" />,
-    color: 'bg-blue-500'
-  },
-  {
-    level: 'VIEWER',
-    label: 'Viewer',
-    description: 'Read-only access to assigned projects',
-    permissions: [
-      'View assigned projects',
-      'Read project reports',
-      'Monitor progress (read-only)'
-    ],
-    icon: <Eye className="h-4 w-4" />,
-    color: 'bg-green-500'
-  }
-]
+  useEffect(() => {
+    loadUserAndTeam()
+  }, [])
 
-export default function UsersPage() {
-  const [teamMembers] = useState<TeamMember[]>([]) // Empty for now - Sprint 0E
-  
-  // Owner profile data
-  const owner = {
-    name: 'Med',
-    email: 'medtlh1@example.com',
-    role: 'OWNER' as const,
-    joinedDate: '2024-03-01T00:00:00Z',
-    lastActive: '2024-03-18T07:00:00Z',
-    totalProjects: 3,
-    activeProjects: 2,
-    totalSkills: 27,
-    timezone: 'Africa/Casablanca'
-  }
+  const loadUserAndTeam = async () => {
+    try {
+      setLoading(true)
+      
+      // Get current user
+      const user = await getCurrentUserClient()
+      setCurrentUser(user)
+      setDisplayName(user?.displayName || '')
 
-  const getRoleIcon = (role: string) => {
-    switch (role) {
-      case 'OWNER': return <Crown className="h-4 w-4 text-yellow-500" />
-      case 'ADMIN': return <Crown className="h-4 w-4 text-yellow-500" />
-      case 'MANAGER': return <Shield className="h-4 w-4 text-blue-500" />
-      case 'VIEWER': return <Eye className="h-4 w-4 text-green-500" />
-      default: return <Users className="h-4 w-4" />
+      // Load team members (only for OWNER/ADMIN)
+      if (user && (user.role === 'OWNER' || user.role === 'ADMIN')) {
+        const response = await fetch('/api/team')
+        if (response.ok) {
+          const data = await response.json()
+          setTeamMembers(data.members || [])
+        }
+      }
+    } catch (error) {
+      console.error('Failed to load team data:', error)
+    } finally {
+      setLoading(false)
     }
   }
 
-  const getRoleBadgeColor = (role: string) => {
-    switch (role) {
-      case 'OWNER': return 'bg-gradient-to-r from-yellow-500 to-orange-500 text-white'
-      case 'ADMIN': return 'bg-yellow-500 text-white'
-      case 'MANAGER': return 'bg-blue-500 text-white'
-      case 'VIEWER': return 'bg-green-500 text-white'
-      default: return 'bg-gray-500 text-white'
+  const handleUpdateProfile = async () => {
+    if (!currentUser || !displayName.trim()) return
+
+    try {
+      const response = await fetch(`/api/team/${currentUser.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ displayName: displayName.trim() })
+      })
+
+      if (response.ok) {
+        setCurrentUser(prev => prev ? { ...prev, displayName: displayName.trim() } : null)
+        setEditingProfile(false)
+      }
+    } catch (error) {
+      console.error('Failed to update profile:', error)
     }
   }
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
+  const formatTimeAgo = (timestamp: string) => {
+    const now = new Date()
+    const time = new Date(timestamp)
+    const diffInMinutes = Math.floor((now.getTime() - time.getTime()) / (1000 * 60))
+    
+    if (diffInMinutes < 1) return 'Just now'
+    if (diffInMinutes < 60) return `${diffInMinutes}m ago`
+    if (diffInMinutes < 1440) return `${Math.floor(diffInMinutes / 60)}h ago`
+    return `${Math.floor(diffInMinutes / 1440)}d ago`
+  }
+
+  const formatDate = (timestamp: string) => {
+    return new Date(timestamp).toLocaleDateString('en-US', {
       month: 'short',
       day: 'numeric',
       year: 'numeric'
     })
   }
 
-  const formatLastActive = (dateString: string) => {
-    const now = new Date()
-    const time = new Date(dateString)
-    const diffInMinutes = Math.floor((now.getTime() - time.getTime()) / (1000 * 60))
-    
-    if (diffInMinutes < 60) return `${diffInMinutes}m ago`
-    if (diffInMinutes < 1440) return `${Math.floor(diffInMinutes / 60)}h ago`
-    return `${Math.floor(diffInMinutes / 1440)}d ago`
+  if (loading) {
+    return (
+      <div className="space-y-6 p-4 md:p-6">
+        <div className="animate-pulse space-y-4">
+          <div className="h-8 bg-muted rounded w-1/4"></div>
+          <div className="h-32 bg-muted rounded"></div>
+          <div className="h-64 bg-muted rounded"></div>
+        </div>
+      </div>
+    )
+  }
+
+  if (!currentUser) {
+    return (
+      <div className="space-y-6 p-4 md:p-6">
+        <div className="text-center py-12">
+          <p className="text-muted-foreground">Unable to load user information</p>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -159,273 +159,278 @@ export default function UsersPage() {
             Manage your team and project access levels.
           </p>
         </div>
-        <div className="flex items-center space-x-2">
-          <Button variant="outline">
-            <Settings className="h-4 w-4 mr-2" />
-            Settings
-          </Button>
-          <Button>
-            <UserPlus className="h-4 w-4 mr-2" />
-            Invite Team Member
-          </Button>
-        </div>
+        {currentUser.role === 'OWNER' && (
+          <div className="flex items-center space-x-2">
+            <Button variant="outline">
+              <Settings className="h-4 w-4 mr-2" />
+              Settings
+            </Button>
+            <Button onClick={() => setShowInviteModal(true)}>
+              <UserPlus className="h-4 w-4 mr-2" />
+              Invite Member
+            </Button>
+          </div>
+        )}
       </div>
 
-      {/* Section 1: Owner Profile Card */}
-      <Card className="border-yellow-200 bg-gradient-to-br from-yellow-50 to-orange-50 dark:border-yellow-800 dark:from-yellow-950/20 dark:to-orange-950/20">
+      {/* Section 1: Your Profile */}
+      <Card className={`border-l-4 ${currentUser.role === 'OWNER' ? 'border-l-yellow-500 bg-gradient-to-br from-yellow-50 to-orange-50 dark:border-l-yellow-400 dark:from-yellow-950/20 dark:to-orange-950/20' : 'border-l-blue-500'}`}>
         <CardHeader>
           <CardTitle className="flex items-center space-x-2">
-            <Crown className="h-6 w-6 text-yellow-500" />
-            <span>Platform Owner</span>
+            {currentUser.role === 'OWNER' ? (
+              <Crown className="h-6 w-6 text-yellow-500" />
+            ) : (
+              <Shield className="h-6 w-6 text-blue-500" />
+            )}
+            <span>Your Profile</span>
           </CardTitle>
           <CardDescription>
-            Full administrative access to all platform features
+            {currentUser.role === 'OWNER' 
+              ? 'Platform owner with full administrative access'
+              : 'Team member profile and permissions'
+            }
           </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex items-start justify-between">
             <div className="flex items-center space-x-4">
               <Avatar className="w-16 h-16">
-                <AvatarImage src="/avatar-placeholder.jpg" />
-                <AvatarFallback className="text-lg font-semibold bg-gradient-to-br from-yellow-500 to-orange-500 text-white">
-                  {owner.name.charAt(0).toUpperCase()}
+                <AvatarImage src={undefined} />
+                <AvatarFallback className={`text-lg font-semibold ${
+                  currentUser.role === 'OWNER' 
+                    ? 'bg-gradient-to-br from-yellow-500 to-orange-500 text-white'
+                    : 'bg-blue-500 text-white'
+                }`}>
+                  {currentUser.displayName.charAt(0).toUpperCase()}
                 </AvatarFallback>
               </Avatar>
               
               <div className="space-y-2">
                 <div className="flex items-center space-x-3">
-                  <h3 className="text-xl font-semibold">{owner.name}</h3>
-                  <Badge className={getRoleBadgeColor('OWNER')}>
-                    <Crown className="h-3 w-3 mr-1" />
-                    OWNER
-                  </Badge>
+                  {editingProfile ? (
+                    <div className="flex items-center space-x-2">
+                      <Input
+                        value={displayName}
+                        onChange={(e) => setDisplayName(e.target.value)}
+                        className="w-48"
+                        placeholder="Display name"
+                      />
+                      <Button size="sm" onClick={handleUpdateProfile}>
+                        Save
+                      </Button>
+                      <Button 
+                        size="sm" 
+                        variant="outline" 
+                        onClick={() => {
+                          setEditingProfile(false)
+                          setDisplayName(currentUser.displayName)
+                        }}
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                  ) : (
+                    <>
+                      <h3 className="text-xl font-semibold">{currentUser.displayName}</h3>
+                      <Badge className={getRoleDisplay(currentUser.role).color + ' text-white'}>
+                        {getRoleDisplay(currentUser.role).icon} {getRoleDisplay(currentUser.role).label}
+                      </Badge>
+                      <Button 
+                        size="sm" 
+                        variant="ghost"
+                        onClick={() => setEditingProfile(true)}
+                      >
+                        <Edit className="h-3 w-3" />
+                      </Button>
+                    </>
+                  )}
                 </div>
                 
                 <div className="flex items-center space-x-4 text-sm text-muted-foreground">
                   <div className="flex items-center space-x-1">
                     <Mail className="h-3 w-3" />
-                    <span>{owner.email}</span>
-                  </div>
-                  <div className="flex items-center space-x-1">
-                    <MapPin className="h-3 w-3" />
-                    <span>{owner.timezone}</span>
+                    <span>{currentUser.email}</span>
                   </div>
                 </div>
                 
-                <div className="flex items-center space-x-4 text-sm">
-                  <div className="flex items-center space-x-1 text-muted-foreground">
-                    <Calendar className="h-3 w-3" />
-                    <span>Joined {formatDate(owner.joinedDate)}</span>
-                  </div>
-                  <div className="flex items-center space-x-1 text-green-600">
-                    <Activity className="h-3 w-3" />
-                    <span>Active {formatLastActive(owner.lastActive)}</span>
-                  </div>
+                <div className="text-sm">
+                  {currentUser.role === 'OWNER' ? (
+                    <span className="text-green-600 font-medium">Full access to all features</span>
+                  ) : (
+                    <span className="text-blue-600 font-medium">
+                      {currentUser.role === 'ADMIN' ? 'Administrative access' :
+                       currentUser.role === 'MANAGER' ? 'Project management access' :
+                       'Read-only access'}
+                    </span>
+                  )}
                 </div>
               </div>
-            </div>
-
-            <DropdownMenu>
-              <DropdownMenuTrigger>
-                <Button variant="ghost" size="sm">
-                  <MoreHorizontal className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem>
-                  <Settings className="h-4 w-4 mr-2" />
-                  Edit Profile
-                </DropdownMenuItem>
-                <DropdownMenuItem>
-                  <Mail className="h-4 w-4 mr-2" />
-                  Change Email
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem>
-                  <Shield className="h-4 w-4 mr-2" />
-                  Security Settings
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-
-          {/* Owner Stats */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6 pt-6 border-t border-yellow-200 dark:border-yellow-800">
-            <div className="text-center">
-              <div className="flex items-center justify-center space-x-1 mb-1">
-                <FolderOpen className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm text-muted-foreground">Projects</span>
-              </div>
-              <div className="text-lg font-semibold">{owner.totalProjects}</div>
-              <div className="text-xs text-muted-foreground">{owner.activeProjects} active</div>
-            </div>
-            
-            <div className="text-center">
-              <div className="flex items-center justify-center space-x-1 mb-1">
-                <Zap className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm text-muted-foreground">Skills</span>
-              </div>
-              <div className="text-lg font-semibold">{owner.totalSkills}</div>
-              <div className="text-xs text-muted-foreground">installed</div>
-            </div>
-            
-            <div className="text-center">
-              <div className="flex items-center justify-center space-x-1 mb-1">
-                <Users className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm text-muted-foreground">Team</span>
-              </div>
-              <div className="text-lg font-semibold">{teamMembers.length}</div>
-              <div className="text-xs text-muted-foreground">members</div>
-            </div>
-            
-            <div className="text-center">
-              <div className="flex items-center justify-center space-x-1 mb-1">
-                <CheckCircle className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm text-muted-foreground">Status</span>
-              </div>
-              <div className="text-lg font-semibold text-green-600">Active</div>
-              <div className="text-xs text-muted-foreground">online now</div>
             </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Section 2: Access Levels Information */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
-            <Shield className="h-5 w-5" />
-            <span>Access Levels</span>
-          </CardTitle>
-          <CardDescription>
-            Understanding team member permissions and capabilities
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {accessLevels.map((level) => (
-              <div key={level.level} className="border rounded-lg p-4">
-                <div className="flex items-center space-x-2 mb-3">
-                  <div className={`p-2 rounded-lg text-white ${level.color}`}>
-                    {level.icon}
-                  </div>
-                  <div>
-                    <h4 className="font-medium">{level.label}</h4>
-                    <p className="text-xs text-muted-foreground">{level.description}</p>
-                  </div>
-                </div>
-                
-                <div className="space-y-2">
-                  <h5 className="text-sm font-medium">Permissions:</h5>
-                  <ul className="space-y-1">
-                    {level.permissions.map((permission, index) => (
-                      <li key={index} className="flex items-center space-x-2 text-sm">
-                        <CheckCircle className="h-3 w-3 text-green-500 flex-shrink-0" />
-                        <span>{permission}</span>
-                      </li>
+      {/* Section 2: Team Members */}
+      {(currentUser.role === 'OWNER' || currentUser.role === 'ADMIN') && (
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0">
+            <div>
+              <CardTitle className="flex items-center space-x-2">
+                <FolderOpen className="h-5 w-5" />
+                <span>Team Members</span>
+                <Badge variant="outline">{teamMembers.length}</Badge>
+              </CardTitle>
+              <CardDescription>
+                Manage team member access and project assignments
+              </CardDescription>
+            </div>
+            {currentUser.role === 'OWNER' && (
+              <Button onClick={() => setShowInviteModal(true)}>
+                <UserPlus className="h-4 w-4 mr-2" />
+                Invite Member
+              </Button>
+            )}
+          </CardHeader>
+          <CardContent>
+            {teamMembers.length === 0 ? (
+              <div className="text-center py-12">
+                <FolderOpen className="h-16 w-16 text-muted-foreground mx-auto mb-4 opacity-50" />
+                <h3 className="text-lg font-semibold mb-2">No team members yet</h3>
+                <p className="text-muted-foreground mb-6 max-w-md mx-auto">
+                  Invite your first team member to start collaborating on projects.
+                </p>
+                {currentUser.role === 'OWNER' && (
+                  <Button onClick={() => setShowInviteModal(true)}>
+                    <UserPlus className="h-4 w-4 mr-2" />
+                    Invite Team Member
+                  </Button>
+                )}
+              </div>
+            ) : (
+              <div className="rounded-md border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Member</TableHead>
+                      <TableHead>Role</TableHead>
+                      <TableHead>Projects</TableHead>
+                      <TableHead>Last Login</TableHead>
+                      <TableHead>Status</TableHead>
+                      {currentUser.role === 'OWNER' && (
+                        <TableHead className="w-[50px]">Actions</TableHead>
+                      )}
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {teamMembers.map((member) => (
+                      <TableRow key={member.id}>
+                        <TableCell>
+                          <div className="flex items-center space-x-3">
+                            <Avatar>
+                              <AvatarImage src={member.avatar_url} />
+                              <AvatarFallback>
+                                {member.display_name.charAt(0).toUpperCase()}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div>
+                              <div className="font-medium">{member.display_name}</div>
+                              <div className="text-sm text-muted-foreground">{member.email}</div>
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge className={getRoleDisplay(member.role).color + ' text-white'}>
+                            {getRoleDisplay(member.role).icon} {getRoleDisplay(member.role).label}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline">
+                            {member.project_count} {member.project_count === 1 ? 'project' : 'projects'}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          {member.last_login_at ? (
+                            <span className="text-sm">
+                              {formatTimeAgo(member.last_login_at)}
+                            </span>
+                          ) : (
+                            <span className="text-sm text-muted-foreground">Never</span>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          {member.is_active ? (
+                            <div className="flex items-center space-x-1">
+                              <CheckCircle className="h-4 w-4 text-green-600" />
+                              <span className="text-sm text-green-600">Active</span>
+                            </div>
+                          ) : (
+                            <div className="flex items-center space-x-1">
+                              <UserX className="h-4 w-4 text-gray-600" />
+                              <span className="text-sm text-gray-600">Inactive</span>
+                            </div>
+                          )}
+                        </TableCell>
+                        {currentUser.role === 'OWNER' && (
+                          <TableCell>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="sm">
+                                  <MoreHorizontal className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem>
+                                  <Edit className="h-4 w-4 mr-2" />
+                                  Edit Role
+                                </DropdownMenuItem>
+                                <DropdownMenuItem>
+                                  <FolderOpen className="h-4 w-4 mr-2" />
+                                  Manage Projects
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem>
+                                  <UserX className="h-4 w-4 mr-2" />
+                                  Deactivate
+                                </DropdownMenuItem>
+                                <DropdownMenuItem className="text-red-600">
+                                  <Trash2 className="h-4 w-4 mr-2" />
+                                  Remove
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </TableCell>
+                        )}
+                      </TableRow>
                     ))}
-                  </ul>
-                </div>
+                  </TableBody>
+                </Table>
               </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
-      {/* Section 3: Team Members List (Empty for now) */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              <Users className="h-5 w-5" />
-              <span>Team Members</span>
-              <Badge variant="outline">{teamMembers.length}</Badge>
-            </div>
-            <Button size="sm">
-              <UserPlus className="h-4 w-4 mr-2" />
-              Invite Member
-            </Button>
-          </CardTitle>
-          <CardDescription>
-            Manage team member access and project assignments
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {teamMembers.length === 0 ? (
-            <div className="text-center py-12">
-              <Users className="h-16 w-16 text-muted-foreground mx-auto mb-4 opacity-50" />
-              <h3 className="text-lg font-semibold mb-2">No team members yet</h3>
-              <p className="text-muted-foreground mb-6 max-w-md mx-auto">
-                Team collaboration features are coming in <strong>Sprint 0E</strong>. You'll be able to invite team members, assign projects, and manage access levels.
-              </p>
-              <div className="flex flex-col sm:flex-row items-center justify-center space-y-2 sm:space-y-0 sm:space-x-4">
-                <Button disabled className="w-full sm:w-auto">
-                  <UserPlus className="h-4 w-4 mr-2" />
-                  Coming in Sprint 0E
-                </Button>
-                <Button variant="outline" disabled className="w-full sm:w-auto">
-                  <Mail className="h-4 w-4 mr-2" />
-                  Bulk Invite (Soon)
-                </Button>
-              </div>
-              
-              <div className="mt-8 p-4 bg-muted/30 rounded-lg">
-                <h4 className="font-medium mb-2">🚀 Coming Features:</h4>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm text-muted-foreground">
-                  <div className="flex items-center space-x-2">
-                    <Clock className="h-3 w-3" />
-                    <span>Team member invitations</span>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Clock className="h-3 w-3" />
-                    <span>Project assignment system</span>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Clock className="h-3 w-3" />
-                    <span>Role-based access control</span>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Clock className="h-3 w-3" />
-                    <span>Activity monitoring</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          ) : (
-            // This will be implemented in Sprint 0E
-            <div className="space-y-4">
-              {teamMembers.map((member) => (
-                <div key={member.id} className="flex items-center justify-between p-4 border rounded-lg">
-                  <div className="flex items-center space-x-4">
-                    <Avatar>
-                      <AvatarImage src={member.avatar} />
-                      <AvatarFallback>{member.name.charAt(0).toUpperCase()}</AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <div className="flex items-center space-x-2">
-                        <span className="font-medium">{member.name}</span>
-                        <Badge className={getRoleBadgeColor(member.role)}>
-                          {getRoleIcon(member.role)}
-                          {member.role}
-                        </Badge>
-                      </div>
-                      <div className="text-sm text-muted-foreground">{member.email}</div>
-                    </div>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Badge variant="outline" className="text-xs">
-                      {member.assignedProjects.length} projects
-                    </Badge>
-                    <Button variant="ghost" size="sm">
-                      <MoreHorizontal className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+      {/* Invite Member Modal Placeholder */}
+      {showInviteModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <Card className="w-full max-w-md">
+            <CardHeader>
+              <CardTitle>Invite Team Member</CardTitle>
+              <CardDescription>
+                Modal will be implemented in Task 0E-07
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button 
+                className="w-full" 
+                onClick={() => setShowInviteModal(false)}
+              >
+                Close
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </div>
   )
 }
