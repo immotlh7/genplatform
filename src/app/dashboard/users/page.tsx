@@ -38,6 +38,7 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { getCurrentUserClient, getRoleDisplay } from '@/lib/access-control'
+import { InviteMemberModal } from '@/components/team/InviteMemberModal'
 import type { User } from '@/lib/access-control'
 
 interface TeamMember {
@@ -106,6 +107,11 @@ export default function TeamManagementPage() {
     } catch (error) {
       console.error('Failed to update profile:', error)
     }
+  }
+
+  const handleInviteSuccess = () => {
+    // Reload team members after successful invitation
+    loadUserAndTeam()
   }
 
   const formatTimeAgo = (timestamp: string) => {
@@ -410,27 +416,12 @@ export default function TeamManagementPage() {
         </Card>
       )}
 
-      {/* Invite Member Modal Placeholder */}
-      {showInviteModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-          <Card className="w-full max-w-md">
-            <CardHeader>
-              <CardTitle>Invite Team Member</CardTitle>
-              <CardDescription>
-                Modal will be implemented in Task 0E-07
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Button 
-                className="w-full" 
-                onClick={() => setShowInviteModal(false)}
-              >
-                Close
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
-      )}
+      {/* Invite Member Modal */}
+      <InviteMemberModal
+        isOpen={showInviteModal}
+        onClose={() => setShowInviteModal(false)}
+        onInviteSuccess={handleInviteSuccess}
+      />
     </div>
   )
 }
