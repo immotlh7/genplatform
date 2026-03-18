@@ -67,7 +67,7 @@ export default function SkillsPage() {
 
       // Load skills (simulate delay)
       setTimeout(() => {
-        setSkills(skillsData)
+        fetch('/api/bridge/skills').then(r=>r.json()).then(d=>{if(d.skills)setSkills(d.skills.map((s:any)=>({id:s.name,name:s.name,description:s.description,category:'development',status:'active',isInstalled:true})));else setSkills(skillsData)}).catch(()=>setSkills(skillsData))
         setIsLoading(false)
       }, 500)
     } catch (error) {
