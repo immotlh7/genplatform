@@ -234,6 +234,208 @@ export async function PUT(req: NextRequest, { params }: RouteParams) {
 }
 
 /**
+ * DELETE /api/team/[id]
+ * Remove team member from the platform (owner only)
+ */
+export async function DELETE(req: NextRequest, { params }: RouteParams) {
+  const { id } = params
+  const ip = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'unknown'
+  const userAgent = req.headers.get('user-agent') || 'unknown'
+
+  try {
+    // Validate team member ID
+    if (!id || id === 'undefined') {
+      return NextResponse.json(
+        { success: false, message: 'Team member ID is required' },
+        { status: 400 }
+      )
+    }
+
+    // Check authentication and permissions (owner only)
+    const authCookie = req.cookies.get('auth-token')?.value
+    const ownerAuth = checkOwnerAuth(authCookie)
+    
+    if (!ownerAuth.isOwner) {
+      await logSecurityEvent(ip, 'unauthorized_team_delete_attempt', 'warning', {
+        targetMemberId: id,
+        userAgent,
+        timestamp: new Date().toISOString()
+      })
+
+      return NextResponse.json(
+        { success: false, message: 'Only platform owner can remove team members' },
+        { status: 403 }
+      )
+    }
+
+    if (!supabaseAdmin) {
+      return NextResponse.json(
+        { success: false, message: 'Team service unavailable' },
+        { status: 503 }
+      )
+    }
+
+    // Get team member details before deletion
+    const { data: memberToDelete, error: fetchError } = await supabaseAdmin
+      .from('team_members')
+      .select('*')
+      .eq('id', id)
+      .single()
+
+    if (fetchError || !memberToDelete) {
+      return NextResponse.json(
+        { success: false, message: 'Team member not found' },
+        { status: 404 }
+      )
+    }
+
+    // Prevent deleting the owner account
+    if (memberToDelete.role === 'OWNER') {
+      return NextResponse.json(
+        { success: false, message: 'Cannot delete owner account' },
+        { status: 403 }
+      )
+    }
+
+    // Check if member has active project assignments
+    const { data: activeAssignments, error: assignmentError } = await supabaseAdmin
+      .from('project_assignments')
+      .select('id, projects(name)')
+      .eq('team_member_id', id)
+
+    if (assignmentError) {
+      console.error('Error checking project assignments:', assignmentError)
+      return NextResponse.json(
+        { success: false, message: 'Failed to check project assignments' },
+        { status: 500 }
+      )
+    }
+
+    const hasActiveProjects = activeAssignments && activeAssignments.length > 0
+
+    // Parse query parameter for force deletion
+    const url = new URL(req.url)
+    const forceDelete = url.searchParams.get('force') === 'true'
+
+    if (hasActiveProjects && !forceDelete) {
+      return NextResponse.json({
+        success: false,
+        message: 'Team member has active project assignments',
+        data: {
+          requiresConfirmation: true,
+          activeProjects: activeAssignments?.map(a => a.projects?.name).filter(Boolean),
+          memberInfo: {
+            email: memberToDelete.email,
+            full_name: memberToDelete.full_name,
+            role: memberToDelete.role
+          }
+        }
+      }, { status: 409 })
+    }
+
+    // Begin transaction-like operations
+    try {
+      // 1. Remove project assignments
+      if (hasActiveProjects) {
+        const { error: removeAssignmentsError } = await supabaseAdmin
+          .from('project_assignments')
+          .delete()
+          .eq('team_member_id', id)
+
+        if (removeAssignmentsError) {
+          throw new Error('Failed to remove project assignments')
+        }
+      }
+
+      // 2. Remove from Supabase Auth if they have an auth account
+      if (memberToDelete.status === 'active') {
+        try {
+          await supabaseAdmin.auth.admin.deleteUser(id)
+        } catch (authError) {
+          console.warn('Failed to delete user from Supabase Auth (may not exist):', authError)
+          // Continue with team member deletion even if auth deletion fails
+        }
+      }
+
+      // 3. Remove team member record
+      const { error: deleteError } = await supabaseAdmin
+        .from('team_members')
+        .delete()
+        .eq('id', id)
+
+      if (deleteError) {
+        throw new Error('Failed to delete team member record')
+      }
+
+      // Log the deletion in security events
+      await supabaseAdmin
+        .from('security_events')
+        .insert({
+          event_type: 'audit',
+          severity: 'warning',
+          description: `Team member removed: ${memberToDelete.email}`,
+          details: {
+            deleted_member_id: id,
+            deleted_member_email: memberToDelete.email,
+            deleted_member_name: memberToDelete.full_name,
+            deleted_member_role: memberToDelete.role,
+            had_active_projects: hasActiveProjects,
+            force_delete: forceDelete,
+            deleted_by: ownerAuth.user?.email,
+            timestamp: new Date().toISOString()
+          },
+          resolved: true
+        })
+
+      // Log security event
+      await logSecurityEvent(ip, 'team_member_deleted', 'warning', {
+        deletedMemberEmail: memberToDelete.email,
+        deletedMemberRole: memberToDelete.role,
+        hadActiveProjects: hasActiveProjects,
+        forceDelete,
+        deletedBy: ownerAuth.user?.email,
+        userAgent
+      })
+
+      return NextResponse.json({
+        success: true,
+        message: 'Team member removed successfully',
+        data: {
+          deletedMember: {
+            email: memberToDelete.email,
+            full_name: memberToDelete.full_name,
+            role: memberToDelete.role
+          },
+          removedProjects: hasActiveProjects ? activeAssignments?.length : 0
+        }
+      })
+
+    } catch (deletionError) {
+      console.error('Error during team member deletion:', deletionError)
+      return NextResponse.json(
+        { success: false, message: 'Failed to remove team member completely' },
+        { status: 500 }
+      )
+    }
+
+  } catch (error) {
+    console.error('Team delete error:', error)
+    
+    await logSecurityEvent(ip, 'team_delete_system_error', 'critical', {
+      targetMemberId: id,
+      error: error instanceof Error ? error.message : 'Unknown error',
+      userAgent,
+      timestamp: new Date().toISOString()
+    })
+
+    return NextResponse.json(
+      { success: false, message: 'Internal server error' },
+      { status: 500 }
+    )
+  }
+}
+
+/**
  * GET /api/team/[id]
  * Get individual team member details
  */
