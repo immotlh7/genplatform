@@ -5,7 +5,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
-import { ScrollArea } from '@/components/ui/scroll-area'
+import { FileTree } from '@/components/memory/file-tree'
+import { FileViewer } from '@/components/memory/file-viewer'
+import { FileEditor } from '@/components/memory/file-editor'
 import { 
   Folder, 
   FileText, 
@@ -15,7 +17,10 @@ import {
   Trash2,
   Plus,
   Home,
-  ChevronRight
+  ChevronRight,
+  RefreshCw,
+  FolderPlus,
+  Upload
 } from 'lucide-react'
 
 interface MemoryFile {
@@ -34,22 +39,43 @@ interface MemoryStats {
   totalSize: number
 }
 
+interface SearchResult {
+  path: string
+  name: string
+  matches: any[]
+  score: number
+  size: number
+  lastModified: string
+}
+
 export default function MemoryPage() {
   const [files, setFiles] = useState<MemoryFile[]>([])
   const [stats, setStats] = useState<MemoryStats>({ totalFiles: 0, totalDirs: 0, totalSize: 0 })
   const [currentPath, setCurrentPath] = useState('')
   const [searchTerm, setSearchTerm] = useState('')
+  const [searchResults, setSearchResults] = useState<SearchResult[]>([])
   const [loading, setLoading] = useState(true)
-  const [selectedFile, setSelectedFile] = useState<MemoryFile | null>(null)
+  const [searching, setSearching] = useState(false)
+  const [selectedFile, setSelectedFile] = useState<string>('')
+  const [mode, setMode] = useState<'browse' | 'view' | 'edit' | 'search'>('browse')
 
   useEffect(() => {
     loadMemoryFiles(currentPath)
   }, [currentPath])
 
+  useEffect(() => {
+    if (searchTerm.length >= 2) {
+      performSearch()
+    } else {
+      setSearchResults([])
+      if (mode === 'search') setMode('browse')
+    }
+  }, [searchTerm])
+
   const loadMemoryFiles = async (path: string) => {
     setLoading(true)
     try {
-      const url = `/api/openclaw/memory?path=${encodeURIComponent(path)}&search=${encodeURIComponent(searchTerm)}`
+      const url = `/api/openclaw/memory?path=${encodeURIComponent(path)}&search=${encodeURIComponent('')}`
       const response = await fetch(url)
       const data = await response.json()
       
@@ -65,17 +91,107 @@ export default function MemoryPage() {
     }
   }
 
+  const performSearch = async () => {
+    if (!searchTerm || searchTerm.length < 2) return
+
+    setSearching(true)
+    try {
+      const response = await fetch(`/api/openclaw/memory/search?q=${encodeURIComponent(searchTerm)}&limit=50&content=true`)
+      const data = await response.json()
+      setSearchResults(data.results || [])
+      setMode('search')
+    } catch (error) {
+      console.error('Search failed:', error)
+      setSearchResults([])
+    } finally {
+      setSearching(false)
+    }
+  }
+
   const navigateTo = (path: string) => {
     setCurrentPath(path)
     setSearchTerm('')
+    setMode('browse')
   }
 
-  const handleFileClick = (file: MemoryFile) => {
-    if (file.type === 'directory') {
-      navigateTo(file.path)
+  const handleFileSelect = (path: string, isDirectory: boolean) => {
+    if (isDirectory) {
+      navigateTo(path)
     } else {
-      setSelectedFile(file)
-      // In production would open file viewer/editor
+      setSelectedFile(path)
+      setMode('view')
+    }
+  }
+
+  const handleEditFile = (path: string) => {
+    setSelectedFile(path)
+    setMode('edit')
+  }
+
+  const handleSaveFile = async (path: string, content: string): Promise<boolean> => {
+    try {
+      const response = await fetch('/api/openclaw/memory', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'save', path, content })
+      })
+      return response.ok
+    } catch (error) {
+      console.error('Failed to save file:', error)
+      return false
+    }
+  }
+
+  const handleCreateFile = async () => {
+    const filename = prompt('Enter filename (include .md extension for markdown):')
+    if (!filename) return
+
+    const fullPath = currentPath ? `${currentPath}/${filename}` : filename
+
+    try {
+      const response = await fetch('/api/openclaw/memory/operations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'create',
+          path: fullPath,
+          content: '# New File\n\nStart writing your content here...',
+          isDirectory: false
+        })
+      })
+
+      if (response.ok) {
+        await loadMemoryFiles(currentPath)
+        setSelectedFile(fullPath)
+        setMode('edit')
+      }
+    } catch (error) {
+      console.error('Failed to create file:', error)
+    }
+  }
+
+  const handleCreateFolder = async () => {
+    const foldername = prompt('Enter folder name:')
+    if (!foldername) return
+
+    const fullPath = currentPath ? `${currentPath}/${foldername}` : foldername
+
+    try {
+      const response = await fetch('/api/openclaw/memory/operations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'create',
+          path: fullPath,
+          isDirectory: true
+        })
+      })
+
+      if (response.ok) {
+        await loadMemoryFiles(currentPath)
+      }
+    } catch (error) {
+      console.error('Failed to create folder:', error)
     }
   }
 
@@ -101,183 +217,147 @@ export default function MemoryPage() {
   const pathParts = currentPath.split('/').filter(Boolean)
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">Memory Browser</h1>
-          <p className="text-muted-foreground">
-            Browse and manage memory files ({stats.totalFiles} files, {formatFileSize(stats.totalSize)})
-          </p>
-        </div>
-        <div className="flex space-x-2">
-          <Button variant="outline">
-            <Plus className="h-4 w-4 mr-2" />
-            New File
-          </Button>
-          <Button variant="outline">
-            <Download className="h-4 w-4 mr-2" />
-            Export
-          </Button>
-        </div>
-      </div>
-
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center space-x-2">
-              <FileText className="h-4 w-4 text-blue-600" />
-              <div>
-                <div className="text-2xl font-bold">{stats.totalFiles}</div>
-                <div className="text-sm text-muted-foreground">Files</div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center space-x-2">
-              <Folder className="h-4 w-4 text-yellow-600" />
-              <div>
-                <div className="text-2xl font-bold">{stats.totalDirs}</div>
-                <div className="text-sm text-muted-foreground">Directories</div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center space-x-2">
-              <div className="w-4 h-4 rounded bg-green-600"></div>
-              <div>
-                <div className="text-2xl font-bold">{formatFileSize(stats.totalSize)}</div>
-                <div className="text-sm text-muted-foreground">Total Size</div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Navigation */}
-      <div className="flex items-center space-x-2 p-4 bg-muted/30 rounded-lg">
-        <Button 
-          variant="ghost" 
-          size="sm" 
-          onClick={() => navigateTo('')}
-          className="p-1 h-auto"
-        >
-          <Home className="h-4 w-4" />
-        </Button>
-        {pathParts.map((part, index) => (
-          <div key={index} className="flex items-center">
-            <ChevronRight className="h-4 w-4 text-muted-foreground" />
-            <Button 
-              variant="ghost" 
-              size="sm"
-              onClick={() => navigateTo(pathParts.slice(0, index + 1).join('/'))}
-              className="h-auto p-1 px-2"
-            >
-              {part}
+    <div className="h-screen flex flex-col">
+      {/* Header */}
+      <div className="border-b p-4 bg-muted/30">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h1 className="text-3xl font-bold">Memory Browser</h1>
+            <p className="text-muted-foreground">
+              Browse and manage memory files ({stats.totalFiles} files, {formatFileSize(stats.totalSize)})
+            </p>
+          </div>
+          <div className="flex space-x-2">
+            <Button variant="outline" onClick={() => loadMemoryFiles(currentPath)}>
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Refresh
+            </Button>
+            <Button variant="outline" onClick={handleCreateFolder}>
+              <FolderPlus className="h-4 w-4 mr-2" />
+              New Folder
+            </Button>
+            <Button onClick={handleCreateFile}>
+              <Plus className="h-4 w-4 mr-2" />
+              New File
             </Button>
           </div>
-        ))}
+        </div>
+
+        {/* Search */}
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search across all memory files..."
+            className="pl-10"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+          {searching && <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
+          </div>}
+        </div>
       </div>
 
-      {/* Search */}
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <Input
-          placeholder="Search memory files..."
-          className="pl-10"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          onKeyPress={(e) => {
-            if (e.key === 'Enter') {
-              loadMemoryFiles(currentPath)
-            }
-          }}
-        />
-      </div>
-
-      {/* File List */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center justify-between">
-            <span>Files & Folders</span>
-            {currentPath && (
-              <Button variant="outline" size="sm" onClick={goUp}>
-                Back
-              </Button>
-            )}
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="p-0">
-          <ScrollArea className="h-96">
-            {loading ? (
-              <div className="p-6 text-center text-muted-foreground">
-                Loading files...
-              </div>
-            ) : files.length === 0 ? (
-              <div className="p-6 text-center text-muted-foreground">
-                No files found
-              </div>
-            ) : (
-              <div className="space-y-1">
-                {files.map((file) => (
+      <div className="flex-1 flex overflow-hidden">
+        {/* Left Panel - File Tree or Search Results */}
+        <div className="w-1/3 border-r bg-muted/10">
+          {mode === 'search' && searchResults.length > 0 ? (
+            <div className="h-full overflow-y-auto">
+              <div className="p-4">
+                <h3 className="font-medium mb-3">Search Results ({searchResults.length})</h3>
+                {searchResults.map((result) => (
                   <div
-                    key={file.path}
-                    className="flex items-center justify-between p-3 hover:bg-muted/50 cursor-pointer border-b"
-                    onClick={() => handleFileClick(file)}
+                    key={result.path}
+                    className="p-3 border rounded-lg mb-2 hover:bg-muted/50 cursor-pointer"
+                    onClick={() => handleFileSelect(result.path, false)}
                   >
-                    <div className="flex items-center space-x-3 flex-1">
-                      {file.type === 'directory' ? (
-                        <Folder className="h-4 w-4 text-yellow-600 flex-shrink-0" />
-                      ) : (
-                        <FileText className="h-4 w-4 text-blue-600 flex-shrink-0" />
-                      )}
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center space-x-2">
-                          <span className="font-medium truncate">{file.name}</span>
-                          {file.isMarkdown && (
-                            <Badge variant="outline" className="text-xs">MD</Badge>
-                          )}
-                        </div>
-                        {file.preview && (
-                          <p className="text-sm text-muted-foreground truncate mt-1">
-                            {file.preview}
-                          </p>
-                        )}
-                      </div>
+                    <div className="flex items-center space-x-2 mb-1">
+                      <FileText className="h-4 w-4 text-blue-600" />
+                      <span className="font-medium text-sm">{result.name}</span>
+                      <Badge variant="outline" className="text-xs">Score: {result.score}</Badge>
                     </div>
-                    
-                    <div className="flex items-center space-x-4 text-sm text-muted-foreground">
-                      <span>{formatFileSize(file.size)}</span>
-                      <span>{new Date(file.lastModified).toLocaleDateString()}</span>
-                      <div className="flex space-x-1">
-                        {file.type === 'file' && (
-                          <>
-                            <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
-                              <Edit className="h-3 w-3" />
-                            </Button>
-                            <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
-                              <Download className="h-3 w-3" />
-                            </Button>
-                            <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
-                              <Trash2 className="h-3 w-3" />
-                            </Button>
-                          </>
-                        )}
+                    <div className="text-xs text-muted-foreground mb-1">{result.path}</div>
+                    {result.matches.slice(0, 2).map((match, idx) => (
+                      <div key={idx} className="text-xs bg-muted p-1 rounded mt-1">
+                        Line {match.line}: {match.highlighted}
                       </div>
-                    </div>
+                    ))}
                   </div>
                 ))}
               </div>
-            )}
-          </ScrollArea>
-        </CardContent>
-      </Card>
+            </div>
+          ) : (
+            <>
+              {/* Navigation Breadcrumb */}
+              {mode === 'browse' && (
+                <div className="p-4 border-b bg-muted/20">
+                  <div className="flex items-center space-x-2 text-sm">
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={() => navigateTo('')}
+                      className="p-1 h-auto"
+                    >
+                      <Home className="h-4 w-4" />
+                    </Button>
+                    {pathParts.map((part, index) => (
+                      <div key={index} className="flex items-center">
+                        <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => navigateTo(pathParts.slice(0, index + 1).join('/'))}
+                          className="h-auto p-1 px-2"
+                        >
+                          {part}
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              <FileTree 
+                onFileSelect={handleFileSelect}
+                selectedPath={selectedFile}
+              />
+            </>
+          )}
+        </div>
+
+        {/* Right Panel - Content */}
+        <div className="flex-1 bg-background">
+          {mode === 'view' && selectedFile ? (
+            <FileViewer 
+              filePath={selectedFile}
+              onEdit={handleEditFile}
+            />
+          ) : mode === 'edit' && selectedFile ? (
+            <FileEditor
+              filePath={selectedFile}
+              onClose={() => setMode('view')}
+              onSave={handleSaveFile}
+            />
+          ) : (
+            <div className="flex items-center justify-center h-full text-muted-foreground">
+              <div className="text-center">
+                {mode === 'search' && searchTerm ? (
+                  <>
+                    <Search className="h-12 w-12 mx-auto mb-4" />
+                    <p>Search results will appear here</p>
+                    {searching && <p className="text-sm mt-2">Searching...</p>}
+                  </>
+                ) : (
+                  <>
+                    <FileText className="h-12 w-12 mx-auto mb-4" />
+                    <p>Select a file to view its contents</p>
+                    <p className="text-sm mt-2">Or create a new file to get started</p>
+                  </>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   )
 }
