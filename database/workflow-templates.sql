@@ -503,20 +503,128 @@ INSERT INTO workflows (
     }'::jsonb
 );
 
+-- Task 7-09: "Nightly Maintenance" Template
+INSERT INTO workflows (
+    id,
+    name,
+    description,
+    template_type,
+    is_active,
+    trigger_type,
+    schedule,
+    config
+) VALUES (
+    'nightly-maintenance-template',
+    'Nightly Maintenance',
+    'Daily code review, security scan, and reporting',
+    'nightly_maintenance',
+    false, -- Start inactive, user can activate
+    'schedule',
+    '0 2 * * *', -- Daily at 2 AM Africa/Casablanca (UTC+1)
+    '{
+        "steps": [
+            {
+                "id": "review_daily_code",
+                "name": "🔍 Review All Code Written Today",
+                "type": "action",
+                "description": "Analyze and review all code changes made during the day",
+                "role": "code_reviewer",
+                "command": "Review all code commits, pull requests, and changes made in the last 24 hours. Analyze code quality, identify patterns, and flag potential issues.",
+                "estimated_duration": "15-20 minutes",
+                "outputs": ["daily_code_report", "quality_metrics", "issue_summary"],
+                "success_criteria": "All daily code changes reviewed and documented"
+            },
+            {
+                "id": "security_scan_all_projects",
+                "name": "🛡️ Security Scan All Projects",
+                "type": "action",
+                "description": "Comprehensive security audit across all active projects",
+                "role": "security_specialist",
+                "command": "Run comprehensive security scans on all active projects. Check for vulnerabilities, outdated dependencies, configuration issues, and security compliance.",
+                "estimated_duration": "20-25 minutes",
+                "outputs": ["security_audit_report", "vulnerability_summary", "compliance_status"],
+                "dependencies": ["review_daily_code"],
+                "success_criteria": "Security scan completed for all projects"
+            },
+            {
+                "id": "memory_cleanup_consolidation",
+                "name": "🧹 Memory Cleanup & Consolidation",
+                "type": "action",
+                "description": "Clean up and organize system memory and data",
+                "role": "system_admin",
+                "command": "Perform memory cleanup, consolidate daily logs, archive old data, and optimize system performance. Clean temporary files and organize memory storage.",
+                "estimated_duration": "10-15 minutes",
+                "outputs": ["cleanup_report", "memory_usage", "optimization_results"],
+                "dependencies": ["security_scan_all_projects"],
+                "success_criteria": "Memory cleanup completed and system optimized"
+            },
+            {
+                "id": "generate_daily_report",
+                "name": "📊 Generate Daily Report",
+                "type": "action",
+                "description": "Compile comprehensive daily activity and status report",
+                "role": "report_generator",
+                "command": "Generate detailed daily report including: code activity, security status, system health, project progress, task completion, and key metrics.",
+                "estimated_duration": "10-15 minutes",
+                "outputs": ["daily_report", "metrics_summary", "trends_analysis"],
+                "dependencies": ["memory_cleanup_consolidation"],
+                "success_criteria": "Daily report generated and distributed"
+            }
+        ],
+        "estimated_total_duration": "55-75 minutes",
+        "success_criteria": [
+            "Daily code review completed",
+            "Security scan passed for all projects",
+            "Memory cleanup successful",
+            "Daily report generated and distributed"
+        ],
+        "failure_handling": {
+            "max_retries": 2,
+            "retry_steps": ["security_scan_all_projects", "memory_cleanup_consolidation"],
+            "escalation_roles": ["ADMIN", "OWNER"],
+            "notification_on_failure": true,
+            "continue_on_step_failure": true
+        },
+        "schedule_config": {
+            "timezone": "Africa/Casablanca",
+            "cron": "0 2 * * *",
+            "description": "Daily at 2:00 AM Casablanca time",
+            "skip_weekends": false,
+            "skip_holidays": false
+        },
+        "automation_settings": {
+            "auto_retry_failed_steps": true,
+            "generate_summary_email": true,
+            "update_dashboard": true,
+            "archive_reports": true
+        },
+        "notification_config": {
+            "on_completion": ["dashboard", "email"],
+            "on_failure": ["dashboard", "email", "slack"],
+            "include_metrics": true,
+            "include_summary": true
+        },
+        "tags": ["maintenance", "nightly", "automated", "reporting"]
+    }'::jsonb
+);
+
 -- Add workflow metadata and tracking
 UPDATE workflows SET 
     created_at = now(),
     updated_at = now()
-WHERE id IN ('idea-to-mvp-template', 'bug-fix-template', 'new-feature-template', 'deploy-pipeline-template');
+WHERE id IN ('idea-to-mvp-template', 'bug-fix-template', 'new-feature-template', 'deploy-pipeline-template', 'nightly-maintenance-template');
 
 -- Create index for quick template lookup
 CREATE INDEX IF NOT EXISTS idx_workflows_template_lookup ON workflows(template_type, is_active);
+CREATE INDEX IF NOT EXISTS idx_workflows_schedule ON workflows(schedule) WHERE trigger_type = 'schedule';
 
 -- Comments for the templates
 COMMENT ON TABLE workflows IS 'Pre-built workflow templates for common automation scenarios';
 
--- Verification queries
--- SELECT name, template_type, trigger_type, is_active, 
---        jsonb_array_length(config->'steps') as step_count
+-- Final verification query
+-- SELECT name, template_type, trigger_type, schedule, is_active, 
+--        jsonb_array_length(config->'steps') as step_count,
+--        config->'estimated_total_duration' as duration
 -- FROM workflows 
--- WHERE template_type IN ('idea_to_mvp', 'bug_fix', 'new_feature', 'deploy_pipeline');
+-- WHERE template_type IN ('idea_to_mvp', 'bug_fix', 'new_feature', 'deploy_pipeline', 'nightly_maintenance')
+-- ORDER BY template_type;
