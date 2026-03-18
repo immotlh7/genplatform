@@ -28,7 +28,7 @@ const navigation = [
   {
     name: 'Overview',
     items: [
-      { name: 'Dashboard', href: '/dashboard', icon: Home },
+      { name: 'Dashboard', href: '/', icon: Home },
       { name: 'Command Center', href: '/dashboard/command-center', icon: Terminal, badge: 'New' },
     ]
   },
@@ -66,7 +66,7 @@ export function Sidebar() {
       <div className="flex grow flex-col gap-y-5 overflow-y-auto bg-background border-r px-6 pb-4">
         {/* Logo */}
         <div className="flex h-16 shrink-0 items-center">
-          <Link href="/dashboard" className="flex items-center space-x-2">
+          <Link href="/" className="flex items-center space-x-2">
             <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
               <span className="text-white font-bold text-sm">GP</span>
             </div>
@@ -120,7 +120,7 @@ export function Sidebar() {
           {/* Bottom section */}
           <div className="mt-auto space-y-2 pt-4 border-t">
             <Link
-              href="/dashboard/help"
+              href="/help"
               className="group flex w-full items-center rounded-md px-2 py-2 text-sm font-medium text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
             >
               <HelpCircle className="mr-3 h-4 w-4 flex-shrink-0" />
