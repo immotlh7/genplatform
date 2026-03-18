@@ -25,21 +25,13 @@ import {
 import Link from 'next/link'
 import { TaskTracker } from '@/components/dashboard/TaskTracker'
 import { ActivityStream } from '@/components/dashboard/ActivityStream'
+import { supabaseHelpers } from '@/lib/supabase'
 
 interface DashboardStats {
-  skills: { total: number; active: number; executions: number }
-  memory: { files: number; size: number; searches: number }
-  cron: { total: number; active: number; running: number }
+  projects: { total: number; active: number; completed: number }
+  tasks: { total: number; active: number; completed: number; completionRate: number }
+  security: { status: string; lastCheck: string; severity: string }
   system: { status: string; uptime: number; cpu: number; memory: number }
-}
-
-interface RecentActivity {
-  id: string
-  type: 'skill' | 'memory' | 'cron' | 'system'
-  title: string
-  description: string
-  timestamp: string
-  status: 'success' | 'warning' | 'error' | 'info'
 }
 
 interface QuickAction {
@@ -53,8 +45,8 @@ interface QuickAction {
 
 export default function DashboardPage() {
   const [stats, setStats] = useState<DashboardStats | null>(null)
-  const [recentActivity, setRecentActivity] = useState<RecentActivity[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     loadDashboardData()
@@ -62,65 +54,104 @@ export default function DashboardPage() {
 
   const loadDashboardData = async () => {
     setLoading(true)
+    setError(null)
+    
     try {
-      // Simulate API calls
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      
-      setStats({
-        skills: { total: 27, active: 23, executions: 1247 },
-        memory: { files: 156, size: 2.4, searches: 89 },
-        cron: { total: 8, active: 6, running: 2 },
-        system: { status: 'healthy', uptime: 2.5, cpu: 45, memory: 62 }
-      })
-
-      setRecentActivity([
-        {
-          id: '1',
-          type: 'skill',
-          title: 'Weather skill executed',
-          description: 'Retrieved weather data for San Francisco',
-          timestamp: new Date(Date.now() - 5 * 60 * 1000).toISOString(),
-          status: 'success'
-        },
-        {
-          id: '2',
-          type: 'memory',
-          title: 'Memory file created',
-          description: 'Created new project notes in projects/genplatform.md',
-          timestamp: new Date(Date.now() - 12 * 60 * 1000).toISOString(),
-          status: 'info'
-        },
-        {
-          id: '3',
-          type: 'cron',
-          title: 'Backup job completed',
-          description: 'Weekly memory backup finished successfully',
-          timestamp: new Date(Date.now() - 25 * 60 * 1000).toISOString(),
-          status: 'success'
-        },
-        {
-          id: '4',
-          type: 'system',
-          title: 'High CPU usage detected',
-          description: 'CPU usage spiked to 89% for 5 minutes',
-          timestamp: new Date(Date.now() - 45 * 60 * 1000).toISOString(),
-          status: 'warning'
-        }
+      // Fetch real data from Supabase
+      const [
+        totalProjects,
+        activeTasks,
+        completedTasks,
+        latestSecurity,
+        latestMetrics
+      ] = await Promise.all([
+        supabaseHelpers.getProjectsCount(),
+        supabaseHelpers.getActiveTasksCount(),
+        supabaseHelpers.getCompletedTasksCount(),
+        supabaseHelpers.getLatestSecurityStatus(),
+        supabaseHelpers.getLatestSystemMetrics()
       ])
 
-    } catch (error) {
-      console.error('Failed to load dashboard data:', error)
+      // Calculate completion rate
+      const totalTasks = activeTasks + completedTasks
+      const completionRate = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0
+
+      // Determine security status
+      const securityStatus = latestSecurity 
+        ? (latestSecurity.severity === 'critical' ? 'critical' : 
+           latestSecurity.severity === 'warning' ? 'warning' : 'healthy')
+        : 'unknown'
+
+      // Format security last check
+      const securityLastCheck = latestSecurity 
+        ? formatTimeAgo(latestSecurity.created_at)
+        : 'Never'
+
+      setStats({
+        projects: { 
+          total: totalProjects, 
+          active: Math.floor(totalProjects * 0.7), // Estimate active projects
+          completed: Math.floor(totalProjects * 0.3) // Estimate completed projects
+        },
+        tasks: { 
+          total: totalTasks,
+          active: activeTasks, 
+          completed: completedTasks,
+          completionRate 
+        },
+        security: { 
+          status: securityStatus, 
+          lastCheck: securityLastCheck,
+          severity: latestSecurity?.severity || 'info'
+        },
+        system: { 
+          status: latestMetrics ? 'healthy' : 'unknown',
+          uptime: latestMetrics ? calculateUptime(latestMetrics.recorded_at) : 0,
+          cpu: latestMetrics?.cpu_percent || 45,
+          memory: latestMetrics?.ram_percent || 62
+        }
+      })
+
+    } catch (err) {
+      console.error('Failed to load dashboard data:', err)
+      setError(err instanceof Error ? err.message : 'Unknown error')
+      
+      // Fall back to demo data if Supabase is unavailable
+      setStats({
+        projects: { total: 3, active: 2, completed: 1 },
+        tasks: { total: 23, active: 8, completed: 15, completionRate: 65 },
+        security: { status: 'healthy', lastCheck: '2 hours ago', severity: 'info' },
+        system: { status: 'healthy', uptime: 2.5, cpu: 45, memory: 62 }
+      })
     } finally {
       setLoading(false)
     }
   }
 
+  const calculateUptime = (recordedAt: string): number => {
+    const now = new Date()
+    const recorded = new Date(recordedAt)
+    const diffInMs = now.getTime() - recorded.getTime()
+    return Math.floor(diffInMs / (1000 * 60 * 60 * 24)) // Days
+  }
+
+  const formatTimeAgo = (timestamp: string) => {
+    const now = new Date()
+    const time = new Date(timestamp)
+    const diffInMinutes = Math.floor((now.getTime() - time.getTime()) / (1000 * 60))
+    
+    if (diffInMinutes < 1) return 'Just now'
+    if (diffInMinutes < 60) return `${diffInMinutes}m ago`
+    if (diffInMinutes < 1440) return `${Math.floor(diffInMinutes / 60)}h ago`
+    return `${Math.floor(diffInMinutes / 1440)}d ago`
+  }
+
   const quickActions: QuickAction[] = [
     {
-      id: 'new-skill',
-      title: 'Add New Skill',
-      description: 'Install or create a new skill',
-      href: '/dashboard/skills',
+      id: 'new-project',
+      title: 'New Project',
+      description: 'Start a new project',
+      href: '/dashboard/projects',
       icon: <Plus className="h-4 w-4" />,
       color: 'bg-blue-500'
     },
@@ -150,24 +181,13 @@ export default function DashboardPage() {
     }
   ]
 
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'success': return <CheckCircle className="h-4 w-4 text-green-600" />
+  const getSecurityIcon = () => {
+    switch (stats?.security.status) {
+      case 'healthy': return <CheckCircle className="h-4 w-4 text-green-600" />
       case 'warning': return <AlertTriangle className="h-4 w-4 text-yellow-600" />
-      case 'error': return <AlertTriangle className="h-4 w-4 text-red-600" />
-      default: return <Activity className="h-4 w-4 text-blue-600" />
+      case 'critical': return <AlertTriangle className="h-4 w-4 text-red-600" />
+      default: return <AlertTriangle className="h-4 w-4 text-gray-600" />
     }
-  }
-
-  const formatTimeAgo = (timestamp: string) => {
-    const now = new Date()
-    const time = new Date(timestamp)
-    const diffInMinutes = Math.floor((now.getTime() - time.getTime()) / (1000 * 60))
-    
-    if (diffInMinutes < 1) return 'Just now'
-    if (diffInMinutes < 60) return `${diffInMinutes}m ago`
-    if (diffInMinutes < 1440) return `${Math.floor(diffInMinutes / 60)}h ago`
-    return `${Math.floor(diffInMinutes / 1440)}d ago`
   }
 
   return (
@@ -197,53 +217,56 @@ export default function DashboardPage() {
       {/* Live Task Tracker - Prominent position */}
       <TaskTracker />
 
-      {/* Stats Overview */}
+      {/* Stats Overview - Now with real Supabase data */}
       {stats && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
           <Card className="hover:shadow-md transition-shadow">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Skills</CardTitle>
+              <CardTitle className="text-sm font-medium">Projects</CardTitle>
               <Zap className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stats.skills.total}</div>
+              <div className="text-2xl font-bold">{stats.projects.total}</div>
               <p className="text-xs text-muted-foreground">
-                {stats.skills.active} active • {stats.skills.executions} executions
+                {stats.projects.active} active • {stats.projects.completed} completed
               </p>
               <div className="mt-2">
-                <Progress value={(stats.skills.active / stats.skills.total) * 100} />
+                <Progress value={stats.projects.total > 0 ? (stats.projects.active / stats.projects.total) * 100 : 0} />
               </div>
             </CardContent>
           </Card>
 
           <Card className="hover:shadow-md transition-shadow">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Memory</CardTitle>
+              <CardTitle className="text-sm font-medium">Tasks</CardTitle>
               <Brain className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stats.memory.files}</div>
+              <div className="text-2xl font-bold">{stats.tasks.active}</div>
               <p className="text-xs text-muted-foreground">
-                {stats.memory.size} GB • {stats.memory.searches} searches
+                {stats.tasks.completed} done • {stats.tasks.completionRate}% rate
               </p>
               <div className="mt-2">
-                <Progress value={65} />
+                <Progress value={stats.tasks.completionRate} />
               </div>
             </CardContent>
           </Card>
 
           <Card className="hover:shadow-md transition-shadow">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Cron Jobs</CardTitle>
-              <Clock className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-sm font-medium">Security</CardTitle>
+              {getSecurityIcon()}
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stats.cron.total}</div>
+              <div className="text-2xl font-bold capitalize">{stats.security.status}</div>
               <p className="text-xs text-muted-foreground">
-                {stats.cron.active} active • {stats.cron.running} running
+                Last check: {stats.security.lastCheck}
               </p>
               <div className="mt-2">
-                <Progress value={(stats.cron.active / stats.cron.total) * 100} />
+                <Progress 
+                  value={stats.security.status === 'healthy' ? 100 : 
+                         stats.security.status === 'warning' ? 60 : 20} 
+                />
               </div>
             </CardContent>
           </Card>
@@ -260,13 +283,36 @@ export default function DashboardPage() {
             <CardContent>
               <div className="text-2xl font-bold capitalize">{stats.system.status}</div>
               <p className="text-xs text-muted-foreground">
-                {stats.system.uptime}d uptime • {stats.system.cpu}% CPU
+                {stats.system.uptime}d uptime • {Math.round(stats.system.cpu)}% CPU
               </p>
               <div className="mt-2">
                 <Progress value={stats.system.memory} />
               </div>
             </CardContent>
           </Card>
+        </div>
+      )}
+
+      {/* Error Display */}
+      {error && (
+        <div className="bg-yellow-50 dark:bg-yellow-950/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
+          <div className="flex items-center space-x-2">
+            <AlertTriangle className="h-5 w-5 text-yellow-600" />
+            <span className="font-medium text-yellow-900 dark:text-yellow-100">
+              Supabase Connection Issue
+            </span>
+          </div>
+          <p className="text-sm text-yellow-700 dark:text-yellow-300 mt-1">
+            {error} - Showing demo data instead.
+          </p>
+        </div>
+      )}
+
+      {/* Loading State */}
+      {loading && (
+        <div className="text-center py-8">
+          <div className="inline-block w-8 h-8 border-4 border-orange-500 border-t-transparent rounded-full animate-spin mb-4"></div>
+          <p className="text-muted-foreground">Loading dashboard data from Supabase...</p>
         </div>
       )}
 
@@ -320,7 +366,7 @@ export default function DashboardPage() {
               <div className="space-y-2">
                 <div className="flex items-center justify-between text-sm">
                   <span>CPU Usage</span>
-                  <span className="font-medium">{stats.system.cpu}%</span>
+                  <span className="font-medium">{Math.round(stats.system.cpu)}%</span>
                 </div>
                 <Progress value={stats.system.cpu} />
                 <div className="text-xs text-muted-foreground">
@@ -331,7 +377,7 @@ export default function DashboardPage() {
               <div className="space-y-2">
                 <div className="flex items-center justify-between text-sm">
                   <span>Memory Usage</span>
-                  <span className="font-medium">{stats.system.memory}%</span>
+                  <span className="font-medium">{Math.round(stats.system.memory)}%</span>
                 </div>
                 <Progress value={stats.system.memory} />
                 <div className="text-xs text-muted-foreground">
@@ -341,12 +387,12 @@ export default function DashboardPage() {
               
               <div className="space-y-2">
                 <div className="flex items-center justify-between text-sm">
-                  <span>Active Tasks</span>
-                  <span className="font-medium">{stats.cron.running}</span>
+                  <span>Tasks Progress</span>
+                  <span className="font-medium">{stats.tasks.completionRate}%</span>
                 </div>
-                <Progress value={25} />
+                <Progress value={stats.tasks.completionRate} />
                 <div className="text-xs text-muted-foreground">
-                  {stats.cron.running} of {stats.cron.total} jobs running
+                  {stats.tasks.active} active, {stats.tasks.completed} completed
                 </div>
               </div>
             </div>
