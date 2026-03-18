@@ -1,27 +1,34 @@
-'use client'
+"use client"
 
 import { useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Switch } from '@/components/ui/switch'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import { 
-  Play, 
-  Settings, 
-  BarChart3, 
-  Clock, 
-  Zap,
-  Calendar,
-  Target,
-  Activity,
+  Play,
+  Settings,
+  BarChart3,
+  MoreVertical,
   CheckCircle,
-  AlertCircle,
-  Loader2
+  XCircle,
+  Clock,
+  Zap,
+  Target,
+  Calendar,
+  Workflow,
+  Bot,
+  Wrench,
+  Rocket,
+  Moon,
+  AlertTriangle
 } from 'lucide-react'
-import { cn } from '@/lib/utils'
-import WorkflowConfigModal from './WorkflowConfigModal'
-import Link from 'next/link'
-import { toast } from 'sonner'
 
 interface Workflow {
   id: string
@@ -31,7 +38,7 @@ interface Workflow {
   is_active: boolean
   trigger_type: 'manual' | 'new_idea' | 'task_complete' | 'schedule'
   schedule?: string
-  config?: Record<string, any>
+  config: any
   last_run_at?: string
   last_run_status?: string
   created_at: string
@@ -39,313 +46,268 @@ interface Workflow {
 
 interface WorkflowCardProps {
   workflow: Workflow
-  onUpdate: () => void
+  onToggle: (id: string, active: boolean) => void
+  onRun: (id: string) => void
+  onConfigure: (id: string) => void
+  onViewRuns: (id: string) => void
 }
 
-export default function WorkflowCard({ workflow, onUpdate }: WorkflowCardProps) {
-  const [isUpdating, setIsUpdating] = useState(false)
-  const [isRunning, setIsRunning] = useState(false)
-  const [showConfigModal, setShowConfigModal] = useState(false)
+export function WorkflowCard({ 
+  workflow, 
+  onToggle, 
+  onRun, 
+  onConfigure, 
+  onViewRuns 
+}: WorkflowCardProps) {
+  const [isToggling, setIsToggling] = useState(false)
 
-  // Get workflow icon based on template type
   const getWorkflowIcon = (templateType: string) => {
     switch (templateType) {
-      case 'idea_to_mvp':
-        return <Target className="h-6 w-6" />
-      case 'bug_fix':
-        return <AlertCircle className="h-6 w-6" />
-      case 'new_feature':
-        return <Zap className="h-6 w-6" />
-      case 'deploy_pipeline':
-        return <Activity className="h-6 w-6" />
-      case 'nightly_maintenance':
-        return <Clock className="h-6 w-6" />
+      case 'idea_to_mvp': return <Target className="h-6 w-6" />
+      case 'bug_fix': return <Wrench className="h-6 w-6" />
+      case 'new_feature': return <Zap className="h-6 w-6" />
+      case 'deploy_pipeline': return <Rocket className="h-6 w-6" />
+      case 'nightly_maintenance': return <Moon className="h-6 w-6" />
+      default: return <Bot className="h-6 w-6" />
+    }
+  }
+
+  const getWorkflowIconColor = (templateType: string) => {
+    switch (templateType) {
+      case 'idea_to_mvp': return 'text-blue-600'
+      case 'bug_fix': return 'text-red-600'
+      case 'new_feature': return 'text-green-600'
+      case 'deploy_pipeline': return 'text-purple-600'
+      case 'nightly_maintenance': return 'text-indigo-600'
+      default: return 'text-gray-600'
+    }
+  }
+
+  const getTriggerTypeBadge = (triggerType: string) => {
+    switch (triggerType) {
+      case 'manual':
+        return <Badge variant="outline" className="text-xs">
+          <Play className="h-3 w-3 mr-1" />
+          Manual
+        </Badge>
+      case 'new_idea':
+        return <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
+          <Target className="h-3 w-3 mr-1" />
+          New Idea
+        </Badge>
+      case 'task_complete':
+        return <Badge variant="outline" className="text-xs bg-green-50 text-green-700 border-green-200">
+          <CheckCircle className="h-3 w-3 mr-1" />
+          Task Complete
+        </Badge>
+      case 'schedule':
+        return <Badge variant="outline" className="text-xs bg-purple-50 text-purple-700 border-purple-200">
+          <Calendar className="h-3 w-3 mr-1" />
+          Scheduled
+        </Badge>
       default:
-        return <Settings className="h-6 w-6" />
+        return <Badge variant="outline" className="text-xs">
+          {triggerType}
+        </Badge>
     }
   }
 
-  // Get trigger type badge
-  const getTriggerBadge = (triggerType: string) => {
-    const badges = {
-      manual: { label: 'Manual', variant: 'outline' as const, color: 'text-blue-600' },
-      new_idea: { label: 'New Idea', variant: 'secondary' as const, color: 'text-purple-600' },
-      task_complete: { label: 'Task Complete', variant: 'default' as const, color: 'text-green-600' },
-      schedule: { label: 'Scheduled', variant: 'outline' as const, color: 'text-orange-600' }
-    }
-    
-    const badge = badges[triggerType as keyof typeof badges] || badges.manual
-    
-    return (
-      <Badge variant={badge.variant} className={cn('text-xs', badge.color)}>
-        {badge.label}
+  const getStatusBadge = (status?: string) => {
+    if (!status || status === 'never') {
+      return <Badge variant="outline" className="text-xs">
+        Never run
       </Badge>
-    )
-  }
-
-  // Get last run status
-  const getLastRunStatus = () => {
-    if (!workflow.last_run_at) {
-      return (
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <span>Never run</span>
-        </div>
-      )
     }
 
-    const timeAgo = getTimeAgo(workflow.last_run_at)
-    const status = workflow.last_run_status
-
-    const statusConfig = {
-      completed: { icon: CheckCircle, color: 'text-green-600', label: 'Completed' },
-      running: { icon: Loader2, color: 'text-blue-600', label: 'Running' },
-      failed: { icon: AlertCircle, color: 'text-red-600', label: 'Failed' },
-      waiting_approval: { icon: Clock, color: 'text-yellow-600', label: 'Waiting Approval' }
+    switch (status) {
+      case 'running':
+        return <Badge className="text-xs bg-blue-500 text-white animate-pulse">
+          <Clock className="h-3 w-3 mr-1" />
+          Running
+        </Badge>
+      case 'completed':
+        return <Badge className="text-xs bg-green-500 text-white">
+          <CheckCircle className="h-3 w-3 mr-1" />
+          Completed
+        </Badge>
+      case 'failed':
+        return <Badge className="text-xs bg-red-500 text-white">
+          <XCircle className="h-3 w-3 mr-1" />
+          Failed
+        </Badge>
+      case 'waiting_approval':
+        return <Badge className="text-xs bg-yellow-500 text-white">
+          <AlertTriangle className="h-3 w-3 mr-1" />
+          Needs Approval
+        </Badge>
+      default:
+        return <Badge variant="outline" className="text-xs">
+          {status}
+        </Badge>
     }
-
-    const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.completed
-    const Icon = config.icon
-
-    return (
-      <div className="flex items-center gap-2 text-sm">
-        <Icon className={cn('h-4 w-4', config.color, status === 'running' && 'animate-spin')} />
-        <span className="text-muted-foreground">
-          Last run: {timeAgo}
-        </span>
-      </div>
-    )
   }
 
-  // Format time ago
-  const getTimeAgo = (dateString: string) => {
-    const date = new Date(dateString)
+  const formatLastRun = (timestamp?: string) => {
+    if (!timestamp) return 'Never run'
+
+    const date = new Date(timestamp)
     const now = new Date()
-    const diffInMinutes = Math.floor((now.getTime() - date.getTime()) / (1000 * 60))
-    
-    if (diffInMinutes < 60) {
-      return `${diffInMinutes}m ago`
-    }
-    
-    const diffInHours = Math.floor(diffInMinutes / 60)
-    if (diffInHours < 24) {
-      return `${diffInHours}h ago`
-    }
-    
-    const diffInDays = Math.floor(diffInHours / 24)
-    return `${diffInDays}d ago`
+    const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60))
+
+    if (diffInHours < 1) return 'Less than 1h ago'
+    if (diffInHours < 24) return `${diffInHours}h ago`
+    if (diffInHours < 48) return 'Yesterday'
+    return date.toLocaleDateString()
   }
 
-  // Handle toggle active state
-  const handleToggleActive = async (checked: boolean) => {
+  const handleToggle = async (checked: boolean) => {
+    setIsToggling(true)
     try {
-      setIsUpdating(true)
-      
-      const response = await fetch(`/api/workflows/${workflow.id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ is_active: checked })
-      })
-
-      if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.message || 'Failed to update workflow')
-      }
-
-      toast.success(`Workflow ${checked ? 'activated' : 'deactivated'} successfully`)
-      onUpdate()
-    } catch (error) {
-      console.error('Error updating workflow:', error)
-      toast.error(error instanceof Error ? error.message : 'Failed to update workflow')
+      await new Promise(resolve => setTimeout(resolve, 500)) // Simulate API call
+      onToggle(workflow.id, checked)
     } finally {
-      setIsUpdating(false)
-    }
-  }
-
-  // Handle run workflow
-  const handleRunWorkflow = async () => {
-    if (!workflow.is_active) {
-      toast.error('Cannot run inactive workflow. Please activate it first.')
-      return
-    }
-
-    try {
-      setIsRunning(true)
-      
-      const response = await fetch('/api/workflows/run', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          workflowId: workflow.id,
-          projectId: null // Will be determined by workflow logic
-        })
-      })
-
-      if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.message || 'Failed to run workflow')
-      }
-
-      const data = await response.json()
-      console.log('Workflow started:', data)
-      
-      toast.success(`Workflow "${workflow.name}" started successfully`)
-      onUpdate()
-    } catch (error) {
-      console.error('Error running workflow:', error)
-      toast.error(error instanceof Error ? error.message : 'Failed to start workflow')
-    } finally {
-      setIsRunning(false)
-    }
-  }
-
-  // Handle save workflow configuration
-  const handleSaveConfig = async (config: Partial<Workflow>) => {
-    try {
-      const response = await fetch(`/api/workflows/${workflow.id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(config)
-      })
-
-      if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.message || 'Failed to save workflow configuration')
-      }
-
-      onUpdate() // Refresh the workflow data
-    } catch (error) {
-      console.error('Error saving workflow config:', error)
-      throw error // Re-throw so modal can handle it
+      setIsToggling(false)
     }
   }
 
   return (
-    <>
-      <Card className={cn(
-        'transition-all duration-200 hover:shadow-md',
-        workflow.is_active ? 'border-green-200 bg-green-50/30' : 'border-gray-200'
-      )}>
-        <CardHeader className="pb-3">
-          <div className="flex items-start justify-between">
-            <div className="flex items-center gap-3">
-              <div className={cn(
-                'p-2 rounded-lg',
-                workflow.is_active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'
-              )}>
-                {getWorkflowIcon(workflow.template_type)}
-              </div>
-              <div>
-                <CardTitle className="text-lg">{workflow.name}</CardTitle>
-                {workflow.description && (
-                  <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
-                    {workflow.description}
-                  </p>
-                )}
-              </div>
+    <Card className={`hover:shadow-md transition-all duration-200 ${
+      workflow.is_active 
+        ? 'border-green-200 bg-green-50/30 dark:border-green-800 dark:bg-green-950/20' 
+        : 'border-gray-200'
+    }`}>
+      <CardHeader className="pb-3">
+        <div className="flex items-start justify-between">
+          <div className="flex items-center space-x-3">
+            <div className={`p-2 rounded-lg bg-background border ${getWorkflowIconColor(workflow.template_type)}`}>
+              {getWorkflowIcon(workflow.template_type)}
             </div>
-            
-            <div className="flex items-center gap-2">
-              {getTriggerBadge(workflow.trigger_type)}
-              <Switch
-                checked={workflow.is_active}
-                onCheckedChange={handleToggleActive}
-                disabled={isUpdating}
-                className={cn(
-                  'data-[state=checked]:bg-green-600',
-                  isUpdating && 'opacity-50 cursor-not-allowed'
-                )}
-              />
+            <div>
+              <CardTitle className="text-lg font-semibold">{workflow.name}</CardTitle>
+              <p className="text-sm text-muted-foreground mt-1">
+                {workflow.description}
+              </p>
             </div>
           </div>
-        </CardHeader>
-
-        <CardContent className="pt-0">
-          <div className="space-y-4">
-            {/* Status */}
-            {getLastRunStatus()}
-
-            {/* Schedule info for scheduled workflows */}
-            {workflow.trigger_type === 'schedule' && workflow.schedule && (
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Calendar className="h-4 w-4" />
-                <span>Schedule: {workflow.schedule}</span>
-              </div>
-            )}
-
-            {/* Action Buttons */}
-            <div className="flex gap-2 pt-2">
-              <Button
-                size="sm"
-                onClick={handleRunWorkflow}
-                disabled={isRunning || !workflow.is_active}
-                className="flex-1"
-                title={!workflow.is_active ? "Activate workflow to run" : ""}
-              >
-                {isRunning ? (
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                ) : (
-                  <Play className="h-4 w-4 mr-2" />
-                )}
+          
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                <MoreVertical className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => onRun(workflow.id)}>
+                <Play className="h-4 w-4 mr-2" />
                 Run Now
-              </Button>
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => onConfigure(workflow.id)}>
+                <Settings className="h-4 w-4 mr-2" />
+                Configure
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => onViewRuns(workflow.id)}>
+                <BarChart3 className="h-4 w-4 mr-2" />
+                View Runs
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </CardHeader>
 
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => setShowConfigModal(true)}
-                disabled={isUpdating}
-                title="Configure workflow"
-              >
-                <Settings className="h-4 w-4" />
-              </Button>
+      <CardContent className="space-y-4">
+        {/* Trigger Type and Status */}
+        <div className="flex items-center justify-between">
+          {getTriggerTypeBadge(workflow.trigger_type)}
+          {getStatusBadge(workflow.last_run_status)}
+        </div>
 
-              <Link href={`/automations/${workflow.id}/runs`}>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  disabled={isUpdating}
-                  title="View workflow runs"
-                >
-                  <BarChart3 className="h-4 w-4" />
-                </Button>
-              </Link>
-            </div>
-
-            {/* Additional status indicators */}
-            {workflow.is_active && workflow.trigger_type === 'schedule' && (
-              <div className="text-xs text-green-600 bg-green-50 px-2 py-1 rounded border border-green-200">
-                ⚡ Active - Will run automatically
-              </div>
-            )}
-            
-            {workflow.is_active && workflow.trigger_type === 'new_idea' && (
-              <div className="text-xs text-purple-600 bg-purple-50 px-2 py-1 rounded border border-purple-200">
-                🎯 Active - Triggers on new ideas
-              </div>
-            )}
-            
-            {workflow.is_active && workflow.trigger_type === 'task_complete' && (
-              <div className="text-xs text-green-600 bg-green-50 px-2 py-1 rounded border border-green-200">
-                ✅ Active - Triggers on task completion
-              </div>
-            )}
-
-            {!workflow.is_active && (
-              <div className="text-xs text-gray-600 bg-gray-50 px-2 py-1 rounded border border-gray-200">
-                ⏸️ Inactive - Enable to activate triggers
-              </div>
-            )}
+        {/* Schedule info for scheduled workflows */}
+        {workflow.trigger_type === 'schedule' && workflow.schedule && (
+          <div className="flex items-center space-x-2 text-xs text-muted-foreground">
+            <Calendar className="h-3 w-3" />
+            <span>Schedule: {workflow.schedule}</span>
           </div>
-        </CardContent>
-      </Card>
+        )}
 
-      {/* Configuration Modal */}
-      <WorkflowConfigModal
-        workflow={workflow}
-        isOpen={showConfigModal}
-        onClose={() => setShowConfigModal(false)}
-        onSave={handleSaveConfig}
-      />
-    </>
+        {/* Last Run Info */}
+        <div className="text-sm">
+          <div className="flex items-center justify-between">
+            <span className="text-muted-foreground">Last run:</span>
+            <span className="font-medium">
+              {formatLastRun(workflow.last_run_at)}
+              {workflow.last_run_status === 'completed' && (
+                <CheckCircle className="h-3 w-3 inline ml-1 text-green-600" />
+              )}
+            </span>
+          </div>
+        </div>
+
+        {/* Active Toggle */}
+        <div className="flex items-center justify-between pt-2 border-t">
+          <div className="flex items-center space-x-2">
+            <Switch
+              id={`active-${workflow.id}`}
+              checked={workflow.is_active}
+              onCheckedChange={handleToggle}
+              disabled={isToggling}
+            />
+            <label 
+              htmlFor={`active-${workflow.id}`} 
+              className="text-sm font-medium cursor-pointer"
+            >
+              {workflow.is_active ? 'Active' : 'Inactive'}
+            </label>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex space-x-1">
+            <Button 
+              size="sm" 
+              variant="outline"
+              onClick={() => onRun(workflow.id)}
+              disabled={isToggling}
+            >
+              <Play className="h-3 w-3 mr-1" />
+              Run Now
+            </Button>
+            <Button 
+              size="sm" 
+              variant="outline"
+              onClick={() => onConfigure(workflow.id)}
+            >
+              <Settings className="h-3 w-3 mr-1" />
+              Configure
+            </Button>
+            <Button 
+              size="sm" 
+              variant="outline"
+              onClick={() => onViewRuns(workflow.id)}
+            >
+              <BarChart3 className="h-3 w-3 mr-1" />
+              View Runs
+            </Button>
+          </div>
+        </div>
+
+        {/* Status indicator at bottom */}
+        {workflow.is_active && (
+          <div className="flex items-center space-x-2 text-xs">
+            <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+            <span className="text-green-700 dark:text-green-400 font-medium">
+              Workflow is active and monitoring for triggers
+            </span>
+          </div>
+        )}
+
+        {!workflow.is_active && (
+          <div className="flex items-center space-x-2 text-xs">
+            <div className="w-2 h-2 rounded-full bg-gray-400"></div>
+            <span className="text-gray-600 dark:text-gray-400">
+              Workflow is inactive
+            </span>
+          </div>
+        )}
+      </CardContent>
+    </Card>
   )
 }
