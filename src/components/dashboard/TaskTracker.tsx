@@ -13,95 +13,169 @@ import {
   Clock,
   Target,
   Activity,
-  ChevronRight
+  ChevronRight,
+  Zap,
+  Brain,
+  Search,
+  Upload,
+  RefreshCw
 } from 'lucide-react'
 
-interface TaskStatus {
-  isActive: boolean
-  currentTaskNumber?: number
-  currentTaskName?: string
-  totalTasks: number
-  completedTasks: number
-  timeElapsed?: string
-  status: 'working' | 'idle' | 'complete' | 'waiting'
-  sprint?: string
+interface LiveStatus {
+  currentTask?: {
+    number: string | number
+    name: string
+    stage: string
+  }
+  currentProject?: {
+    name: string
+    id: string
+  }
+  currentAction: string
+  uptime: number
+  tokensUsed: number
+  status: string
+  timestamp: string
 }
 
-export function TaskTracker() {
-  const [taskStatus, setTaskStatus] = useState<TaskStatus>({
-    isActive: true,
-    currentTaskNumber: 1,
-    currentTaskName: "Create live task tracker component",
-    totalTasks: 23,
-    completedTasks: 0,
-    timeElapsed: "00:00:00",
-    status: 'working',
-    sprint: '0D'
-  })
+interface TaskTrackerProps {
+  bridgeApiUrl?: string
+}
 
-  const [startTime] = useState(new Date())
+export function TaskTracker({ bridgeApiUrl = 'http://localhost:3001' }: TaskTrackerProps) {
+  const [liveStatus, setLiveStatus] = useState<LiveStatus>({
+    currentAction: 'idle',
+    uptime: 0,
+    tokensUsed: 0,
+    status: 'idle',
+    timestamp: new Date().toISOString()
+  })
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    if (taskStatus.status === 'working') {
-      const interval = setInterval(() => {
-        const now = new Date()
-        const diff = now.getTime() - startTime.getTime()
-        const hours = Math.floor(diff / (1000 * 60 * 60))
-        const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))
-        const seconds = Math.floor((diff % (1000 * 60)) / 1000)
-        
-        setTaskStatus(prev => ({
-          ...prev,
-          timeElapsed: `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`
-        }))
-      }, 1000)
+    fetchLiveStatus()
+    
+    // Update every 10 seconds
+    const interval = setInterval(fetchLiveStatus, 10000)
+    return () => clearInterval(interval)
+  }, [bridgeApiUrl])
 
-      return () => clearInterval(interval)
+  const fetchLiveStatus = async () => {
+    try {
+      setLoading(true)
+      setError(null)
+
+      const response = await fetch(`${bridgeApiUrl}/api/live-status`)
+      if (!response.ok) {
+        throw new Error(`Bridge API error: ${response.status}`)
+      }
+
+      const data = await response.json()
+      setLiveStatus(data)
+    } catch (err) {
+      console.error('Failed to fetch live status:', err)
+      setError(err instanceof Error ? err.message : 'Unknown error')
+      
+      // Fall back to demo data if Bridge API is unavailable
+      setLiveStatus({
+        currentTask: {
+          number: '0D-16',
+          name: 'Add live task tracker to Dashboard',
+          stage: 'building'
+        },
+        currentProject: {
+          name: 'GenPlatform.ai',
+          id: 'genplatform-main'
+        },
+        currentAction: 'coding',
+        uptime: 3600,
+        tokensUsed: 15420,
+        status: 'active',
+        timestamp: new Date().toISOString()
+      })
+    } finally {
+      setLoading(false)
     }
-  }, [taskStatus.status, startTime])
+  }
 
   const getStatusIcon = () => {
-    switch (taskStatus.status) {
-      case 'working':
+    switch (liveStatus.status) {
+      case 'active':
         return <Hammer className="h-5 w-5 text-orange-500 animate-pulse" />
-      case 'complete':
-        return <CheckCircle className="h-5 w-5 text-green-500" />
-      case 'waiting':
+      case 'idle':
         return <Pause className="h-5 w-5 text-gray-500" />
       default:
         return <Activity className="h-5 w-5 text-blue-500" />
     }
   }
 
-  const getStatusText = () => {
-    switch (taskStatus.status) {
-      case 'working':
-        return `🔨 Currently working on: Task ${taskStatus.currentTaskNumber} — ${taskStatus.currentTaskName}`
-      case 'complete':
-        return "✅ All tasks complete"
-      case 'waiting':
-        return "⏸️ Waiting for instructions"
+  const getActionIcon = () => {
+    switch (liveStatus.currentAction) {
+      case 'coding':
+        return <Zap className="h-4 w-4" />
+      case 'reviewing':
+        return <CheckCircle className="h-4 w-4" />
+      case 'researching':
+        return <Search className="h-4 w-4" />
+      case 'deploying':
+        return <Upload className="h-4 w-4" />
       default:
-        return "⚡ Ready to begin work"
+        return <Brain className="h-4 w-4" />
     }
   }
 
+  const getStatusText = () => {
+    if (liveStatus.status === 'active' && liveStatus.currentTask) {
+      return `🔨 Currently working on: Task ${liveStatus.currentTask.number} — ${liveStatus.currentTask.name}`
+    }
+    if (liveStatus.status === 'idle') {
+      return "⏸️ Waiting for instructions"
+    }
+    return "⚡ Ready to begin work"
+  }
+
   const getStatusBadge = () => {
-    switch (taskStatus.status) {
-      case 'working':
-        return <Badge className="bg-orange-500 hover:bg-orange-600">In Progress</Badge>
-      case 'complete':
-        return <Badge className="bg-green-500 hover:bg-green-600">Complete</Badge>
-      case 'waiting':
-        return <Badge variant="secondary">Waiting</Badge>
+    switch (liveStatus.status) {
+      case 'active':
+        return <Badge className="bg-orange-500 hover:bg-orange-600">Active</Badge>
+      case 'idle':
+        return <Badge variant="secondary">Idle</Badge>
       default:
         return <Badge variant="outline">Ready</Badge>
     }
   }
 
-  const progressPercentage = taskStatus.totalTasks > 0 
-    ? Math.round((taskStatus.completedTasks / taskStatus.totalTasks) * 100) 
-    : 0
+  const getDepartmentRole = () => {
+    switch (liveStatus.currentAction) {
+      case 'coding':
+        return 'Development Team'
+      case 'reviewing':
+        return 'Quality Assurance'
+      case 'researching':
+        return 'Research Team'
+      case 'deploying':
+        return 'DevOps Team'
+      default:
+        return 'AI Assistant'
+    }
+  }
+
+  const formatUptime = (seconds: number) => {
+    const hours = Math.floor(seconds / 3600)
+    const minutes = Math.floor((seconds % 3600) / 60)
+    return `${hours}h ${minutes}m`
+  }
+
+  const formatTokens = (tokens: number) => {
+    if (tokens > 1000000) {
+      return `${(tokens / 1000000).toFixed(1)}M`
+    }
+    if (tokens > 1000) {
+      return `${(tokens / 1000).toFixed(1)}K`
+    }
+    return tokens.toString()
+  }
 
   return (
     <Card className="mb-6 border-l-4 border-l-orange-500">
@@ -111,17 +185,28 @@ export function TaskTracker() {
             {getStatusIcon()}
             <span>Live Task Monitor</span>
             {getStatusBadge()}
+            {error && (
+              <Badge variant="destructive" className="ml-2">
+                API Error
+              </Badge>
+            )}
           </CardTitle>
           <div className="flex items-center space-x-2">
             <Badge variant="outline" className="font-mono">
-              Sprint {taskStatus.sprint}
+              Sprint 0D
             </Badge>
-            {taskStatus.timeElapsed && (
-              <Badge variant="outline" className="font-mono flex items-center space-x-1">
-                <Clock className="h-3 w-3" />
-                <span>{taskStatus.timeElapsed}</span>
-              </Badge>
-            )}
+            <Badge variant="outline" className="font-mono flex items-center space-x-1">
+              <Clock className="h-3 w-3" />
+              <span>{formatUptime(liveStatus.uptime)}</span>
+            </Badge>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={fetchLiveStatus}
+              disabled={loading}
+            >
+              <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+            </Button>
           </div>
         </div>
         <CardDescription className="text-base">
@@ -129,33 +214,49 @@ export function TaskTracker() {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        {/* Progress Section */}
-        <div className="space-y-2">
-          <div className="flex items-center justify-between text-sm">
-            <div className="flex items-center space-x-2">
-              <Target className="h-4 w-4 text-muted-foreground" />
-              <span>Sprint Progress</span>
+        {/* Current Department/Role Active */}
+        {liveStatus.status === 'active' && (
+          <div className="flex items-center justify-between p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
+            <div className="flex items-center space-x-3">
+              <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white">
+                {getActionIcon()}
+              </div>
+              <div>
+                <div className="font-medium text-blue-900 dark:text-blue-100">
+                  {getDepartmentRole()} Active
+                </div>
+                <div className="text-sm text-blue-700 dark:text-blue-300 capitalize">
+                  {liveStatus.currentAction} • {liveStatus.currentTask?.stage}
+                </div>
+              </div>
             </div>
-            <span className="font-mono font-medium">
-              {taskStatus.completedTasks}/{taskStatus.totalTasks} tasks ({progressPercentage}%)
-            </span>
+            <div className="text-right">
+              <div className="text-sm font-medium text-blue-900 dark:text-blue-100">
+                {liveStatus.currentProject?.name}
+              </div>
+              <div className="text-xs text-blue-700 dark:text-blue-300">
+                Project: {liveStatus.currentProject?.id}
+              </div>
+            </div>
           </div>
-          <Progress value={progressPercentage} className="h-3" />
-        </div>
+        )}
 
         {/* Current Task Details */}
-        {taskStatus.status === 'working' && taskStatus.currentTaskName && (
+        {liveStatus.status === 'active' && liveStatus.currentTask && (
           <div className="flex items-center justify-between p-3 bg-orange-50 dark:bg-orange-950/20 rounded-lg border border-orange-200 dark:border-orange-800">
             <div className="flex items-center space-x-3">
               <div className="w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center text-white font-bold text-sm">
-                {taskStatus.currentTaskNumber}
+                {typeof liveStatus.currentTask.number === 'string' 
+                  ? liveStatus.currentTask.number.split('-')[1] || liveStatus.currentTask.number
+                  : liveStatus.currentTask.number
+                }
               </div>
               <div>
                 <div className="font-medium text-orange-900 dark:text-orange-100">
-                  {taskStatus.currentTaskName}
+                  {liveStatus.currentTask.name}
                 </div>
-                <div className="text-sm text-orange-700 dark:text-orange-300">
-                  Estimated: 15 minutes
+                <div className="text-sm text-orange-700 dark:text-orange-300 capitalize">
+                  Stage: {liveStatus.currentTask.stage}
                 </div>
               </div>
             </div>
@@ -166,18 +267,25 @@ export function TaskTracker() {
         {/* Quick Stats */}
         <div className="grid grid-cols-3 gap-4">
           <div className="text-center p-2 bg-muted/30 rounded-lg">
-            <div className="text-lg font-bold text-blue-600">{taskStatus.totalTasks}</div>
-            <div className="text-xs text-muted-foreground">Total Tasks</div>
+            <div className="text-lg font-bold text-blue-600">{formatUptime(liveStatus.uptime)}</div>
+            <div className="text-xs text-muted-foreground">Uptime</div>
           </div>
           <div className="text-center p-2 bg-muted/30 rounded-lg">
-            <div className="text-lg font-bold text-green-600">{taskStatus.completedTasks}</div>
-            <div className="text-xs text-muted-foreground">Completed</div>
+            <div className="text-lg font-bold text-green-600">{formatTokens(liveStatus.tokensUsed)}</div>
+            <div className="text-xs text-muted-foreground">Tokens Used</div>
           </div>
           <div className="text-center p-2 bg-muted/30 rounded-lg">
-            <div className="text-lg font-bold text-orange-600">{taskStatus.totalTasks - taskStatus.completedTasks}</div>
-            <div className="text-xs text-muted-foreground">Remaining</div>
+            <div className="text-lg font-bold text-orange-600 capitalize">{liveStatus.status}</div>
+            <div className="text-xs text-muted-foreground">Status</div>
           </div>
         </div>
+
+        {/* Error Display */}
+        {error && (
+          <div className="text-xs text-muted-foreground p-2 bg-muted/20 rounded border-l-2 border-yellow-400">
+            ⚠️ Bridge API unavailable ({error}). Showing demo data.
+          </div>
+        )}
       </CardContent>
     </Card>
   )
