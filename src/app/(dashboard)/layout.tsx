@@ -1,10 +1,6 @@
-import { Inter } from 'next/font/google'
-import { ThemeProvider } from '@/components/theme-provider'
 import { Sidebar } from '@/components/layout/sidebar'
-import { Header } from '@/components/layout/header'
-import { TooltipProvider } from '@/components/ui/tooltip'
-
-const inter = Inter({ subsets: ['latin'] })
+import { Navbar } from '@/components/layout/navbar'
+import { NotificationProvider, NotificationToast } from '@/components/notifications/notification-system'
 
 export default function DashboardLayout({
   children,
@@ -12,31 +8,17 @@ export default function DashboardLayout({
   children: React.ReactNode
 }) {
   return (
-    <div className={inter.className}>
-      <ThemeProvider
-        attribute="class"
-        defaultTheme="dark"
-        enableSystem
-        disableTransitionOnChange
-      >
-        <TooltipProvider>
-          <div className="flex h-screen bg-background overflow-hidden">
-            {/* Desktop Sidebar */}
-            <div className="hidden md:block">
-              <Sidebar />
-            </div>
-            
-            <div className="flex-1 flex flex-col overflow-hidden">
-              <Header />
-              <main className="flex-1 overflow-y-auto p-4 lg:p-6 bg-background">
-                <div className="max-w-7xl mx-auto">
-                  {children}
-                </div>
-              </main>
-            </div>
-          </div>
-        </TooltipProvider>
-      </ThemeProvider>
-    </div>
+    <NotificationProvider>
+      <div className="min-h-screen bg-background">
+        <Sidebar />
+        <div className="lg:pl-72">
+          <Navbar />
+          <main className="py-4">
+            {children}
+          </main>
+        </div>
+        <NotificationToast />
+      </div>
+    </NotificationProvider>
   )
 }
