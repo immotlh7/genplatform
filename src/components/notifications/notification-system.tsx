@@ -11,8 +11,7 @@ import {
   AlertTriangle,
   Info,
   XCircle,
-  Settings,
-  Mark
+  Settings
 } from 'lucide-react'
 import {
   DropdownMenu,
@@ -226,19 +225,17 @@ export function NotificationBell() {
 
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="sm" className="relative">
-          <Bell className="h-4 w-4" />
-          {hasUnread && (
-            <Badge 
-              variant="destructive" 
-              className="absolute -top-2 -right-2 h-5 w-5 p-0 flex items-center justify-center text-xs"
-            >
-              {unreadCount > 9 ? '9+' : unreadCount}
-            </Badge>
-          )}
-        </Button>
-      </DropdownMenuTrigger>
+      <Button variant="ghost" size="sm" className="relative">
+        <Bell className="h-4 w-4" />
+        {hasUnread && (
+          <Badge 
+            variant="destructive" 
+            className="absolute -top-2 -right-2 h-5 w-5 p-0 flex items-center justify-center text-xs"
+          >
+            {unreadCount > 9 ? '9+' : unreadCount}
+          </Badge>
+        )}
+      </Button>
       
       <DropdownMenuContent align="end" className="w-80">
         <div className="flex items-center justify-between p-4 border-b">
