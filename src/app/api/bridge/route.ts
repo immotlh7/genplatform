@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getCurrentUser } from '@/lib/access-control'
+import { getCurrentUser } from '@/lib/access-control-server'
 
 interface BridgeMessage {
   id?: string
@@ -111,7 +111,7 @@ async function callCommanderSkill(arabicText: string): Promise<CommanderResponse
 export async function POST(request: NextRequest) {
   try {
     // Check user authentication
-    const currentUser = getCurrentUser()
+    const currentUser = await getCurrentUser()
     if (!currentUser) {
       return NextResponse.json(
         { success: false, error: 'Authentication required' },
@@ -233,7 +233,7 @@ export async function POST(request: NextRequest) {
 // GET endpoint for Bridge status and capabilities
 export async function GET(request: NextRequest) {
   try {
-    const currentUser = getCurrentUser()
+    const currentUser = await getCurrentUser()
     if (!currentUser) {
       return NextResponse.json(
         { success: false, error: 'Authentication required' },
