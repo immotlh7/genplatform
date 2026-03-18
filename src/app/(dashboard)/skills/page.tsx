@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Switch } from '@/components/ui/switch'
+import { SkillDetailModal } from '@/components/skills/skill-detail-modal'
 import { 
   Search, 
   Download, 
@@ -33,6 +34,8 @@ export default function SkillsPage() {
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedCategory, setSelectedCategory] = useState<string>('all')
   const [categories, setCategories] = useState<string[]>([])
+  const [selectedSkill, setSelectedSkill] = useState<Skill | null>(null)
+  const [showDetail, setShowDetail] = useState(false)
 
   useEffect(() => {
     loadSkills()
@@ -60,14 +63,20 @@ export default function SkillsPage() {
         ? { ...skill, active: !skill.active }
         : skill
     ))
-    
-    // In production, would call API to actually toggle skill
-    console.log(`Toggled skill: ${skillName}`)
   }
 
   const bulkToggle = async (enable: boolean) => {
     setSkills(prev => prev.map(skill => ({ ...skill, active: enable })))
-    console.log(`Bulk ${enable ? 'enabled' : 'disabled'} all skills`)
+  }
+
+  const handleSkillClick = (skill: Skill) => {
+    setSelectedSkill(skill)
+    setShowDetail(true)
+  }
+
+  const installSkill = async () => {
+    // Demo - would integrate with clawhub install
+    console.log('Installing new skill from clawhub')
   }
 
   const filteredSkills = skills.filter(skill => {
@@ -118,7 +127,7 @@ export default function SkillsPage() {
             <Power className="h-4 w-4 mr-2" />
             Enable All
           </Button>
-          <Button>
+          <Button onClick={installSkill}>
             <Plus className="h-4 w-4 mr-2" />
             Install Skill
           </Button>
@@ -184,7 +193,11 @@ export default function SkillsPage() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredSkills.map((skill) => (
-            <Card key={skill.name} className="hover:shadow-lg transition-shadow">
+            <Card 
+              key={skill.name} 
+              className="hover:shadow-lg transition-shadow cursor-pointer"
+              onClick={() => handleSkillClick(skill)}
+            >
               <CardHeader>
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
@@ -198,7 +211,11 @@ export default function SkillsPage() {
                   </div>
                   <Switch 
                     checked={skill.active}
-                    onCheckedChange={() => toggleSkill(skill.name)}
+                    onCheckedChange={(e) => {
+                      e.stopPropagation()
+                      toggleSkill(skill.name)
+                    }}
+                    onClick={(e) => e.stopPropagation()}
                   />
                 </div>
               </CardHeader>
@@ -217,10 +234,22 @@ export default function SkillsPage() {
 
                 {/* Actions */}
                 <div className="flex space-x-2 pt-2">
-                  <Button size="sm" variant="outline" className="flex-1">
+                  <Button 
+                    size="sm" 
+                    variant="outline" 
+                    className="flex-1"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      handleSkillClick(skill)
+                    }}
+                  >
                     View Details
                   </Button>
-                  <Button size="sm" variant="outline">
+                  <Button 
+                    size="sm" 
+                    variant="outline"
+                    onClick={(e) => e.stopPropagation()}
+                  >
                     <Download className="h-3 w-3" />
                   </Button>
                 </div>
@@ -229,6 +258,14 @@ export default function SkillsPage() {
           ))}
         </div>
       )}
+
+      {/* Detail Modal */}
+      <SkillDetailModal 
+        skill={selectedSkill}
+        open={showDetail}
+        onOpenChange={setShowDetail}
+        onToggle={toggleSkill}
+      />
     </div>
   )
 }
