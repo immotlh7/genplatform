@@ -84,11 +84,9 @@ export function Navbar() {
 
           {/* User menu */}
           <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" className="relative h-8 w-8 rounded-full">
-                <User className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
+            <Button variant="ghost" size="sm" className="relative h-8 w-8 rounded-full">
+              <User className="h-4 w-4" />
+            </Button>
             <DropdownMenuContent className="w-56" align="end">
               <DropdownMenuLabel className="font-normal">
                 <div className="flex flex-col space-y-1">
