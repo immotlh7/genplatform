@@ -23,7 +23,10 @@ import {
   Settings,
   GitCompare,
   Download,
-  Bell
+  Bell,
+  FolderOpen,
+  Shield,
+  Database
 } from 'lucide-react'
 import Link from 'next/link'
 import { TaskTracker } from '@/components/dashboard/TaskTracker'
@@ -32,7 +35,7 @@ import { ImprovementsWidget } from '@/components/dashboard/ImprovementsWidget'
 import { ReportsNotifications } from '@/components/notifications/ReportsNotifications'
 import { AutomationsCard } from '@/components/dashboard/AutomationsCard'
 import { supabaseHelpers } from '@/lib/supabase'
-import { getCurrentUserClient, getAccessibleProjects } from '@/lib/access-control'
+import { getCurrentUserClient, getFilteredDashboardStats, getUserPermissionSummary, getAccessibleProjects } from '@/lib/access-control'
 import type { User } from '@/lib/access-control'
 
 interface DashboardStats {
@@ -41,6 +44,9 @@ interface DashboardStats {
   security: { status: string; lastCheck: string; severity: string }
   system: { status: string; uptime: number; cpu: number; memory: number }
   reports: { total: number; thisWeek: number; pendingGeneration: number; lastGenerated: string }
+  team?: { total: number; active: number; invited: number }
+  accessLevel: string
+  projectCount: number
 }
 
 interface QuickAction {
@@ -51,7 +57,10 @@ interface QuickAction {
   icon: React.ReactNode
   color: string
   requiresOwner?: boolean
+  requiresAdmin?: boolean
+  requiresManager?: boolean
   badge?: string
+  permission?: string
 }
 
 export default function DashboardPage() {
@@ -76,136 +85,90 @@ export default function DashboardPage() {
 
       if (!user) {
         setError('Authentication required')
+        setStats(getDemoStats('VIEWER', 0)) // Show demo data for non-authenticated users
         return
       }
 
-      // Get accessible projects based on user role
-      let projectIds: string[] = []
-      if (user.role === 'OWNER' || user.role === 'ADMIN') {
-        // Owner and Admin see all projects
-        projectIds = await getAccessibleProjects(user.id)
-      } else {
-        // Manager and Viewer see only assigned projects
-        projectIds = await getAccessibleProjects(user.id)
-      }
+      // Get accessible projects and filtered stats
+      const projectIds = await getAccessibleProjects(user.id, user.role)
       setAccessibleProjectIds(projectIds)
 
-      // Fetch stats with project filtering
+      const filteredStats = await getFilteredDashboardStats(user)
+
+      // Get additional stats based on role
       const [
-        totalProjects,
-        activeTasks,
-        completedTasks,
         latestSecurity,
         latestMetrics,
-        reportsStats
+        teamStats
       ] = await Promise.all([
-        getFilteredProjectsCount(projectIds),
-        getFilteredTasksCount(projectIds, 'in_progress'),
-        getFilteredTasksCount(projectIds, 'done'),
         supabaseHelpers.getLatestSecurityStatus(),
         supabaseHelpers.getLatestSystemMetrics(),
-        getReportsStats()
+        getUserPermissionSummary(user).canManageTeam ? getTeamStats() : Promise.resolve(null)
       ])
 
-      // Calculate completion rate
-      const totalTasks = activeTasks + completedTasks
-      const completionRate = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0
-
-      // Determine security status
-      const securityStatus = latestSecurity 
-        ? (latestSecurity.severity === 'critical' ? 'critical' : 
-           latestSecurity.severity === 'warning' ? 'warning' : 'healthy')
-        : 'unknown'
-
-      // Format security last check
-      const securityLastCheck = latestSecurity 
-        ? formatTimeAgo(latestSecurity.created_at)
-        : 'Never'
-
+      // Build comprehensive stats object
       setStats({
-        projects: { 
-          total: totalProjects, 
-          active: Math.floor(totalProjects * 0.7), // Estimate active projects
-          completed: Math.floor(totalProjects * 0.3) // Estimate completed projects
-        },
-        tasks: { 
-          total: totalTasks,
-          active: activeTasks, 
-          completed: completedTasks,
-          completionRate 
-        },
-        security: { 
-          status: securityStatus, 
-          lastCheck: securityLastCheck,
+        ...filteredStats,
+        security: {
+          status: latestSecurity 
+            ? (latestSecurity.severity === 'critical' ? 'critical' : 
+               latestSecurity.severity === 'warning' ? 'warning' : 'healthy')
+            : 'unknown',
+          lastCheck: latestSecurity ? formatTimeAgo(latestSecurity.created_at) : 'Never',
           severity: latestSecurity?.severity || 'info'
         },
-        system: { 
+        system: {
           status: latestMetrics ? 'healthy' : 'unknown',
           uptime: latestMetrics ? calculateUptime(latestMetrics.recorded_at) : 0,
           cpu: latestMetrics?.cpu_percent || 45,
           memory: latestMetrics?.ram_percent || 62
         },
-        reports: reportsStats
+        reports: {
+          total: 8,
+          thisWeek: 3,
+          pendingGeneration: projectIds.length > 0 ? 1 : 0,
+          lastGenerated: '2 hours ago'
+        },
+        team: teamStats
       })
 
     } catch (err) {
       console.error('Failed to load dashboard data:', err)
       setError(err instanceof Error ? err.message : 'Unknown error')
       
-      // Fall back to demo data
-      setStats({
-        projects: { total: 3, active: 2, completed: 1 },
-        tasks: { total: 23, active: 8, completed: 15, completionRate: 65 },
-        security: { status: 'healthy', lastCheck: '2 hours ago', severity: 'info' },
-        system: { status: 'healthy', uptime: 2.5, cpu: 45, memory: 62 },
-        reports: { total: 8, thisWeek: 3, pendingGeneration: 1, lastGenerated: '2 hours ago' }
-      })
+      // Fall back to demo data based on user role or default
+      const userRole = currentUser?.role || 'VIEWER'
+      const projectCount = accessibleProjectIds.length || 0
+      setStats(getDemoStats(userRole, projectCount))
     } finally {
       setLoading(false)
     }
   }
 
-  const getReportsStats = async () => {
-    // Mock reports statistics - in real app, this would fetch from /api/reports/stats
-    return {
-      total: 8,
-      thisWeek: 3,
-      pendingGeneration: 1,
-      lastGenerated: '2 hours ago'
-    }
-  }
+  const getDemoStats = (role: string, projectCount: number): DashboardStats => ({
+    projects: { total: projectCount || 2, active: Math.max(1, projectCount - 1), completed: 1 },
+    tasks: { total: projectCount * 8, active: projectCount * 3, completed: projectCount * 5, completionRate: 65 },
+    security: { status: 'healthy', lastCheck: '2 hours ago', severity: 'info' },
+    system: { status: 'healthy', uptime: 2.5, cpu: 45, memory: 62 },
+    reports: { total: 5, thisWeek: 2, pendingGeneration: projectCount > 0 ? 1 : 0, lastGenerated: '2 hours ago' },
+    accessLevel: role,
+    projectCount
+  })
 
-  const getFilteredProjectsCount = async (projectIds: string[]): Promise<number> => {
-    if (projectIds.length === 0) return 0
-    
+  const getTeamStats = async () => {
     try {
-      const { count, error } = await supabaseHelpers.supabase
-        .from('projects')
-        .select('*', { count: 'exact', head: true })
-        .in('id', projectIds)
-        .neq('status', 'deleted')
+      const teamMembers = await supabaseHelpers.getTeamMembers()
+      const active = teamMembers.filter(m => m.status === 'active').length
+      const invited = teamMembers.filter(m => m.status === 'invited').length
       
-      return count || 0
+      return {
+        total: teamMembers.length,
+        active,
+        invited
+      }
     } catch (error) {
-      console.error('Error fetching filtered projects count:', error)
-      return 0
-    }
-  }
-
-  const getFilteredTasksCount = async (projectIds: string[], status: string): Promise<number> => {
-    if (projectIds.length === 0) return 0
-
-    try {
-      const { count, error } = await supabaseHelpers.supabase
-        .from('project_tasks')
-        .select('*', { count: 'exact', head: true })
-        .in('project_id', projectIds)
-        .eq('status', status)
-      
-      return count || 0
-    } catch (error) {
-      console.error(`Error fetching filtered ${status} tasks count:`, error)
-      return 0
+      console.error('Error fetching team stats:', error)
+      return { total: 0, active: 0, invited: 0 }
     }
   }
 
@@ -228,74 +191,106 @@ export default function DashboardPage() {
   }
 
   const getQuickActions = (user: User | null): QuickAction[] => {
-    const baseActions: QuickAction[] = [
-      {
+    if (!user) {
+      return [
+        {
+          id: 'login',
+          title: 'Sign In',
+          description: 'Access your dashboard',
+          href: '/login',
+          icon: <Shield className="h-4 w-4" />,
+          color: 'bg-blue-500'
+        }
+      ]
+    }
+
+    const permissions = getUserPermissionSummary(user)
+    const baseActions: QuickAction[] = []
+
+    // Project actions
+    if (permissions.canCreateProjects) {
+      baseActions.push({
+        id: 'new-project',
+        title: 'New Project',
+        description: 'Start a new project',
+        href: '/dashboard/projects?action=create',
+        icon: <Plus className="h-4 w-4" />,
+        color: 'bg-blue-600',
+        badge: 'Create'
+      })
+    }
+
+    // Always show accessible projects
+    baseActions.push({
+      id: 'view-projects',
+      title: 'View Projects',
+      description: `Access your ${accessibleProjectIds.length} project${accessibleProjectIds.length !== 1 ? 's' : ''}`,
+      href: '/dashboard/projects',
+      icon: <FolderOpen className="h-4 w-4" />,
+      color: 'bg-green-600'
+    })
+
+    // Reports actions
+    if (permissions.canViewReports) {
+      baseActions.push({
+        id: 'view-reports',
+        title: 'View Reports',
+        description: 'Access system reports',
+        href: '/dashboard/reports',
+        icon: <FileText className="h-4 w-4" />,
+        color: 'bg-purple-500'
+      })
+    }
+
+    if (permissions.canGenerateReports) {
+      baseActions.push({
         id: 'generate-report',
         title: 'Generate Report',
         description: 'Create new system report',
         href: '/dashboard/reports?action=generate',
-        icon: <FileText className="h-4 w-4" />,
+        icon: <BarChart3 className="h-4 w-4" />,
         color: 'bg-blue-500',
         badge: 'New'
-      },
-      {
-        id: 'compare-reports',
-        title: 'Compare Reports',
-        description: 'Analyze report differences',
-        href: '/dashboard/reports?action=compare',
-        icon: <GitCompare className="h-4 w-4" />,
-        color: 'bg-purple-500'
-      },
-      {
-        id: 'propose-improvement',
-        title: 'Suggest Improvement',
-        description: 'Submit enhancement idea',
-        href: '/dashboard/reports?tab=improvements&action=create',
-        icon: <TrendingUp className="h-4 w-4" />,
-        color: 'bg-green-500'
-      },
-      {
-        id: 'create-memory',
-        title: 'Create Memory File',
-        description: 'Add new memory or notes',
-        href: '/dashboard/memory',
-        icon: <Brain className="h-4 w-4" />,
-        color: 'bg-cyan-500'
-      },
-      {
-        id: 'system-check',
-        title: 'Health Check',
-        description: 'Run system diagnostics',
-        href: '/dashboard/monitoring',
-        icon: <Activity className="h-4 w-4" />,
-        color: 'bg-orange-500'
-      }
-    ]
-
-    // Add actions based on user role
-    if (user && (user.role === 'OWNER' || user.role === 'ADMIN')) {
-      baseActions.unshift({
-        id: 'new-project',
-        title: 'New Project',
-        description: 'Start a new project',
-        href: '/dashboard/projects',
-        icon: <Plus className="h-4 w-4" />,
-        color: 'bg-blue-600'
       })
     }
 
-    if (user && (user.role === 'OWNER' || user.role === 'ADMIN' || user.role === 'MANAGER')) {
+    // Team management
+    if (permissions.canManageTeam) {
       baseActions.push({
-        id: 'new-cron',
-        title: 'Schedule Job',
-        description: 'Create automated task',
-        href: '/dashboard/cron',
-        icon: <Clock className="h-4 w-4" />,
+        id: 'manage-team',
+        title: 'Manage Team',
+        description: 'Invite and manage members',
+        href: '/dashboard/team',
+        icon: <Users className="h-4 w-4" />,
         color: 'bg-indigo-500'
       })
     }
 
-    return baseActions
+    // System actions
+    if (permissions.canViewSystem) {
+      baseActions.push({
+        id: 'system-health',
+        title: 'System Health',
+        description: 'Monitor system status',
+        href: '/dashboard/monitoring',
+        icon: <Activity className="h-4 w-4" />,
+        color: 'bg-orange-500'
+      })
+    }
+
+    // Admin-only actions
+    if (permissions.isAdmin) {
+      baseActions.push({
+        id: 'automations',
+        title: 'Automations',
+        description: 'Manage automated workflows',
+        href: '/dashboard/automations',
+        icon: <Zap className="h-4 w-4" />,
+        color: 'bg-yellow-500'
+      })
+    }
+
+    return baseActions.slice(0, 8) // Limit to 8 actions
   }
 
   const getSecurityIcon = () => {
@@ -320,6 +315,8 @@ export default function DashboardPage() {
     )
   }
 
+  const permissions = currentUser ? getUserPermissionSummary(currentUser) : null
+
   return (
     <div className="space-y-6 p-4 md:p-6">
       {/* Header with user context and notifications */}
@@ -329,56 +326,66 @@ export default function DashboardPage() {
           <p className="text-muted-foreground">
             {currentUser ? (
               <>Welcome back, {currentUser.displayName}! Here's your {
-                currentUser.role === 'OWNER' || currentUser.role === 'ADMIN' 
+                permissions?.isAdmin
                   ? 'platform overview' 
-                  : 'assigned projects overview'
+                  : `${accessibleProjectIds.length} project${accessibleProjectIds.length !== 1 ? 's' : ''} overview`
               }.</>
             ) : (
-              'Welcome back! Here\'s what\'s happening with your AI agent platform.'
+              'Welcome to GenPlatform.ai Mission Control'
             )}
           </p>
         </div>
         <div className="flex items-center space-x-2">
-          <ReportsNotifications />
+          {permissions?.canViewReports && <ReportsNotifications />}
           <Button variant="outline" onClick={loadDashboardData} disabled={loading}>
             <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
             Refresh
           </Button>
-          <Link href="/dashboard/command-center">
-            <Button>
-              <Play className="h-4 w-4 mr-2" />
-              Command Center
-            </Button>
-          </Link>
+          {permissions?.isManager && (
+            <Link href="/dashboard/command-center">
+              <Button>
+                <Play className="h-4 w-4 mr-2" />
+                Command Center
+              </Button>
+            </Link>
+          )}
         </div>
       </div>
 
-      {/* Access level indicator for non-owners */}
-      {currentUser && currentUser.role !== 'OWNER' && (
+      {/* Access level indicator */}
+      {currentUser && (
         <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-          <div className="flex items-center space-x-2">
-            <Badge className="bg-blue-500 text-white">
-              {currentUser.role}
-            </Badge>
-            <span className="text-sm text-blue-900 dark:text-blue-100">
-              You have {currentUser.role.toLowerCase()} access to {accessibleProjectIds.length} project{accessibleProjectIds.length !== 1 ? 's' : ''}
-            </span>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <Badge className="bg-blue-500 text-white">
+                {currentUser.role}
+              </Badge>
+              <span className="text-sm text-blue-900 dark:text-blue-100">
+                {permissions?.isAdmin 
+                  ? 'Full platform access'
+                  : `Access to ${accessibleProjectIds.length} project${accessibleProjectIds.length !== 1 ? 's' : ''}`
+                }
+              </span>
+            </div>
+            <div className="text-xs text-blue-700 dark:text-blue-300">
+              {currentUser.userType === 'owner' ? '🏆 Platform Owner' : '👤 Team Member'}
+            </div>
           </div>
         </div>
       )}
 
-      {/* Live Task Tracker - Prominent position */}
-      <TaskTracker />
+      {/* Live Task Tracker - Filtered by user access */}
+      {currentUser && <TaskTracker projectFilter={permissions?.isAdmin ? undefined : accessibleProjectIds} />}
 
-      {/* Enhanced Stats Overview - Now includes Automations and Reports */}
+      {/* Enhanced Stats Overview */}
       {stats && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4 md:gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6 gap-4 md:gap-6">
           <Card className="hover:shadow-md transition-shadow">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">
-                {currentUser?.role === 'OWNER' || currentUser?.role === 'ADMIN' ? 'All Projects' : 'Your Projects'}
+                {permissions?.isAdmin ? 'All Projects' : 'Your Projects'}
               </CardTitle>
-              <Zap className="h-4 w-4 text-muted-foreground" />
+              <FolderOpen className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{stats.projects.total}</div>
@@ -407,10 +414,27 @@ export default function DashboardPage() {
             </CardContent>
           </Card>
 
-          {/* Automations Card - Only for OWNER and ADMIN */}
-          {currentUser && (currentUser.role === 'OWNER' || currentUser.role === 'ADMIN') && (
-            <AutomationsCard />
+          {/* Team card - only for those with team access */}
+          {permissions?.canManageTeam && stats.team && (
+            <Card className="hover:shadow-md transition-shadow">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Team</CardTitle>
+                <Users className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{stats.team.total}</div>
+                <p className="text-xs text-muted-foreground">
+                  {stats.team.active} active • {stats.team.invited} invited
+                </p>
+                <div className="mt-2">
+                  <Progress value={stats.team.total > 0 ? (stats.team.active / stats.team.total) * 100 : 0} />
+                </div>
+              </CardContent>
+            </Card>
           )}
+
+          {/* Automations Card - Only for OWNER and ADMIN */}
+          {permissions?.isAdmin && <AutomationsCard />}
 
           <Card className="hover:shadow-md transition-shadow">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -428,44 +452,27 @@ export default function DashboardPage() {
             </CardContent>
           </Card>
 
-          <Card className="hover:shadow-md transition-shadow">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Security</CardTitle>
-              {getSecurityIcon()}
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold capitalize">{stats.security.status}</div>
-              <p className="text-xs text-muted-foreground">
-                Last check: {stats.security.lastCheck}
-              </p>
-              <div className="mt-2">
-                <Progress 
-                  value={stats.security.status === 'healthy' ? 100 : 
-                         stats.security.status === 'warning' ? 60 : 20} 
-                />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="hover:shadow-md transition-shadow">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">System Health</CardTitle>
-              {stats.system.status === 'healthy' ? (
-                <CheckCircle className="h-4 w-4 text-green-600" />
-              ) : (
-                <AlertTriangle className="h-4 w-4 text-yellow-600" />
-              )}
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold capitalize">{stats.system.status}</div>
-              <p className="text-xs text-muted-foreground">
-                {stats.system.uptime}d uptime • {Math.round(stats.system.cpu)}% CPU
-              </p>
-              <div className="mt-2">
-                <Progress value={stats.system.memory} />
-              </div>
-            </CardContent>
-          </Card>
+          {/* Security card - admin only */}
+          {permissions?.isAdmin && (
+            <Card className="hover:shadow-md transition-shadow">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Security</CardTitle>
+                {getSecurityIcon()}
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold capitalize">{stats.security.status}</div>
+                <p className="text-xs text-muted-foreground">
+                  Last check: {stats.security.lastCheck}
+                </p>
+                <div className="mt-2">
+                  <Progress 
+                    value={stats.security.status === 'healthy' ? 100 : 
+                           stats.security.status === 'warning' ? 60 : 20} 
+                  />
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </div>
       )}
 
@@ -486,7 +493,7 @@ export default function DashboardPage() {
 
       {/* Main Content Grid: Quick Actions + Activity Stream + Improvements */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Quick Actions - Enhanced with Reports actions */}
+        {/* Quick Actions - Role-based filtering */}
         <Card className="lg:col-span-1">
           <CardHeader>
             <CardTitle className="flex items-center space-x-2">
@@ -520,9 +527,11 @@ export default function DashboardPage() {
             ))}
             
             {/* View All Actions */}
-            <Link href="/dashboard/reports">
+            <Link href={permissions?.canViewReports ? "/dashboard/reports" : "/dashboard/projects"}>
               <div className="flex items-center justify-center p-3 border border-dashed rounded-lg hover:bg-muted/50 transition-colors cursor-pointer text-muted-foreground">
-                <span className="text-sm">View all reports features →</span>
+                <span className="text-sm">
+                  View all {permissions?.canViewReports ? 'reports' : 'projects'} →
+                </span>
               </div>
             </Link>
           </CardContent>
@@ -533,35 +542,35 @@ export default function DashboardPage() {
           <ActivityStream 
             refreshInterval={30000} 
             maxEvents={20}
-            projectFilter={currentUser?.role === 'OWNER' || currentUser?.role === 'ADMIN' ? undefined : accessibleProjectIds}
+            projectFilter={permissions?.isAdmin ? undefined : accessibleProjectIds}
           />
         </div>
       </div>
 
-      {/* Reports and Improvements Row */}
+      {/* Reports and Improvements Row - Conditional based on permissions */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Improvements Widget - Full featured */}
+        {/* Improvements Widget */}
         <ImprovementsWidget />
         
-        {/* Recent Reports Summary */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center justify-between">
-              <div className="flex items-center space-x-2">
-                <BarChart3 className="h-5 w-5" />
-                <span>Recent Reports</span>
-              </div>
-              <Link href="/dashboard/reports">
-                <Button variant="outline" size="sm">
-                  View All
-                </Button>
-              </Link>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {/* Quick Stats */}
-              {stats && (
+        {/* Recent Reports Summary - Only if user can view reports */}
+        {permissions?.canViewReports && stats && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <BarChart3 className="h-5 w-5" />
+                  <span>Recent Reports</span>
+                </div>
+                <Link href="/dashboard/reports">
+                  <Button variant="outline" size="sm">
+                    View All
+                  </Button>
+                </Link>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {/* Quick Stats */}
                 <div className="grid grid-cols-3 gap-4 mb-4">
                   <div className="text-center p-3 bg-blue-50 rounded-lg">
                     <div className="text-lg font-bold text-blue-600">{stats.reports.total}</div>
@@ -576,40 +585,42 @@ export default function DashboardPage() {
                     <div className="text-xs text-muted-foreground">Pending</div>
                   </div>
                 </div>
-              )}
-              
-              {/* Quick Actions */}
-              <div className="grid grid-cols-1 gap-2">
-                <Link href="/dashboard/reports?action=generate">
-                  <Button variant="outline" className="w-full justify-start">
-                    <Plus className="h-4 w-4 mr-2" />
-                    Generate New Report
-                  </Button>
-                </Link>
-                <Link href="/dashboard/reports?action=compare">
-                  <Button variant="outline" className="w-full justify-start">
-                    <GitCompare className="h-4 w-4 mr-2" />
-                    Compare Reports
-                  </Button>
-                </Link>
-                <Link href="/dashboard/reports?action=export">
-                  <Button variant="outline" className="w-full justify-start">
-                    <Download className="h-4 w-4 mr-2" />
-                    Export Reports
-                  </Button>
-                </Link>
+                
+                {/* Quick Actions */}
+                <div className="grid grid-cols-1 gap-2">
+                  {permissions?.canGenerateReports && (
+                    <Link href="/dashboard/reports?action=generate">
+                      <Button variant="outline" className="w-full justify-start">
+                        <Plus className="h-4 w-4 mr-2" />
+                        Generate New Report
+                      </Button>
+                    </Link>
+                  )}
+                  <Link href="/dashboard/reports?action=compare">
+                    <Button variant="outline" className="w-full justify-start">
+                      <GitCompare className="h-4 w-4 mr-2" />
+                      Compare Reports
+                    </Button>
+                  </Link>
+                  <Link href="/dashboard/reports?action=export">
+                    <Button variant="outline" className="w-full justify-start">
+                      <Download className="h-4 w-4 mr-2" />
+                      Export Reports
+                    </Button>
+                  </Link>
+                </div>
+                
+                <div className="text-xs text-muted-foreground text-center pt-2 border-t">
+                  Last report generated: {stats.reports.lastGenerated}
+                </div>
               </div>
-              
-              <div className="text-xs text-muted-foreground text-center pt-2 border-t">
-                Last report generated: {stats?.reports.lastGenerated || 'Unknown'}
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        )}
       </div>
 
-      {/* Performance Overview */}
-      {stats && (
+      {/* Performance Overview - Admin only */}
+      {permissions?.isAdmin && stats && (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center space-x-2">
