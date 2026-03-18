@@ -230,28 +230,26 @@ export default function ProjectsPage() {
                 <div className="flex items-center justify-between pt-2">
                   <div className="flex space-x-2">
                     {project.githubUrl && (
-                      <Button 
-                        size="sm" 
-                        variant="outline" 
-                        asChild
+                      <a 
+                        href={project.githubUrl} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
                         onClick={(e) => e.stopPropagation()}
+                        className="inline-flex items-center justify-center h-8 w-8 rounded-md border border-input bg-background hover:bg-accent hover:text-accent-foreground"
                       >
-                        <a href={project.githubUrl} target="_blank" rel="noopener noreferrer">
-                          <Github className="h-3 w-3" />
-                        </a>
-                      </Button>
+                        <Github className="h-3 w-3" />
+                      </a>
                     )}
                     {project.deployUrl && (
-                      <Button 
-                        size="sm" 
-                        variant="outline" 
-                        asChild
+                      <a 
+                        href={project.deployUrl} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
                         onClick={(e) => e.stopPropagation()}
+                        className="inline-flex items-center justify-center h-8 w-8 rounded-md border border-input bg-background hover:bg-accent hover:text-accent-foreground"
                       >
-                        <a href={project.deployUrl} target="_blank" rel="noopener noreferrer">
-                          <ExternalLink className="h-3 w-3" />
-                        </a>
-                      </Button>
+                        <ExternalLink className="h-3 w-3" />
+                      </a>
                     )}
                   </div>
                 </div>

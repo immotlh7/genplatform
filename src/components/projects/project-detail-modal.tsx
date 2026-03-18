@@ -118,20 +118,26 @@ export function ProjectDetailModal({ project, open, onOpenChange }: ProjectDetai
             {/* Actions */}
             <div className="flex space-x-3 pt-4">
               {project.githubUrl && (
-                <Button asChild>
-                  <a href={project.githubUrl} target="_blank" rel="noopener noreferrer">
-                    <Github className="h-4 w-4 mr-2" />
-                    View Code
-                  </a>
-                </Button>
+                <a 
+                  href={project.githubUrl} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center px-4 py-2 bg-primary text-primary-foreground hover:bg-primary/90 rounded-md text-sm font-medium"
+                >
+                  <Github className="h-4 w-4 mr-2" />
+                  View Code
+                </a>
               )}
               {project.deployUrl && (
-                <Button variant="outline" asChild>
-                  <a href={project.deployUrl} target="_blank" rel="noopener noreferrer">
-                    <ExternalLink className="h-4 w-4 mr-2" />
-                    Live Demo
-                  </a>
-                </Button>
+                <a 
+                  href={project.deployUrl} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center px-4 py-2 border border-input bg-background hover:bg-accent hover:text-accent-foreground rounded-md text-sm font-medium"
+                >
+                  <ExternalLink className="h-4 w-4 mr-2" />
+                  Live Demo
+                </a>
               )}
             </div>
           </TabsContent>
