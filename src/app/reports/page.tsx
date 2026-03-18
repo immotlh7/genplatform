@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
@@ -19,6 +19,8 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
+import { ReportCard, type Report } from '@/components/reports/report-card'
+import { GenerateReportDialog } from '@/components/reports/generate-report-dialog'
 import {
   FileText,
   Search,
@@ -34,52 +36,106 @@ export default function ReportsPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [dateFilter, setDateFilter] = useState('all')
   const [typeFilter, setTypeFilter] = useState('all')
+  const [reports, setReports] = useState<Report[]>([])
+  const [loading, setLoading] = useState(true)
 
-  // Mock data for development
-  const mockReports = [
-    {
-      id: '1',
-      title: 'Daily Development Report - March 18, 2026',
-      type: 'daily',
-      createdAt: '2026-03-18T22:50:00Z',
-      status: 'completed',
-      size: '2.4 MB',
-      insights: 15,
-      metrics: {
-        tasksCompleted: 12,
-        codeCommits: 8,
-        deployments: 3
+  useEffect(() => {
+    loadReports()
+  }, [])
+
+  const loadReports = async () => {
+    try {
+      setLoading(true)
+      // Mock API call - replace with actual API
+      const response = await fetch('/api/reports')
+      if (response.ok) {
+        const data = await response.json()
+        setReports(data.data || [])
+      } else {
+        // Fallback to mock data
+        loadMockReports()
       }
-    },
-    {
-      id: '2',
-      title: 'Weekly Sprint Analysis - Week 12',
-      type: 'weekly',
-      createdAt: '2026-03-17T10:00:00Z',
-      status: 'completed',
-      size: '1.8 MB',
-      insights: 8,
-      metrics: {
-        sprintsCompleted: 2,
-        velocity: 24,
-        bugCount: 2
-      }
-    },
-    {
-      id: '3',
-      title: 'Performance Analysis Report',
-      type: 'custom',
-      createdAt: '2026-03-16T15:30:00Z',
-      status: 'completed',
-      size: '3.2 MB',
-      insights: 22,
-      metrics: {
-        performanceScore: 94,
-        loadTime: 1.2,
-        errorRate: 0.02
-      }
+    } catch (error) {
+      console.error('Error loading reports:', error)
+      loadMockReports()
+    } finally {
+      setLoading(false)
     }
-  ]
+  }
+
+  const loadMockReports = () => {
+    const mockReports: Report[] = [
+      {
+        id: '1',
+        title: 'Daily Development Report - March 18, 2026',
+        type: 'daily',
+        description: 'Comprehensive overview of development activities and performance',
+        createdAt: '2026-03-18T22:50:00Z',
+        updatedAt: '2026-03-18T22:50:00Z',
+        status: 'completed',
+        size: '2.4 MB',
+        insights: 15,
+        metrics: {
+          tasksCompleted: 12,
+          codeCommits: 8,
+          deployments: 3
+        },
+        tags: ['development', 'sprint', 'performance'],
+        author: 'System',
+        project: 'GenPlatform.ai'
+      },
+      {
+        id: '2',
+        title: 'Weekly Sprint Analysis - Week 12',
+        type: 'weekly',
+        description: 'Sprint velocity analysis and team performance metrics',
+        createdAt: '2026-03-17T10:00:00Z',
+        updatedAt: '2026-03-17T10:30:00Z',
+        status: 'completed',
+        size: '1.8 MB',
+        insights: 8,
+        metrics: {
+          sprintsCompleted: 2,
+          velocity: 24,
+          bugCount: 2
+        },
+        tags: ['sprint', 'velocity', 'team'],
+        author: 'System',
+        project: 'GenPlatform.ai'
+      },
+      {
+        id: '3',
+        title: 'Performance Analysis Report',
+        type: 'custom',
+        description: 'Deep dive into application performance and optimization opportunities',
+        createdAt: '2026-03-16T15:30:00Z',
+        updatedAt: '2026-03-16T16:00:00Z',
+        status: 'completed',
+        size: '3.2 MB',
+        insights: 22,
+        metrics: {
+          performanceScore: 94,
+          loadTime: 1.2,
+          errorRate: 0.02
+        },
+        tags: ['performance', 'optimization', 'database'],
+        author: 'Med',
+        project: 'GenPlatform.ai'
+      },
+      {
+        id: '4',
+        title: 'Weekly Report Generation',
+        type: 'weekly',
+        description: 'Automated weekly report currently being generated',
+        createdAt: '2026-03-18T22:00:00Z',
+        updatedAt: '2026-03-18T22:30:00Z',
+        status: 'generating',
+        author: 'System',
+        project: 'GenPlatform.ai'
+      }
+    ]
+    setReports(mockReports)
+  }
 
   const mockImprovements = [
     {
@@ -104,8 +160,9 @@ export default function ReportsPage() {
     }
   ]
 
-  const filteredReports = mockReports.filter(report => {
-    const matchesSearch = report.title.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredReports = reports.filter(report => {
+    const matchesSearch = report.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         report.description?.toLowerCase().includes(searchQuery.toLowerCase())
     const matchesType = typeFilter === 'all' || report.type === typeFilter
     return matchesSearch && matchesType
   })
@@ -122,15 +179,6 @@ export default function ReportsPage() {
     })
   }
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'completed': return 'bg-green-500/20 text-green-500'
-      case 'generating': return 'bg-yellow-500/20 text-yellow-500'
-      case 'failed': return 'bg-red-500/20 text-red-500'
-      default: return 'bg-zinc-500/20 text-zinc-400'
-    }
-  }
-
   const getPriorityColor = (priority: string) => {
     switch (priority) {
       case 'high': return 'bg-red-500/20 text-red-500'
@@ -138,6 +186,46 @@ export default function ReportsPage() {
       case 'low': return 'bg-green-500/20 text-green-500'
       default: return 'bg-zinc-500/20 text-zinc-400'
     }
+  }
+
+  const handleReportView = (report: Report) => {
+    window.location.href = `/reports/${report.id}`
+  }
+
+  const handleReportDownload = (report: Report) => {
+    console.log('Downloading report:', report.id)
+    // Implement download logic
+  }
+
+  const handleReportDelete = async (report: Report) => {
+    console.log('Deleting report:', report.id)
+    // Implement delete logic
+    setReports(prev => prev.filter(r => r.id !== report.id))
+  }
+
+  const handleReportShare = (report: Report) => {
+    console.log('Sharing report:', report.id)
+    // Implement share logic
+  }
+
+  const handleReportGenerated = (newReport: any) => {
+    console.log('New report generated:', newReport)
+    loadReports() // Refresh the list
+  }
+
+  if (loading) {
+    return (
+      <div className="container max-w-6xl mx-auto p-6">
+        <div className="space-y-6">
+          <div className="h-8 w-48 bg-muted animate-pulse rounded" />
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="h-48 bg-muted animate-pulse rounded-lg" />
+            ))}
+          </div>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -155,10 +243,12 @@ export default function ReportsPage() {
             <Download className="h-4 w-4 mr-2" />
             Export All
           </Button>
-          <Button>
-            <Plus className="h-4 w-4 mr-2" />
-            Generate Report
-          </Button>
+          <GenerateReportDialog onSuccess={handleReportGenerated}>
+            <Button>
+              <Plus className="h-4 w-4 mr-2" />
+              Generate Report
+            </Button>
+          </GenerateReportDialog>
         </div>
       </div>
 
@@ -170,7 +260,7 @@ export default function ReportsPage() {
             <FileText className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{mockReports.length}</div>
+            <div className="text-2xl font-bold">{reports.length}</div>
             <p className="text-xs text-muted-foreground">
               +2 from last week
             </p>
@@ -238,6 +328,7 @@ export default function ReportsPage() {
                 <SelectItem value="all">All Types</SelectItem>
                 <SelectItem value="daily">Daily</SelectItem>
                 <SelectItem value="weekly">Weekly</SelectItem>
+                <SelectItem value="monthly">Monthly</SelectItem>
                 <SelectItem value="custom">Custom</SelectItem>
               </SelectContent>
             </Select>
@@ -257,49 +348,14 @@ export default function ReportsPage() {
           {/* Reports Grid */}
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {filteredReports.map((report) => (
-              <Card key={report.id} className="hover:shadow-md transition-shadow cursor-pointer">
-                <CardHeader className="pb-3">
-                  <div className="flex items-start justify-between">
-                    <div className="space-y-1 flex-1">
-                      <CardTitle className="text-base leading-tight">{report.title}</CardTitle>
-                      <div className="flex items-center space-x-2">
-                        <Badge variant="outline" className="text-xs">
-                          {report.type}
-                        </Badge>
-                        <Badge variant="outline" className={`text-xs ${getStatusColor(report.status)}`}>
-                          {report.status}
-                        </Badge>
-                      </div>
-                    </div>
-                    <FileText className="h-4 w-4 text-muted-foreground" />
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <div className="space-y-2 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Size:</span>
-                      <span>{report.size}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Insights:</span>
-                      <span>{report.insights}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Created:</span>
-                      <span>{formatDate(report.createdAt)}</span>
-                    </div>
-                  </div>
-                  <div className="flex space-x-2">
-                    <Button variant="outline" size="sm" className="flex-1">
-                      <FileText className="h-3 w-3 mr-1" />
-                      View
-                    </Button>
-                    <Button variant="outline" size="sm">
-                      <Download className="h-3 w-3" />
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
+              <ReportCard
+                key={report.id}
+                report={report}
+                onView={handleReportView}
+                onDownload={handleReportDownload}
+                onDelete={handleReportDelete}
+                onShare={handleReportShare}
+              />
             ))}
           </div>
 
@@ -315,10 +371,12 @@ export default function ReportsPage() {
                   }
                 </p>
                 {!searchQuery && typeFilter === 'all' && (
-                  <Button>
-                    <Plus className="h-4 w-4 mr-2" />
-                    Generate Report
-                  </Button>
+                  <GenerateReportDialog onSuccess={handleReportGenerated}>
+                    <Button>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Generate Report
+                    </Button>
+                  </GenerateReportDialog>
                 )}
               </CardContent>
             </Card>

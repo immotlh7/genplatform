@@ -1,319 +1,247 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getCurrentUser } from '@/lib/access-control-server'
+import { createServerComponentClient } from '@supabase/auth-helpers-nextjs'
+import { cookies } from 'next/headers'
 
-export interface ReportData {
+interface Report {
   id: string
   title: string
-  description: string
   type: 'daily' | 'weekly' | 'monthly' | 'custom'
-  status: 'generating' | 'completed' | 'failed' | 'scheduled'
+  description?: string
+  content?: any
   createdAt: string
-  generatedAt?: string
-  dataRange: {
-    start: string
-    end: string
-  }
-  metrics: {
-    totalProjects: number
-    completedTasks: number
-    activeUsers: number
-    systemHealth: number
-  }
-  size: string
-  downloadUrl?: string
-  isStarred?: boolean
-  tags: string[]
-  author?: {
-    id: string
-    name: string
-    avatar?: string
-  }
-  generationTime?: number // in seconds
-  confidence?: number // 0-100
-  fileFormat?: 'pdf' | 'html' | 'json' | 'csv'
-  viewCount?: number
-  lastAccessed?: string
+  updatedAt: string
+  status: 'generating' | 'completed' | 'failed' | 'scheduled'
+  size?: string
+  insights?: number
+  metrics?: Record<string, any>
+  tags?: string[]
+  author?: string
+  project?: string
 }
 
-export interface ReportStats {
-  totalReports: number
-  reportsThisMonth: number
-  avgGenerationTime: string
-  successRate: number
-  lastGenerated: string
-  topReportType: string
-  totalSize: string
-  favoriteReports: number
-}
-
-interface ReportsResponse {
-  success: boolean
-  data: {
-    reports: ReportData[]
-    stats: ReportStats
-    pagination: {
-      total: number
-      page: number
-      limit: number
-      totalPages: number
-      hasNext: boolean
-      hasPrev: boolean
-    }
+// Mock data for development - will be replaced with database queries
+const MOCK_REPORTS: Report[] = [
+  {
+    id: '1',
+    title: 'Daily Development Report - March 18, 2026',
+    type: 'daily',
+    description: 'Comprehensive overview of development activities, sprint progress, and system performance for today',
+    createdAt: '2026-03-18T22:50:00Z',
+    updatedAt: '2026-03-18T22:50:00Z',
+    status: 'completed',
+    size: '2.4 MB',
+    insights: 15,
+    metrics: {
+      tasksCompleted: 12,
+      codeCommits: 8,
+      deployments: 3,
+      testsCovered: 94,
+      performanceScore: 96,
+      bugCount: 2
+    },
+    tags: ['development', 'sprint', 'performance'],
+    author: 'System',
+    project: 'GenPlatform.ai'
+  },
+  {
+    id: '2', 
+    title: 'Weekly Sprint Analysis - Week 12',
+    type: 'weekly',
+    description: 'Sprint velocity analysis, team performance metrics, and improvement recommendations',
+    createdAt: '2026-03-17T10:00:00Z',
+    updatedAt: '2026-03-17T10:30:00Z',
+    status: 'completed',
+    size: '1.8 MB',
+    insights: 8,
+    metrics: {
+      sprintsCompleted: 2,
+      velocity: 24,
+      bugCount: 2,
+      teamProductivity: 89,
+      storyPointsDelivered: 48
+    },
+    tags: ['sprint', 'velocity', 'team'],
+    author: 'System',
+    project: 'GenPlatform.ai'
+  },
+  {
+    id: '3',
+    title: 'Performance Analysis Report',
+    type: 'custom',
+    description: 'Deep dive into application performance, database queries, and optimization opportunities',
+    createdAt: '2026-03-16T15:30:00Z',
+    updatedAt: '2026-03-16T16:00:00Z',
+    status: 'completed',
+    size: '3.2 MB',
+    insights: 22,
+    metrics: {
+      performanceScore: 94,
+      loadTime: 1.2,
+      errorRate: 0.02,
+      dbQueries: 156,
+      cacheHitRate: 87
+    },
+    tags: ['performance', 'optimization', 'database'],
+    author: 'Med',
+    project: 'GenPlatform.ai'
+  },
+  {
+    id: '4',
+    title: 'Security Audit Report - Q1 2026',
+    type: 'monthly',
+    description: 'Monthly security assessment covering authentication, authorization, and vulnerability analysis',
+    createdAt: '2026-03-15T09:00:00Z',
+    updatedAt: '2026-03-15T11:30:00Z',
+    status: 'completed',
+    size: '4.1 MB',
+    insights: 18,
+    metrics: {
+      vulnerabilities: 0,
+      securityScore: 98,
+      authEvents: 234,
+      failedLogins: 3,
+      patchLevel: 100
+    },
+    tags: ['security', 'audit', 'compliance'],
+    author: 'System',
+    project: 'GenPlatform.ai'
+  },
+  {
+    id: '5',
+    title: 'Daily Development Report - March 17, 2026',
+    type: 'daily',
+    description: 'Daily development activities and progress tracking',
+    createdAt: '2026-03-17T23:00:00Z',
+    updatedAt: '2026-03-17T23:15:00Z',
+    status: 'completed',
+    size: '1.9 MB',
+    insights: 11,
+    metrics: {
+      tasksCompleted: 8,
+      codeCommits: 6,
+      deployments: 2,
+      testsCovered: 91
+    },
+    tags: ['development', 'daily'],
+    author: 'System',
+    project: 'GenPlatform.ai'
+  },
+  {
+    id: '6',
+    title: 'Weekly Report Generation',
+    type: 'weekly',
+    description: 'Automated weekly report currently being generated',
+    createdAt: '2026-03-18T22:00:00Z',
+    updatedAt: '2026-03-18T22:30:00Z',
+    status: 'generating',
+    author: 'System',
+    project: 'GenPlatform.ai'
   }
-  meta?: {
-    filters: {
-      type?: string
-      status?: string
-      search?: string
-      dateRange?: { start: string; end: string }
-    }
-    generated: string
-  }
-}
-
-// Mock data generator
-function generateMockReports(count: number = 10): ReportData[] {
-  const types: ReportData['type'][] = ['daily', 'weekly', 'monthly', 'custom']
-  const statuses: ReportData['status'][] = ['completed', 'generating', 'failed', 'scheduled']
-  const tags = [
-    ['automated', 'daily', 'system'],
-    ['weekly', 'team', 'performance'],
-    ['monthly', 'security', 'audit'],
-    ['custom', 'sprint', 'analysis'],
-    ['emergency', 'incident', 'response'],
-    ['quarterly', 'business', 'metrics'],
-    ['user', 'activity', 'engagement'],
-    ['infrastructure', 'monitoring', 'alerts'],
-    ['deployment', 'pipeline', 'status'],
-    ['backup', 'recovery', 'verification']
-  ]
-
-  return Array.from({ length: count }, (_, index) => {
-    const type = types[Math.floor(Math.random() * types.length)]
-    const status = index < 3 ? 'completed' : statuses[Math.floor(Math.random() * statuses.length)]
-    const createdAt = new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000).toISOString()
-    const generatedAt = status === 'completed' ? 
-      new Date(new Date(createdAt).getTime() + Math.random() * 10 * 60 * 1000).toISOString() : 
-      undefined
-    
-    const titles = {
-      daily: ['Daily System Report', 'Daily Operations Summary', 'System Health Check'],
-      weekly: ['Weekly Team Performance', 'Project Progress Summary', 'Weekly Analytics'],
-      monthly: ['Monthly Security Audit', 'Business Metrics Report', 'Infrastructure Review'],
-      custom: ['Sprint Analysis', 'Incident Report', 'Performance Investigation']
-    }
-    
-    const descriptions = {
-      daily: ['Comprehensive daily overview of system performance and project progress'],
-      weekly: ['Team productivity metrics and project milestones achieved'],
-      monthly: ['Comprehensive security review and compliance check'],
-      custom: ['Detailed analysis of specific events or time periods']
-    }
-
-    const reportTitles = titles[type]
-    const reportDescriptions = descriptions[type]
-    
-    return {
-      id: `report-${index + 1}`,
-      title: reportTitles[Math.floor(Math.random() * reportTitles.length)],
-      description: reportDescriptions[Math.floor(Math.random() * reportDescriptions.length)],
-      type,
-      status,
-      createdAt,
-      generatedAt,
-      dataRange: {
-        start: new Date(Date.now() - (type === 'daily' ? 24 : type === 'weekly' ? 7 * 24 : 30 * 24) * 60 * 60 * 1000).toISOString(),
-        end: new Date().toISOString()
-      },
-      metrics: {
-        totalProjects: Math.floor(Math.random() * 10) + 1,
-        completedTasks: Math.floor(Math.random() * 50) + 1,
-        activeUsers: Math.floor(Math.random() * 10) + 1,
-        systemHealth: Math.floor(Math.random() * 20) + 80
-      },
-      size: `${(Math.random() * 10 + 0.5).toFixed(1)} MB`,
-      downloadUrl: status === 'completed' ? `/api/reports/report-${index + 1}/download` : undefined,
-      isStarred: Math.random() > 0.7,
-      tags: tags[index % tags.length],
-      author: {
-        id: 'user-1',
-        name: 'System',
-        avatar: undefined
-      },
-      generationTime: status === 'completed' ? Math.floor(Math.random() * 300) + 30 : undefined,
-      confidence: status === 'completed' ? Math.floor(Math.random() * 20) + 80 : undefined,
-      fileFormat: 'pdf',
-      viewCount: Math.floor(Math.random() * 20),
-      lastAccessed: status === 'completed' ? 
-        new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000).toISOString() : 
-        undefined
-    }
-  })
-}
-
-function generateMockStats(): ReportStats {
-  return {
-    totalReports: 47,
-    reportsThisMonth: 12,
-    avgGenerationTime: '2.3 min',
-    successRate: 98.7,
-    lastGenerated: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-    topReportType: 'Daily',
-    totalSize: '127.3 MB',
-    favoriteReports: 8
-  }
-}
+]
 
 export async function GET(request: NextRequest) {
   try {
-    // Check authentication
-    const currentUser = await getCurrentUser()
-    if (!currentUser) {
-      return NextResponse.json(
-        { success: false, error: 'Authentication required' },
-        { status: 401 }
-      )
-    }
-
-    // Parse query parameters
+    // Get query parameters
     const { searchParams } = new URL(request.url)
-    const page = parseInt(searchParams.get('page') || '1')
-    const limit = parseInt(searchParams.get('limit') || '10')
     const type = searchParams.get('type')
     const status = searchParams.get('status')
+    const project = searchParams.get('project')
+    const limit = parseInt(searchParams.get('limit') || '50')
+    const offset = parseInt(searchParams.get('offset') || '0')
     const search = searchParams.get('search')
-    const sortBy = searchParams.get('sortBy') || 'createdAt'
-    const sortOrder = searchParams.get('sortOrder') || 'desc'
-    const starred = searchParams.get('starred') === 'true'
-    const dateStart = searchParams.get('dateStart')
-    const dateEnd = searchParams.get('dateEnd')
+    const dateFrom = searchParams.get('dateFrom')
+    const dateTo = searchParams.get('dateTo')
 
-    // Validate pagination
-    if (page < 1 || limit < 1 || limit > 100) {
-      return NextResponse.json(
-        { success: false, error: 'Invalid pagination parameters' },
-        { status: 400 }
-      )
-    }
+    // For production: Initialize Supabase client
+    // const supabase = createServerComponentClient({ cookies })
 
-    // Generate mock data
-    let reports = generateMockReports(50) // Generate more for filtering
+    // For development: Use mock data with filtering
+    let filteredReports = [...MOCK_REPORTS]
 
     // Apply filters
-    if (type && type !== 'all') {
-      reports = reports.filter(report => report.type === type)
+    if (type) {
+      filteredReports = filteredReports.filter(report => report.type === type)
     }
 
-    if (status && status !== 'all') {
-      reports = reports.filter(report => report.status === status)
+    if (status) {
+      filteredReports = filteredReports.filter(report => report.status === status)
     }
 
-    if (starred) {
-      reports = reports.filter(report => report.isStarred)
+    if (project) {
+      filteredReports = filteredReports.filter(report => 
+        report.project?.toLowerCase().includes(project.toLowerCase())
+      )
     }
 
     if (search) {
       const searchLower = search.toLowerCase()
-      reports = reports.filter(report =>
+      filteredReports = filteredReports.filter(report =>
         report.title.toLowerCase().includes(searchLower) ||
-        report.description.toLowerCase().includes(searchLower) ||
-        report.tags.some(tag => tag.toLowerCase().includes(searchLower))
+        report.description?.toLowerCase().includes(searchLower) ||
+        report.tags?.some(tag => tag.toLowerCase().includes(searchLower))
       )
     }
 
-    if (dateStart) {
-      const startDate = new Date(dateStart)
-      reports = reports.filter(report => new Date(report.createdAt) >= startDate)
+    if (dateFrom) {
+      filteredReports = filteredReports.filter(report =>
+        new Date(report.createdAt) >= new Date(dateFrom)
+      )
     }
 
-    if (dateEnd) {
-      const endDate = new Date(dateEnd)
-      reports = reports.filter(report => new Date(report.createdAt) <= endDate)
+    if (dateTo) {
+      filteredReports = filteredReports.filter(report =>
+        new Date(report.createdAt) <= new Date(dateTo)
+      )
     }
 
-    // Sort reports
-    reports.sort((a, b) => {
-      let aVal: any, bVal: any
-
-      switch (sortBy) {
-        case 'createdAt':
-          aVal = new Date(a.createdAt).getTime()
-          bVal = new Date(b.createdAt).getTime()
-          break
-        case 'title':
-          aVal = a.title.toLowerCase()
-          bVal = b.title.toLowerCase()
-          break
-        case 'status':
-          aVal = a.status
-          bVal = b.status
-          break
-        case 'type':
-          aVal = a.type
-          bVal = b.type
-          break
-        case 'size':
-          aVal = parseFloat(a.size.replace(' MB', ''))
-          bVal = parseFloat(b.size.replace(' MB', ''))
-          break
-        case 'generationTime':
-          aVal = a.generationTime || 0
-          bVal = b.generationTime || 0
-          break
-        default:
-          aVal = new Date(a.createdAt).getTime()
-          bVal = new Date(b.createdAt).getTime()
-      }
-
-      if (sortOrder === 'asc') {
-        return aVal < bVal ? -1 : aVal > bVal ? 1 : 0
-      } else {
-        return aVal > bVal ? -1 : aVal < bVal ? 1 : 0
-      }
-    })
+    // Sort by creation date (newest first)
+    filteredReports.sort((a, b) => 
+      new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    )
 
     // Apply pagination
-    const total = reports.length
-    const totalPages = Math.ceil(total / limit)
-    const offset = (page - 1) * limit
-    const paginatedReports = reports.slice(offset, offset + limit)
+    const total = filteredReports.length
+    const reports = filteredReports.slice(offset, offset + limit)
 
-    // Generate stats
-    const stats = generateMockStats()
-
-    const response: ReportsResponse = {
-      success: true,
-      data: {
-        reports: paginatedReports,
-        stats,
-        pagination: {
-          total,
-          page,
-          limit,
-          totalPages,
-          hasNext: page < totalPages,
-          hasPrev: page > 1
-        }
-      },
-      meta: {
-        filters: {
-          ...(type && { type }),
-          ...(status && { status }),
-          ...(search && { search }),
-          ...(dateStart && dateEnd && { dateRange: { start: dateStart, end: dateEnd } })
-        },
-        generated: new Date().toISOString()
+    // Calculate aggregations
+    const aggregations = {
+      totalReports: total,
+      completedReports: filteredReports.filter(r => r.status === 'completed').length,
+      generatingReports: filteredReports.filter(r => r.status === 'generating').length,
+      failedReports: filteredReports.filter(r => r.status === 'failed').length,
+      totalInsights: filteredReports.reduce((sum, r) => sum + (r.insights || 0), 0),
+      averageSize: filteredReports
+        .filter(r => r.size)
+        .reduce((sum, r, _, arr) => {
+          const sizeNum = parseFloat(r.size!.replace(/[^\d.]/g, ''))
+          return sum + sizeNum / arr.length
+        }, 0),
+      reportTypes: {
+        daily: filteredReports.filter(r => r.type === 'daily').length,
+        weekly: filteredReports.filter(r => r.type === 'weekly').length,
+        monthly: filteredReports.filter(r => r.type === 'monthly').length,
+        custom: filteredReports.filter(r => r.type === 'custom').length
       }
     }
 
-    return NextResponse.json(response)
+    return NextResponse.json({
+      success: true,
+      data: reports,
+      pagination: {
+        total,
+        limit,
+        offset,
+        hasMore: offset + limit < total
+      },
+      aggregations
+    })
 
   } catch (error) {
     console.error('Error fetching reports:', error)
     return NextResponse.json(
-      {
-        success: false,
-        error: 'Internal server error',
+      { 
+        success: false, 
+        error: 'Failed to fetch reports',
         details: error instanceof Error ? error.message : 'Unknown error'
       },
       { status: 500 }
@@ -321,79 +249,57 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// POST endpoint for creating new reports
 export async function POST(request: NextRequest) {
   try {
-    const currentUser = await getCurrentUser()
-    if (!currentUser) {
-      return NextResponse.json(
-        { success: false, error: 'Authentication required' },
-        { status: 401 }
-      )
-    }
-
     const body = await request.json()
-    const { title, description, type, dataRange, tags = [] } = body
+    const { title, type, description, project, tags, metrics } = body
 
     // Validate required fields
-    if (!title || !description || !type) {
+    if (!title || !type) {
       return NextResponse.json(
-        { success: false, error: 'Missing required fields: title, description, type' },
+        { success: false, error: 'Title and type are required' },
         { status: 400 }
       )
     }
 
-    // Validate type
-    if (!['daily', 'weekly', 'monthly', 'custom'].includes(type)) {
-      return NextResponse.json(
-        { success: false, error: 'Invalid report type' },
-        { status: 400 }
-      )
-    }
+    // For production: Save to database
+    // const supabase = createServerComponentClient({ cookies })
 
-    // Create new report
-    const newReport: ReportData = {
-      id: `report-${Date.now()}`,
+    // For development: Create mock report
+    const newReport: Report = {
+      id: Date.now().toString(),
       title,
-      description,
       type,
-      status: 'generating',
+      description,
+      project,
+      tags: tags || [],
+      metrics: metrics || {},
       createdAt: new Date().toISOString(),
-      dataRange: dataRange || {
-        start: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
-        end: new Date().toISOString()
-      },
-      metrics: {
-        totalProjects: 0,
-        completedTasks: 0,
-        activeUsers: 0,
-        systemHealth: 0
-      },
-      size: 'Calculating...',
-      tags: Array.isArray(tags) ? tags : [],
-      author: {
-        id: currentUser.id,
-        name: currentUser.name || 'User'
-      },
-      fileFormat: 'pdf',
-      viewCount: 0
+      updatedAt: new Date().toISOString(),
+      status: 'generating',
+      author: 'System'
     }
 
-    // In a real implementation, this would:
-    // 1. Save to database
-    // 2. Queue background job for report generation
-    // 3. Send notifications when complete
+    // Simulate generation process (in production, this would trigger background job)
+    setTimeout(() => {
+      // Update status to completed (this would be done by background worker)
+      console.log(`Report ${newReport.id} generation completed`)
+    }, 30000) // 30 seconds simulation
 
     return NextResponse.json({
       success: true,
       data: newReport,
       message: 'Report generation started'
-    }, { status: 201 })
+    })
 
   } catch (error) {
     console.error('Error creating report:', error)
     return NextResponse.json(
-      { success: false, error: 'Failed to create report' },
+      { 
+        success: false, 
+        error: 'Failed to create report',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      },
       { status: 500 }
     )
   }
