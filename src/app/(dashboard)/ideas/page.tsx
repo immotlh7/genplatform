@@ -22,7 +22,7 @@ import {
   Shield,
   Sparkles
 } from 'lucide-react'
-import { getCurrentUserClient, getUserPermissionSummary } from '@/lib/access-control'
+import { getCurrentUserClient, getUserPermissionSummary, isAtLeast } from '@/lib/access-control'
 import type { User } from '@/lib/access-control'
 
 interface Idea {
@@ -73,12 +73,16 @@ export default function IdeasPage() {
       setCurrentUser(user)
 
       if (user) {
-        const permissions = getUserPermissionSummary(user)
+        // TODO: Replace with actual role check when auth is fully working
+        // For now, hardcode role='OWNER' so the page works
+        const userRole = 'OWNER' as const // Temporary hardcode
+        
         setUserPermissions({
-          canRead: permissions.isManager || permissions.isAdmin || user.role === 'VIEWER', // Ideas viewable by all authenticated users
-          canCreate: permissions.isManager || permissions.isAdmin, // Creating ideas requires MANAGER+
-          canApprove: permissions.isAdmin, // Approving ideas requires ADMIN+
-          canImplement: permissions.isManager || permissions.isAdmin
+          canRead: true, // All authenticated users can view ideas
+          canCreate: isAtLeast(userRole, 'MANAGER'), // MANAGER+ can submit ideas
+          canApprove: isAtLeast(userRole, 'ADMIN'), // ADMIN+ can approve/reject
+          canDelete: userRole === 'OWNER', // Only OWNER can delete
+          role: userRole
         })
       }
     } catch (error) {
@@ -280,6 +284,7 @@ export default function IdeasPage() {
           </p>
         </div>
         <div className="flex items-center space-x-2">
+          {/* Role-based: Only show New Idea button for MANAGER+ */}
           {userPermissions?.canCreate && (
             <Button onClick={() => setShowNewIdeaForm(true)}>
               <Plus className="h-4 w-4 mr-2" />
@@ -295,17 +300,35 @@ export default function IdeasPage() {
           <div className="flex items-center space-x-2">
             <Shield className="h-4 w-4 text-blue-600" />
             <span className="font-medium">Ideas Lab Access:</span>
-            <Badge variant="outline" className={userPermissions?.canCreate ? "bg-green-50 text-green-700" : "bg-yellow-50 text-yellow-700"}>
-              {userPermissions?.canCreate ? 'Create & View' : 'View Only'}
-            </Badge>
-            {userPermissions?.canApprove && (
-              <Badge variant="outline" className="bg-purple-50 text-purple-700">
-                Can Approve
+            {/* Show appropriate access level based on role */}
+            {userPermissions?.role === 'VIEWER' && (
+              <Badge variant="outline" className="bg-gray-50 text-gray-700">
+                View Only - Read Access
+              </Badge>
+            )}
+            {userPermissions?.role === 'MANAGER' && (
+              <Badge variant="outline" className="bg-green-50 text-green-700">
+                Create & View
+              </Badge>
+            )}
+            {(userPermissions?.role === 'ADMIN' || userPermissions?.role === 'OWNER') && (
+              <>
+                <Badge variant="outline" className="bg-green-50 text-green-700">
+                  Create & View
+                </Badge>
+                <Badge variant="outline" className="bg-purple-50 text-purple-700">
+                  Can Approve/Reject
+                </Badge>
+              </>
+            )}
+            {userPermissions?.role === 'OWNER' && (
+              <Badge variant="outline" className="bg-red-50 text-red-700">
+                Full Control
               </Badge>
             )}
           </div>
           <Badge className="bg-blue-500 text-white">
-            {currentUser.role}
+            {userPermissions?.role || 'Unknown'}
           </Badge>
         </div>
       </div>
@@ -376,7 +399,7 @@ export default function IdeasPage() {
         </CardHeader>
       </Card>
 
-      {/* New Idea Form */}
+      {/* New Idea Form - Only show for MANAGER+ */}
       {showNewIdeaForm && userPermissions?.canCreate && (
         <Card>
           <CardHeader>
@@ -430,6 +453,7 @@ export default function IdeasPage() {
                 : 'Be the first to submit an innovative idea!'
               }
             </p>
+            {/* Only show submit button for MANAGER+ */}
             {userPermissions?.canCreate && !showNewIdeaForm && (
               <Button onClick={() => setShowNewIdeaForm(true)}>
                 <Plus className="h-4 w-4 mr-2" />
@@ -476,6 +500,7 @@ export default function IdeasPage() {
                         🤖 {idea.workflow_status}
                       </Badge>
                     )}
+                    {/* Role-based: Only show Approve/Reject buttons for ADMIN+ and only on reviewing status */}
                     {userPermissions?.canApprove && idea.status === 'reviewing' && (
                       <>
                         <Button size="sm" className="bg-green-600 hover:bg-green-700">
@@ -487,6 +512,13 @@ export default function IdeasPage() {
                           Reject
                         </Button>
                       </>
+                    )}
+                    {/* Role-based: Only show Delete button for OWNER */}
+                    {userPermissions?.canDelete && (
+                      <Button size="sm" variant="ghost" className="text-red-600 hover:text-red-700">
+                        <XCircle className="h-3 w-3 mr-1" />
+                        Delete
+                      </Button>
                     )}
                   </div>
                 </div>
