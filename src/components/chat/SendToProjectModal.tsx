@@ -1,439 +1,511 @@
 "use client"
 
 import { useState, useEffect } from 'react'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
+import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
-import {
+import { 
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
 import { 
-  Send,
-  FolderOpen,
-  Plus,
+  FolderOpen, 
+  Send, 
+  X, 
+  Plus, 
+  AlertCircle, 
   CheckCircle,
-  AlertTriangle,
-  RefreshCw,
-  Target,
-  Flag,
-  User,
-  Calendar,
+  Loader2,
   Languages,
-  Lightbulb
+  FileText,
+  Calendar,
+  User
 } from 'lucide-react'
+import { useToast } from '@/hooks/use-toast'
 
 interface Project {
   id: string
   name: string
   description?: string
-  status: 'active' | 'paused' | 'completed'
-  priority: 'HIGH' | 'MEDIUM' | 'LOW'
-  tasksCount?: number
-}
-
-interface TaskData {
-  title: string
-  description: string
-  priority: 'HIGH' | 'MEDIUM' | 'LOW'
-  dueDate?: string
-  assignee?: string
-  tags?: string[]
+  status: 'active' | 'archived' | 'completed'
+  created_at: string
+  taskCount?: number
+  isAccessible?: boolean
 }
 
 interface SendToProjectModalProps {
-  isOpen: boolean
+  open: boolean
   onClose: () => void
-  originalText?: string
-  translatedText: string
+  arabicText?: string
+  englishText?: string
   confidence?: number
-  onSuccess?: (result: { projectId: string; taskId: string; taskData: TaskData }) => void
+  preselectedProjectId?: string
+  onSuccess?: (projectId: string, result: any) => void
 }
 
-export function SendToProjectModal({ 
-  isOpen, 
-  onClose, 
-  originalText, 
-  translatedText, 
-  confidence = 0.8,
-  onSuccess 
+export function SendToProjectModal({
+  open,
+  onClose,
+  arabicText = '',
+  englishText = '',
+  confidence = 0,
+  preselectedProjectId,
+  onSuccess
 }: SendToProjectModalProps) {
+  const { toast } = useToast()
   const [projects, setProjects] = useState<Project[]>([])
-  const [selectedProjectId, setSelectedProjectId] = useState('')
+  const [selectedProjectId, setSelectedProjectId] = useState(preselectedProjectId || '')
+  const [selectedProject, setSelectedProject] = useState<Project | null>(null)
+  const [contentTitle, setContentTitle] = useState('')
+  const [contentDescription, setContentDescription] = useState(englishText)
+  const [contentType, setContentType] = useState<'task' | 'idea' | 'note' | 'command'>('task')
+  const [priority, setPriority] = useState<'low' | 'medium' | 'high'>('medium')
   const [loading, setLoading] = useState(false)
-  const [submitting, setSubmitting] = useState(false)
-  const [error, setError] = useState('')
-
-  const [taskData, setTaskData] = useState<TaskData>({
-    title: translatedText,
-    description: originalText ? `Original: ${originalText}\n\nTranslated: ${translatedText}` : translatedText,
-    priority: 'MEDIUM'
-  })
+  const [projectsLoading, setProjectsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    if (isOpen) {
-      loadProjects()
-      // Reset form when modal opens
-      setTaskData({
-        title: translatedText,
-        description: originalText ? `Original: ${originalText}\n\nTranslated: ${translatedText}` : translatedText,
-        priority: 'MEDIUM'
-      })
-      setSelectedProjectId('')
-      setError('')
+    if (open) {
+      loadAccessibleProjects()
     }
-  }, [isOpen, translatedText, originalText])
+  }, [open])
 
-  const loadProjects = async () => {
-    setLoading(true)
+  useEffect(() => {
+    if (selectedProjectId) {
+      const project = projects.find(p => p.id === selectedProjectId)
+      setSelectedProject(project || null)
+    }
+  }, [selectedProjectId, projects])
+
+  useEffect(() => {
+    // Auto-generate title from content
+    if (englishText && !contentTitle) {
+      const title = generateTitleFromContent(englishText)
+      setContentTitle(title)
+    }
+    setContentDescription(englishText)
+  }, [englishText])
+
+  const loadAccessibleProjects = async () => {
+    setProjectsLoading(true)
+    setError(null)
+    
     try {
-      // Mock project loading - in real app, this would call /api/projects
-      await new Promise(resolve => setTimeout(resolve, 500))
+      const response = await fetch('/api/projects', {
+        method: 'GET',
+        credentials: 'include'
+      })
+
+      if (!response.ok) {
+        if (response.status === 403) {
+          throw new Error('You don\'t have permission to view projects')
+        }
+        throw new Error(`Failed to load projects: ${response.statusText}`)
+      }
+
+      const data = await response.json()
       
-      const mockProjects: Project[] = [
+      if (data.success && data.data.projects) {
+        // Filter for active projects only
+        const activeProjects = data.data.projects.filter((p: Project) => 
+          p.status === 'active' && p.isAccessible !== false
+        )
+        setProjects(activeProjects)
+        
+        // Auto-select first project if none selected
+        if (!selectedProjectId && activeProjects.length > 0) {
+          setSelectedProjectId(activeProjects[0].id)
+        }
+      } else {
+        throw new Error(data.message || 'Failed to load projects')
+      }
+
+    } catch (err) {
+      console.error('Error loading projects:', err)
+      setError(err instanceof Error ? err.message : 'Failed to load projects')
+      
+      // Show demo projects for development
+      const demoProjects: Project[] = [
         {
-          id: 'genplatform',
-          name: 'GenPlatform.ai',
-          description: 'Mission Control Dashboard for AI agents',
+          id: 'demo-1',
+          name: 'GenPlatform Development',
+          description: 'Main platform development project',
           status: 'active',
-          priority: 'HIGH',
-          tasksCount: 23
+          created_at: new Date().toISOString(),
+          taskCount: 12,
+          isAccessible: true
         },
         {
-          id: 'agent-skills',
-          name: 'Agent Skills Library',
-          description: 'Collection of reusable AI agent skills',
+          id: 'demo-2',
+          name: 'Mobile App Project',
+          description: 'Cross-platform mobile application',
           status: 'active',
-          priority: 'MEDIUM',
-          tasksCount: 12
-        },
-        {
-          id: 'commander-enhancement',
-          name: 'Commander Enhancement',
-          description: 'Arabic-to-English command translation system',
-          status: 'active',
-          priority: 'HIGH',
-          tasksCount: 8
-        },
-        {
-          id: 'memory-system',
-          name: 'Memory System',
-          description: 'Distributed knowledge management',
-          status: 'paused',
-          priority: 'LOW',
-          tasksCount: 5
+          created_at: new Date().toISOString(),
+          taskCount: 8,
+          isAccessible: true
         }
       ]
       
-      setProjects(mockProjects)
-      
-      // Auto-select first active project
-      const firstActive = mockProjects.find(p => p.status === 'active')
-      if (firstActive) {
-        setSelectedProjectId(firstActive.id)
+      setProjects(demoProjects)
+      if (!selectedProjectId) {
+        setSelectedProjectId(demoProjects[0].id)
       }
+    } finally {
+      setProjectsLoading(false)
+    }
+  }
+
+  const generateTitleFromContent = (content: string): string => {
+    // Extract first meaningful sentence or phrase
+    const cleaned = content.trim()
+    
+    // If it's a command, extract the action
+    if (cleaned.toLowerCase().includes('create') || cleaned.toLowerCase().includes('أنشئ')) {
+      return 'Create Task'
+    }
+    if (cleaned.toLowerCase().includes('fix') || cleaned.toLowerCase().includes('إصلاح')) {
+      return 'Fix Issue'
+    }
+    if (cleaned.toLowerCase().includes('feature') || cleaned.toLowerCase().includes('ميزة')) {
+      return 'New Feature'
+    }
+    if (cleaned.toLowerCase().includes('deploy') || cleaned.toLowerCase().includes('نشر')) {
+      return 'Deployment Task'
+    }
+    
+    // Otherwise, take first few words
+    const words = cleaned.split(' ').slice(0, 5).join(' ')
+    return words.length > 50 ? words.substring(0, 47) + '...' : words
+  }
+
+  const getContentTypeIcon = (type: string) => {
+    switch (type) {
+      case 'task':
+        return <CheckCircle className="h-4 w-4" />
+      case 'idea':
+        return <Plus className="h-4 w-4" />
+      case 'note':
+        return <FileText className="h-4 w-4" />
+      case 'command':
+        return <Languages className="h-4 w-4" />
+      default:
+        return <CheckCircle className="h-4 w-4" />
+    }
+  }
+
+  const handleSendToProject = async () => {
+    if (!selectedProjectId || !contentDescription.trim()) {
+      toast({
+        title: "Validation Error",
+        description: "Please select a project and provide content description.",
+        variant: "destructive",
+      })
+      return
+    }
+
+    setLoading(true)
+    setError(null)
+
+    try {
+      const response = await fetch('/api/projects/add-content', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          projectId: selectedProjectId,
+          content: {
+            title: contentTitle || 'Untitled',
+            description: contentDescription,
+            type: contentType,
+            priority: priority,
+            source: 'commander_chat',
+            metadata: {
+              originalArabic: arabicText || null,
+              englishTranslation: englishText || null,
+              confidence: confidence || null,
+              createdVia: 'chat_commander',
+              timestamp: new Date().toISOString()
+            }
+          }
+        })
+      })
+
+      if (!response.ok) {
+        const errorData = await response.text()
+        throw new Error(`Failed to add content: ${response.status} - ${errorData}`)
+      }
+
+      const data = await response.json()
       
+      if (data.success) {
+        toast({
+          title: "Success!",
+          description: `${contentType.charAt(0).toUpperCase() + contentType.slice(1)} added to ${selectedProject?.name}`,
+        })
+        
+        onSuccess?.(selectedProjectId, data.data)
+        onClose()
+      } else {
+        throw new Error(data.message || 'Failed to add content to project')
+      }
+
     } catch (err) {
-      setError('Failed to load projects')
-      console.error('Error loading projects:', err)
+      console.error('Error sending to project:', err)
+      const errorMessage = err instanceof Error ? err.message : 'Failed to send to project'
+      setError(errorMessage)
+      
+      toast({
+        title: "Error",
+        description: errorMessage,
+        variant: "destructive",
+      })
     } finally {
       setLoading(false)
     }
   }
 
-  const handleSubmit = async () => {
-    if (!selectedProjectId) {
-      setError('Please select a project')
-      return
-    }
-
-    if (!taskData.title.trim()) {
-      setError('Task title is required')
-      return
-    }
-
-    setSubmitting(true)
-    setError('')
-
-    try {
-      // Mock API call to create task
-      await new Promise(resolve => setTimeout(resolve, 800))
-      
-      // Simulate API call
-      const response = await fetch('/api/projects/tasks', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          projectId: selectedProjectId,
-          ...taskData,
-          source: 'commander-chat',
-          metadata: {
-            originalText,
-            translatedText,
-            confidence,
-            createdFrom: 'chat'
-          }
-        })
-      }).catch(() => ({ ok: false })) // Mock failure handling
-
-      const taskId = `task-${Date.now()}`
-      const selectedProject = projects.find(p => p.id === selectedProjectId)
-
-      // Success callback
-      onSuccess?.({
-        projectId: selectedProjectId,
-        taskId,
-        taskData: {
-          ...taskData,
-          title: taskData.title,
-          description: taskData.description
-        }
-      })
-
-      // Close modal
-      onClose()
-
-    } catch (err) {
-      setError('Failed to create task. Please try again.')
-      console.error('Error creating task:', err)
-    } finally {
-      setSubmitting(false)
-    }
-  }
-
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case 'HIGH': return 'bg-red-100 text-red-800 border-red-300'
-      case 'MEDIUM': return 'bg-yellow-100 text-yellow-800 border-yellow-300'
-      case 'LOW': return 'bg-green-100 text-green-800 border-green-300'
-      default: return 'bg-gray-100 text-gray-800 border-gray-300'
-    }
-  }
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'active': return 'bg-green-500'
-      case 'paused': return 'bg-yellow-500'
-      case 'completed': return 'bg-blue-500'
-      default: return 'bg-gray-500'
-    }
-  }
-
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+    <Dialog open={open} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center space-x-2">
-            <Send className="h-5 w-5" />
+            <FolderOpen className="h-5 w-5 text-blue-600" />
             <span>Send to Project</span>
           </DialogTitle>
           <DialogDescription>
-            Create a new task from your Commander translation
+            Add translated command or content to a project as a task, idea, or note.
           </DialogDescription>
         </DialogHeader>
 
-        {error && (
-          <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
-            <div className="flex items-center space-x-2">
-              <AlertTriangle className="h-4 w-4 text-red-600" />
-              <p className="text-sm text-red-600">{error}</p>
-            </div>
-          </div>
-        )}
-
         <div className="space-y-6">
-          {/* Translation Preview */}
-          <Card className="bg-blue-50/50 border-blue-200">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base flex items-center space-x-2">
-                <Languages className="h-4 w-4 text-blue-600" />
-                <span>Commander Translation</span>
-                <Badge className="bg-blue-100 text-blue-800">
-                  <CheckCircle className="h-3 w-3 mr-1" />
-                  {Math.round((confidence || 0.8) * 100)}%
-                </Badge>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {originalText && (
+          {/* Source Text Display */}
+          {(arabicText || englishText) && (
+            <div className="space-y-3">
+              {arabicText && (
                 <div className="space-y-1">
-                  <Label className="text-xs text-muted-foreground">Original (Arabic):</Label>
-                  <div className="p-2 bg-orange-50 rounded text-right font-arabic" dir="rtl">
-                    {originalText}
+                  <Label className="text-sm font-medium flex items-center space-x-1">
+                    <Languages className="h-3 w-3" />
+                    <span>Original Arabic Text:</span>
+                  </Label>
+                  <div className="text-sm bg-orange-50 border border-orange-200 rounded-lg p-3 font-mono text-right" dir="rtl">
+                    {arabicText}
                   </div>
                 </div>
               )}
-              <div className="space-y-1">
-                <Label className="text-xs text-muted-foreground">Translation (English):</Label>
-                <div className="p-2 bg-white rounded font-medium">
-                  {translatedText}
+
+              {englishText && (
+                <div className="space-y-1">
+                  <Label className="text-sm font-medium flex items-center justify-between">
+                    <div className="flex items-center space-x-1">
+                      <Languages className="h-3 w-3" />
+                      <span>English Translation:</span>
+                    </div>
+                    {confidence > 0 && (
+                      <Badge className={`text-xs ${
+                        confidence >= 0.8 ? 'bg-green-100 text-green-800' : 
+                        confidence >= 0.6 ? 'bg-yellow-100 text-yellow-800' : 
+                        'bg-red-100 text-red-800'
+                      }`}>
+                        {Math.round(confidence * 100)}% confidence
+                      </Badge>
+                    )}
+                  </Label>
+                  <div className="text-sm bg-blue-50 border border-blue-200 rounded-lg p-3">
+                    {englishText}
+                  </div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
+              )}
+            </div>
+          )}
 
           {/* Project Selection */}
-          <div className="space-y-3">
-            <Label htmlFor="project" className="flex items-center space-x-2">
-              <Target className="h-4 w-4" />
-              <span>Select Project</span>
-            </Label>
-            
-            {loading ? (
-              <div className="flex items-center justify-center p-8">
-                <RefreshCw className="h-5 w-5 animate-spin mr-2" />
-                <span>Loading projects...</span>
+          <div className="space-y-2">
+            <Label htmlFor="project">Select Project *</Label>
+            {projectsLoading ? (
+              <div className="flex items-center space-x-2 p-3 border rounded-lg">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                <span className="text-sm text-muted-foreground">Loading projects...</span>
               </div>
-            ) : (
+            ) : projects.length > 0 ? (
               <Select value={selectedProjectId} onValueChange={setSelectedProjectId}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Choose a project..." />
+                  <SelectValue placeholder="Choose a project" />
                 </SelectTrigger>
                 <SelectContent>
                   {projects.map((project) => (
                     <SelectItem key={project.id} value={project.id}>
-                      <div className="flex items-center space-x-3 py-1">
-                        <div className={`w-2 h-2 rounded-full ${getStatusColor(project.status)}`}></div>
-                        <div className="flex-1">
-                          <div className="font-medium">{project.name}</div>
-                          <div className="text-xs text-muted-foreground">
-                            {project.tasksCount} tasks • {project.status}
-                          </div>
+                      <div className="flex items-center justify-between w-full">
+                        <span>{project.name}</span>
+                        <div className="flex items-center space-x-2 ml-2">
+                          <Badge variant="outline" className="text-xs">
+                            {project.taskCount || 0} tasks
+                          </Badge>
+                          <Badge className={`text-xs ${
+                            project.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+                          }`}>
+                            {project.status}
+                          </Badge>
                         </div>
-                        <Badge className={getPriorityColor(project.priority)} variant="outline">
-                          {project.priority}
-                        </Badge>
                       </div>
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
-            )}
-
-            {selectedProjectId && (
-              <div className="p-3 bg-muted/30 rounded-lg">
-                <div className="text-sm">
-                  <strong>Selected Project:</strong> {projects.find(p => p.id === selectedProjectId)?.name}
-                </div>
-                <div className="text-xs text-muted-foreground">
-                  {projects.find(p => p.id === selectedProjectId)?.description}
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Task Details */}
-          <div className="space-y-4">
-            <h3 className="font-medium flex items-center space-x-2">
-              <Lightbulb className="h-4 w-4" />
-              <span>Task Details</span>
-            </h3>
-
-            <div className="space-y-2">
-              <Label htmlFor="title">Task Title</Label>
-              <Input
-                id="title"
-                value={taskData.title}
-                onChange={(e) => setTaskData(prev => ({ ...prev, title: e.target.value }))}
-                placeholder="Enter task title..."
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="description">Description</Label>
-              <Textarea
-                id="description"
-                value={taskData.description}
-                onChange={(e) => setTaskData(prev => ({ ...prev, description: e.target.value }))}
-                placeholder="Task description..."
-                rows={4}
-              />
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="priority" className="flex items-center space-x-1">
-                  <Flag className="h-3 w-3" />
-                  <span>Priority</span>
-                </Label>
-                <Select 
-                  value={taskData.priority} 
-                  onValueChange={(value) => setTaskData(prev => ({ ...prev, priority: value as 'HIGH' | 'MEDIUM' | 'LOW' }))}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="HIGH">
-                      <div className="flex items-center space-x-2">
-                        <div className="w-2 h-2 bg-red-500 rounded-full"></div>
-                        <span>High Priority</span>
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="MEDIUM">
-                      <div className="flex items-center space-x-2">
-                        <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
-                        <span>Medium Priority</span>
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="LOW">
-                      <div className="flex items-center space-x-2">
-                        <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                        <span>Low Priority</span>
-                      </div>
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="dueDate" className="flex items-center space-x-1">
-                  <Calendar className="h-3 w-3" />
-                  <span>Due Date (Optional)</span>
-                </Label>
-                <Input
-                  id="dueDate"
-                  type="date"
-                  value={taskData.dueDate || ''}
-                  onChange={(e) => setTaskData(prev => ({ ...prev, dueDate: e.target.value }))}
-                />
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="flex justify-between pt-4 border-t">
-          <Button variant="outline" onClick={onClose}>
-            Cancel
-          </Button>
-          <Button onClick={handleSubmit} disabled={submitting || loading || !selectedProjectId}>
-            {submitting ? (
-              <>
-                <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                Creating Task...
-              </>
             ) : (
-              <>
-                <Send className="h-4 w-4 mr-2" />
-                Send to Project
-              </>
+              <div className="flex items-center space-x-2 p-3 border border-red-200 rounded-lg bg-red-50">
+                <AlertCircle className="h-4 w-4 text-red-600" />
+                <span className="text-sm text-red-700">No accessible projects found</span>
+              </div>
             )}
-          </Button>
+          </div>
+
+          {/* Selected Project Info */}
+          {selectedProject && (
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h4 className="font-medium text-blue-900">{selectedProject.name}</h4>
+                  {selectedProject.description && (
+                    <p className="text-sm text-blue-700 mt-1">{selectedProject.description}</p>
+                  )}
+                </div>
+                <Badge className="bg-blue-100 text-blue-800">
+                  {selectedProject.taskCount || 0} tasks
+                </Badge>
+              </div>
+            </div>
+          )}
+
+          {/* Content Configuration */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="contentType">Content Type *</Label>
+              <Select value={contentType} onValueChange={(value: any) => setContentType(value)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="task">
+                    <div className="flex items-center space-x-2">
+                      <CheckCircle className="h-3 w-3" />
+                      <span>Task</span>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="idea">
+                    <div className="flex items-center space-x-2">
+                      <Plus className="h-3 w-3" />
+                      <span>Idea</span>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="note">
+                    <div className="flex items-center space-x-2">
+                      <FileText className="h-3 w-3" />
+                      <span>Note</span>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="command">
+                    <div className="flex items-center space-x-2">
+                      <Languages className="h-3 w-3" />
+                      <span>Command</span>
+                    </div>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="priority">Priority</Label>
+              <Select value={priority} onValueChange={(value: any) => setPriority(value)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="low">
+                    <Badge className="bg-green-100 text-green-800">Low</Badge>
+                  </SelectItem>
+                  <SelectItem value="medium">
+                    <Badge className="bg-yellow-100 text-yellow-800">Medium</Badge>
+                  </SelectItem>
+                  <SelectItem value="high">
+                    <Badge className="bg-red-100 text-red-800">High</Badge>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          {/* Content Title */}
+          <div className="space-y-2">
+            <Label htmlFor="contentTitle">Title</Label>
+            <Input
+              id="contentTitle"
+              value={contentTitle}
+              onChange={(e) => setContentTitle(e.target.value)}
+              placeholder={`Enter ${contentType} title...`}
+            />
+          </div>
+
+          {/* Content Description */}
+          <div className="space-y-2">
+            <Label htmlFor="contentDescription">Description *</Label>
+            <Textarea
+              id="contentDescription"
+              value={contentDescription}
+              onChange={(e) => setContentDescription(e.target.value)}
+              placeholder={`Enter ${contentType} description...`}
+              className="min-h-[100px]"
+            />
+          </div>
+
+          {/* Error Display */}
+          {error && (
+            <div className="flex items-start space-x-2 p-3 border border-red-200 rounded-lg bg-red-50">
+              <AlertCircle className="h-4 w-4 text-red-600 mt-0.5" />
+              <div>
+                <p className="text-sm font-medium text-red-800">Error</p>
+                <p className="text-sm text-red-700">{error}</p>
+              </div>
+            </div>
+          )}
+
+          {/* Action Buttons */}
+          <div className="flex items-center justify-between pt-4 border-t">
+            <div className="flex items-center space-x-2 text-xs text-muted-foreground">
+              <User className="h-3 w-3" />
+              <span>Added via Commander Chat</span>
+              <Calendar className="h-3 w-3 ml-2" />
+              <span>{new Date().toLocaleDateString()}</span>
+            </div>
+            <div className="flex space-x-2">
+              <Button variant="outline" onClick={onClose} disabled={loading}>
+                <X className="h-3 w-3 mr-1" />
+                Cancel
+              </Button>
+              <Button 
+                onClick={handleSendToProject} 
+                disabled={loading || !selectedProjectId || !contentDescription.trim()}
+              >
+                {loading ? (
+                  <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                ) : (
+                  <Send className="h-3 w-3 mr-1" />
+                )}
+                Send to Project
+              </Button>
+            </div>
+          </div>
         </div>
       </DialogContent>
     </Dialog>
   )
 }
+
+export default SendToProjectModal
