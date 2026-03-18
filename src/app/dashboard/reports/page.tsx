@@ -1,525 +1,522 @@
 "use client"
 
 import { useState, useEffect } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Switch } from '@/components/ui/switch'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
+import { Badge } from '@/components/ui/badge'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+  DropdownMenuLabel,
+} from '@/components/ui/dropdown-menu'
 import { 
-  FileText, 
-  Calendar, 
-  Clock, 
-  Download, 
+  FileText,
   Plus,
+  Search,
+  Filter,
+  Download,
+  Calendar,
+  Clock,
+  TrendingUp,
+  BarChart3,
+  PieChart,
+  Activity,
+  Target,
+  CheckCircle,
+  AlertTriangle,
+  Zap,
   RefreshCw,
   Settings,
-  Trash2,
-  Play,
-  Pause,
+  MoreHorizontal,
   Eye,
-  Edit,
-  BarChart3,
-  TrendingUp,
-  Activity
+  Star,
+  Archive
 } from 'lucide-react'
 
 interface Report {
   id: string
   title: string
   description: string
-  type: 'performance' | 'usage' | 'security' | 'custom'
-  schedule: {
-    frequency: 'daily' | 'weekly' | 'monthly' | 'quarterly'
-    time: string
-    dayOfWeek?: number
-    dayOfMonth?: number
-    enabled: boolean
+  type: 'daily' | 'weekly' | 'monthly' | 'custom'
+  status: 'generating' | 'completed' | 'failed' | 'scheduled'
+  createdAt: string
+  generatedAt?: string
+  dataRange: {
+    start: string
+    end: string
   }
-  recipients: string[]
-  lastGenerated?: string
-  nextScheduled?: string
-  status: 'active' | 'paused' | 'error'
-  config: {
-    period: string
-    metrics: string[]
-    format: 'pdf' | 'json' | 'csv' | 'xlsx'
-    includeCharts: boolean
-    includeInsights: boolean
+  metrics: {
+    totalProjects: number
+    completedTasks: number
+    activeUsers: number
+    systemHealth: number
   }
+  size: string
+  downloadUrl?: string
+  isStarred?: boolean
+  tags: string[]
 }
 
-interface ScheduledReport {
-  id: string
-  reportId: string
-  title: string
-  generatedAt: string
-  status: 'completed' | 'failed' | 'generating'
-  size?: string
-  downloadUrl?: string
-  errorMessage?: string
+interface ReportStats {
+  totalReports: number
+  reportsThisMonth: number
+  avgGenerationTime: string
+  successRate: number
+  lastGenerated: string
+  topReportType: string
 }
 
 export default function ReportsPage() {
   const [reports, setReports] = useState<Report[]>([])
-  const [history, setHistory] = useState<ScheduledReport[]>([])
-  const [loading, setLoading] = useState(true)
-  const [newReportOpen, setNewReportOpen] = useState(false)
+  const [stats, setStats] = useState<ReportStats | null>(null)
+  const [loading, setLoading] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [selectedType, setSelectedType] = useState<string>('all')
+  const [selectedStatus, setSelectedStatus] = useState<string>('all')
+  const [activeTab, setActiveTab] = useState('reports')
 
   useEffect(() => {
     loadReports()
-    loadReportHistory()
+    loadStats()
   }, [])
 
   const loadReports = async () => {
     setLoading(true)
     try {
-      // In production, fetch from API
-      // For demo, use mock data
-      setReports([
+      // Mock API call - in real app, this would call /api/reports
+      await new Promise(resolve => setTimeout(resolve, 800))
+      
+      const mockReports: Report[] = [
         {
           id: 'report-1',
-          title: 'Weekly Performance Summary',
-          description: 'Comprehensive performance metrics and trends analysis',
-          type: 'performance',
-          schedule: {
-            frequency: 'weekly',
-            time: '09:00',
-            dayOfWeek: 1, // Monday
-            enabled: true
+          title: 'Daily System Report',
+          description: 'Comprehensive daily overview of system performance and project progress',
+          type: 'daily',
+          status: 'completed',
+          createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+          generatedAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+          dataRange: {
+            start: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
+            end: new Date().toISOString()
           },
-          recipients: ['admin@genplatform.ai', 'team@genplatform.ai'],
-          lastGenerated: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-          nextScheduled: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString(),
-          status: 'active',
-          config: {
-            period: '7d',
-            metrics: ['sessions', 'skills', 'performance'],
-            format: 'pdf',
-            includeCharts: true,
-            includeInsights: true
-          }
+          metrics: {
+            totalProjects: 6,
+            completedTasks: 23,
+            activeUsers: 3,
+            systemHealth: 98
+          },
+          size: '2.4 MB',
+          downloadUrl: '/api/reports/report-1/download',
+          isStarred: true,
+          tags: ['automated', 'daily', 'system']
         },
         {
           id: 'report-2',
-          title: 'Daily Usage Analytics',
-          description: 'Daily breakdown of system usage and skill execution',
-          type: 'usage',
-          schedule: {
-            frequency: 'daily',
-            time: '08:00',
-            enabled: true
+          title: 'Weekly Team Performance',
+          description: 'Team productivity metrics and project milestones achieved',
+          type: 'weekly',
+          status: 'completed',
+          createdAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
+          generatedAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
+          dataRange: {
+            start: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
+            end: new Date().toISOString()
           },
-          recipients: ['analytics@genplatform.ai'],
-          lastGenerated: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString(),
-          nextScheduled: new Date(Date.now() + 19 * 60 * 60 * 1000).toISOString(),
-          status: 'active',
-          config: {
-            period: '24h',
-            metrics: ['sessions', 'skills'],
-            format: 'json',
-            includeCharts: false,
-            includeInsights: true
-          }
+          metrics: {
+            totalProjects: 6,
+            completedTasks: 47,
+            activeUsers: 3,
+            systemHealth: 96
+          },
+          size: '5.1 MB',
+          downloadUrl: '/api/reports/report-2/download',
+          tags: ['weekly', 'team', 'performance']
         },
         {
           id: 'report-3',
-          title: 'Monthly System Health',
-          description: 'Comprehensive monthly health and security review',
-          type: 'security',
-          schedule: {
-            frequency: 'monthly',
-            time: '10:00',
-            dayOfMonth: 1,
-            enabled: false
+          title: 'Sprint 2C Analysis',
+          description: 'Detailed analysis of Sprint 2C completion and outcomes',
+          type: 'custom',
+          status: 'generating',
+          createdAt: new Date(Date.now() - 30 * 60 * 1000).toISOString(),
+          dataRange: {
+            start: new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString(),
+            end: new Date().toISOString()
           },
-          recipients: ['security@genplatform.ai', 'ops@genplatform.ai'],
-          lastGenerated: new Date(Date.now() - 25 * 24 * 60 * 60 * 1000).toISOString(),
-          nextScheduled: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString(),
-          status: 'paused',
-          config: {
-            period: '30d',
-            metrics: ['performance', 'security', 'system'],
-            format: 'pdf',
-            includeCharts: true,
-            includeInsights: true
-          }
+          metrics: {
+            totalProjects: 1,
+            completedTasks: 5,
+            activeUsers: 1,
+            systemHealth: 100
+          },
+          size: 'Calculating...',
+          tags: ['sprint', 'analysis', 'custom']
+        },
+        {
+          id: 'report-4',
+          title: 'Monthly Security Audit',
+          description: 'Comprehensive security review and compliance check',
+          type: 'monthly',
+          status: 'scheduled',
+          createdAt: new Date(Date.now() - 10 * 60 * 1000).toISOString(),
+          dataRange: {
+            start: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
+            end: new Date().toISOString()
+          },
+          metrics: {
+            totalProjects: 6,
+            completedTasks: 0,
+            activeUsers: 3,
+            systemHealth: 0
+          },
+          size: 'Pending',
+          tags: ['monthly', 'security', 'audit']
         }
-      ])
+      ]
+      
+      setReports(mockReports)
+    } catch (error) {
+      console.error('Error loading reports:', error)
     } finally {
       setLoading(false)
     }
   }
 
-  const loadReportHistory = async () => {
+  const loadStats = async () => {
     try {
-      setHistory([
-        {
-          id: 'hist-1',
-          reportId: 'report-1',
-          title: 'Weekly Performance Summary - Week 11',
-          generatedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-          status: 'completed',
-          size: '2.4 MB',
-          downloadUrl: '/downloads/performance-week11.pdf'
-        },
-        {
-          id: 'hist-2',
-          reportId: 'report-2',
-          title: 'Daily Usage Analytics - March 17',
-          generatedAt: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString(),
-          status: 'completed',
-          size: '156 KB',
-          downloadUrl: '/downloads/usage-mar17.json'
-        },
-        {
-          id: 'hist-3',
-          reportId: 'report-2',
-          title: 'Daily Usage Analytics - March 16',
-          generatedAt: new Date(Date.now() - 29 * 60 * 60 * 1000).toISOString(),
-          status: 'completed',
-          size: '142 KB'
-        },
-        {
-          id: 'hist-4',
-          reportId: 'report-1',
-          title: 'Weekly Performance Summary - Week 10',
-          generatedAt: new Date(Date.now() - 9 * 24 * 60 * 60 * 1000).toISOString(),
-          status: 'failed',
-          errorMessage: 'Data source temporarily unavailable'
-        }
-      ])
-    } catch (error) {
-      console.error('Failed to load report history:', error)
-    }
-  }
-
-  const generateReport = async (reportId: string) => {
-    try {
-      const response = await fetch('/api/openclaw/analytics', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          action: 'generate_report',
-          reportConfig: { reportId }
-        })
+      // Mock stats loading
+      await new Promise(resolve => setTimeout(resolve, 300))
+      
+      setStats({
+        totalReports: 47,
+        reportsThisMonth: 12,
+        avgGenerationTime: '2.3 min',
+        successRate: 98.7,
+        lastGenerated: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+        topReportType: 'Daily'
       })
-
-      if (response.ok) {
-        console.log('Report generation initiated')
-        await loadReportHistory()
-      }
     } catch (error) {
-      console.error('Failed to generate report:', error)
+      console.error('Error loading stats:', error)
     }
   }
 
-  const toggleReportSchedule = async (reportId: string) => {
-    setReports(prev => prev.map(report => 
-      report.id === reportId 
-        ? { 
-            ...report, 
-            schedule: { ...report.schedule, enabled: !report.schedule.enabled },
-            status: !report.schedule.enabled ? 'active' : 'paused' as const
-          }
-        : report
-    ))
+  const filteredReports = reports.filter(report => {
+    const matchesSearch = report.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         report.description.toLowerCase().includes(searchQuery.toLowerCase())
+    const matchesType = selectedType === 'all' || report.type === selectedType
+    const matchesStatus = selectedStatus === 'all' || report.status === selectedStatus
+    
+    return matchesSearch && matchesType && matchesStatus
+  })
+
+  const getStatusIcon = (status: Report['status']) => {
+    switch (status) {
+      case 'completed': return <CheckCircle className="h-4 w-4 text-green-600" />
+      case 'generating': return <RefreshCw className="h-4 w-4 text-blue-600 animate-spin" />
+      case 'failed': return <AlertTriangle className="h-4 w-4 text-red-600" />
+      case 'scheduled': return <Clock className="h-4 w-4 text-orange-600" />
+      default: return null
+    }
   }
 
-  const getStatusBadge = (status: string) => {
-    const colors = {
-      active: 'bg-green-100 text-green-800',
-      paused: 'bg-yellow-100 text-yellow-800',
-      error: 'bg-red-100 text-red-800'
+  const getStatusBadge = (status: Report['status']) => {
+    const configs = {
+      completed: { label: 'Completed', className: 'bg-green-50 text-green-700 border-green-200' },
+      generating: { label: 'Generating', className: 'bg-blue-50 text-blue-700 border-blue-200' },
+      failed: { label: 'Failed', className: 'bg-red-50 text-red-700 border-red-200' },
+      scheduled: { label: 'Scheduled', className: 'bg-orange-50 text-orange-700 border-orange-200' }
     }
+    
+    const config = configs[status]
     return (
-      <Badge className={colors[status as keyof typeof colors]}>
-        {status}
+      <Badge variant="outline" className={config.className}>
+        {config.label}
       </Badge>
     )
   }
 
-  const getTypeIcon = (type: string) => {
+  const getTypeIcon = (type: Report['type']) => {
     switch (type) {
-      case 'performance': return <BarChart3 className="h-4 w-4" />
-      case 'usage': return <Activity className="h-4 w-4" />
-      case 'security': return <Settings className="h-4 w-4" />
+      case 'daily': return <Calendar className="h-4 w-4" />
+      case 'weekly': return <BarChart3 className="h-4 w-4" />
+      case 'monthly': return <PieChart className="h-4 w-4" />
+      case 'custom': return <Target className="h-4 w-4" />
       default: return <FileText className="h-4 w-4" />
     }
   }
 
-  const formatSchedule = (schedule: Report['schedule']) => {
-    const { frequency, time, dayOfWeek, dayOfMonth } = schedule
-    
-    switch (frequency) {
-      case 'daily':
-        return `Daily at ${time}`
-      case 'weekly':
-        const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
-        return `Weekly on ${days[dayOfWeek || 0]} at ${time}`
-      case 'monthly':
-        return `Monthly on the ${dayOfMonth}${getOrdinalSuffix(dayOfMonth || 1)} at ${time}`
-      case 'quarterly':
-        return `Quarterly at ${time}`
-      default:
-        return 'Custom schedule'
-    }
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    })
   }
 
-  const getOrdinalSuffix = (num: number) => {
-    const j = num % 10
-    const k = num % 100
-    if (j === 1 && k !== 11) return 'st'
-    if (j === 2 && k !== 12) return 'nd'
-    if (j === 3 && k !== 13) return 'rd'
-    return 'th'
-  }
-
-  const formatTimeAgo = (timestamp: string) => {
-    const now = new Date()
-    const time = new Date(timestamp)
-    const diffInMinutes = Math.floor((now.getTime() - time.getTime()) / (1000 * 60))
-    
-    if (diffInMinutes < 60) return `${diffInMinutes}m ago`
-    if (diffInMinutes < 1440) return `${Math.floor(diffInMinutes / 60)}h ago`
-    return `${Math.floor(diffInMinutes / 1440)}d ago`
-  }
-
-  const formatNextRun = (timestamp?: string) => {
-    if (!timestamp) return 'Not scheduled'
-    
-    const now = new Date()
-    const next = new Date(timestamp)
-    const diffInMinutes = Math.floor((next.getTime() - now.getTime()) / (1000 * 60))
-    
-    if (diffInMinutes < 60) return `in ${diffInMinutes}m`
-    if (diffInMinutes < 1440) return `in ${Math.floor(diffInMinutes / 60)}h`
-    return `in ${Math.floor(diffInMinutes / 1440)}d`
+  const generateReport = () => {
+    console.log('Generate new report')
+    // This would open the report generation dialog
   }
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Reports & Analytics</h1>
+          <h1 className="text-3xl font-bold tracking-tight">Reports & Analytics</h1>
           <p className="text-muted-foreground">
-            Automated report generation and scheduling
+            Generate insights and track system performance
           </p>
         </div>
-        <div className="flex space-x-2">
-          <Button variant="outline" onClick={() => loadReports()}>
+        <div className="flex items-center space-x-3">
+          <Button variant="outline" onClick={loadReports}>
             <RefreshCw className="h-4 w-4 mr-2" />
             Refresh
           </Button>
-          <Dialog open={newReportOpen} onOpenChange={setNewReportOpen}>
-            <Button onClick={() => setNewReportOpen(true)}>
-              <Plus className="h-4 w-4 mr-2" />
-              New Report
-            </Button>
-            <DialogContent className="max-w-2xl">
-              <DialogHeader>
-                <DialogTitle>Create New Report</DialogTitle>
-              </DialogHeader>
-              <div className="space-y-4 py-4">
-                <div className="space-y-2">
-                  <Label htmlFor="title">Report Title</Label>
-                  <Input id="title" placeholder="e.g., Weekly Performance Summary" />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="description">Description</Label>
-                  <Textarea id="description" placeholder="Brief description of the report" />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>Report Type</Label>
-                    <Select>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select type" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="performance">Performance</SelectItem>
-                        <SelectItem value="usage">Usage Analytics</SelectItem>
-                        <SelectItem value="security">Security</SelectItem>
-                        <SelectItem value="custom">Custom</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Frequency</Label>
-                    <Select>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select frequency" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="daily">Daily</SelectItem>
-                        <SelectItem value="weekly">Weekly</SelectItem>
-                        <SelectItem value="monthly">Monthly</SelectItem>
-                        <SelectItem value="quarterly">Quarterly</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-                <div className="flex justify-end space-x-2">
-                  <Button variant="outline" onClick={() => setNewReportOpen(false)}>
-                    Cancel
-                  </Button>
-                  <Button onClick={() => setNewReportOpen(false)}>
-                    Create Report
-                  </Button>
-                </div>
-              </div>
-            </DialogContent>
-          </Dialog>
+          <Button onClick={generateReport}>
+            <Plus className="h-4 w-4 mr-2" />
+            Generate Report
+          </Button>
         </div>
       </div>
 
-      {/* Scheduled Reports */}
-      <div className="space-y-4">
-        <h2 className="text-xl font-semibold">Scheduled Reports</h2>
-        {loading ? (
-          <div className="grid grid-cols-1 gap-4">
-            {[1, 2, 3].map(i => (
-              <Card key={i}>
-                <CardContent className="p-6">
-                  <div className="animate-pulse">
-                    <div className="h-6 bg-muted rounded mb-4 w-1/3"></div>
-                    <div className="h-4 bg-muted rounded mb-2 w-2/3"></div>
-                    <div className="h-4 bg-muted rounded w-1/2"></div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 gap-4">
-            {reports.map((report) => (
-              <Card key={report.id} className="hover:shadow-md transition-shadow">
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center space-x-3">
-                      {getTypeIcon(report.type)}
-                      <div>
-                        <h3 className="font-semibold text-lg">{report.title}</h3>
-                        <p className="text-sm text-muted-foreground">{report.description}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      {getStatusBadge(report.status)}
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => generateReport(report.id)}
-                      >
-                        <Play className="h-3 w-3 mr-1" />
-                        Run Now
-                      </Button>
-                    </div>
-                  </div>
+      {/* Stats Overview */}
+      {stats && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Reports</CardTitle>
+              <FileText className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stats.totalReports}</div>
+              <p className="text-xs text-muted-foreground">
+                {stats.reportsThisMonth} this month
+              </p>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Success Rate</CardTitle>
+              <CheckCircle className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stats.successRate}%</div>
+              <p className="text-xs text-muted-foreground">
+                Generation success
+              </p>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Avg Generation</CardTitle>
+              <Clock className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stats.avgGenerationTime}</div>
+              <p className="text-xs text-muted-foreground">
+                Per report
+              </p>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Last Generated</CardTitle>
+              <Activity className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{formatDate(stats.lastGenerated)}</div>
+              <p className="text-xs text-muted-foreground">
+                {stats.topReportType} report
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
-                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm">
-                    <div>
-                      <span className="text-muted-foreground">Schedule:</span>
-                      <div className="font-medium">{formatSchedule(report.schedule)}</div>
-                    </div>
-                    
-                    <div>
-                      <span className="text-muted-foreground">Last Generated:</span>
-                      <div className="font-medium">
-                        {report.lastGenerated ? formatTimeAgo(report.lastGenerated) : 'Never'}
-                      </div>
-                    </div>
+      {/* Main Content */}
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="reports" className="flex items-center space-x-2">
+            <FileText className="h-4 w-4" />
+            <span>Reports</span>
+          </TabsTrigger>
+          <TabsTrigger value="improvements" className="flex items-center space-x-2">
+            <TrendingUp className="h-4 w-4" />
+            <span>Improvements</span>
+          </TabsTrigger>
+        </TabsList>
 
-                    <div>
-                      <span className="text-muted-foreground">Next Run:</span>
-                      <div className="font-medium">{formatNextRun(report.nextScheduled)}</div>
-                    </div>
-
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <span className="text-muted-foreground">Recipients:</span>
-                        <div className="font-medium">{report.recipients.length} emails</div>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <Switch 
-                          checked={report.schedule.enabled}
-                          onCheckedChange={() => toggleReportSchedule(report.id)}
-                        />
-                        <Button size="sm" variant="ghost">
-                          <Edit className="h-3 w-3" />
-                        </Button>
-                        <Button size="sm" variant="ghost" className="text-red-600">
-                          <Trash2 className="h-3 w-3" />
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Report Config */}
-                  <div className="mt-4 pt-4 border-t">
-                    <div className="flex items-center space-x-4 text-xs text-muted-foreground">
-                      <span>Period: {report.config.period}</span>
-                      <span>Format: {report.config.format.toUpperCase()}</span>
-                      <span>Metrics: {report.config.metrics.join(', ')}</span>
-                      {report.config.includeCharts && <Badge variant="outline">Charts</Badge>}
-                      {report.config.includeInsights && <Badge variant="outline">Insights</Badge>}
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* Report History */}
-      <div className="space-y-4">
-        <h2 className="text-xl font-semibold">Recent Reports</h2>
-        <Card>
-          <CardContent className="p-6">
-            <div className="space-y-4">
-              {history.map((item) => (
-                <div key={item.id} className="flex items-center justify-between p-4 border rounded-lg">
-                  <div className="flex items-center space-x-3">
-                    <FileText className="h-4 w-4 text-muted-foreground" />
-                    <div>
-                      <div className="font-medium">{item.title}</div>
-                      <div className="text-sm text-muted-foreground">
-                        Generated {formatTimeAgo(item.generatedAt)}
-                        {item.size && ` • ${item.size}`}
-                      </div>
-                      {item.errorMessage && (
-                        <div className="text-sm text-red-600">{item.errorMessage}</div>
-                      )}
-                    </div>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Badge 
-                      variant={item.status === 'completed' ? 'default' : 
-                              item.status === 'failed' ? 'destructive' : 'secondary'}
-                    >
-                      {item.status}
-                    </Badge>
-                    {item.downloadUrl && (
-                      <Button size="sm" variant="outline">
-                        <Download className="h-3 w-3 mr-1" />
-                        Download
-                      </Button>
-                    )}
-                    <Button size="sm" variant="ghost">
-                      <Eye className="h-3 w-3" />
-                    </Button>
-                  </div>
-                </div>
-              ))}
+        {/* Reports Tab */}
+        <TabsContent value="reports" className="space-y-4">
+          {/* Filters */}
+          <div className="flex flex-col sm:flex-row gap-4">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search reports..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10"
+              />
             </div>
-          </CardContent>
-        </Card>
-      </div>
+            
+            <Select value={selectedType} onValueChange={setSelectedType}>
+              <SelectTrigger className="w-full sm:w-40">
+                <SelectValue placeholder="Filter by type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Types</SelectItem>
+                <SelectItem value="daily">Daily</SelectItem>
+                <SelectItem value="weekly">Weekly</SelectItem>
+                <SelectItem value="monthly">Monthly</SelectItem>
+                <SelectItem value="custom">Custom</SelectItem>
+              </SelectContent>
+            </Select>
+            
+            <Select value={selectedStatus} onValueChange={setSelectedStatus}>
+              <SelectTrigger className="w-full sm:w-40">
+                <SelectValue placeholder="Filter by status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Status</SelectItem>
+                <SelectItem value="completed">Completed</SelectItem>
+                <SelectItem value="generating">Generating</SelectItem>
+                <SelectItem value="scheduled">Scheduled</SelectItem>
+                <SelectItem value="failed">Failed</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Reports List */}
+          <div className="space-y-4">
+            {loading ? (
+              <div className="text-center py-8">
+                <RefreshCw className="h-6 w-6 animate-spin mx-auto mb-2 text-muted-foreground" />
+                <p className="text-sm text-muted-foreground">Loading reports...</p>
+              </div>
+            ) : filteredReports.length > 0 ? (
+              filteredReports.map((report) => (
+                <Card key={report.id} className="hover:shadow-md transition-shadow">
+                  <CardContent className="p-6">
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-start space-x-4 flex-1">
+                        <div className="mt-1">
+                          {getTypeIcon(report.type)}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center space-x-2 mb-1">
+                            <h3 className="font-semibold text-lg truncate">{report.title}</h3>
+                            {report.isStarred && (
+                              <Star className="h-4 w-4 text-yellow-500 fill-current" />
+                            )}
+                          </div>
+                          <p className="text-sm text-muted-foreground mb-3">
+                            {report.description}
+                          </p>
+                          <div className="flex flex-wrap items-center gap-2 mb-3">
+                            {getStatusBadge(report.status)}
+                            <Badge variant="outline" className="capitalize">
+                              {report.type}
+                            </Badge>
+                            {report.tags.slice(0, 2).map((tag) => (
+                              <Badge key={tag} variant="secondary" className="text-xs">
+                                {tag}
+                              </Badge>
+                            ))}
+                          </div>
+                          <div className="flex items-center text-xs text-muted-foreground space-x-4">
+                            <span>Created: {formatDate(report.createdAt)}</span>
+                            {report.generatedAt && (
+                              <span>Generated: {formatDate(report.generatedAt)}</span>
+                            )}
+                            <span>Size: {report.size}</span>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex items-center space-x-2 ml-4">
+                        {getStatusIcon(report.status)}
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem>
+                              <Eye className="h-4 w-4 mr-2" />
+                              View Report
+                            </DropdownMenuItem>
+                            {report.downloadUrl && report.status === 'completed' && (
+                              <DropdownMenuItem>
+                                <Download className="h-4 w-4 mr-2" />
+                                Download
+                              </DropdownMenuItem>
+                            )}
+                            <DropdownMenuItem>
+                              <Star className="h-4 w-4 mr-2" />
+                              {report.isStarred ? 'Unstar' : 'Star'}
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem>
+                              <Archive className="h-4 w-4 mr-2" />
+                              Archive
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))
+            ) : (
+              <div className="text-center py-8">
+                <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <h3 className="text-lg font-semibold mb-2">No reports found</h3>
+                <p className="text-sm text-muted-foreground mb-4">
+                  {searchQuery || selectedType !== 'all' || selectedStatus !== 'all' 
+                    ? 'Try adjusting your filters or search query.'
+                    : 'Generate your first report to get started.'}
+                </p>
+                <Button onClick={generateReport}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Generate Report
+                </Button>
+              </div>
+            )}
+          </div>
+        </TabsContent>
+
+        {/* Improvements Tab */}
+        <TabsContent value="improvements" className="space-y-4">
+          <div className="text-center py-8">
+            <TrendingUp className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+            <h3 className="text-lg font-semibold mb-2">Improvements System</h3>
+            <p className="text-sm text-muted-foreground mb-4">
+              This section will display system improvement suggestions and proposals.
+            </p>
+            <p className="text-xs text-muted-foreground">
+              Coming in Task 5A-10
+            </p>
+          </div>
+        </TabsContent>
+      </Tabs>
     </div>
   )
 }
