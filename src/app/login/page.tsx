@@ -26,9 +26,9 @@ export default function LoginPage() {
 
       const data = await response.json()
 
-      if (response.ok) {
-        localStorage.setItem('auth-token', data.token)
-        router.push('/')
+      if (data.success) {
+        // Cookie is set by the server, redirect to dashboard
+        router.push('/dashboard')
       } else {
         setError(data.error || 'Authentication failed')
       }
