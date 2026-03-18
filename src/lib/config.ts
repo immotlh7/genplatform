@@ -1,6 +1,6 @@
 export const config = {
   // Authentication
-  dashboardPassword: process.env.DASHBOARD_PASSWORD || 'admin123',
+  dashboardPassword: 'admin123',
   
   // OpenClaw paths
   openclawPath: process.env.OPENCLAW_PATH || '/root/.openclaw',
