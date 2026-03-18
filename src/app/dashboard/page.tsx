@@ -30,6 +30,7 @@ import { TaskTracker } from '@/components/dashboard/TaskTracker'
 import { ActivityStream } from '@/components/dashboard/ActivityStream'
 import { ImprovementsWidget } from '@/components/dashboard/ImprovementsWidget'
 import { ReportsNotifications } from '@/components/notifications/ReportsNotifications'
+import { AutomationsCard } from '@/components/dashboard/AutomationsCard'
 import { supabaseHelpers } from '@/lib/supabase'
 import { getCurrentUserClient, getAccessibleProjects } from '@/lib/access-control'
 import type { User } from '@/lib/access-control'
@@ -369,9 +370,9 @@ export default function DashboardPage() {
       {/* Live Task Tracker - Prominent position */}
       <TaskTracker />
 
-      {/* Enhanced Stats Overview - Now includes Reports */}
+      {/* Enhanced Stats Overview - Now includes Automations and Reports */}
       {stats && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 md:gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4 md:gap-6">
           <Card className="hover:shadow-md transition-shadow">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">
@@ -405,6 +406,11 @@ export default function DashboardPage() {
               </div>
             </CardContent>
           </Card>
+
+          {/* Automations Card - Only for OWNER and ADMIN */}
+          {currentUser && (currentUser.role === 'OWNER' || currentUser.role === 'ADMIN') && (
+            <AutomationsCard />
+          )}
 
           <Card className="hover:shadow-md transition-shadow">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">

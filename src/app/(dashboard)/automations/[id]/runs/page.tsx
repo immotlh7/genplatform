@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { 
   ArrowLeft, 
   Clock, 
@@ -15,29 +16,33 @@ import {
   Pause,
   Eye,
   ThumbsUp,
-  ThumbsDown
+  ThumbsDown,
+  Activity,
+  BarChart3,
+  FileText,
+  RefreshCw
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import WorkflowProgress from '@/components/automations/WorkflowProgress'
+import Link from 'next/link'
 
 interface WorkflowRun {
   id: string
   workflow_id: string
   project_id?: string
-  status: 'running' | 'completed' | 'failed' | 'waiting_approval'
+  status: 'running' | 'completed' | 'failed' | 'waiting_approval' | 'paused'
   current_step?: string
   steps_completed: number
   steps_total: number
   logs: any[]
   started_at: string
   completed_at?: string
-}
-
-interface WorkflowStep {
-  id: string
-  name: string
-  type: 'action' | 'approval' | 'loop' | 'notification'
-  description: string
-  estimatedMinutes?: number
+  workflow?: {
+    id: string
+    name: string
+    description: string
+    template_type: string
+  }
 }
 
 export default function WorkflowRunDetailPage() {
@@ -46,113 +51,53 @@ export default function WorkflowRunDetailPage() {
   const runId = params.id as string
 
   const [workflowRun, setWorkflowRun] = useState<WorkflowRun | null>(null)
-  const [workflow, setWorkflow] = useState<any>(null)
-  const [steps, setSteps] = useState<WorkflowStep[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [expandedStep, setExpandedStep] = useState<string | null>(null)
   const [approving, setApproving] = useState(false)
 
   useEffect(() => {
-    if (runId) {
-      fetchWorkflowRun()
-      
-      // Poll for updates every 5 seconds for running workflows
-      const interval = setInterval(() => {
-        if (workflowRun?.status === 'running' || workflowRun?.status === 'waiting_approval') {
-          fetchWorkflowRun()
-        }
-      }, 5000)
-
-      return () => clearInterval(interval)
-    }
+    fetchWorkflowRun()
+    
+    // Auto-refresh for running workflows
+    const interval = setInterval(() => {
+      if (workflowRun?.status === 'running' || workflowRun?.status === 'waiting_approval') {
+        fetchWorkflowRun(false) // Silent refresh
+      }
+    }, 5000)
+    
+    return () => clearInterval(interval)
   }, [runId, workflowRun?.status])
 
-  const fetchWorkflowRun = async () => {
+  const fetchWorkflowRun = async (showLoading = true) => {
+    if (showLoading) setLoading(true)
+    setError(null)
+    
     try {
       const response = await fetch(`/api/workflows/runs/${runId}`)
       
       if (!response.ok) {
-        throw new Error('Failed to fetch workflow run')
+        if (response.status === 404) {
+          setError('Workflow run not found')
+        } else {
+          const errorData = await response.json()
+          setError(errorData.message || 'Failed to fetch workflow run')
+        }
+        return
       }
-      
+
       const data = await response.json()
-      setWorkflowRun(data.run)
-      setWorkflow(data.workflow)
-      setSteps(data.workflow?.config?.steps || [])
-    } catch (error) {
-      console.error('Error fetching workflow run:', error)
-      setError('Failed to load workflow run')
+      setWorkflowRun(data.workflowRun)
+    } catch (err) {
+      console.error('Error fetching workflow run:', err)
+      setError(err instanceof Error ? err.message : 'Unknown error')
     } finally {
-      setLoading(false)
+      if (showLoading) setLoading(false)
     }
-  }
-
-  const getStepStatus = (stepIndex: number) => {
-    if (!workflowRun) return 'pending'
-    
-    if (stepIndex < workflowRun.steps_completed) {
-      return 'completed'
-    } else if (stepIndex === workflowRun.steps_completed) {
-      if (workflowRun.status === 'waiting_approval') {
-        return 'waiting_approval'
-      } else if (workflowRun.status === 'running') {
-        return 'running'
-      } else if (workflowRun.status === 'failed') {
-        return 'failed'
-      }
-    }
-    
-    return 'pending'
-  }
-
-  const getStepIcon = (status: string) => {
-    switch (status) {
-      case 'completed':
-        return <CheckCircle className="h-5 w-5 text-green-600" />
-      case 'running':
-        return <Loader2 className="h-5 w-5 text-blue-600 animate-spin" />
-      case 'waiting_approval':
-        return <Clock className="h-5 w-5 text-yellow-600" />
-      case 'failed':
-        return <AlertCircle className="h-5 w-5 text-red-600" />
-      default:
-        return <div className="h-5 w-5 rounded-full border-2 border-gray-300" />
-    }
-  }
-
-  const getStepDuration = (stepName: string) => {
-    if (!workflowRun?.logs) return null
-    
-    const stepLogs = workflowRun.logs.filter(log => log.step === stepName)
-    if (stepLogs.length < 2) return null
-    
-    const startLog = stepLogs.find(log => log.message.includes('Starting'))
-    const endLog = stepLogs.find(log => log.message.includes('Completed'))
-    
-    if (!startLog || !endLog) return null
-    
-    const duration = new Date(endLog.timestamp).getTime() - new Date(startLog.timestamp).getTime()
-    return formatDuration(duration)
-  }
-
-  const formatDuration = (ms: number) => {
-    const seconds = Math.floor(ms / 1000)
-    const minutes = Math.floor(seconds / 60)
-    const remainingSeconds = seconds % 60
-    
-    if (minutes > 0) {
-      return `${minutes}m ${remainingSeconds}s`
-    }
-    return `${remainingSeconds}s`
-  }
-
-  const getStepLogs = (stepName: string) => {
-    if (!workflowRun?.logs) return []
-    return workflowRun.logs.filter(log => log.step === stepName)
   }
 
   const handleApproval = async (approved: boolean) => {
+    if (!workflowRun) return
+
     try {
       setApproving(true)
       
@@ -160,31 +105,75 @@ export default function WorkflowRunDetailPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
-          runId: workflowRun?.id,
-          approved 
+          runId: workflowRun.id,
+          approved
         })
       })
 
       if (!response.ok) {
-        throw new Error('Failed to process approval')
+        const errorData = await response.json()
+        throw new Error(errorData.message || 'Failed to process approval')
       }
 
-      // Refresh data
-      await fetchWorkflowRun()
+      // Refresh the workflow run data
+      await fetchWorkflowRun(false)
     } catch (error) {
       console.error('Error processing approval:', error)
-      setError('Failed to process approval')
+      setError(error instanceof Error ? error.message : 'Failed to process approval')
     } finally {
       setApproving(false)
     }
   }
 
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'completed':
+        return <CheckCircle className="h-5 w-5 text-green-600" />
+      case 'running':
+        return <Loader2 className="h-5 w-5 text-blue-600 animate-spin" />
+      case 'failed':
+        return <AlertCircle className="h-5 w-5 text-red-600" />
+      case 'waiting_approval':
+        return <Clock className="h-5 w-5 text-amber-600" />
+      case 'paused':
+        return <Pause className="h-5 w-5 text-gray-600" />
+      default:
+        return <Activity className="h-5 w-5 text-gray-600" />
+    }
+  }
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'completed': return 'bg-green-500'
+      case 'running': return 'bg-blue-500'
+      case 'failed': return 'bg-red-500'
+      case 'waiting_approval': return 'bg-amber-500'
+      case 'paused': return 'bg-gray-500'
+      default: return 'bg-gray-300'
+    }
+  }
+
+  const formatDuration = (startTime: string, endTime?: string) => {
+    const start = new Date(startTime).getTime()
+    const end = endTime ? new Date(endTime).getTime() : Date.now()
+    const duration = end - start
+    
+    const minutes = Math.floor(duration / (1000 * 60))
+    const seconds = Math.floor((duration % (1000 * 60)) / 1000)
+    
+    if (minutes > 0) {
+      return `${minutes}m ${seconds}s`
+    }
+    return `${seconds}s`
+  }
+
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-center">
-          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
-          <p className="text-muted-foreground">Loading workflow run...</p>
+      <div className="container max-w-6xl mx-auto p-6 space-y-6">
+        <div className="animate-pulse space-y-4">
+          <div className="h-8 bg-muted rounded w-1/4"></div>
+          <div className="h-64 bg-muted rounded"></div>
+          <div className="h-48 bg-muted rounded"></div>
         </div>
       </div>
     )
@@ -192,235 +181,309 @@ export default function WorkflowRunDetailPage() {
 
   if (error || !workflowRun) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-center">
-          <AlertCircle className="h-8 w-8 text-red-500 mx-auto mb-4" />
-          <p className="text-red-600">{error || 'Workflow run not found'}</p>
-          <Button 
-            variant="outline" 
-            onClick={() => router.back()}
-            className="mt-4"
-          >
+      <div className="container max-w-6xl mx-auto p-6">
+        <div className="flex items-center space-x-4 mb-6">
+          <Button variant="ghost" onClick={() => router.back()}>
             <ArrowLeft className="h-4 w-4 mr-2" />
-            Go Back
+            Back
           </Button>
         </div>
+        
+        <Card>
+          <CardContent className="flex flex-col items-center justify-center py-12">
+            <AlertCircle className="h-12 w-12 text-muted-foreground mb-4" />
+            <h2 className="text-xl font-semibold mb-2">Unable to Load Workflow Run</h2>
+            <p className="text-muted-foreground text-center mb-4">
+              {error || 'The workflow run could not be found.'}
+            </p>
+            <Button onClick={() => fetchWorkflowRun()}>
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Try Again
+            </Button>
+          </CardContent>
+        </Card>
       </div>
     )
   }
 
   return (
-    <div className="space-y-6">
+    <div className="container max-w-6xl mx-auto p-6 space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <Button 
-            variant="ghost" 
-            onClick={() => router.back()}
-          >
+        <div className="flex items-center space-x-4">
+          <Button variant="ghost" onClick={() => router.back()}>
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back
           </Button>
-          
           <div>
             <h1 className="text-2xl font-bold">
-              {workflow?.name} - Run #{workflowRun.id.slice(-8)}
+              {workflowRun.workflow?.name || 'Workflow Run'}
             </h1>
             <p className="text-muted-foreground">
-              Started {new Date(workflowRun.started_at).toLocaleString()}
+              Run #{workflowRun.id.slice(-8)} • Started {new Date(workflowRun.started_at).toLocaleString()}
             </p>
           </div>
         </div>
-
-        <div className="flex items-center gap-4">
-          <Badge variant={
-            workflowRun.status === 'completed' ? 'default' :
-            workflowRun.status === 'running' ? 'secondary' :
-            workflowRun.status === 'waiting_approval' ? 'outline' :
-            'destructive'
-          }>
-            {workflowRun.status.replace('_', ' ').toUpperCase()}
-          </Badge>
-          
-          <div className="text-sm text-muted-foreground">
-            {workflowRun.steps_completed}/{workflowRun.steps_total} steps completed
+        
+        <div className="flex items-center space-x-3">
+          <div className="flex items-center space-x-2">
+            {getStatusIcon(workflowRun.status)}
+            <Badge 
+              variant="outline" 
+              className={cn('text-white font-medium', getStatusColor(workflowRun.status))}
+            >
+              {workflowRun.status.replace('_', ' ').toUpperCase()}
+            </Badge>
           </div>
+          
+          <Button variant="outline" size="sm" onClick={() => fetchWorkflowRun()}>
+            <RefreshCw className="h-4 w-4" />
+          </Button>
         </div>
       </div>
 
-      {/* Workflow Steps */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Workflow Steps</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {steps.map((step, index) => {
-              const status = getStepStatus(index)
-              const duration = getStepDuration(step.name)
-              const logs = getStepLogs(step.name)
-              const isExpanded = expandedStep === step.id
-              const isCurrentStep = index === workflowRun.steps_completed
-
-              return (
-                <div key={step.id} className="space-y-2">
-                  <div 
-                    className={cn(
-                      'flex items-center justify-between p-4 border rounded-lg cursor-pointer transition-colors',
-                      status === 'completed' && 'bg-green-50 border-green-200',
-                      status === 'running' && 'bg-blue-50 border-blue-200',
-                      status === 'waiting_approval' && 'bg-yellow-50 border-yellow-200',
-                      status === 'failed' && 'bg-red-50 border-red-200',
-                      status === 'pending' && 'bg-gray-50 border-gray-200'
-                    )}
-                    onClick={() => setExpandedStep(isExpanded ? null : step.id)}
-                  >
-                    <div className="flex items-center gap-3">
-                      {getStepIcon(status)}
-                      <div>
-                        <h4 className="font-medium">
-                          Step {index + 1}: {step.name}
-                        </h4>
-                        <p className="text-sm text-muted-foreground">
-                          {step.description}
-                        </p>
-                        {step.type === 'approval' && status === 'waiting_approval' && (
-                          <div className="flex gap-2 mt-2">
-                            <Button
-                              size="sm"
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                handleApproval(true)
-                              }}
-                              disabled={approving}
-                            >
-                              <ThumbsUp className="h-4 w-4 mr-1" />
-                              Approve & Continue
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="destructive"
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                handleApproval(false)
-                              }}
-                              disabled={approving}
-                            >
-                              <ThumbsDown className="h-4 w-4 mr-1" />
-                              Reject & Stop
-                            </Button>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-4">
-                      {duration && (
-                        <span className="text-sm text-muted-foreground">
-                          {duration}
-                        </span>
-                      )}
-                      {status === 'completed' && (
-                        <Badge variant="outline" className="text-green-600">
-                          {status}
-                        </Badge>
-                      )}
-                      {logs.length > 0 && (
-                        <Button size="sm" variant="ghost">
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Expanded Step Details */}
-                  {isExpanded && logs.length > 0 && (
-                    <Card>
-                      <CardHeader className="pb-3">
-                        <CardTitle className="text-base">Step Logs</CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="space-y-2 max-h-60 overflow-y-auto">
-                          {logs.map((log, logIndex) => (
-                            <div 
-                              key={logIndex}
-                              className={cn(
-                                'text-sm p-2 rounded',
-                                log.level === 'error' && 'bg-red-50 text-red-800',
-                                log.level === 'warning' && 'bg-yellow-50 text-yellow-800',
-                                log.level === 'success' && 'bg-green-50 text-green-800',
-                                log.level === 'info' && 'bg-blue-50 text-blue-800'
-                              )}
-                            >
-                              <div className="flex justify-between items-start">
-                                <span>{log.message}</span>
-                                <span className="text-xs text-muted-foreground ml-2">
-                                  {new Date(log.timestamp).toLocaleTimeString()}
-                                </span>
-                              </div>
-                              {log.error && (
-                                <div className="mt-1 text-xs opacity-75">
-                                  Error: {log.error}
-                                </div>
-                              )}
-                            </div>
-                          ))}
-                        </div>
-                      </CardContent>
-                    </Card>
-                  )}
-                </div>
-              )
-            })}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Run Summary */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      {/* Overview Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-2xl font-bold">{workflowRun.steps_completed}</p>
-                <p className="text-sm text-muted-foreground">Steps Completed</p>
-              </div>
-              <CheckCircle className="h-8 w-8 text-green-500" />
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Status</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center space-x-2">
+              {getStatusIcon(workflowRun.status)}
+              <span className="font-semibold capitalize">
+                {workflowRun.status.replace('_', ' ')}
+              </span>
             </div>
           </CardContent>
         </Card>
 
         <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-2xl font-bold">{workflowRun.steps_total}</p>
-                <p className="text-sm text-muted-foreground">Total Steps</p>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Progress</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-1">
+              <div className="font-semibold">
+                {workflowRun.steps_completed}/{workflowRun.steps_total} Steps
               </div>
-              <Play className="h-8 w-8 text-blue-500" />
+              <div className="text-sm text-muted-foreground">
+                {Math.round((workflowRun.steps_completed / workflowRun.steps_total) * 100)}% Complete
+              </div>
             </div>
           </CardContent>
         </Card>
 
         <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-2xl font-bold">
-                  {workflowRun.completed_at 
-                    ? formatDuration(new Date(workflowRun.completed_at).getTime() - new Date(workflowRun.started_at).getTime())
-                    : formatDuration(new Date().getTime() - new Date(workflowRun.started_at).getTime())
-                  }
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  {workflowRun.completed_at ? 'Total Duration' : 'Elapsed Time'}
-                </p>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Duration</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-1">
+              <div className="font-semibold">
+                {formatDuration(workflowRun.started_at, workflowRun.completed_at)}
               </div>
-              <Clock className="h-8 w-8 text-purple-500" />
+              <div className="text-sm text-muted-foreground">
+                {workflowRun.completed_at ? 'Total time' : 'Elapsed time'}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Current Step</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-1">
+              <div className="font-semibold truncate">
+                {workflowRun.current_step || 'N/A'}
+              </div>
+              <div className="text-sm text-muted-foreground">
+                Step {workflowRun.steps_completed + 1}
+              </div>
             </div>
           </CardContent>
         </Card>
       </div>
+
+      {/* Approval Section */}
+      {workflowRun.status === 'waiting_approval' && (
+        <Card className="border-amber-200 bg-amber-50">
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2 text-amber-800">
+              <Clock className="h-5 w-5" />
+              <span>Approval Required</span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <p className="text-amber-700">
+                This workflow is waiting for your approval to continue with the next step: 
+                <span className="font-medium"> {workflowRun.current_step}</span>
+              </p>
+              
+              <div className="flex space-x-3">
+                <Button
+                  onClick={() => handleApproval(true)}
+                  disabled={approving}
+                  className="bg-green-600 hover:bg-green-700"
+                >
+                  {approving ? (
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  ) : (
+                    <ThumbsUp className="h-4 w-4 mr-2" />
+                  )}
+                  Approve & Continue
+                </Button>
+                
+                <Button
+                  variant="outline"
+                  onClick={() => handleApproval(false)}
+                  disabled={approving}
+                  className="border-red-200 text-red-600 hover:bg-red-50"
+                >
+                  <ThumbsDown className="h-4 w-4 mr-2" />
+                  Reject & Stop
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Main Content Tabs */}
+      <Tabs defaultValue="progress" className="space-y-4">
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="progress" className="flex items-center space-x-2">
+            <Activity className="h-4 w-4" />
+            <span>Progress</span>
+          </TabsTrigger>
+          <TabsTrigger value="logs" className="flex items-center space-x-2">
+            <FileText className="h-4 w-4" />
+            <span>Logs</span>
+          </TabsTrigger>
+          <TabsTrigger value="details" className="flex items-center space-x-2">
+            <Eye className="h-4 w-4" />
+            <span>Details</span>
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="progress">
+          <WorkflowProgress 
+            workflowRun={workflowRun} 
+            onRefresh={() => fetchWorkflowRun(false)}
+            showLogs={true}
+          />
+        </TabsContent>
+
+        <TabsContent value="logs">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <FileText className="h-5 w-5" />
+                <span>Execution Logs</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="bg-gray-900 text-gray-100 p-4 rounded-lg font-mono text-sm max-h-96 overflow-y-auto">
+                {workflowRun.logs && workflowRun.logs.length > 0 ? (
+                  workflowRun.logs.map((log, index) => (
+                    <div key={index} className="mb-2 flex space-x-2">
+                      <span className="text-gray-400 flex-shrink-0">
+                        {new Date(log.timestamp || Date.now()).toLocaleTimeString()}
+                      </span>
+                      <span className={cn(
+                        'flex-shrink-0 font-medium',
+                        log.level === 'error' && 'text-red-400',
+                        log.level === 'warn' && 'text-yellow-400',
+                        log.level === 'info' && 'text-blue-400',
+                        log.level === 'success' && 'text-green-400'
+                      )}>
+                        [{log.level?.toUpperCase() || 'INFO'}]
+                      </span>
+                      <span className="flex-1">{log.message || JSON.stringify(log)}</span>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-gray-400 text-center py-8">
+                    No logs available for this workflow run
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="details">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <Eye className="h-5 w-5" />
+                <span>Run Details</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-4">
+                  <div>
+                    <h4 className="font-medium text-sm text-muted-foreground mb-1">Workflow</h4>
+                    <div>
+                      <div className="font-medium">{workflowRun.workflow?.name || 'Unknown'}</div>
+                      <div className="text-sm text-muted-foreground">
+                        {workflowRun.workflow?.description || 'No description'}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <h4 className="font-medium text-sm text-muted-foreground mb-1">Template Type</h4>
+                    <div className="capitalize">
+                      {workflowRun.workflow?.template_type?.replace('_', ' ') || 'Unknown'}
+                    </div>
+                  </div>
+
+                  {workflowRun.project_id && (
+                    <div>
+                      <h4 className="font-medium text-sm text-muted-foreground mb-1">Project</h4>
+                      <Link 
+                        href={`/dashboard/projects/${workflowRun.project_id}`}
+                        className="text-blue-600 hover:text-blue-800"
+                      >
+                        View Project →
+                      </Link>
+                    </div>
+                  )}
+                </div>
+
+                <div className="space-y-4">
+                  <div>
+                    <h4 className="font-medium text-sm text-muted-foreground mb-1">Run ID</h4>
+                    <div className="font-mono text-sm">{workflowRun.id}</div>
+                  </div>
+
+                  <div>
+                    <h4 className="font-medium text-sm text-muted-foreground mb-1">Started At</h4>
+                    <div>{new Date(workflowRun.started_at).toLocaleString()}</div>
+                  </div>
+
+                  {workflowRun.completed_at && (
+                    <div>
+                      <h4 className="font-medium text-sm text-muted-foreground mb-1">Completed At</h4>
+                      <div>{new Date(workflowRun.completed_at).toLocaleString()}</div>
+                    </div>
+                  )}
+                  
+                  <div>
+                    <h4 className="font-medium text-sm text-muted-foreground mb-1">Total Duration</h4>
+                    <div>{formatDuration(workflowRun.started_at, workflowRun.completed_at)}</div>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   )
 }

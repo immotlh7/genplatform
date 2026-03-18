@@ -1,5 +1,6 @@
 "use client"
 
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
@@ -26,45 +27,106 @@ import {
   TrendingUp
 } from 'lucide-react'
 
-const navigation = [
-  {
-    name: 'Overview',
-    items: [
-      { name: 'Dashboard', href: '/dashboard', icon: Home },
-      { name: 'Command Center', href: '/dashboard/command-center', icon: Terminal, badge: 'New' },
-      { name: 'Chat', href: '/dashboard/chat', icon: Terminal },
-    ]
-  },
-  {
-    name: 'Core Features',
-    items: [
-      { name: 'Skills', href: '/dashboard/skills', icon: Zap },
-      { name: 'Memory', href: '/dashboard/memory', icon: Brain },
-      { name: 'Cron Jobs', href: '/dashboard/cron', icon: Clock },
-      { name: 'Projects', href: '/dashboard/projects', icon: Folder },
-      { name: 'Automations', href: '/dashboard/automations', icon: Zap, badge: 'Active: 3' }, // Task 7-23: Add automations to sidebar
-    ]
-  },
-  {
-    name: 'Monitoring',
-    items: [
-      { name: 'System Monitor', href: '/dashboard/monitoring', icon: Activity },
-      { name: 'Analytics', href: '/dashboard/analytics', icon: BarChart3 },
-      { name: 'Reports', href: '/dashboard/reports', icon: FileText, showImprovements: true },
-    ]
-  },
-  {
-    name: 'Administration',
-    items: [
-      { name: 'Settings', href: '/dashboard/settings', icon: Settings },
-      { name: 'Users', href: '/dashboard/users', icon: Users },
-      { name: 'Security', href: '/dashboard/security', icon: Shield },
-    ]
-  }
-]
+interface AutomationStatus {
+  running_workflows: number
+  waiting_approval: number
+}
 
 export function Sidebar() {
   const pathname = usePathname()
+  const [automationStatus, setAutomationStatus] = useState<AutomationStatus>({ running_workflows: 0, waiting_approval: 0 })
+
+  // Fetch automation status for badge
+  useEffect(() => {
+    const fetchAutomationStatus = async () => {
+      try {
+        const response = await fetch('/api/workflows/status')
+        if (response.ok) {
+          const data = await response.json()
+          setAutomationStatus({
+            running_workflows: data.status.running_workflows || 0,
+            waiting_approval: data.status.waiting_approval || 0
+          })
+        }
+      } catch (error) {
+        console.error('Error fetching automation status:', error)
+      }
+    }
+
+    fetchAutomationStatus()
+    
+    // Refresh every 30 seconds
+    const interval = setInterval(fetchAutomationStatus, 30000)
+    return () => clearInterval(interval)
+  }, [])
+
+  const getAutomationBadge = () => {
+    const { running_workflows, waiting_approval } = automationStatus
+    
+    if (running_workflows > 0) {
+      return `${running_workflows} running`
+    } else if (waiting_approval > 0) {
+      return `${waiting_approval} approval`
+    }
+    
+    return null
+  }
+
+  const getAutomationBadgeVariant = () => {
+    const { running_workflows, waiting_approval } = automationStatus
+    
+    if (running_workflows > 0) {
+      return "default" // Blue for running
+    } else if (waiting_approval > 0) {
+      return "secondary" // Amber for approval needed
+    }
+    
+    return "outline"
+  }
+
+  const navigation = [
+    {
+      name: 'Overview',
+      items: [
+        { name: 'Dashboard', href: '/dashboard', icon: Home },
+        { name: 'Command Center', href: '/dashboard/command-center', icon: Terminal, badge: 'New' },
+        { name: 'Chat', href: '/dashboard/chat', icon: Terminal },
+      ]
+    },
+    {
+      name: 'Core Features',
+      items: [
+        { name: 'Skills', href: '/dashboard/skills', icon: Zap },
+        { name: 'Memory', href: '/dashboard/memory', icon: Brain },
+        { name: 'Cron Jobs', href: '/dashboard/cron', icon: Clock },
+        { name: 'Projects', href: '/dashboard/projects', icon: Folder },
+        { 
+          name: 'Automations', 
+          href: '/automations', // Correct path for automations
+          icon: Zap, 
+          badge: getAutomationBadge(),
+          badgeVariant: getAutomationBadgeVariant(),
+          requiresOwnerAdmin: true // Only show to OWNER and ADMIN
+        },
+      ]
+    },
+    {
+      name: 'Monitoring',
+      items: [
+        { name: 'System Monitor', href: '/dashboard/monitoring', icon: Activity },
+        { name: 'Analytics', href: '/dashboard/analytics', icon: BarChart3 },
+        { name: 'Reports', href: '/dashboard/reports', icon: FileText, showImprovements: true },
+      ]
+    },
+    {
+      name: 'Administration',
+      items: [
+        { name: 'Settings', href: '/dashboard/settings', icon: Settings },
+        { name: 'Users', href: '/dashboard/users', icon: Users },
+        { name: 'Security', href: '/dashboard/security', icon: Shield },
+      ]
+    }
+  ]
 
   return (
     <div className="hidden lg:fixed lg:inset-y-0 lg:z-50 lg:flex lg:w-72 lg:flex-col">
@@ -103,7 +165,10 @@ export function Sidebar() {
                               : 'text-muted-foreground'
                           )}
                         >
-                          <item.icon className="mr-3 h-4 w-4 flex-shrink-0" />
+                          <item.icon className={cn(
+                            "mr-3 h-4 w-4 flex-shrink-0",
+                            item.name === 'Automations' && automationStatus.running_workflows > 0 && "animate-pulse"
+                          )} />
                           <span className="flex-1">{item.name}</span>
                           
                           {/* Show improvements badge for Reports page */}
@@ -111,13 +176,28 @@ export function Sidebar() {
                             <SidebarImprovementIndicator className="mr-2" />
                           )}
                           
+                          {/* Dynamic badge with different variants */}
                           {item.badge && (
-                            <Badge variant="secondary" className="ml-auto text-xs">
+                            <Badge 
+                              variant={(item as any).badgeVariant || "secondary"} 
+                              className={cn(
+                                "ml-auto text-xs",
+                                item.name === 'Automations' && automationStatus.running_workflows > 0 && "bg-blue-500 text-white",
+                                item.name === 'Automations' && automationStatus.waiting_approval > 0 && "bg-amber-500 text-white"
+                              )}
+                            >
                               {item.badge}
                             </Badge>
                           )}
+                          
+                          {/* Active indicator */}
                           {isActive && (
                             <ChevronRight className="ml-auto h-4 w-4 flex-shrink-0" />
+                          )}
+                          
+                          {/* Running indicator for automations */}
+                          {item.name === 'Automations' && automationStatus.running_workflows > 0 && !item.badge && (
+                            <div className="ml-auto w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
                           )}
                         </Link>
                       )
@@ -148,6 +228,32 @@ export function Sidebar() {
                 </div>
               </div>
             </div>
+            
+            {/* Automation Quick Status */}
+            {(automationStatus.running_workflows > 0 || automationStatus.waiting_approval > 0) && (
+              <div className="px-2 py-2 border-t">
+                <div className="text-xs text-muted-foreground space-y-1">
+                  {automationStatus.running_workflows > 0 && (
+                    <div className="flex items-center justify-between">
+                      <span>Workflows Running</span>
+                      <div className="flex items-center space-x-1">
+                        <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+                        <span>{automationStatus.running_workflows}</span>
+                      </div>
+                    </div>
+                  )}
+                  {automationStatus.waiting_approval > 0 && (
+                    <div className="flex items-center justify-between">
+                      <span>Need Approval</span>
+                      <div className="flex items-center space-x-1">
+                        <div className="w-2 h-2 bg-amber-500 rounded-full animate-pulse"></div>
+                        <span>{automationStatus.waiting_approval}</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         </nav>
       </div>
