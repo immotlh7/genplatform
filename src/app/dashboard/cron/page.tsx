@@ -19,8 +19,13 @@ import {
   CheckCircle,
   XCircle,
   Calendar,
-  MoreHorizontal
+  MoreHorizontal,
+  Eye,
+  Lock,
+  Shield
 } from 'lucide-react'
+import { getCurrentUserClient } from '@/lib/access-control'
+import type { User } from '@/lib/access-control'
 
 interface CronJob {
   id: string
@@ -32,6 +37,8 @@ interface CronJob {
   lastRun?: string
   nextRun?: string
   status: 'running' | 'idle' | 'failed' | 'disabled'
+  isSystemCritical?: boolean // New field to identify system-critical jobs
+  createdBy?: string // Track who created the job
   config?: {
     timeout?: number
     retries?: number
@@ -51,7 +58,9 @@ interface CronStats {
 }
 
 export default function CronPage() {
+  const [currentUser, setCurrentUser] = useState<User | null>(null)
   const [jobs, setJobs] = useState<CronJob[]>([])
+  const [filteredJobs, setFilteredJobs] = useState<CronJob[]>([])
   const [stats, setStats] = useState<CronStats>({ total: 0, enabled: 0, running: 0, failed: 0 })
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
@@ -59,20 +68,64 @@ export default function CronPage() {
   const [detailModalOpen, setDetailModalOpen] = useState(false)
 
   useEffect(() => {
-    loadCronJobs()
+    loadUserAndCronJobs()
   }, [])
 
-  const loadCronJobs = async () => {
+  useEffect(() => {
+    // Filter jobs based on search and user permissions
+    const filtered = jobs.filter(job => {
+      // Search filter
+      const matchesSearch = job.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        job.command.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        job.description?.toLowerCase().includes(searchTerm.toLowerCase())
+
+      // Access filter based on user role
+      if (!currentUser) return false
+
+      // VIEWER role: Can only see non-system-critical jobs
+      if (currentUser.role === 'VIEWER' && job.isSystemCritical) {
+        return false
+      }
+
+      return matchesSearch
+    })
+
+    setFilteredJobs(filtered)
+  }, [jobs, searchTerm, currentUser])
+
+  const loadUserAndCronJobs = async () => {
     setLoading(true)
     try {
+      // Get current user
+      const user = await getCurrentUserClient()
+      setCurrentUser(user)
+
       const response = await fetch('/api/openclaw/cron')
       const data = await response.json()
       setJobs(data.jobs || [])
       setStats(data.stats || { total: 0, enabled: 0, running: 0, failed: 0 })
     } catch (error) {
       console.error('Failed to load cron jobs:', error)
-      // Demo data if API fails
-      setJobs([
+      // Demo data if API fails - with system-critical flags
+      const demoJobs: CronJob[] = [
+        {
+          id: 'auto-continue',
+          name: 'Auto-Continue Sprint',
+          schedule: '*/5 * * * *',
+          command: 'Check if there are remaining tasks in the current sprint that are not yet completed. If yes, continue working on the next uncompleted task.',
+          description: 'Auto-continue Sprint task execution every 5 minutes',
+          enabled: true,
+          lastRun: new Date(Date.now() - 3 * 60 * 1000).toISOString(),
+          nextRun: new Date(Date.now() + 2 * 60 * 1000).toISOString(),
+          status: 'idle',
+          isSystemCritical: false, // User-created job
+          createdBy: 'system',
+          config: {
+            timeout: 300,
+            retries: 1,
+            logLevel: 'info'
+          }
+        },
         {
           id: 'memory-cleanup',
           name: 'Memory Cleanup',
@@ -83,6 +136,8 @@ export default function CronPage() {
           lastRun: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
           nextRun: new Date(Date.now() + 22 * 60 * 60 * 1000).toISOString(),
           status: 'idle',
+          isSystemCritical: true, // System maintenance
+          createdBy: 'system',
           config: {
             timeout: 300,
             retries: 2,
@@ -100,10 +155,31 @@ export default function CronPage() {
           lastRun: new Date(Date.now() - 30 * 60 * 1000).toISOString(),
           nextRun: new Date(Date.now() + 5.5 * 60 * 60 * 1000).toISOString(),
           status: 'idle',
+          isSystemCritical: false, // Non-critical update check
+          createdBy: 'admin',
           config: {
             timeout: 180,
             retries: 1,
             logLevel: 'info'
+          }
+        },
+        {
+          id: 'security-audit',
+          name: 'Security Audit',
+          schedule: '0 1 * * 1',
+          command: 'openclaw security scan --full-audit',
+          description: 'Weekly comprehensive security audit',
+          enabled: true,
+          lastRun: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+          nextRun: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString(),
+          status: 'idle',
+          isSystemCritical: true, // Security is critical
+          createdBy: 'system',
+          config: {
+            timeout: 1800,
+            retries: 0,
+            logLevel: 'debug',
+            notifications: true
           }
         },
         {
@@ -116,6 +192,8 @@ export default function CronPage() {
           lastRun: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
           nextRun: new Date(Date.now() + 4 * 24 * 60 * 60 * 1000).toISOString(),
           status: 'idle',
+          isSystemCritical: true, // Backup is critical
+          createdBy: 'system',
           config: {
             timeout: 600,
             retries: 3,
@@ -133,41 +211,78 @@ export default function CronPage() {
           lastRun: new Date(Date.now() - 5 * 60 * 1000).toISOString(),
           nextRun: new Date(Date.now() + 10 * 60 * 1000).toISOString(),
           status: 'running',
+          isSystemCritical: true, // Health monitoring is critical
+          createdBy: 'system',
           config: {
             timeout: 60,
             retries: 0,
             logLevel: 'warn'
           }
-        },
-        {
-          id: 'log-rotation',
-          name: 'Log Rotation',
-          schedule: '0 1 * * *',
-          command: 'openclaw logs rotate --keep=7',
-          description: 'Rotate logs daily, keep last 7 days',
-          enabled: false,
-          lastRun: new Date(Date.now() - 25 * 60 * 60 * 1000).toISOString(),
-          status: 'disabled',
-          config: {
-            timeout: 120,
-            retries: 1,
-            logLevel: 'info'
-          }
         }
-      ])
+      ]
+
+      setJobs(demoJobs)
+      
+      // Calculate filtered stats based on user access
+      const accessibleJobs = user ? demoJobs.filter(job => 
+        !(user.role === 'VIEWER' && job.isSystemCritical)
+      ) : demoJobs
+
       setStats({
-        total: 5,
-        enabled: 4,
-        running: 1,
-        failed: 0,
-        nextExecution: new Date(Date.now() + 10 * 60 * 1000).toISOString()
+        total: accessibleJobs.length,
+        enabled: accessibleJobs.filter(job => job.enabled).length,
+        running: accessibleJobs.filter(job => job.status === 'running').length,
+        failed: accessibleJobs.filter(job => job.status === 'failed').length,
+        nextExecution: new Date(Date.now() + 2 * 60 * 1000).toISOString()
       })
     } finally {
       setLoading(false)
     }
   }
 
+  const canUserCreate = () => {
+    if (!currentUser) return false
+    // Only OWNER, ADMIN, and MANAGER can create jobs
+    return currentUser.role === 'OWNER' || currentUser.role === 'ADMIN' || currentUser.role === 'MANAGER'
+  }
+
+  const canUserModify = (job: CronJob) => {
+    if (!currentUser) return false
+    
+    // OWNER can modify anything
+    if (currentUser.role === 'OWNER') return true
+    
+    // ADMIN can modify non-system-critical jobs
+    if (currentUser.role === 'ADMIN') return !job.isSystemCritical
+    
+    // MANAGER can only modify jobs they created (non-system-critical)
+    if (currentUser.role === 'MANAGER') {
+      return !job.isSystemCritical && (job.createdBy === currentUser.email || job.createdBy === 'admin')
+    }
+    
+    // VIEWER cannot modify anything
+    return false
+  }
+
+  const canUserDelete = (job: CronJob) => {
+    if (!currentUser) return false
+    
+    // Only OWNER can delete system-critical jobs
+    if (job.isSystemCritical) {
+      return currentUser.role === 'OWNER'
+    }
+    
+    // OWNER and ADMIN can delete non-critical jobs
+    return currentUser.role === 'OWNER' || currentUser.role === 'ADMIN'
+  }
+
   const toggleJob = async (jobId: string) => {
+    const job = jobs.find(j => j.id === jobId)
+    if (!job || !canUserModify(job)) {
+      alert('You do not have permission to modify this job')
+      return
+    }
+
     try {
       const response = await fetch('/api/openclaw/cron/toggle', {
         method: 'POST',
@@ -200,6 +315,12 @@ export default function CronPage() {
   }
 
   const runJob = async (jobId: string) => {
+    const job = jobs.find(j => j.id === jobId)
+    if (!job || !canUserModify(job)) {
+      alert('You do not have permission to run this job')
+      return
+    }
+
     try {
       const response = await fetch('/api/openclaw/cron/run', {
         method: 'POST',
@@ -269,7 +390,9 @@ export default function CronPage() {
     
     const [min, hour, day, month, weekday] = parts
     
-    if (min === '0' && hour === '2' && day === '*' && month === '*' && weekday === '*') {
+    if (min === '*/5' && hour === '*' && day === '*' && month === '*' && weekday === '*') {
+      return 'Every 5 minutes'
+    } else if (min === '0' && hour === '2' && day === '*' && month === '*' && weekday === '*') {
       return 'Daily at 2 AM'
     } else if (min === '0' && hour.startsWith('*/')) {
       return `Every ${hour.slice(2)}h`
@@ -280,15 +403,27 @@ export default function CronPage() {
     return 'Custom'
   }
 
-  const filteredJobs = jobs.filter(job =>
-    job.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    job.command.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    job.description?.toLowerCase().includes(searchTerm.toLowerCase())
-  )
-
   const openJobDetail = (job: CronJob) => {
     setSelectedJob(job)
     setDetailModalOpen(true)
+  }
+
+  const isReadOnly = !canUserCreate()
+
+  if (!currentUser) {
+    return (
+      <div className="space-y-6 p-6">
+        <Card className="text-center py-12">
+          <CardContent>
+            <AlertCircle className="h-16 w-16 text-muted-foreground mx-auto mb-4 opacity-50" />
+            <h3 className="text-lg font-semibold mb-2">Authentication Required</h3>
+            <p className="text-muted-foreground mb-6 max-w-md mx-auto">
+              Please log in to access cron job management.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    )
   }
 
   return (
@@ -298,26 +433,78 @@ export default function CronPage() {
         <div>
           <h1 className="text-3xl font-bold">Cron Jobs</h1>
           <p className="text-muted-foreground">
-            Manage scheduled tasks and automation
+            {currentUser.role === 'VIEWER' 
+              ? 'View scheduled tasks and automation (limited access)'
+              : 'Manage scheduled tasks and automation'
+            }
           </p>
         </div>
         <div className="flex space-x-2">
-          <Button variant="outline" onClick={loadCronJobs}>
-            <RefreshCw className="h-4 w-4 mr-2" />
-            Refresh
-          </Button>
-          <Button>
-            <Plus className="h-4 w-4 mr-2" />
-            New Job
-          </Button>
+          {canUserCreate() && (
+            <Button variant="outline" onClick={loadUserAndCronJobs}>
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Refresh
+            </Button>
+          )}
+          {canUserCreate() && (
+            <Button>
+              <Plus className="h-4 w-4 mr-2" />
+              New Job
+            </Button>
+          )}
+          {isReadOnly && (
+            <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+              <Eye className="h-3 w-3 mr-1" />
+              View Only
+            </Badge>
+          )}
         </div>
       </div>
 
-      {/* Stats Cards */}
+      {/* Access level indicator */}
+      {currentUser.role !== 'OWNER' && (
+        <div className={`border rounded-lg p-4 ${
+          currentUser.role === 'VIEWER' 
+            ? 'bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800'
+            : currentUser.role === 'MANAGER'
+              ? 'bg-yellow-50 dark:bg-yellow-950/20 border-yellow-200 dark:border-yellow-800'
+              : 'bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-800'
+        }`}>
+          <div className="flex items-center space-x-2">
+            <Badge className={
+              currentUser.role === 'VIEWER' 
+                ? 'bg-blue-500 text-white' 
+                : currentUser.role === 'MANAGER'
+                  ? 'bg-yellow-500 text-white'
+                  : 'bg-green-500 text-white'
+            }>
+              {currentUser.role}
+            </Badge>
+            <span className={`text-sm ${
+              currentUser.role === 'VIEWER' 
+                ? 'text-blue-900 dark:text-blue-100'
+                : currentUser.role === 'MANAGER'
+                  ? 'text-yellow-900 dark:text-yellow-100'
+                  : 'text-green-900 dark:text-green-100'
+            }`}>
+              {currentUser.role === 'VIEWER' 
+                ? 'You can view non-critical cron jobs but cannot modify them'
+                : currentUser.role === 'MANAGER'
+                  ? 'You can manage non-critical jobs (system jobs hidden for security)'
+                  : 'You can manage all non-critical jobs'
+              }
+            </span>
+          </div>
+        </div>
+      )}
+
+      {/* Stats Cards - Filtered */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Jobs</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              {currentUser.role === 'VIEWER' ? 'Visible Jobs' : 'Total Jobs'}
+            </CardTitle>
             <Settings className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -401,85 +588,117 @@ export default function CronPage() {
               <Clock className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
               <h3 className="text-lg font-medium mb-2">No cron jobs found</h3>
               <p className="text-muted-foreground mb-4">
-                {searchTerm ? 'No jobs match your search criteria' : 'Get started by creating your first scheduled job'}
+                {searchTerm ? 'No jobs match your search criteria' : 
+                 currentUser.role === 'VIEWER' ? 'No jobs are visible to your role' :
+                 'Get started by creating your first scheduled job'}
               </p>
-              <Button>
-                <Plus className="h-4 w-4 mr-2" />
-                Create Job
-              </Button>
+              {canUserCreate() && (
+                <Button>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Create Job
+                </Button>
+              )}
             </CardContent>
           </Card>
         ) : (
-          filteredJobs.map((job) => (
-            <Card key={job.id} className="hover:shadow-md transition-shadow">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center space-x-3">
-                    {getStatusIcon(job.status)}
-                    <div>
-                      <h3 className="font-semibold text-lg">{job.name}</h3>
-                      <p className="text-sm text-muted-foreground">{job.description}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    {getStatusBadge(job.status)}
-                    <Button variant="ghost" size="sm" onClick={() => openJobDetail(job)}>
-                      <MoreHorizontal className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm">
-                  <div>
-                    <span className="text-muted-foreground">Schedule:</span>
-                    <div className="font-medium">{parseSchedule(job.schedule)}</div>
-                    <code className="text-xs text-muted-foreground">{job.schedule}</code>
-                  </div>
-                  
-                  <div>
-                    <span className="text-muted-foreground">Command:</span>
-                    <code className="block font-mono text-xs bg-muted px-2 py-1 rounded mt-1 truncate">
-                      {job.command}
-                    </code>
-                  </div>
-
-                  <div>
-                    <span className="text-muted-foreground">Last Run:</span>
-                    <div className="font-medium">
-                      {job.lastRun ? new Date(job.lastRun).toLocaleDateString() : 'Never'}
-                    </div>
-                    {job.lastRun && (
-                      <div className="text-xs text-muted-foreground">
-                        {new Date(job.lastRun).toLocaleTimeString()}
+          filteredJobs.map((job) => {
+            const canModify = canUserModify(job)
+            const canDelete = canUserDelete(job)
+            
+            return (
+              <Card key={job.id} className={`hover:shadow-md transition-shadow ${
+                !canModify ? 'bg-gray-50/50 dark:bg-gray-950/50' : ''
+              }`}>
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center space-x-3">
+                      {getStatusIcon(job.status)}
+                      <div>
+                        <div className="flex items-center space-x-2">
+                          <h3 className="font-semibold text-lg">{job.name}</h3>
+                          {job.isSystemCritical && (
+                            <Badge variant="outline" className="text-xs bg-red-50 text-red-700 border-red-200">
+                              <Shield className="h-3 w-3 mr-1" />
+                              Critical
+                            </Badge>
+                          )}
+                          {!canModify && (
+                            <Lock className="h-4 w-4 text-muted-foreground" />
+                          )}
+                        </div>
+                        <p className="text-sm text-muted-foreground">{job.description}</p>
                       </div>
-                    )}
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <span className="text-muted-foreground">Next Run:</span>
-                      <div className="font-medium">{formatNextRun(job.nextRun)}</div>
                     </div>
                     <div className="flex items-center space-x-2">
-                      <Switch 
-                        checked={job.enabled}
-                        onCheckedChange={() => toggleJob(job.id)}
-                      />
-                      <Button 
-                        size="sm" 
-                        variant="outline"
-                        onClick={() => runJob(job.id)}
-                        disabled={!job.enabled || job.status === 'running'}
-                      >
-                        <Play className="h-3 w-3 mr-1" />
-                        Run
+                      {getStatusBadge(job.status)}
+                      <Button variant="ghost" size="sm" onClick={() => openJobDetail(job)}>
+                        <MoreHorizontal className="h-4 w-4" />
                       </Button>
                     </div>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))
+
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm">
+                    <div>
+                      <span className="text-muted-foreground">Schedule:</span>
+                      <div className="font-medium">{parseSchedule(job.schedule)}</div>
+                      <code className="text-xs text-muted-foreground">{job.schedule}</code>
+                    </div>
+                    
+                    <div>
+                      <span className="text-muted-foreground">Command:</span>
+                      <code className={`block font-mono text-xs px-2 py-1 rounded mt-1 truncate ${
+                        canModify ? 'bg-muted' : 'bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800'
+                      }`}>
+                        {job.command}
+                      </code>
+                    </div>
+
+                    <div>
+                      <span className="text-muted-foreground">Last Run:</span>
+                      <div className="font-medium">
+                        {job.lastRun ? new Date(job.lastRun).toLocaleDateString() : 'Never'}
+                      </div>
+                      {job.lastRun && (
+                        <div className="text-xs text-muted-foreground">
+                          {new Date(job.lastRun).toLocaleTimeString()}
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <span className="text-muted-foreground">Next Run:</span>
+                        <div className="font-medium">{formatNextRun(job.nextRun)}</div>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Switch 
+                          checked={job.enabled}
+                          onCheckedChange={() => toggleJob(job.id)}
+                          disabled={!canModify}
+                        />
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          onClick={() => runJob(job.id)}
+                          disabled={!canModify || !job.enabled || job.status === 'running'}
+                        >
+                          <Play className="h-3 w-3 mr-1" />
+                          Run
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+
+                  {!canModify && (
+                    <div className="mt-3 text-xs text-blue-600 bg-blue-50 dark:bg-blue-950/30 p-2 rounded border border-blue-200 dark:border-blue-800">
+                      <Eye className="h-3 w-3 inline mr-1" />
+                      Read-only access - Contact admin to modify this job
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )
+          })
         )}
       </div>
 
