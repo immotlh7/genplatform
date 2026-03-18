@@ -1,255 +1,254 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabase } from '@/lib/supabase'
+import { supabaseAdmin } from '@/lib/supabase'
+import { requirePermission, checkOwnerAuth } from '@/lib/rbac'
+import { logSecurityEvent } from '@/lib/security-logger'
+import { spawn } from 'child_process'
+import path from 'path'
 
+interface StartWorkflowRequest {
+  workflowId: string
+  projectId?: string
+  triggerContext?: any
+  priority?: 'low' | 'medium' | 'high'
+}
+
+/**
+ * POST /api/workflows/run
+ * Start workflow execution
+ */
 export async function POST(req: NextRequest) {
-  try {
-    const { workflowId, projectId, context = {} } = await req.json()
+  const ip = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'unknown'
+  const userAgent = req.headers.get('user-agent') || 'unknown'
 
-    // Validate required parameters
-    if (!workflowId) {
-      return NextResponse.json({
-        success: false,
-        message: 'workflowId is required'
-      }, { status: 400 })
+  try {
+    // Check authentication and permissions
+    const authCookie = req.cookies.get('auth-token')?.value
+    let authorized = false
+    let requestorInfo = null
+
+    // Check owner authentication first
+    const ownerAuth = checkOwnerAuth(authCookie)
+    if (ownerAuth.isOwner) {
+      authorized = true
+      requestorInfo = ownerAuth.user
+    } else {
+      // Check team member permissions (ADMIN can run workflows)
+      const permissionCheck = await requirePermission('system:health') // Using system:health as proxy for ADMIN
+      if (permissionCheck.authorized) {
+        authorized = true
+        requestorInfo = permissionCheck.user
+      }
     }
 
-    console.log(`🚀 Starting workflow execution: ${workflowId}`)
+    if (!authorized) {
+      await logSecurityEvent(ip, 'unauthorized_workflow_start_attempt', 'warning', {
+        userAgent,
+        timestamp: new Date().toISOString()
+      })
 
-    // Fetch workflow to validate it exists and is active
-    const { data: workflow, error: workflowError } = await supabase
+      return NextResponse.json(
+        { success: false, message: 'Insufficient permissions to start workflows' },
+        { status: 403 }
+      )
+    }
+
+    // Parse request body
+    const body: StartWorkflowRequest = await req.json()
+    const { workflowId, projectId, triggerContext, priority = 'medium' } = body
+
+    // Validate required fields
+    if (!workflowId) {
+      return NextResponse.json(
+        { success: false, message: 'workflowId is required' },
+        { status: 400 }
+      )
+    }
+
+    if (!supabaseAdmin) {
+      return NextResponse.json(
+        { success: false, message: 'Workflow service unavailable' },
+        { status: 503 }
+      )
+    }
+
+    // Verify workflow exists and is active
+    const { data: workflow, error: workflowError } = await supabaseAdmin
       .from('workflows')
       .select('*')
       .eq('id', workflowId)
       .single()
 
     if (workflowError || !workflow) {
-      console.error('Workflow not found:', workflowError)
-      return NextResponse.json({
-        success: false,
-        message: 'Workflow not found'
-      }, { status: 404 })
+      return NextResponse.json(
+        { success: false, message: 'Workflow not found' },
+        { status: 404 }
+      )
     }
 
     if (!workflow.is_active) {
-      return NextResponse.json({
-        success: false,
-        message: 'Workflow is not active'
-      }, { status: 400 })
+      return NextResponse.json(
+        { success: false, message: 'Workflow is not active' },
+        { status: 400 }
+      )
     }
 
-    // Validate user has permission to run workflows
-    // TODO: Add proper authentication and role checking
-    // For now, assume user has permission
+    // Validate project if specified
+    if (projectId) {
+      const { data: project, error: projectError } = await supabaseAdmin
+        .from('projects')
+        .select('id, name')
+        .eq('id', projectId)
+        .single()
+
+      if (projectError || !project) {
+        return NextResponse.json(
+          { success: false, message: 'Project not found' },
+          { status: 404 }
+        )
+      }
+    }
+
+    // Get workflow steps count
+    const workflowSteps = workflow.config?.steps || []
+    const stepsTotal = workflowSteps.length
+
+    if (stepsTotal === 0) {
+      return NextResponse.json(
+        { success: false, message: 'Workflow has no steps defined' },
+        { status: 400 }
+      )
+    }
 
     // Create workflow run record
-    const { data: workflowRun, error: runError } = await supabase
+    const { data: workflowRun, error: createError } = await supabaseAdmin
       .from('workflow_runs')
       .insert({
         workflow_id: workflowId,
-        project_id: projectId,
+        project_id: projectId || null,
         status: 'running',
-        current_step: null,
+        current_step: workflowSteps[0]?.name || 'Starting...',
         steps_completed: 0,
-        steps_total: workflow.config?.steps?.length || 0,
-        logs: [{
-          level: 'info',
-          message: 'Workflow execution started',
-          timestamp: new Date().toISOString(),
-          context
-        }]
+        steps_total: stepsTotal,
+        started_by: requestorInfo?.email || 'system',
+        logs: [
+          {
+            type: 'workflow_started',
+            status: 'started',
+            timestamp: new Date().toISOString(),
+            started_by: requestorInfo?.email,
+            trigger_context: triggerContext,
+            priority: priority
+          }
+        ]
       })
       .select()
       .single()
 
-    if (runError) {
-      console.error('Failed to create workflow run:', runError)
-      return NextResponse.json({
-        success: false,
-        message: 'Failed to create workflow run',
-        error: runError.message
-      }, { status: 500 })
+    if (createError) {
+      console.error('Error creating workflow run:', createError)
+      return NextResponse.json(
+        { success: false, message: 'Failed to create workflow run' },
+        { status: 500 }
+      )
     }
 
-    // In a real implementation, this would:
-    // 1. Send the workflow run to the Bridge API workflow engine
-    // 2. The engine would execute steps asynchronously
-    // 3. Return immediately with the run ID
-    
-    // For now, simulate starting the workflow engine
+    const runId = workflowRun.id
+
+    // Start workflow execution engine asynchronously
     try {
-      // Call the workflow engine to start execution
-      await startWorkflowEngine(workflowRun.id, workflow, projectId, context)
-    } catch (engineError) {
-      console.error('Failed to start workflow engine:', engineError)
-      
-      // Update workflow run status to failed
-      await supabase
-        .from('workflow_runs')
-        .update({ 
-          status: 'failed',
-          logs: [{
-            level: 'error',
-            message: `Failed to start workflow engine: ${engineError.message}`,
-            timestamp: new Date().toISOString()
-          }]
-        })
-        .eq('id', workflowRun.id)
+      const enginePath = path.join(process.cwd(), 'engine', 'workflow-runner.js')
+      const childProcess = spawn('node', [enginePath, 'start', runId], {
+        detached: true,
+        stdio: 'ignore',
+        env: {
+          ...process.env,
+          NODE_ENV: process.env.NODE_ENV,
+          NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
+          SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY,
+          OPENCLAW_API_URL: process.env.OPENCLAW_API_URL,
+          OPENCLAW_API_KEY: process.env.OPENCLAW_API_KEY
+        }
+      })
 
-      return NextResponse.json({
-        success: false,
-        message: 'Failed to start workflow execution',
-        error: engineError.message
-      }, { status: 500 })
+      childProcess.unref() // Allow the parent process to exit independently
+      
+      console.log(`🚀 Workflow execution started: ${runId} (PID: ${childProcess.pid})`)
+    } catch (execError) {
+      console.error('Failed to start workflow engine:', execError)
+      
+      // Update run status to failed
+      await supabaseAdmin
+        .from('workflow_runs')
+        .update({
+          status: 'failed',
+          error_message: 'Failed to start workflow execution engine'
+        })
+        .eq('id', runId)
+
+      return NextResponse.json(
+        { success: false, message: 'Failed to start workflow execution' },
+        { status: 500 }
+      )
     }
 
-    // Update workflow's last run info
-    await supabase
-      .from('workflows')
-      .update({
-        last_run_at: new Date().toISOString(),
-        last_run_status: 'running'
-      })
-      .eq('id', workflowId)
+    // Log security event
+    await logSecurityEvent(ip, 'workflow_started', 'info', {
+      workflowId,
+      workflowName: workflow.name,
+      runId,
+      projectId,
+      startedBy: requestorInfo?.email,
+      priority,
+      userAgent
+    })
 
-    console.log(`✅ Workflow started successfully: ${workflowRun.id}`)
+    // Log to security_events table
+    await supabaseAdmin
+      .from('security_events')
+      .insert({
+        event_type: 'audit',
+        severity: 'info',
+        description: `Workflow started: ${workflow.name}`,
+        details: {
+          workflow_id: workflowId,
+          workflow_name: workflow.name,
+          run_id: runId,
+          project_id: projectId,
+          started_by: requestorInfo?.email,
+          trigger_context: triggerContext,
+          priority,
+          steps_total: stepsTotal
+        },
+        resolved: true
+      })
 
     return NextResponse.json({
       success: true,
-      runId: workflowRun.id,
       message: 'Workflow started successfully',
-      workflow: {
-        id: workflow.id,
-        name: workflow.name,
-        template_type: workflow.template_type
-      },
-      run: {
-        id: workflowRun.id,
-        status: workflowRun.status,
-        steps_total: workflowRun.steps_total,
-        started_at: workflowRun.started_at
+      data: {
+        runId: runId,
+        workflowId: workflowId,
+        workflowName: workflow.name,
+        status: 'running',
+        stepsTotal: stepsTotal,
+        estimatedDuration: workflow.config?.estimated_total_duration || 'Unknown',
+        startedAt: workflowRun.started_at,
+        startedBy: requestorInfo?.email
       }
     })
 
   } catch (error) {
-    console.error('Workflow run API error:', error)
-    return NextResponse.json({
-      success: false,
-      message: 'Internal server error',
-      error: error instanceof Error ? error.message : 'Unknown error'
-    }, { status: 500 })
-  }
-}
-
-/**
- * Start the workflow engine for a specific workflow run
- * In a real implementation, this would communicate with the Bridge API
- */
-async function startWorkflowEngine(runId: string, workflow: any, projectId: string | null, context: any) {
-  try {
-    console.log(`⚙️ Starting workflow engine for run: ${runId}`)
-
-    // Simulate workflow engine startup
-    // In production, this would:
-    // 1. Send HTTP request to Bridge API workflow engine
-    // 2. Pass workflow definition and run ID
-    // 3. Engine executes steps asynchronously
-    // 4. Updates database with progress
-
-    // For demonstration, we'll simulate the first step execution
-    setTimeout(async () => {
-      try {
-        await simulateFirstStep(runId, workflow)
-      } catch (error) {
-        console.error('Error in simulated first step:', error)
-      }
-    }, 2000) // Start first step after 2 seconds
-
-    return true
-  } catch (error) {
-    console.error('Error starting workflow engine:', error)
-    throw error
-  }
-}
-
-/**
- * Simulate the execution of the first workflow step
- */
-async function simulateFirstStep(runId: string, workflow: any) {
-  try {
-    const steps = workflow.config?.steps || []
-    if (steps.length === 0) return
-
-    const firstStep = steps[0]
-    console.log(`🔧 Simulating first step: ${firstStep.name}`)
-
-    // Update current step
-    await supabase
-      .from('workflow_runs')
-      .update({
-        current_step: firstStep.name
-      })
-      .eq('id', runId)
-
-    // Add step start log
-    const currentRun = await supabase
-      .from('workflow_runs')
-      .select('logs')
-      .eq('id', runId)
-      .single()
-
-    if (currentRun.data) {
-      const updatedLogs = [
-        ...(currentRun.data.logs || []),
-        {
-          level: 'info',
-          message: `Starting step: ${firstStep.name}`,
-          step: firstStep.name,
-          timestamp: new Date().toISOString()
-        }
-      ]
-
-      await supabase
-        .from('workflow_runs')
-        .update({ logs: updatedLogs })
-        .eq('id', runId)
-    }
-
-    // Simulate step execution time
-    const executionTime = Math.min((firstStep.estimatedMinutes || 1) * 1000, 10000) // Cap at 10 seconds for demo
+    console.error('Workflow start error:', error)
     
-    setTimeout(async () => {
-      // Complete first step
-      const updatedRun = await supabase
-        .from('workflow_runs')
-        .select('logs')
-        .eq('id', runId)
-        .single()
+    await logSecurityEvent(ip, 'workflow_start_system_error', 'critical', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+      userAgent,
+      timestamp: new Date().toISOString()
+    })
 
-      if (updatedRun.data) {
-        const completionLogs = [
-          ...(updatedRun.data.logs || []),
-          {
-            level: 'success',
-            message: `Completed step: ${firstStep.name}`,
-            step: firstStep.name,
-            timestamp: new Date().toISOString(),
-            duration: executionTime
-          }
-        ]
-
-        await supabase
-          .from('workflow_runs')
-          .update({
-            steps_completed: 1,
-            logs: completionLogs
-          })
-          .eq('id', runId)
-
-        console.log(`✅ First step completed: ${firstStep.name}`)
-      }
-    }, executionTime)
-
-  } catch (error) {
-    console.error('Error simulating first step:', error)
+    return NextResponse.json(
+      { success: false, message: 'Internal server error' },
+      { status: 500 }
+    )
   }
 }
