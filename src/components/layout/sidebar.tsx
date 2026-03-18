@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Badge } from '@/components/ui/badge'
+import { SidebarImprovementIndicator } from '@/components/layout/ImprovementsBadge'
 import { 
   Home,
   Zap,
@@ -21,15 +22,17 @@ import {
   Folder,
   Database,
   Shield,
-  Users
+  Users,
+  TrendingUp
 } from 'lucide-react'
 
 const navigation = [
   {
     name: 'Overview',
     items: [
-      { name: 'Dashboard', href: '/', icon: Home },
+      { name: 'Dashboard', href: '/dashboard', icon: Home },
       { name: 'Command Center', href: '/dashboard/command-center', icon: Terminal, badge: 'New' },
+      { name: 'Chat', href: '/dashboard/chat', icon: Terminal },
     ]
   },
   {
@@ -38,6 +41,7 @@ const navigation = [
       { name: 'Skills', href: '/dashboard/skills', icon: Zap },
       { name: 'Memory', href: '/dashboard/memory', icon: Brain },
       { name: 'Cron Jobs', href: '/dashboard/cron', icon: Clock },
+      { name: 'Projects', href: '/dashboard/projects', icon: Folder },
     ]
   },
   {
@@ -45,7 +49,7 @@ const navigation = [
     items: [
       { name: 'System Monitor', href: '/dashboard/monitoring', icon: Activity },
       { name: 'Analytics', href: '/dashboard/analytics', icon: BarChart3 },
-      { name: 'Reports', href: '/dashboard/reports', icon: FileText },
+      { name: 'Reports', href: '/dashboard/reports', icon: FileText, showImprovements: true },
     ]
   },
   {
@@ -100,6 +104,12 @@ export function Sidebar() {
                         >
                           <item.icon className="mr-3 h-4 w-4 flex-shrink-0" />
                           <span className="flex-1">{item.name}</span>
+                          
+                          {/* Show improvements badge for Reports page */}
+                          {item.showImprovements && (
+                            <SidebarImprovementIndicator className="mr-2" />
+                          )}
+                          
                           {item.badge && (
                             <Badge variant="secondary" className="ml-auto text-xs">
                               {item.badge}
