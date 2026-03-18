@@ -64,8 +64,8 @@ export async function POST(request: NextRequest) {
 
             // Update enabled state
             skillConfig.enabled = shouldEnable
-            // skillConfig.lastModified = new Date().toISOString()
-            // skillConfig.bulkOperation = true
+            // // skillConfig.lastModified = new Date().toISOString()
+            // // skillConfig.bulkOperation = true
 
             // Write updated configuration
             await writeFile(configPath, JSON.stringify(skillConfig, null, 2))

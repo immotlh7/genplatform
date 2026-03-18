@@ -40,7 +40,7 @@ export async function POST(request: NextRequest) {
 
     // Toggle the enabled state
     skillConfig.enabled = !skillConfig.enabled
-    skillConfig.lastModified = new Date().toISOString()
+    // skillConfig.lastModified = new Date().toISOString()
 
     // Write updated configuration
     await writeFile(configPath, JSON.stringify(skillConfig, null, 2))
