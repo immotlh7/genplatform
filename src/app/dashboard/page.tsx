@@ -23,7 +23,6 @@ import {
   Settings
 } from 'lucide-react'
 import Link from 'next/link'
-import { useNotifications } from '@/components/notifications/notification-system'
 
 interface DashboardStats {
   skills: { total: number; active: number; executions: number }
@@ -51,7 +50,6 @@ interface QuickAction {
 }
 
 export default function DashboardPage() {
-  const { addNotification } = useNotifications()
   const [stats, setStats] = useState<DashboardStats | null>(null)
   const [recentActivity, setRecentActivity] = useState<RecentActivity[]>([])
   const [loading, setLoading] = useState(true)
