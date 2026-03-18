@@ -14,7 +14,7 @@ import {
   Settings 
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from '@/components/ui/sheet'
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { cn } from '@/lib/utils'
 
 const navigation = [
@@ -33,12 +33,16 @@ export function MobileNav() {
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
-      <SheetTrigger asChild>
-        <Button variant="ghost" size="sm" className="md:hidden">
-          <Menu className="h-5 w-5" />
-          <span className="sr-only">Toggle navigation menu</span>
-        </Button>
-      </SheetTrigger>
+      <Button 
+        variant="ghost" 
+        size="sm" 
+        className="md:hidden"
+        onClick={() => setOpen(true)}
+      >
+        <Menu className="h-5 w-5" />
+        <span className="sr-only">Toggle navigation menu</span>
+      </Button>
+      
       <SheetContent side="left" className="w-64">
         <SheetHeader>
           <SheetTitle className="text-left">GenPlatform.ai</SheetTitle>
