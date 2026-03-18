@@ -16,7 +16,7 @@ import {
   Calendar,
   MapPin,
   Activity,
-  Projects,
+  FolderOpen,
   Zap,
   Clock,
   CheckCircle,
@@ -253,7 +253,7 @@ export default function UsersPage() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6 pt-6 border-t border-yellow-200 dark:border-yellow-800">
             <div className="text-center">
               <div className="flex items-center justify-center space-x-1 mb-1">
-                <Projects className="h-4 w-4 text-muted-foreground" />
+                <FolderOpen className="h-4 w-4 text-muted-foreground" />
                 <span className="text-sm text-muted-foreground">Projects</span>
               </div>
               <div className="text-lg font-semibold">{owner.totalProjects}</div>
