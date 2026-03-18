@@ -1,14 +1,12 @@
 "use client"
 
-import { Moon, Sun, User, LogOut } from 'lucide-react'
-import { useTheme } from 'next-themes'
+import { User } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import { ThemeToggle } from '@/components/ui/theme-toggle'
 import { logout } from '@/lib/auth'
 
 export function Header() {
-  const { theme, setTheme } = useTheme()
-
   const handleLogout = () => {
     logout()
   }
@@ -22,15 +20,7 @@ export function Header() {
         
         <div className="ml-auto flex items-center space-x-4">
           {/* Theme Toggle */}
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-          >
-            <Sun className="h-4 w-4 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-            <Moon className="absolute h-4 w-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
-            <span className="sr-only">Toggle theme</span>
-          </Button>
+          <ThemeToggle />
 
           {/* User Avatar */}
           <Button 
