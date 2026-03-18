@@ -13,6 +13,7 @@ app.use(express.json());
 app.use('/api/tasks', require('./routes/tasks'));
 app.use('/api/live-status', require('./routes/live-status'));
 app.use('/api/health', require('./routes/health'));
+app.use('/api/commander', require('./routes/commander'));
 
 // Health check
 app.get('/health', (req, res) => {
@@ -46,4 +47,5 @@ app.listen(PORT, () => {
   console.log(`🌉 GenPlatform Bridge API running on port ${PORT}`);
   console.log(`📊 Health metrics endpoint: http://localhost:${PORT}/api/health/collect`);
   console.log(`🔍 Live status endpoint: http://localhost:${PORT}/api/live-status`);
+  console.log(`🔧 Commander endpoint: http://localhost:${PORT}/api/commander`);
 });
