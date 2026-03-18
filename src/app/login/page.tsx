@@ -6,8 +6,8 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
-import { supabase } from '@/lib/supabase'
-import { Mail, Lock, Crown } from 'lucide-react'
+import { authHelpers, supabaseHelpers } from '@/lib/supabase'
+import { Mail, Lock, Crown, AlertCircle } from 'lucide-react'
 
 export default function LoginPage() {
   const [ownerPassword, setOwnerPassword] = useState('')
@@ -38,7 +38,7 @@ export default function LoginPage() {
         // Cookie is set by the server, redirect to dashboard
         router.push('/dashboard')
       } else {
-        setError(data.error || 'Authentication failed')
+        setError(data.message || 'Authentication failed')
       }
     } catch (err) {
       setError('Network error occurred')
@@ -53,28 +53,32 @@ export default function LoginPage() {
     setTeamError('')
 
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: teamEmail,
-        password: teamPassword
-      })
+      const { user, session, error } = await authHelpers.signIn(teamEmail, teamPassword)
 
       if (error) {
         setTeamError(error.message)
         return
       }
 
-      if (data.user) {
-        // Verify user is in team_members table
-        const { data: teamMember, error: memberError } = await supabase
-          .from('team_members')
-          .select('id, email, display_name, role, is_active')
-          .eq('email', data.user.email)
-          .eq('is_active', true)
-          .single()
+      if (user && session) {
+        // Verify user is in team_members table and active
+        const teamMember = await supabaseHelpers.getTeamMemberByEmail(teamEmail)
 
-        if (memberError || !teamMember) {
+        if (!teamMember) {
           setTeamError('You are not authorized to access this platform')
-          await supabase.auth.signOut()
+          await authHelpers.signOut()
+          return
+        }
+
+        if (teamMember.status !== 'active') {
+          let statusMessage = 'Your account is not active'
+          if (teamMember.status === 'invited') {
+            statusMessage = 'Please check your email and complete the signup process'
+          } else if (teamMember.status === 'disabled') {
+            statusMessage = 'Your account has been disabled. Contact the platform owner.'
+          }
+          setTeamError(statusMessage)
+          await authHelpers.signOut()
           return
         }
 
@@ -85,6 +89,25 @@ export default function LoginPage() {
       setTeamError('Network error occurred')
     } finally {
       setTeamLoading(false)
+    }
+  }
+
+  const handleForgotPassword = async () => {
+    if (!teamEmail) {
+      setTeamError('Please enter your email address first')
+      return
+    }
+
+    try {
+      const { error } = await authHelpers.resetPassword(teamEmail)
+      if (error) {
+        setTeamError(error.message)
+      } else {
+        setTeamError('')
+        alert('Password reset email sent! Check your inbox.')
+      }
+    } catch (err) {
+      setTeamError('Failed to send reset email')
     }
   }
 
@@ -114,8 +137,9 @@ export default function LoginPage() {
                 />
               </div>
               {error && (
-                <div className="text-sm text-red-600 dark:text-red-400">
-                  {error}
+                <div className="flex items-center space-x-2 text-sm text-red-600 dark:text-red-400">
+                  <AlertCircle className="h-4 w-4" />
+                  <span>{error}</span>
                 </div>
               )}
               <Button 
@@ -178,6 +202,7 @@ export default function LoginPage() {
                     value={teamEmail}
                     onChange={(e) => setTeamEmail(e.target.value)}
                     disabled={teamLoading}
+                    autoComplete="email"
                   />
                 </div>
                 <div>
@@ -187,21 +212,37 @@ export default function LoginPage() {
                     value={teamPassword}
                     onChange={(e) => setTeamPassword(e.target.value)}
                     disabled={teamLoading}
+                    autoComplete="current-password"
                   />
                 </div>
                 {teamError && (
-                  <div className="text-sm text-red-600 dark:text-red-400">
-                    {teamError}
+                  <div className="flex items-center space-x-2 text-sm text-red-600 dark:text-red-400">
+                    <AlertCircle className="h-4 w-4" />
+                    <span>{teamError}</span>
                   </div>
                 )}
-                <Button 
-                  type="submit" 
-                  variant="outline"
-                  className="w-full" 
-                  disabled={teamLoading || !teamEmail || !teamPassword}
-                >
-                  {teamLoading ? 'Signing in...' : 'Sign In'}
-                </Button>
+                
+                <div className="flex space-x-2">
+                  <Button 
+                    type="submit" 
+                    variant="outline"
+                    className="flex-1" 
+                    disabled={teamLoading || !teamEmail || !teamPassword}
+                  >
+                    {teamLoading ? 'Signing in...' : 'Sign In'}
+                  </Button>
+                </div>
+
+                <div className="text-center">
+                  <button
+                    type="button"
+                    onClick={handleForgotPassword}
+                    disabled={teamLoading}
+                    className="text-xs text-muted-foreground hover:text-foreground underline"
+                  >
+                    Forgot your password?
+                  </button>
+                </div>
               </form>
 
               {/* Help Text */}
