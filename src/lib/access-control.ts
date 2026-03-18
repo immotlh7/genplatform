@@ -126,6 +126,86 @@ export async function getAccessibleProjects(userId: string, userRole?: Role): Pr
 }
 
 /**
+ * Check if user can access specific project
+ */
+export async function canAccessProject(userId: string, projectId: string): Promise<boolean> {
+  try {
+    // Check if project is in user's accessible projects list
+    const user = await getCurrentUserClient()
+    if (!user) return false
+
+    // Owner and Admin can access all projects
+    if (user.role === 'OWNER' || user.role === 'ADMIN') {
+      return true
+    }
+
+    // Check if user has assignment to this project
+    if (!supabaseAdmin) {
+      return false
+    }
+
+    const { data: assignment, error } = await supabaseAdmin
+      .from('project_assignments')
+      .select('id')
+      .eq('team_member_id', userId)
+      .eq('project_id', projectId)
+      .single()
+
+    return !error && !!assignment
+  } catch (error) {
+    console.error('Error checking project access:', error)
+    return false
+  }
+}
+
+/**
+ * Get user's access level for a specific project
+ */
+export async function getAccessLevel(userId: string, projectId: string): Promise<'ADMIN' | 'MANAGER' | 'VIEWER' | null> {
+  try {
+    const user = await getCurrentUserClient()
+    if (!user) return null
+
+    // Owner has admin access to everything
+    if (user.role === 'OWNER') return 'ADMIN'
+
+    // Admin has admin access to all projects
+    if (user.role === 'ADMIN') return 'ADMIN'
+
+    // For other users, check their project assignment role
+    if (!supabaseAdmin) {
+      return null
+    }
+
+    const { data: assignment, error } = await supabaseAdmin
+      .from('project_assignments')
+      .select('role')
+      .eq('team_member_id', userId)
+      .eq('project_id', projectId)
+      .single()
+
+    if (error || !assignment) {
+      return null
+    }
+
+    // Map project assignment roles to access levels
+    switch (assignment.role) {
+      case 'lead':
+        return 'ADMIN'
+      case 'member':
+        return 'MANAGER'
+      case 'viewer':
+        return 'VIEWER'
+      default:
+        return 'VIEWER'
+    }
+  } catch (error) {
+    console.error('Error getting access level:', error)
+    return null
+  }
+}
+
+/**
  * Filter dashboard stats based on user access
  */
 export async function getFilteredDashboardStats(user: User) {
