@@ -1,342 +1,514 @@
-// Workflow template definitions and database insertion utilities
-import { supabaseHelpers } from './supabase'
+// Workflow template definitions for automation system
+// Tasks 7-05 through 7-09: Pre-built workflow templates
 
 export interface WorkflowStep {
-  order: number
+  id: string
   name: string
+  type: 'action' | 'approval' | 'loop' | 'notification'
   description: string
-  type: 'action' | 'approval' | 'loop'
-  icon: string
-  command?: string
-  approval_message?: string
+  estimatedMinutes?: number
+  config?: {
+    role?: string
+    command?: string
+    approver?: 'owner' | 'admin'
+    loopTarget?: string
+    notificationMessage?: string
+    requiresInput?: boolean
+  }
 }
 
 export interface WorkflowTemplate {
+  id: string
   name: string
   description: string
   template_type: string
   trigger_type: 'manual' | 'new_idea' | 'task_complete' | 'schedule'
+  schedule?: string
   is_active: boolean
   steps: WorkflowStep[]
-  schedule?: string
+  config: {
+    priority: 'low' | 'medium' | 'high'
+    category: string
+    estimatedTotalMinutes: number
+  }
 }
 
+// Task 7-05: "Idea to MVP" template
 export const ideaToMvpTemplate: WorkflowTemplate = {
+  id: 'idea-to-mvp-template',
   name: 'Idea to MVP',
-  description: 'Complete pipeline from idea submission to deployed MVP with approval gates',
+  description: 'Complete workflow to transform an idea into a working MVP with automated development pipeline',
   template_type: 'idea_to_mvp',
   trigger_type: 'new_idea',
   is_active: false,
   steps: [
     {
-      order: 1,
+      id: 'research-analyze',
       name: 'Research & Analyze',
-      description: 'Investigate market, competitors, and technical feasibility',
       type: 'action',
-      icon: '🔬',
-      command: 'trigger role-researcher with idea context'
+      description: 'Research market, competitors, and technical feasibility of the idea',
+      estimatedMinutes: 60,
+      config: {
+        role: 'researcher',
+        command: 'research_and_analyze_idea',
+        requiresInput: true
+      }
     },
     {
-      order: 2,
+      id: 'generate-master-plan',
       name: 'Generate Master Plan',
-      description: 'Create comprehensive project plan with architecture and timeline',
       type: 'action',
-      icon: '📋',
-      command: 'trigger role-architect with research results'
+      description: 'Create comprehensive project plan with technical architecture and roadmap',
+      estimatedMinutes: 45,
+      config: {
+        role: 'architect',
+        command: 'generate_master_plan',
+        requiresInput: false
+      }
     },
     {
-      order: 3,
-      name: 'Wait for Owner Approval',
-      description: 'Pause for owner review and approval of the master plan',
+      id: 'owner-approval',
+      name: 'Owner Approval',
       type: 'approval',
-      icon: '⏸️',
-      approval_message: 'Master plan is ready for your review. Approve to proceed with task breakdown?'
+      description: 'Wait for owner to approve the master plan before proceeding',
+      estimatedMinutes: 0,
+      config: {
+        approver: 'owner',
+        requiresInput: true
+      }
     },
     {
-      order: 4,
+      id: 'create-task-breakdown',
       name: 'Create Task Breakdown',
-      description: 'Convert plan into detailed task list with time estimates',
       type: 'action',
-      icon: '📊',
-      command: 'create detailed task breakdown from approved plan'
+      description: 'Break down the master plan into specific, actionable development tasks',
+      estimatedMinutes: 30,
+      config: {
+        role: 'architect',
+        command: 'create_task_breakdown',
+        requiresInput: false
+      }
     },
     {
-      order: 5,
+      id: 'development-loop',
       name: 'Development Loop',
-      description: 'For each task: Code → Self-Review → Next task',
       type: 'loop',
-      icon: '🔄',
-      command: 'loop: for each task { code implementation → self-review → commit }'
+      description: 'For each task: Code implementation → Self-review → Quality check',
+      estimatedMinutes: 240, // 4 hours estimate for MVP development
+      config: {
+        loopTarget: 'project_tasks',
+        command: 'execute_development_cycle',
+        requiresInput: false
+      }
     },
     {
-      order: 6,
+      id: 'security-scan',
       name: 'Final Security Scan',
-      description: 'Comprehensive security audit before deployment',
       type: 'action',
-      icon: '🛡️',
-      command: 'run complete security audit on codebase'
+      description: 'Comprehensive security audit of the completed MVP',
+      estimatedMinutes: 20,
+      config: {
+        role: 'security',
+        command: 'security_audit',
+        requiresInput: false
+      }
     },
     {
-      order: 7,
+      id: 'deploy-preview',
       name: 'Deploy to Preview',
-      description: 'Deploy to staging environment for testing',
       type: 'action',
-      icon: '🚀',
-      command: 'deploy to vercel preview environment'
+      description: 'Deploy the MVP to staging environment for testing',
+      estimatedMinutes: 15,
+      config: {
+        role: 'devops',
+        command: 'deploy_to_preview',
+        requiresInput: false
+      }
     },
     {
-      order: 8,
+      id: 'notify-completion',
       name: 'Notify Owner',
-      description: 'Send completion notification with preview links',
-      type: 'action',
-      icon: '🔔',
-      command: 'send notification: "Project ready for review!" with preview URL'
+      type: 'notification',
+      description: 'Send completion notification to owner',
+      estimatedMinutes: 1,
+      config: {
+        notificationMessage: 'Project ready for review! 🚀',
+        requiresInput: false
+      }
     }
-  ]
+  ],
+  config: {
+    priority: 'high',
+    category: 'development',
+    estimatedTotalMinutes: 411 // ~7 hours total
+  }
 }
 
+// Task 7-06: "Bug Fix" template
 export const bugFixTemplate: WorkflowTemplate = {
+  id: 'bug-fix-template',
   name: 'Bug Fix',
-  description: 'Automated bug reproduction, fix, and deployment pipeline',
+  description: 'Systematic approach to identify, fix, and deploy bug fixes',
   template_type: 'bug_fix',
   trigger_type: 'manual',
   is_active: false,
   steps: [
     {
-      order: 1,
+      id: 'reproduce-bug',
       name: 'Reproduce Bug',
-      description: 'Investigate and confirm the reported bug',
       type: 'action',
-      icon: '🐛',
-      command: 'investigate and reproduce the reported bug'
+      description: 'Investigate and confirm the bug, document steps to reproduce',
+      estimatedMinutes: 30,
+      config: {
+        role: 'developer',
+        command: 'reproduce_and_investigate_bug',
+        requiresInput: true
+      }
     },
     {
-      order: 2,
+      id: 'find-root-cause',
       name: 'Find Root Cause',
-      description: 'Analyze code to identify the source of the issue',
       type: 'action',
-      icon: '🔍',
-      command: 'analyze codebase to find root cause of bug'
+      description: 'Analyze code and identify the root cause of the issue',
+      estimatedMinutes: 45,
+      config: {
+        role: 'developer',
+        command: 'find_root_cause',
+        requiresInput: false
+      }
     },
     {
-      order: 3,
+      id: 'implement-fix',
       name: 'Implement Fix',
-      description: 'Code and implement the bug fix',
       type: 'action',
-      icon: '💻',
-      command: 'implement fix for identified bug'
+      description: 'Code the fix for the identified issue',
+      estimatedMinutes: 60,
+      config: {
+        role: 'developer',
+        command: 'implement_bug_fix',
+        requiresInput: false
+      }
     },
     {
-      order: 4,
+      id: 'test-fix',
       name: 'Test Fix',
-      description: 'Verify the fix resolves the issue',
       type: 'action',
-      icon: '✅',
-      command: 'test the implemented fix thoroughly'
+      description: 'Thoroughly test the fix to ensure it resolves the issue',
+      estimatedMinutes: 30,
+      config: {
+        role: 'developer',
+        command: 'test_bug_fix',
+        requiresInput: false
+      }
     },
     {
-      order: 5,
+      id: 'deploy-fix',
       name: 'Deploy Fix',
-      description: 'Deploy the fix to production',
       type: 'action',
-      icon: '🚀',
-      command: 'deploy fix to production environment'
+      description: 'Deploy the fix to production environment',
+      estimatedMinutes: 15,
+      config: {
+        role: 'devops',
+        command: 'deploy_bug_fix',
+        requiresInput: false
+      }
     },
     {
-      order: 6,
+      id: 'notify-completion',
       name: 'Notify Completion',
-      description: 'Confirm bug fix is deployed and working',
-      type: 'action',
-      icon: '🔔',
-      command: 'send notification: "Bug fixed and deployed"'
+      type: 'notification',
+      description: 'Send notification that bug has been fixed and deployed',
+      estimatedMinutes: 1,
+      config: {
+        notificationMessage: 'Bug fixed and deployed ✅',
+        requiresInput: false
+      }
     }
-  ]
+  ],
+  config: {
+    priority: 'high',
+    category: 'maintenance',
+    estimatedTotalMinutes: 181 // ~3 hours
+  }
 }
 
+// Task 7-07: "New Feature" template
 export const newFeatureTemplate: WorkflowTemplate = {
+  id: 'new-feature-template',
   name: 'New Feature',
-  description: 'Plan, code, review, and deploy new features with approval gates',
+  description: 'End-to-end feature development with approval gates and quality checks',
   template_type: 'new_feature',
   trigger_type: 'manual',
   is_active: false,
   steps: [
     {
-      order: 1,
+      id: 'plan-feature',
       name: 'Plan Feature',
-      description: 'Design and plan the new feature implementation',
       type: 'action',
-      icon: '📋',
-      command: 'plan and design new feature implementation'
+      description: 'Define feature requirements, design, and implementation approach',
+      estimatedMinutes: 60,
+      config: {
+        role: 'architect',
+        command: 'plan_new_feature',
+        requiresInput: true
+      }
     },
     {
-      order: 2,
+      id: 'approval-gate',
       name: 'Wait for Approval',
-      description: 'Owner review and approval of feature plan',
       type: 'approval',
-      icon: '⏸️',
-      approval_message: 'Feature plan is ready. Approve to start development?'
+      description: 'Get approval for feature plan before implementation',
+      estimatedMinutes: 0,
+      config: {
+        approver: 'owner',
+        requiresInput: true
+      }
     },
     {
-      order: 3,
+      id: 'code-feature',
       name: 'Code Feature',
-      description: 'Implement the new feature',
       type: 'action',
-      icon: '💻',
-      command: 'implement new feature according to approved plan'
+      description: 'Implement the feature according to the approved plan',
+      estimatedMinutes: 120,
+      config: {
+        role: 'developer',
+        command: 'implement_feature',
+        requiresInput: false
+      }
     },
     {
-      order: 4,
+      id: 'code-review',
       name: 'Code Review',
-      description: 'Self-review and optimize the implementation',
       type: 'action',
-      icon: '🔍',
-      command: 'perform code review and optimization'
+      description: 'Thorough code review for quality and best practices',
+      estimatedMinutes: 30,
+      config: {
+        role: 'reviewer',
+        command: 'review_feature_code',
+        requiresInput: false
+      }
     },
     {
-      order: 5,
+      id: 'security-check',
       name: 'Security Check',
-      description: 'Security audit of new feature',
       type: 'action',
-      icon: '🛡️',
-      command: 'run security audit on new feature code'
+      description: 'Security audit of the new feature',
+      estimatedMinutes: 20,
+      config: {
+        role: 'security',
+        command: 'security_check_feature',
+        requiresInput: false
+      }
     },
     {
-      order: 6,
+      id: 'deploy-feature',
       name: 'Deploy',
-      description: 'Deploy feature to production',
       type: 'action',
-      icon: '🚀',
-      command: 'deploy new feature to production'
+      description: 'Deploy feature to production environment',
+      estimatedMinutes: 15,
+      config: {
+        role: 'devops',
+        command: 'deploy_feature',
+        requiresInput: false
+      }
     },
     {
-      order: 7,
-      name: 'Notify Completion',
+      id: 'notify-live',
+      name: 'Notify Live',
+      type: 'notification',
       description: 'Announce feature is live',
-      type: 'action',
-      icon: '🔔',
-      command: 'send notification: "Feature live!" with details'
+      estimatedMinutes: 1,
+      config: {
+        notificationMessage: 'Feature live! 🎉',
+        requiresInput: false
+      }
     }
-  ]
+  ],
+  config: {
+    priority: 'medium',
+    category: 'development',
+    estimatedTotalMinutes: 246 // ~4 hours
+  }
 }
 
+// Task 7-08: "Deploy Pipeline" template
 export const deployPipelineTemplate: WorkflowTemplate = {
+  id: 'deploy-pipeline-template',
   name: 'Deploy Pipeline',
-  description: 'Build, test, and deploy with approval gates',
+  description: 'Comprehensive deployment pipeline with testing and approval gates',
   template_type: 'deploy_pipeline',
   trigger_type: 'manual',
   is_active: false,
   steps: [
     {
-      order: 1,
+      id: 'build-project',
       name: 'Build Project',
-      description: 'Compile and build the project',
       type: 'action',
-      icon: '🔨',
-      command: 'build project with latest changes'
+      description: 'Compile and build the project for deployment',
+      estimatedMinutes: 10,
+      config: {
+        role: 'devops',
+        command: 'build_project',
+        requiresInput: false
+      }
     },
     {
-      order: 2,
+      id: 'run-tests',
       name: 'Run Tests',
-      description: 'Execute test suite',
       type: 'action',
-      icon: '✅',
-      command: 'run complete test suite'
+      description: 'Execute full test suite to ensure quality',
+      estimatedMinutes: 15,
+      config: {
+        role: 'devops',
+        command: 'run_test_suite',
+        requiresInput: false
+      }
     },
     {
-      order: 3,
+      id: 'security-scan',
       name: 'Security Scan',
-      description: 'Scan for security vulnerabilities',
       type: 'action',
-      icon: '🛡️',
-      command: 'run security vulnerability scan'
+      description: 'Perform security vulnerability scan',
+      estimatedMinutes: 10,
+      config: {
+        role: 'security',
+        command: 'security_scan',
+        requiresInput: false
+      }
     },
     {
-      order: 4,
-      name: 'Deploy to Staging?',
-      description: 'Approval gate for staging deployment',
+      id: 'staging-approval',
+      name: 'Deploy to Staging Approval',
       type: 'approval',
-      icon: '⏸️',
-      approval_message: 'Build and tests passed. Deploy to staging?'
+      description: 'Approve deployment to staging environment',
+      estimatedMinutes: 0,
+      config: {
+        approver: 'admin',
+        requiresInput: true
+      }
     },
     {
-      order: 5,
+      id: 'deploy-staging',
       name: 'Deploy to Staging',
-      description: 'Deploy to staging environment',
       type: 'action',
-      icon: '🚀',
-      command: 'deploy to staging environment'
+      description: 'Deploy to staging environment for final testing',
+      estimatedMinutes: 10,
+      config: {
+        role: 'devops',
+        command: 'deploy_to_staging',
+        requiresInput: false
+      }
     },
     {
-      order: 6,
-      name: 'Deploy to Production?',
-      description: 'Final approval for production deployment',
+      id: 'production-approval',
+      name: 'Deploy to Production Approval',
       type: 'approval',
-      icon: '⏸️',
-      approval_message: 'Staging deployment successful. Deploy to production?'
+      description: 'Final approval for production deployment',
+      estimatedMinutes: 0,
+      config: {
+        approver: 'owner',
+        requiresInput: true
+      }
     },
     {
-      order: 7,
+      id: 'deploy-production',
       name: 'Deploy to Production',
-      description: 'Deploy to production environment',
       type: 'action',
-      icon: '🚀',
-      command: 'deploy to production environment'
+      description: 'Deploy to production environment',
+      estimatedMinutes: 15,
+      config: {
+        role: 'devops',
+        command: 'deploy_to_production',
+        requiresInput: false
+      }
     },
     {
-      order: 8,
-      name: 'Notify Success',
-      description: 'Confirm successful production deployment',
-      type: 'action',
-      icon: '🔔',
-      command: 'send notification: "Deployed to production!"'
+      id: 'notify-deployed',
+      name: 'Notify Deployed',
+      type: 'notification',
+      description: 'Send notification of successful production deployment',
+      estimatedMinutes: 1,
+      config: {
+        notificationMessage: 'Deployed to production! 🚀',
+        requiresInput: false
+      }
     }
-  ]
+  ],
+  config: {
+    priority: 'high',
+    category: 'deployment',
+    estimatedTotalMinutes: 61 // ~1 hour
+  }
 }
 
+// Task 7-09: "Nightly Maintenance" template
 export const nightlyMaintenanceTemplate: WorkflowTemplate = {
+  id: 'nightly-maintenance-template',
   name: 'Nightly Maintenance',
-  description: 'Daily code review, security scan, and cleanup tasks',
+  description: 'Automated nightly tasks for code review, security, and system maintenance',
   template_type: 'nightly_maintenance',
   trigger_type: 'schedule',
-  schedule: '0 2 * * *', // Daily at 2 AM Africa/Casablanca
+  schedule: 'daily 2 AM Africa/Casablanca',
   is_active: false,
   steps: [
     {
-      order: 1,
+      id: 'review-daily-code',
       name: 'Review All Code Written Today',
-      description: 'Review all commits from the past 24 hours',
       type: 'action',
-      icon: '🔍',
-      command: 'review all code commits from past 24 hours'
+      description: 'Analyze all code commits from the past day for quality and patterns',
+      estimatedMinutes: 30,
+      config: {
+        role: 'reviewer',
+        command: 'review_daily_code_changes',
+        requiresInput: false
+      }
     },
     {
-      order: 2,
+      id: 'security-scan-all',
       name: 'Security Scan All Projects',
-      description: 'Run security audit across all active projects',
       type: 'action',
-      icon: '🛡️',
-      command: 'run comprehensive security scan on all projects'
+      description: 'Run comprehensive security audit on all active projects',
+      estimatedMinutes: 45,
+      config: {
+        role: 'security',
+        command: 'scan_all_projects',
+        requiresInput: false
+      }
     },
     {
-      order: 3,
+      id: 'memory-cleanup',
       name: 'Memory Cleanup & Consolidation',
-      description: 'Clean up temporary files and consolidate memory',
       type: 'action',
-      icon: '🧹',
-      command: 'cleanup temporary files and consolidate memory files'
+      description: 'Clean up temporary files, optimize databases, consolidate logs',
+      estimatedMinutes: 20,
+      config: {
+        role: 'system',
+        command: 'cleanup_and_consolidate',
+        requiresInput: false
+      }
     },
     {
-      order: 4,
+      id: 'generate-daily-report',
       name: 'Generate Daily Report',
-      description: 'Create summary report of daily activities',
       type: 'action',
-      icon: '📊',
-      command: 'generate daily summary report with metrics'
+      description: 'Create comprehensive daily report of all activities and metrics',
+      estimatedMinutes: 15,
+      config: {
+        role: 'reporter',
+        command: 'generate_daily_report',
+        requiresInput: false
+      }
     }
-  ]
+  ],
+  config: {
+    priority: 'medium',
+    category: 'maintenance',
+    estimatedTotalMinutes: 110 // ~2 hours
+  }
 }
 
-export const allWorkflowTemplates = [
+// Export all templates
+export const workflowTemplates = [
   ideaToMvpTemplate,
   bugFixTemplate,
   newFeatureTemplate,
@@ -344,48 +516,15 @@ export const allWorkflowTemplates = [
   nightlyMaintenanceTemplate
 ]
 
-export async function insertWorkflowTemplate(template: WorkflowTemplate) {
-  try {
-    const { data, error } = await supabaseHelpers.supabase
-      .from('workflows')
-      .insert({
-        name: template.name,
-        description: template.description,
-        template_type: template.template_type,
-        trigger_type: template.trigger_type,
-        is_active: template.is_active,
-        schedule: template.schedule,
-        config: {
-          steps: template.steps
-        }
-      })
-      .select()
-      .single()
-
-    if (error) {
-      console.error('Error inserting workflow template:', error)
-      return null
-    }
-
-    console.log(`Inserted workflow template: ${template.name}`)
-    return data
-  } catch (err) {
-    console.error('Failed to insert workflow template:', err)
-    return null
-  }
+// Helper functions
+export const getTemplateById = (id: string): WorkflowTemplate | undefined => {
+  return workflowTemplates.find(template => template.id === id)
 }
 
-export async function insertAllWorkflowTemplates() {
-  console.log('Inserting workflow templates...')
-  
-  const results = []
-  for (const template of allWorkflowTemplates) {
-    const result = await insertWorkflowTemplate(template)
-    results.push(result)
-  }
-  
-  const successful = results.filter(r => r !== null).length
-  console.log(`Successfully inserted ${successful}/${allWorkflowTemplates.length} workflow templates`)
-  
-  return results
+export const getTemplatesByTriggerType = (triggerType: string): WorkflowTemplate[] => {
+  return workflowTemplates.filter(template => template.trigger_type === triggerType)
+}
+
+export const getActiveTemplates = (): WorkflowTemplate[] => {
+  return workflowTemplates.filter(template => template.is_active)
 }

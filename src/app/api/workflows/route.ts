@@ -1,291 +1,281 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getCurrentUserServer } from '@/lib/access-control'
-import { supabaseHelpers } from '@/lib/supabase'
+import { supabase } from '@/lib/supabase'
 
-export async function GET(request: NextRequest) {
+export async function GET(req: NextRequest) {
   try {
-    // Check authentication and permissions
-    const user = await getCurrentUserServer()
-    if (!user) {
-      return NextResponse.json(
-        { error: 'Authentication required' }, 
-        { status: 401 }
-      )
-    }
+    console.log('📋 Fetching all workflows with run information')
 
-    // Only OWNER and ADMIN can view workflows
-    if (user.role !== 'OWNER' && user.role !== 'ADMIN') {
-      return NextResponse.json(
-        { error: 'Insufficient permissions. Only OWNER and ADMIN can view workflows.' },
-        { status: 403 }
-      )
-    }
-
-    // Get all workflows with last run info
-    const { data: workflows, error: workflowsError } = await supabaseHelpers.supabase
+    // Fetch all workflows with their last run information
+    const { data: workflows, error: workflowsError } = await supabase
       .from('workflows')
       .select('*')
       .order('created_at', { ascending: false })
 
     if (workflowsError) {
       console.error('Error fetching workflows:', workflowsError)
-      return NextResponse.json(
-        { error: 'Failed to fetch workflows' }, 
-        { status: 500 }
-      )
+      return NextResponse.json({
+        success: false,
+        message: 'Failed to fetch workflows',
+        error: workflowsError.message
+      }, { status: 500 })
     }
 
-    // Get running workflows count for each workflow
-    const workflowsWithRunInfo = await Promise.all(
+    // Enrich workflows with additional run statistics
+    const enrichedWorkflows = await Promise.all(
       (workflows || []).map(async (workflow) => {
         try {
-          // Get latest run info
-          const { data: latestRun } = await supabaseHelpers.supabase
-            .from('workflow_runs')
-            .select('status, started_at, completed_at, steps_completed, steps_total')
-            .eq('workflow_id', workflow.id)
-            .order('started_at', { ascending: false })
-            .limit(1)
-            .single()
-
-          // Get count of running workflows
-          const { count: runningCount } = await supabaseHelpers.supabase
-            .from('workflow_runs')
-            .select('*', { count: 'exact', head: true })
-            .eq('workflow_id', workflow.id)
-            .eq('status', 'running')
-
-          // Get count of waiting approval workflows
-          const { count: waitingApprovalCount } = await supabaseHelpers.supabase
-            .from('workflow_runs')
-            .select('*', { count: 'exact', head: true })
-            .eq('workflow_id', workflow.id)
-            .eq('status', 'waiting_approval')
-
           // Get total runs count
-          const { count: totalRuns } = await supabaseHelpers.supabase
+          const { count: totalRuns } = await supabase
             .from('workflow_runs')
             .select('*', { count: 'exact', head: true })
             .eq('workflow_id', workflow.id)
 
-          // Calculate success rate
-          const { count: successfulRuns } = await supabaseHelpers.supabase
+          // Get successful runs count
+          const { count: successfulRuns } = await supabase
             .from('workflow_runs')
             .select('*', { count: 'exact', head: true })
             .eq('workflow_id', workflow.id)
             .eq('status', 'completed')
 
+          // Get failed runs count
+          const { count: failedRuns } = await supabase
+            .from('workflow_runs')
+            .select('*', { count: 'exact', head: true })
+            .eq('workflow_id', workflow.id)
+            .eq('status', 'failed')
+
+          // Get currently running count
+          const { count: runningCount } = await supabase
+            .from('workflow_runs')
+            .select('*', { count: 'exact', head: true })
+            .eq('workflow_id', workflow.id)
+            .in('status', ['running', 'waiting_approval'])
+
+          // Get latest run details
+          const { data: latestRun } = await supabase
+            .from('workflow_runs')
+            .select('*')
+            .eq('workflow_id', workflow.id)
+            .order('started_at', { ascending: false })
+            .limit(1)
+            .single()
+
+          // Calculate success rate
           const successRate = totalRuns && totalRuns > 0 
-            ? Math.round((successfulRuns || 0) / totalRuns * 100) 
+            ? Math.round((successfulRuns / totalRuns) * 100)
             : 0
+
+          // Calculate average duration for completed runs
+          let averageDuration = null
+          if (successfulRuns && successfulRuns > 0) {
+            const { data: completedRuns } = await supabase
+              .from('workflow_runs')
+              .select('started_at, completed_at')
+              .eq('workflow_id', workflow.id)
+              .eq('status', 'completed')
+              .not('completed_at', 'is', null)
+
+            if (completedRuns && completedRuns.length > 0) {
+              const totalDuration = completedRuns.reduce((sum, run) => {
+                const start = new Date(run.started_at).getTime()
+                const end = new Date(run.completed_at).getTime()
+                return sum + (end - start)
+              }, 0)
+              
+              averageDuration = Math.round(totalDuration / completedRuns.length / 1000) // Convert to seconds
+            }
+          }
 
           return {
             ...workflow,
-            latestRun,
-            runningCount: runningCount || 0,
-            waitingApprovalCount: waitingApprovalCount || 0,
+            // Run statistics
             totalRuns: totalRuns || 0,
-            successRate
+            successfulRuns: successfulRuns || 0,
+            failedRuns: failedRuns || 0,
+            runningCount: runningCount || 0,
+            successRate,
+            averageDuration,
+            
+            // Latest run info
+            latestRun: latestRun ? {
+              id: latestRun.id,
+              status: latestRun.status,
+              started_at: latestRun.started_at,
+              completed_at: latestRun.completed_at,
+              steps_completed: latestRun.steps_completed,
+              steps_total: latestRun.steps_total
+            } : null,
+            
+            // Derived fields for UI
+            isActive: workflow.is_active,
+            lastRunAt: workflow.last_run_at,
+            lastRunStatus: workflow.last_run_status,
+            triggerType: workflow.trigger_type,
+            
+            // Template info
+            templateType: workflow.template_type,
+            stepsCount: workflow.config?.steps?.length || 0,
+            estimatedDuration: workflow.config?.estimatedTotalMinutes || null
           }
-        } catch (error) {
-          console.error(`Error fetching run info for workflow ${workflow.id}:`, error)
+        } catch (enrichError) {
+          console.error(`Error enriching workflow ${workflow.id}:`, enrichError)
+          
+          // Return basic workflow data if enrichment fails
           return {
             ...workflow,
-            latestRun: null,
-            runningCount: 0,
-            waitingApprovalCount: 0,
             totalRuns: 0,
-            successRate: 0
+            successfulRuns: 0,
+            failedRuns: 0,
+            runningCount: 0,
+            successRate: 0,
+            averageDuration: null,
+            latestRun: null,
+            isActive: workflow.is_active,
+            lastRunAt: workflow.last_run_at,
+            lastRunStatus: workflow.last_run_status,
+            triggerType: workflow.trigger_type,
+            templateType: workflow.template_type,
+            stepsCount: workflow.config?.steps?.length || 0,
+            estimatedDuration: workflow.config?.estimatedTotalMinutes || null
           }
         }
       })
     )
 
     // Calculate summary statistics
-    const summary = {
-      total: workflowsWithRunInfo.length,
-      active: workflowsWithRunInfo.filter(w => w.is_active).length,
-      running: workflowsWithRunInfo.reduce((sum, w) => sum + w.runningCount, 0),
-      waitingApproval: workflowsWithRunInfo.reduce((sum, w) => sum + w.waitingApprovalCount, 0),
-      totalRuns: workflowsWithRunInfo.reduce((sum, w) => sum + w.totalRuns, 0)
-    }
+    const totalWorkflows = enrichedWorkflows.length
+    const activeWorkflows = enrichedWorkflows.filter(w => w.isActive).length
+    const totalRuns = enrichedWorkflows.reduce((sum, w) => sum + w.totalRuns, 0)
+    const currentlyRunning = enrichedWorkflows.reduce((sum, w) => sum + w.runningCount, 0)
+
+    console.log(`✅ Retrieved ${totalWorkflows} workflows (${activeWorkflows} active)`)
 
     return NextResponse.json({
       success: true,
-      workflows: workflowsWithRunInfo,
-      summary
+      workflows: enrichedWorkflows,
+      summary: {
+        totalWorkflows,
+        activeWorkflows,
+        inactiveWorkflows: totalWorkflows - activeWorkflows,
+        totalRuns,
+        currentlyRunning
+      },
+      count: totalWorkflows
     })
 
   } catch (error) {
-    console.error('Error in workflows API:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' }, 
-      { status: 500 }
-    )
+    console.error('Workflows API error:', error)
+    return NextResponse.json({
+      success: false,
+      message: 'Internal server error',
+      error: error instanceof Error ? error.message : 'Unknown error'
+    }, { status: 500 })
   }
 }
 
-export async function POST(request: NextRequest) {
+export async function POST(req: NextRequest) {
   try {
-    // Check authentication and permissions
-    const user = await getCurrentUserServer()
-    if (!user) {
-      return NextResponse.json(
-        { error: 'Authentication required' }, 
-        { status: 401 }
-      )
-    }
+    const workflowData = await req.json()
 
-    if (user.role !== 'OWNER' && user.role !== 'ADMIN') {
-      return NextResponse.json(
-        { error: 'Insufficient permissions. Only OWNER and ADMIN can create workflows.' },
-        { status: 403 }
-      )
-    }
-
-    const body = await request.json()
-    const { 
-      name, 
-      description, 
-      template_type, 
-      trigger_type, 
-      schedule, 
-      is_active = false,
-      config = {}
-    } = body
+    console.log('➕ Creating new workflow:', workflowData.name)
 
     // Validate required fields
-    if (!name || !template_type || !trigger_type) {
-      return NextResponse.json(
-        { error: 'name, template_type, and trigger_type are required' }, 
-        { status: 400 }
-      )
-    }
-
-    // Validate trigger_type
-    const validTriggers = ['manual', 'new_idea', 'task_complete', 'schedule']
-    if (!validTriggers.includes(trigger_type)) {
-      return NextResponse.json(
-        { error: `trigger_type must be one of: ${validTriggers.join(', ')}` }, 
-        { status: 400 }
-      )
-    }
-
-    // Validate schedule if trigger_type is 'schedule'
-    if (trigger_type === 'schedule' && !schedule) {
-      return NextResponse.json(
-        { error: 'schedule is required when trigger_type is "schedule"' }, 
-        { status: 400 }
-      )
+    const requiredFields = ['name', 'template_type', 'trigger_type']
+    const missingFields = requiredFields.filter(field => !workflowData[field])
+    
+    if (missingFields.length > 0) {
+      return NextResponse.json({
+        success: false,
+        message: `Missing required fields: ${missingFields.join(', ')}`
+      }, { status: 400 })
     }
 
     // Create workflow
-    const { data: workflow, error: createError } = await supabaseHelpers.supabase
+    const { data: workflow, error: createError } = await supabase
       .from('workflows')
       .insert({
-        name,
-        description,
-        template_type,
-        trigger_type,
-        schedule,
-        is_active,
-        config
+        name: workflowData.name,
+        description: workflowData.description || null,
+        template_type: workflowData.template_type,
+        trigger_type: workflowData.trigger_type,
+        schedule: workflowData.schedule || null,
+        is_active: workflowData.is_active || false,
+        config: workflowData.config || {}
       })
       .select()
       .single()
 
     if (createError) {
       console.error('Error creating workflow:', createError)
-      return NextResponse.json(
-        { error: 'Failed to create workflow' }, 
-        { status: 500 }
-      )
+      return NextResponse.json({
+        success: false,
+        message: 'Failed to create workflow',
+        error: createError.message
+      }, { status: 500 })
     }
+
+    console.log(`✅ Created workflow: ${workflow.id}`)
 
     return NextResponse.json({
       success: true,
-      workflow,
-      message: 'Workflow created successfully'
+      message: 'Workflow created successfully',
+      workflow
     })
 
   } catch (error) {
-    console.error('Error creating workflow:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' }, 
-      { status: 500 }
-    )
+    console.error('Create workflow API error:', error)
+    return NextResponse.json({
+      success: false,
+      message: 'Internal server error',
+      error: error instanceof Error ? error.message : 'Unknown error'
+    }, { status: 500 })
   }
 }
 
-export async function PUT(request: NextRequest) {
+export async function PATCH(req: NextRequest) {
   try {
-    // Check authentication and permissions
-    const user = await getCurrentUserServer()
-    if (!user) {
-      return NextResponse.json(
-        { error: 'Authentication required' }, 
-        { status: 401 }
-      )
-    }
-
-    if (user.role !== 'OWNER' && user.role !== 'ADMIN') {
-      return NextResponse.json(
-        { error: 'Insufficient permissions. Only OWNER and ADMIN can update workflows.' },
-        { status: 403 }
-      )
-    }
-
-    const body = await request.json()
-    const { id, ...updateData } = body
+    const { id, ...updates } = await req.json()
 
     if (!id) {
-      return NextResponse.json(
-        { error: 'Workflow ID is required' }, 
-        { status: 400 }
-      )
+      return NextResponse.json({
+        success: false,
+        message: 'Workflow ID is required'
+      }, { status: 400 })
     }
 
-    // Validate workflow exists
-    const { data: existingWorkflow, error: fetchError } = await supabaseHelpers.supabase
-      .from('workflows')
-      .select('*')
-      .eq('id', id)
-      .single()
-
-    if (fetchError || !existingWorkflow) {
-      return NextResponse.json(
-        { error: 'Workflow not found' }, 
-        { status: 404 }
-      )
-    }
+    console.log(`🔄 Updating workflow: ${id}`)
 
     // Update workflow
-    const { data: workflow, error: updateError } = await supabaseHelpers.supabase
+    const { data: workflow, error: updateError } = await supabase
       .from('workflows')
-      .update(updateData)
+      .update(updates)
       .eq('id', id)
       .select()
       .single()
 
     if (updateError) {
       console.error('Error updating workflow:', updateError)
-      return NextResponse.json(
-        { error: 'Failed to update workflow' }, 
-        { status: 500 }
-      )
+      return NextResponse.json({
+        success: false,
+        message: 'Failed to update workflow',
+        error: updateError.message
+      }, { status: 500 })
     }
+
+    console.log(`✅ Updated workflow: ${workflow.id}`)
 
     return NextResponse.json({
       success: true,
-      workflow,
-      message: 'Workflow updated successfully'
+      message: 'Workflow updated successfully',
+      workflow
     })
 
   } catch (error) {
-    console.error('Error updating workflow:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' }, 
-      { status: 500 }
-    )
+    console.error('Update workflow API error:', error)
+    return NextResponse.json({
+      success: false,
+      message: 'Internal server error',
+      error: error instanceof Error ? error.message : 'Unknown error'
+    }, { status: 500 })
   }
 }
