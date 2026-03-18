@@ -1,74 +1,58 @@
+import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
+import { cookies } from 'next/headers'
 import { NextRequest, NextResponse } from 'next/server'
-import { supabase } from '@/lib/supabase'
 
-export async function GET(request: NextRequest) {
-  const { searchParams } = new URL(request.url)
-  const code = searchParams.get('code')
-  const error = searchParams.get('error')
-  const error_description = searchParams.get('error_description')
-
-  // Handle auth errors
-  if (error) {
-    console.error('Auth callback error:', error, error_description)
-    return NextResponse.redirect(new URL('/login?error=' + encodeURIComponent(error_description || error), request.url))
-  }
-
-  // Handle auth success
+/**
+ * Supabase Auth Callback Handler
+ * Handles the OAuth callback and email confirmation flows
+ */
+export async function GET(req: NextRequest) {
+  const requestUrl = new URL(req.url)
+  const code = requestUrl.searchParams.get('code')
+  const next = requestUrl.searchParams.get('next') || '/dashboard'
+  
   if (code) {
     try {
-      // Exchange the auth code for a session
-      const { data, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code)
+      const cookieStore = cookies()
+      const supabase = createRouteHandlerClient({ cookies: () => cookieStore })
       
-      if (exchangeError) {
-        console.error('Code exchange error:', exchangeError)
-        return NextResponse.redirect(new URL('/login?error=auth_failed', request.url))
+      // Exchange the code for a session
+      const { data, error } = await supabase.auth.exchangeCodeForSession(code)
+      
+      if (error) {
+        console.error('Auth callback error:', error)
+        return NextResponse.redirect(`${requestUrl.origin}/login?error=auth_callback_failed`)
       }
-
+      
       if (data.user) {
-        // Verify user is in team_members table and active
+        // Verify user is in team_members table
         const { data: teamMember, error: memberError } = await supabase
           .from('team_members')
-          .select('id, email, display_name, role, is_active')
+          .select('id, email, status, role')
           .eq('email', data.user.email)
-          .eq('is_active', true)
           .single()
-
-        if (memberError || !teamMember) {
-          console.error('Team member verification failed:', memberError)
-          await supabase.auth.signOut()
-          return NextResponse.redirect(new URL('/login?error=unauthorized', request.url))
-        }
-
-        // Success - redirect to dashboard
-        const response = NextResponse.redirect(new URL('/dashboard', request.url))
         
-        // Set Supabase session cookies
-        if (data.session) {
-          response.cookies.set('sb-access-token', data.session.access_token, {
-            path: '/',
-            httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            sameSite: 'lax',
-            maxAge: data.session.expires_in
-          })
-          
-          response.cookies.set('sb-refresh-token', data.session.refresh_token, {
-            path: '/',
-            httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            sameSite: 'lax',
-            maxAge: 60 * 60 * 24 * 30 // 30 days
-          })
+        if (memberError || !teamMember) {
+          console.error('User not found in team_members:', memberError)
+          await supabase.auth.signOut()
+          return NextResponse.redirect(`${requestUrl.origin}/login?error=unauthorized`)
         }
-
-        return response
+        
+        if (teamMember.status !== 'active') {
+          console.error('User account not active:', teamMember.status)
+          await supabase.auth.signOut()
+          return NextResponse.redirect(`${requestUrl.origin}/login?error=account_inactive`)
+        }
+        
+        // Success - redirect to intended destination
+        return NextResponse.redirect(`${requestUrl.origin}${next}`)
       }
     } catch (error) {
-      console.error('Auth callback processing error:', error)
-      return NextResponse.redirect(new URL('/login?error=processing_failed', request.url))
+      console.error('Auth callback exception:', error)
+      return NextResponse.redirect(`${requestUrl.origin}/login?error=auth_error`)
     }
   }
-
-  // No code or error - redirect to login
-  return NextResponse.redirect(new URL('/login', request.url))
+  
+  // No code parameter or other error
+  return NextResponse.redirect(`${requestUrl.origin}/login?error=missing_code`)
 }
