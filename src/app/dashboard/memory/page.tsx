@@ -146,7 +146,7 @@ export default function MemoryPage() {
           </div>
 
           <DropdownMenu>
-            <DropdownMenuTrigger asChild>
+            <DropdownMenuTrigger>
               <Button 
                 variant="ghost" 
                 size="sm" 
