@@ -1,37 +1,62 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getCurrentUser } from '@/lib/access-control'
-import { supabase } from '@/lib/supabase'
+import { supabaseAdmin } from '@/lib/supabase'
+import { requirePermission, checkOwnerAuth } from '@/lib/rbac'
+import { logSecurityEvent } from '@/lib/security-logger'
 
-interface ProjectAssignment {
-  projectId: string
-  accessLevel: 'ADMIN' | 'MANAGER' | 'VIEWER'
-}
-
-interface InviteRequest {
+interface InviteTeamMemberRequest {
   email: string
-  displayName: string
+  fullName: string
   role: 'ADMIN' | 'MANAGER' | 'VIEWER'
-  projectAssignments: ProjectAssignment[]
+  message?: string
 }
 
-export async function POST(request: NextRequest) {
+/**
+ * POST /api/team/invite
+ * Invite a new team member to join the platform
+ */
+export async function POST(req: NextRequest) {
+  const ip = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'unknown'
+  const userAgent = req.headers.get('user-agent') || 'unknown'
+
   try {
-    // Only OWNER can invite team members
-    const currentUser = getCurrentUser()
-    if (!currentUser || currentUser.role !== 'OWNER') {
+    // Check authentication and permissions
+    const authCookie = req.cookies.get('auth-token')?.value
+    let authorized = false
+    let inviterInfo = null
+
+    // Check owner authentication first
+    const ownerAuth = checkOwnerAuth(authCookie)
+    if (ownerAuth.isOwner) {
+      authorized = true
+      inviterInfo = ownerAuth.user
+    } else {
+      // Check team member permissions
+      const permissionCheck = await requirePermission('team:invite')
+      if (permissionCheck.authorized) {
+        authorized = true
+        inviterInfo = permissionCheck.user
+      }
+    }
+
+    if (!authorized) {
+      await logSecurityEvent(ip, 'unauthorized_team_invite_attempt', 'warning', {
+        userAgent,
+        timestamp: new Date().toISOString()
+      })
+
       return NextResponse.json(
-        { success: false, error: 'Unauthorized: Only platform owner can invite team members' },
+        { success: false, message: 'Insufficient permissions to invite team members' },
         { status: 403 }
       )
     }
 
-    const body: InviteRequest = await request.json()
-    const { email, displayName, role, projectAssignments } = body
+    // Validate request body
+    const body: InviteTeamMemberRequest = await req.json()
+    const { email, fullName, role, message } = body
 
-    // Validate required fields
-    if (!email || !displayName || !role) {
+    if (!email || !fullName || !role) {
       return NextResponse.json(
-        { success: false, error: 'Missing required fields: email, displayName, role' },
+        { success: false, message: 'Email, full name, and role are required' },
         { status: 400 }
       )
     }
@@ -40,7 +65,7 @@ export async function POST(request: NextRequest) {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
     if (!emailRegex.test(email)) {
       return NextResponse.json(
-        { success: false, error: 'Invalid email format' },
+        { success: false, message: 'Invalid email format' },
         { status: 400 }
       )
     }
@@ -48,142 +73,150 @@ export async function POST(request: NextRequest) {
     // Validate role
     if (!['ADMIN', 'MANAGER', 'VIEWER'].includes(role)) {
       return NextResponse.json(
-        { success: false, error: 'Invalid role. Must be ADMIN, MANAGER, or VIEWER' },
+        { success: false, message: 'Invalid role. Must be ADMIN, MANAGER, or VIEWER' },
         { status: 400 }
       )
     }
 
-    // Check if user already exists
-    const { data: existingMember, error: checkError } = await supabase
-      .from('team_members')
-      .select('id, email')
-      .eq('email', email)
-      .single()
+    // Check if user is already in team
+    if (supabaseAdmin) {
+      const { data: existingMember, error: checkError } = await supabaseAdmin
+        .from('team_members')
+        .select('id, email, status')
+        .eq('email', email)
+        .single()
 
-    if (existingMember && !checkError) {
-      return NextResponse.json(
-        { success: false, error: 'A team member with this email already exists' },
-        { status: 409 }
-      )
-    }
-
-    // Step 1: Create Supabase Auth user (sends invitation email automatically)
-    const { data: authUser, error: authError } = await supabase.auth.admin.inviteUserByEmail(email, {
-      data: {
-        display_name: displayName,
-        role: role,
-        invited_by: currentUser.id
-      },
-      redirectTo: `${process.env.NEXT_PUBLIC_APP_URL || 'https://genplatform-six.vercel.app'}/auth/callback`
-    })
-
-    if (authError || !authUser.user) {
-      console.error('Supabase Auth invite error:', authError)
-      return NextResponse.json(
-        { success: false, error: 'Failed to send invitation email' },
-        { status: 500 }
-      )
-    }
-
-    // Step 2: Insert into team_members table
-    const { data: teamMember, error: memberError } = await supabase
-      .from('team_members')
-      .insert({
-        email,
-        display_name: displayName,
-        role,
-        is_active: true,
-        invited_by: currentUser.id,
-        invited_at: new Date().toISOString(),
-        created_at: new Date().toISOString()
-      })
-      .select()
-      .single()
-
-    if (memberError || !teamMember) {
-      console.error('Team member creation error:', memberError)
-      
-      // Clean up the auth user if team member creation fails
-      await supabase.auth.admin.deleteUser(authUser.user.id)
-      
-      return NextResponse.json(
-        { success: false, error: 'Failed to create team member record' },
-        { status: 500 }
-      )
-    }
-
-    // Step 3: Create project assignments
-    if (projectAssignments && projectAssignments.length > 0) {
-      // Validate that all referenced projects exist
-      const projectIds = projectAssignments.map(a => a.projectId)
-      const { data: projects, error: projectsError } = await supabase
-        .from('projects')
-        .select('id')
-        .in('id', projectIds)
-
-      if (projectsError || projects.length !== projectIds.length) {
-        console.error('Invalid project references:', projectsError)
+      if (checkError && checkError.code !== 'PGRST116') {
+        console.error('Error checking existing member:', checkError)
         return NextResponse.json(
-          { success: false, error: 'One or more referenced projects do not exist' },
-          { status: 400 }
+          { success: false, message: 'Database error occurred' },
+          { status: 500 }
         )
       }
 
-      // Insert project assignments
-      const assignments = projectAssignments.map(assignment => ({
-        project_id: assignment.projectId,
-        member_id: teamMember.id,
-        access_level: assignment.accessLevel,
-        assigned_at: new Date().toISOString()
-      }))
+      if (existingMember) {
+        const statusMessage = existingMember.status === 'active' 
+          ? 'User is already a team member'
+          : existingMember.status === 'invited'
+          ? 'User has already been invited'
+          : 'User account exists but is disabled'
 
-      const { error: assignmentError } = await supabase
-        .from('project_assignments')
-        .insert(assignments)
-
-      if (assignmentError) {
-        console.error('Project assignment error:', assignmentError)
-        // Don't fail the entire operation for assignment errors
-        // The team member is created, just log the error
+        return NextResponse.json(
+          { success: false, message: statusMessage },
+          { status: 409 }
+        )
       }
-    }
 
-    // Log the invitation as a security event
-    await supabase
-      .from('security_events')
-      .insert({
-        event_type: 'login', // Using 'login' as closest available type
-        severity: 'info',
-        description: `Team member invited: ${displayName} (${email}) with role ${role}`,
-        details: {
-          invited_email: email,
-          invited_role: role,
-          invited_by: currentUser.email,
-          project_assignments: projectAssignments.length
+      // Create team member record
+      const { data: teamMember, error: createError } = await supabaseAdmin
+        .from('team_members')
+        .insert({
+          email,
+          full_name: fullName,
+          role,
+          status: 'invited',
+          invited_by: inviterInfo?.id || 'owner'
+        })
+        .select()
+        .single()
+
+      if (createError) {
+        console.error('Error creating team member:', createError)
+        return NextResponse.json(
+          { success: false, message: 'Failed to create team member record' },
+          { status: 500 }
+        )
+      }
+
+      // Send invitation via Supabase Auth
+      const { data: authData, error: inviteError } = await supabaseAdmin.auth.admin.inviteUserByEmail(
+        email,
+        {
+          data: {
+            full_name: fullName,
+            role,
+            invited_by: inviterInfo?.email,
+            custom_message: message
+          },
+          redirectTo: `${process.env.NEXTAUTH_URL}/auth/callback`
         }
+      )
+
+      if (inviteError) {
+        console.error('Error sending invitation:', inviteError)
+        
+        // Clean up team member record if invite failed
+        await supabaseAdmin
+          .from('team_members')
+          .delete()
+          .eq('id', teamMember.id)
+
+        return NextResponse.json(
+          { success: false, message: 'Failed to send invitation email' },
+          { status: 500 }
+        )
+      }
+
+      // Log security event
+      await logSecurityEvent(ip, 'team_member_invited', 'info', {
+        invitedEmail: email,
+        invitedRole: role,
+        inviterEmail: inviterInfo?.email,
+        inviterRole: inviterInfo?.role,
+        userAgent,
+        teamMemberId: teamMember.id
       })
 
-    return NextResponse.json({
-      success: true,
-      memberId: teamMember.id,
-      message: `Invitation sent to ${email}`,
-      data: {
-        id: teamMember.id,
-        email: teamMember.email,
-        displayName: teamMember.display_name,
-        role: teamMember.role,
-        projectAssignments: projectAssignments.length
-      }
-    })
+      // Log to security_events table as well
+      await supabaseAdmin
+        .from('security_events')
+        .insert({
+          event_type: 'audit',
+          severity: 'info',
+          description: `Team member invited: ${email} as ${role}`,
+          details: {
+            invited_email: email,
+            invited_role: role,
+            inviter_email: inviterInfo?.email,
+            inviter_role: inviterInfo?.role,
+            personal_message: message || null
+          },
+          resolved: true
+        })
+
+      return NextResponse.json({
+        success: true,
+        message: 'Invitation sent successfully',
+        data: {
+          teamMember: {
+            id: teamMember.id,
+            email: teamMember.email,
+            full_name: teamMember.full_name,
+            role: teamMember.role,
+            status: teamMember.status,
+            created_at: teamMember.created_at
+          }
+        }
+      })
+    }
+
+    // Fallback if Supabase admin not available
+    return NextResponse.json(
+      { success: false, message: 'Team management service unavailable' },
+      { status: 503 }
+    )
 
   } catch (error) {
-    console.error('Team invitation error:', error)
+    console.error('Team invite error:', error)
+    
+    await logSecurityEvent(ip, 'team_invite_system_error', 'critical', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+      userAgent,
+      timestamp: new Date().toISOString()
+    })
+
     return NextResponse.json(
-      { 
-        success: false, 
-        error: 'Internal server error',
-        details: error instanceof Error ? error.message : 'Unknown error'
-      },
+      { success: false, message: 'Internal server error' },
       { status: 500 }
     )
   }
