@@ -82,25 +82,25 @@ export function ActivityStream({
     return [
       {
         id: '1',
-        type: 'task',
+        type: 'task' as const,
         event_type: 'task_completed',
-        title: 'Task 0D-16 completed',
-        description: 'Live task tracker with Bridge API integration',
+        title: 'Task 0D-23 completed',
+        description: 'Full integration test script created and verified',
         actor_role: 'development-team',
         created_at: new Date(now.getTime() - 2 * 60 * 1000).toISOString()
       },
       {
         id: '2',
-        type: 'task',
+        type: 'task' as const,
         event_type: 'task_started',
-        title: 'Task 0D-17 started',
-        description: 'Creating activity stream component',
+        title: 'Task 0D-24 started',
+        description: 'Final deployment and verification in progress',
         actor_role: 'development-team',
         created_at: new Date(now.getTime() - 5 * 60 * 1000).toISOString()
       },
       {
         id: '3',
-        type: 'security',
+        type: 'security' as const,
         event_type: 'health_check',
         title: 'Security scan passed',
         description: 'All systems operational, no threats detected',
@@ -110,43 +110,43 @@ export function ActivityStream({
       },
       {
         id: '4',
-        type: 'task',
+        type: 'task' as const,
         event_type: 'task_review_requested',
-        title: 'QA reviewing Task 0D-15',
-        description: 'Bridge API endpoint review in progress',
+        title: 'QA reviewing Sprint 0D',
+        description: 'Live monitoring system review in progress',
         actor_role: 'qa-team',
         created_at: new Date(now.getTime() - 18 * 60 * 1000).toISOString()
       },
       {
         id: '5',
-        type: 'improvement',
+        type: 'improvement' as const,
         event_type: 'proposal_created',
         title: 'New improvement suggested',
-        description: 'Optimize API response caching for better performance',
+        description: 'Optimize Bridge API response caching for better performance',
         actor_role: 'self-improver',
         created_at: new Date(now.getTime() - 25 * 60 * 1000).toISOString()
       },
       {
         id: '6',
-        type: 'task',
+        type: 'task' as const,
         event_type: 'task_completed',
-        title: 'Task 0D-15 completed',
-        description: 'Bridge API endpoint GET /api/live-status implemented',
+        title: 'Task 0D-22 completed',
+        description: 'Supabase connection added to frontend with TypeScript types',
         actor_role: 'development-team',
         created_at: new Date(now.getTime() - 32 * 60 * 1000).toISOString()
       },
       {
         id: '7',
-        type: 'system',
+        type: 'system' as const,
         event_type: 'deployment',
         title: 'Production deployment successful',
-        description: 'GenPlatform.ai deployed to Vercel',
+        description: 'GenPlatform.ai Sprint 0D deployed to Vercel',
         actor_role: 'devops-team',
         created_at: new Date(now.getTime() - 45 * 60 * 1000).toISOString()
       },
       {
         id: '8',
-        type: 'security',
+        type: 'security' as const,
         event_type: 'login',
         title: 'User login successful',
         description: 'Admin user authenticated successfully',
