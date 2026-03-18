@@ -26,6 +26,8 @@ import Link from 'next/link'
 import { TaskTracker } from '@/components/dashboard/TaskTracker'
 import { ActivityStream } from '@/components/dashboard/ActivityStream'
 import { supabaseHelpers } from '@/lib/supabase'
+import { getCurrentUserClient, getAccessibleProjects } from '@/lib/access-control'
+import type { User } from '@/lib/access-control'
 
 interface DashboardStats {
   projects: { total: number; active: number; completed: number }
@@ -41,9 +43,12 @@ interface QuickAction {
   href: string
   icon: React.ReactNode
   color: string
+  requiresOwner?: boolean
 }
 
 export default function DashboardPage() {
+  const [currentUser, setCurrentUser] = useState<User | null>(null)
+  const [accessibleProjectIds, setAccessibleProjectIds] = useState<string[]>([])
   const [stats, setStats] = useState<DashboardStats | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -57,7 +62,27 @@ export default function DashboardPage() {
     setError(null)
     
     try {
-      // Fetch real data from Supabase
+      // Get current user first
+      const user = await getCurrentUserClient()
+      setCurrentUser(user)
+
+      if (!user) {
+        setError('Authentication required')
+        return
+      }
+
+      // Get accessible projects based on user role
+      let projectIds: string[] = []
+      if (user.role === 'OWNER' || user.role === 'ADMIN') {
+        // Owner and Admin see all projects
+        projectIds = await getAccessibleProjects(user.id)
+      } else {
+        // Manager and Viewer see only assigned projects
+        projectIds = await getAccessibleProjects(user.id)
+      }
+      setAccessibleProjectIds(projectIds)
+
+      // Fetch stats with project filtering
       const [
         totalProjects,
         activeTasks,
@@ -65,9 +90,9 @@ export default function DashboardPage() {
         latestSecurity,
         latestMetrics
       ] = await Promise.all([
-        supabaseHelpers.getProjectsCount(),
-        supabaseHelpers.getActiveTasksCount(),
-        supabaseHelpers.getCompletedTasksCount(),
+        getFilteredProjectsCount(projectIds),
+        getFilteredTasksCount(projectIds, 'in_progress'),
+        getFilteredTasksCount(projectIds, 'done'),
         supabaseHelpers.getLatestSecurityStatus(),
         supabaseHelpers.getLatestSystemMetrics()
       ])
@@ -116,7 +141,7 @@ export default function DashboardPage() {
       console.error('Failed to load dashboard data:', err)
       setError(err instanceof Error ? err.message : 'Unknown error')
       
-      // Fall back to demo data if Supabase is unavailable
+      // Fall back to demo data
       setStats({
         projects: { total: 3, active: 2, completed: 1 },
         tasks: { total: 23, active: 8, completed: 15, completionRate: 65 },
@@ -125,6 +150,40 @@ export default function DashboardPage() {
       })
     } finally {
       setLoading(false)
+    }
+  }
+
+  const getFilteredProjectsCount = async (projectIds: string[]): Promise<number> => {
+    if (projectIds.length === 0) return 0
+    
+    try {
+      const { count, error } = await supabaseHelpers.supabase
+        .from('projects')
+        .select('*', { count: 'exact', head: true })
+        .in('id', projectIds)
+        .neq('status', 'deleted')
+      
+      return count || 0
+    } catch (error) {
+      console.error('Error fetching filtered projects count:', error)
+      return 0
+    }
+  }
+
+  const getFilteredTasksCount = async (projectIds: string[], status: string): Promise<number> => {
+    if (projectIds.length === 0) return 0
+
+    try {
+      const { count, error } = await supabaseHelpers.supabase
+        .from('project_tasks')
+        .select('*', { count: 'exact', head: true })
+        .in('project_id', projectIds)
+        .eq('status', status)
+      
+      return count || 0
+    } catch (error) {
+      console.error(`Error fetching filtered ${status} tasks count:`, error)
+      return 0
     }
   }
 
@@ -146,40 +205,51 @@ export default function DashboardPage() {
     return `${Math.floor(diffInMinutes / 1440)}d ago`
   }
 
-  const quickActions: QuickAction[] = [
-    {
-      id: 'new-project',
-      title: 'New Project',
-      description: 'Start a new project',
-      href: '/dashboard/projects',
-      icon: <Plus className="h-4 w-4" />,
-      color: 'bg-blue-500'
-    },
-    {
-      id: 'create-memory',
-      title: 'Create Memory File',
-      description: 'Add new memory or notes',
-      href: '/dashboard/memory',
-      icon: <FileText className="h-4 w-4" />,
-      color: 'bg-green-500'
-    },
-    {
-      id: 'new-cron',
-      title: 'Schedule Job',
-      description: 'Create automated task',
-      href: '/dashboard/cron',
-      icon: <Clock className="h-4 w-4" />,
-      color: 'bg-purple-500'
-    },
-    {
-      id: 'system-check',
-      title: 'Health Check',
-      description: 'Run system diagnostics',
-      href: '/dashboard/monitoring',
-      icon: <Activity className="h-4 w-4" />,
-      color: 'bg-orange-500'
+  const getQuickActions = (user: User | null): QuickAction[] => {
+    const baseActions: QuickAction[] = [
+      {
+        id: 'create-memory',
+        title: 'Create Memory File',
+        description: 'Add new memory or notes',
+        href: '/dashboard/memory',
+        icon: <FileText className="h-4 w-4" />,
+        color: 'bg-green-500'
+      },
+      {
+        id: 'system-check',
+        title: 'Health Check',
+        description: 'Run system diagnostics',
+        href: '/dashboard/monitoring',
+        icon: <Activity className="h-4 w-4" />,
+        color: 'bg-orange-500'
+      }
+    ]
+
+    // Add actions based on user role
+    if (user && (user.role === 'OWNER' || user.role === 'ADMIN')) {
+      baseActions.unshift({
+        id: 'new-project',
+        title: 'New Project',
+        description: 'Start a new project',
+        href: '/dashboard/projects',
+        icon: <Plus className="h-4 w-4" />,
+        color: 'bg-blue-500'
+      })
     }
-  ]
+
+    if (user && (user.role === 'OWNER' || user.role === 'ADMIN' || user.role === 'MANAGER')) {
+      baseActions.push({
+        id: 'new-cron',
+        title: 'Schedule Job',
+        description: 'Create automated task',
+        href: '/dashboard/cron',
+        icon: <Clock className="h-4 w-4" />,
+        color: 'bg-purple-500'
+      })
+    }
+
+    return baseActions
+  }
 
   const getSecurityIcon = () => {
     switch (stats?.security.status) {
@@ -190,14 +260,35 @@ export default function DashboardPage() {
     }
   }
 
+  // Show loading state while fetching user data
+  if (loading && !currentUser) {
+    return (
+      <div className="space-y-6 p-4 md:p-6">
+        <div className="animate-pulse space-y-4">
+          <div className="h-8 bg-muted rounded w-1/4"></div>
+          <div className="h-32 bg-muted rounded"></div>
+          <div className="h-64 bg-muted rounded"></div>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-6 p-4 md:p-6">
-      {/* Header */}
+      {/* Header with user context */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold">Dashboard</h1>
           <p className="text-muted-foreground">
-            Welcome back! Here's what's happening with your AI agent platform.
+            {currentUser ? (
+              <>Welcome back, {currentUser.displayName}! Here's your {
+                currentUser.role === 'OWNER' || currentUser.role === 'ADMIN' 
+                  ? 'platform overview' 
+                  : 'assigned projects overview'
+              }.</>
+            ) : (
+              'Welcome back! Here\'s what\'s happening with your AI agent platform.'
+            )}
           </p>
         </div>
         <div className="flex items-center space-x-2">
@@ -214,15 +305,31 @@ export default function DashboardPage() {
         </div>
       </div>
 
+      {/* Access level indicator for non-owners */}
+      {currentUser && currentUser.role !== 'OWNER' && (
+        <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+          <div className="flex items-center space-x-2">
+            <Badge className="bg-blue-500 text-white">
+              {currentUser.role}
+            </Badge>
+            <span className="text-sm text-blue-900 dark:text-blue-100">
+              You have {currentUser.role.toLowerCase()} access to {accessibleProjectIds.length} project{accessibleProjectIds.length !== 1 ? 's' : ''}
+            </span>
+          </div>
+        </div>
+      )}
+
       {/* Live Task Tracker - Prominent position */}
       <TaskTracker />
 
-      {/* Stats Overview - Now with real Supabase data */}
+      {/* Stats Overview - Now with real filtered data */}
       {stats && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
           <Card className="hover:shadow-md transition-shadow">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Projects</CardTitle>
+              <CardTitle className="text-sm font-medium">
+                {currentUser?.role === 'OWNER' || currentUser?.role === 'ADMIN' ? 'All Projects' : 'Your Projects'}
+              </CardTitle>
               <Zap className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
@@ -299,26 +406,18 @@ export default function DashboardPage() {
           <div className="flex items-center space-x-2">
             <AlertTriangle className="h-5 w-5 text-yellow-600" />
             <span className="font-medium text-yellow-900 dark:text-yellow-100">
-              Supabase Connection Issue
+              Data Loading Issue
             </span>
           </div>
           <p className="text-sm text-yellow-700 dark:text-yellow-300 mt-1">
-            {error} - Showing demo data instead.
+            {error} - Showing available data.
           </p>
-        </div>
-      )}
-
-      {/* Loading State */}
-      {loading && (
-        <div className="text-center py-8">
-          <div className="inline-block w-8 h-8 border-4 border-orange-500 border-t-transparent rounded-full animate-spin mb-4"></div>
-          <p className="text-muted-foreground">Loading dashboard data from Supabase...</p>
         </div>
       )}
 
       {/* Main Content Grid: Quick Actions + Activity Stream */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Quick Actions */}
+        {/* Quick Actions - Role-based */}
         <Card className="lg:col-span-1">
           <CardHeader>
             <CardTitle className="flex items-center space-x-2">
@@ -327,7 +426,7 @@ export default function DashboardPage() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            {quickActions.map((action) => (
+            {getQuickActions(currentUser).map((action) => (
               <Link key={action.id} href={action.href}>
                 <div className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer">
                   <div className={`p-2 rounded-lg text-white ${action.color}`}>
@@ -346,9 +445,13 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
 
-        {/* Activity Stream - Taking up 2/3 of the space */}
+        {/* Activity Stream - Filtered for user's projects */}
         <div className="lg:col-span-2">
-          <ActivityStream refreshInterval={30000} maxEvents={20} />
+          <ActivityStream 
+            refreshInterval={30000} 
+            maxEvents={20}
+            projectFilter={currentUser?.role === 'OWNER' || currentUser?.role === 'ADMIN' ? undefined : accessibleProjectIds}
+          />
         </div>
       </div>
 
@@ -397,7 +500,7 @@ export default function DashboardPage() {
               </div>
             </div>
           </CardContent>
-        </Card>
+        </div>
       )}
     </div>
   )
