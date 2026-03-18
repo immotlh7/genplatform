@@ -258,7 +258,7 @@ export default function SkillsPage() {
             />
           </div>
         </div>
-        <Select value={selectedCategory} onValueChange={(value: string) => setSelectedCategory(value)}>
+        <Select value={selectedCategory} onValueChange={(value) => setSelectedCategory(value || 'all')}>
           <SelectTrigger className="w-[180px]">
             <SelectValue placeholder="Category" />
           </SelectTrigger>
@@ -270,7 +270,7 @@ export default function SkillsPage() {
             <SelectItem value="productivity">Productivity</SelectItem>
           </SelectContent>
         </Select>
-        <Select value={selectedStatus} onValueChange={(value: string) => setSelectedStatus(value)}>
+        <Select value={selectedStatus} onValueChange={(value) => setSelectedStatus(value || 'all')}>
           <SelectTrigger className="w-[140px]">
             <SelectValue placeholder="Status" />
           </SelectTrigger>
