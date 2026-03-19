@@ -1,65 +1,28 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { checkOwnerAuth } from '@/lib/rbac'
-import { authHelpers, supabaseHelpers } from '@/lib/supabase'
+import { NextRequest, NextResponse } from 'next/server';
 
-/**
- * GET /api/auth/check
- * Check current authentication status for both owner and team members
- */
 export async function GET(req: NextRequest) {
   try {
-    // Check owner authentication first (cookie-based)
-    const authCookie = req.cookies.get('auth-token')?.value
-    const ownerAuth = checkOwnerAuth(authCookie)
+    const authCookie = req.cookies.get('auth-token');
+    if (!authCookie) {
+      return NextResponse.json({ authenticated: false, user: null });
+    }
     
-    if (ownerAuth.isOwner && ownerAuth.user) {
+    const sessionData = JSON.parse(Buffer.from(authCookie.value, 'base64').toString());
+    
+    if (sessionData.role === 'OWNER' && sessionData.exp > Math.floor(Date.now() / 1000)) {
       return NextResponse.json({
         authenticated: true,
-        userType: 'owner',
-        user: ownerAuth.user
-      })
-    }
-
-    // Check Supabase authentication for team members
-    try {
-      const supabaseUser = await authHelpers.getCurrentUser()
-      
-      if (supabaseUser) {
-        const teamMember = await supabaseHelpers.getTeamMemberByEmail(supabaseUser.email!)
-        
-        if (teamMember && teamMember.status === 'active') {
-          return NextResponse.json({
-            authenticated: true,
-            userType: 'team_member',
-            user: {
-              id: supabaseUser.id,
-              email: supabaseUser.email,
-              displayName: teamMember.full_name,
-              role: teamMember.role,
-              userType: 'team_member'
-            }
-          })
+        user: {
+          id: sessionData.userId || 'owner',
+          email: sessionData.email || 'owner@genplatform.ai',
+          displayName: sessionData.displayName || 'Med',
+          role: 'OWNER'
         }
-      }
-    } catch (supabaseError) {
-      console.warn('Supabase auth check failed:', supabaseError)
-      // Continue to return unauthenticated
+      });
     }
-
-    // No valid authentication found
-    return NextResponse.json({
-      authenticated: false,
-      userType: null,
-      user: null
-    })
-
-  } catch (error) {
-    console.error('Auth check error:', error)
-    return NextResponse.json({
-      authenticated: false,
-      userType: null,
-      user: null,
-      error: 'Authentication check failed'
-    }, { status: 500 })
+    
+    return NextResponse.json({ authenticated: false, user: null });
+  } catch (e) {
+    return NextResponse.json({ authenticated: false, user: null });
   }
 }

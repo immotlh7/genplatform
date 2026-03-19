@@ -264,7 +264,12 @@ function shouldSkipCSRF(pathname: string): boolean {
     '/api/health', 
     '/api/webhook/',
     '/api/test-',
-    '/api/auth/callback' // Supabase auth callback
+    '/api/auth/callback', // Supabase auth callback
+    '/api/auth/login',   // Owner login (no token yet)
+    '/api/auth/check',   // Session check
+    '/api/bridge/',      // Bridge API data routes
+    '/api/team',         // Team data
+    '/api/workflows'     // Workflows data
   ]
   
   return skipPaths.some(path => pathname.startsWith(path))

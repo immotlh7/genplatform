@@ -42,7 +42,7 @@ interface TaskTrackerProps {
   bridgeApiUrl?: string
 }
 
-export function TaskTracker({ bridgeApiUrl = 'http://localhost:3001' }: TaskTrackerProps) {
+export function TaskTracker({ bridgeApiUrl = '' }: TaskTrackerProps) {
   const [liveStatus, setLiveStatus] = useState<LiveStatus>({
     currentAction: 'idle',
     uptime: 0,
@@ -66,7 +66,7 @@ export function TaskTracker({ bridgeApiUrl = 'http://localhost:3001' }: TaskTrac
       setLoading(true)
       setError(null)
 
-      const response = await fetch(`${bridgeApiUrl}/api/live-status`)
+      const response = await fetch('/api/bridge/live-status')
       if (!response.ok) {
         throw new Error(`Bridge API error: ${response.status}`)
       }

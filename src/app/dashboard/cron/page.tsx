@@ -100,7 +100,7 @@ export default function CronPage() {
       const user = await getCurrentUserClient()
       setCurrentUser(user)
 
-      const response = await fetch('/api/openclaw/cron')
+      const response = await fetch('/api/bridge/cron')
       const data = await response.json()
       setJobs(data.jobs || [])
       setStats(data.stats || { total: 0, enabled: 0, running: 0, failed: 0 })
@@ -284,7 +284,7 @@ export default function CronPage() {
     }
 
     try {
-      const response = await fetch('/api/openclaw/cron/toggle', {
+      const response = await fetch('/api/bridge/cron/toggle', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ jobId })
@@ -322,7 +322,7 @@ export default function CronPage() {
     }
 
     try {
-      const response = await fetch('/api/openclaw/cron/run', {
+      const response = await fetch('/api/bridge/cron/run', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ jobId })

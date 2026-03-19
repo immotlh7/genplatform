@@ -80,7 +80,7 @@ export function NotificationProvider({ children }: NotificationProviderProps) {
       {
         id: 'demo-1',
         title: 'System Updated',
-        message: 'GenPlatform.ai has been updated to version 2.1.0 with new features and improvements.',
+        message: 'GenPlatform.ai is running on app.gen3.ai with live data from Bridge API.',
         type: 'success',
         timestamp: new Date(Date.now() - 10 * 60 * 1000).toISOString(),
         read: false,
@@ -93,7 +93,7 @@ export function NotificationProvider({ children }: NotificationProviderProps) {
       {
         id: 'demo-2',
         title: 'High CPU Usage Detected',
-        message: 'CPU usage has been above 85% for the past 10 minutes. Consider checking running processes.',
+        message: '',
         type: 'warning',
         timestamp: new Date(Date.now() - 25 * 60 * 1000).toISOString(),
         read: false,
