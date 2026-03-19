@@ -1,27 +1,47 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 
-export async function GET() {
+const BRIDGE_URL = process.env.BRIDGE_API_URL || 'http://localhost:3001';
+
+export async function GET(request: NextRequest) {
   try {
-    const BRIDGE_URL = process.env.BRIDGE_API_URL || 'http://localhost:3001';
-    const res = await fetch(BRIDGE_URL + '/api/logs', { cache: 'no-store' });
-    const raw = await res.json();
-    const lines = (raw.lines || []).slice(-100).map((line: any) => {
+    const response = await fetch(BRIDGE_URL + '/api/logs');
+    
+    if (!response.ok) {
+      return NextResponse.json(
+        { error: 'Failed to fetch logs from Bridge API' },
+        { status: response.status }
+      );
+    }
+
+    const text = await response.text();
+    const lines = text.split('\n').filter(line => line.trim());
+    
+    // Parse JSON log lines
+    const logs = lines.map(line => {
       try {
-        if (typeof line === 'string') {
-          const parsed = JSON.parse(line);
-          return {
-            timestamp: parsed._meta?.date || parsed.time || new Date().toISOString(),
-            level: (parsed._meta?.logLevelName || 'INFO').toLowerCase(),
-            message: parsed['2'] || parsed.message || String(line).substring(0, 200)
-          };
-        }
-        return { timestamp: new Date().toISOString(), level: 'info', message: String(line).substring(0, 200) };
+        const parsed = JSON.parse(line);
+        return {
+          timestamp: parsed.timestamp || new Date().toISOString(),
+          level: parsed.level || 'info',
+          message: parsed.message || line
+        };
       } catch {
-        return { timestamp: new Date().toISOString(), level: 'info', message: String(line).substring(0, 200) };
+        // Fallback for non-JSON lines
+        return {
+          timestamp: new Date().toISOString(),
+          level: 'info',
+          message: line
+        };
       }
     });
-    return NextResponse.json({ lines, totalLines: lines.length });
-  } catch (e: any) {
-    return NextResponse.json({ error: e.message, lines: [] }, { status: 500 });
+
+    // Return last 100 logs
+    return NextResponse.json(logs.slice(-100));
+  } catch (error) {
+    console.error('Error fetching logs:', error);
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
   }
 }
