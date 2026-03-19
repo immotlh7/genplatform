@@ -1,90 +1,74 @@
-"use client"
+'use client'
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react'
-import { createBrowserClient } from '@supabase/ssr'
+import { createContext, useContext, useState, ReactNode, useEffect } from 'react'
+import { supabase } from '@/lib/supabase'
 
-export interface Project {
+interface Project {
   id: string
   name: string
   description?: string
-  status: 'active' | 'archived' | 'deleted'
-  priority: 'high' | 'medium' | 'low'
-  createdAt: string
-  updatedAt: string
+  status: 'active' | 'paused' | 'completed'
+  priority: number
+  createdAt?: string
+  updatedAt?: string
 }
 
-export interface ProjectContextType {
-  currentProject: Project | null
+interface ProjectContextType {
   projects: Project[]
-  loading: boolean
+  currentProject: Project | null
   setCurrentProject: (project: Project | null) => void
+  loading: boolean
   refreshProjects: () => Promise<void>
-  createProject: (data: { name: string; description?: string; priority?: 'high' | 'medium' | 'low' }) => Promise<Project>
-  updateProject: (id: string, updates: Partial<Project>) => Promise<void>
-  archiveProject: (id: string) => Promise<void>
-  deleteProject: (id: string) => Promise<void>
 }
+
+const MOCK_PROJECTS: Project[] = [
+  {
+    id: '001',
+    name: 'GenPlatform.ai',
+    description: 'Main development project for GenPlatform.ai mission control dashboard',
+    status: 'active',
+    priority: 10,
+    createdAt: '2024-01-15T10:00:00Z',
+    updatedAt: new Date().toISOString()
+  },
+  {
+    id: '002',
+    name: 'AI Agent Framework',
+    description: 'Core framework for managing and orchestrating AI agents',
+    status: 'active',
+    priority: 8,
+    createdAt: '2024-01-20T14:30:00Z',
+    updatedAt: new Date().toISOString()
+  },
+  {
+    id: '003',
+    name: 'Documentation Site',
+    description: 'Public documentation and API reference',
+    status: 'paused',
+    priority: 5,
+    createdAt: '2024-02-01T09:15:00Z',
+    updatedAt: new Date().toISOString()
+  }
+]
 
 const ProjectContext = createContext<ProjectContextType | undefined>(undefined)
 
-export function useProject() {
+export function useProjects() {
   const context = useContext(ProjectContext)
   if (context === undefined) {
-    throw new Error('useProject must be used within a ProjectProvider')
+    throw new Error('useProjects must be used within a ProjectProvider')
   }
   return context
 }
 
-interface ProjectProviderProps {
-  children: ReactNode
-}
-
-// Mock projects for development
-const MOCK_PROJECTS: Project[] = [
-  {
-    id: '1',
-    name: 'GenPlatform.ai',
-    description: 'AI-powered development platform',
-    status: 'active',
-    priority: 'high',
-    createdAt: '2026-03-18T00:00:00Z',
-    updatedAt: '2026-03-18T22:50:00Z'
-  },
-  {
-    id: '2', 
-    name: 'Personal Dashboard',
-    description: 'OpenClaw personal control dashboard',
-    status: 'active',
-    priority: 'medium',
-    createdAt: '2026-03-18T10:00:00Z',
-    updatedAt: '2026-03-18T22:50:00Z'
-  },
-  {
-    id: '3',
-    name: 'Mobile App',
-    description: 'React Native companion app',
-    status: 'archived',
-    priority: 'low',
-    createdAt: '2026-03-10T00:00:00Z',
-    updatedAt: '2026-03-15T12:00:00Z'
-  }
-]
-
-export function ProjectProvider({ children }: ProjectProviderProps) {
-  const [currentProject, setCurrentProject] = useState<Project | null>(null)
+export function ProjectProvider({ children }: { children: ReactNode }) {
   const [projects, setProjects] = useState<Project[]>([])
+  const [currentProject, setCurrentProject] = useState<Project | null>(null)
   const [loading, setLoading] = useState(true)
-  const supabase = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
-
-  useEffect(() => {
-    loadProjects()
-  }, [])
 
   const loadProjects = async () => {
+    setLoading(true)
     try {
-      setLoading(true)
-      
-      // Try to fetch from database first
       const { data, error } = await supabase
         .from('projects')
         .select('*')
@@ -92,8 +76,7 @@ export function ProjectProvider({ children }: ProjectProviderProps) {
         .order('updated_at', { ascending: false })
 
       if (error) {
-        console.log('Using mock projects (database not available):', error.message)
-        // Use mock data when database is not available
+        console.log('Loading projects from hardcoded data:', error.message)
         setProjects(MOCK_PROJECTS)
         setCurrentProject(MOCK_PROJECTS[0])
         return
@@ -116,13 +99,11 @@ export function ProjectProvider({ children }: ProjectProviderProps) {
         const activeProject = formattedProjects.find(p => p.status === 'active')
         setCurrentProject(activeProject || formattedProjects[0] || null)
       } else {
-        // Use mock data when no projects in database
         setProjects(MOCK_PROJECTS)
         setCurrentProject(MOCK_PROJECTS[0])
       }
     } catch (error) {
       console.error('Error loading projects:', error)
-      // Fallback to mock data
       setProjects(MOCK_PROJECTS)
       setCurrentProject(MOCK_PROJECTS[0])
     } finally {
@@ -130,117 +111,41 @@ export function ProjectProvider({ children }: ProjectProviderProps) {
     }
   }
 
+  // Initial load
+  useEffect(() => {
+    loadProjects()
+  }, [])
+
   const refreshProjects = async () => {
     await loadProjects()
   }
 
-  const createProject = async (data: { name: string; description?: string; priority?: 'high' | 'medium' | 'low' }): Promise<Project> => {
-    try {
-      const newProject = {
-        name: data.name,
-        description: data.description || '',
-        status: 'active',
-        priority: data.priority || 'medium'
-      }
+  // Listen for project changes
+  useEffect(() => {
+    const subscription = supabase
+      .channel('projects-changes')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'projects'
+      }, () => {
+        refreshProjects()
+      })
+      .subscribe()
 
-      const { data: project, error } = await supabase
-        .from('projects')
-        .insert([newProject])
-        .select()
-        .single()
-
-      if (error) throw error
-
-      const formattedProject: Project = {
-        id: project.id,
-        name: project.name,
-        description: project.description,
-        status: project.status,
-        priority: project.priority,
-        createdAt: project.created_at,
-        updatedAt: project.updated_at
-      }
-
-      setProjects(prev => [formattedProject, ...prev])
-      
-      return formattedProject
-    } catch (error) {
-      console.error('Error creating project:', error)
-      
-      // Mock creation for development
-      const mockProject: Project = {
-        id: Date.now().toString(),
-        name: data.name,
-        description: data.description || '',
-        status: 'active',
-        priority: data.priority || 'medium',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      }
-      
-      setProjects(prev => [mockProject, ...prev])
-      return mockProject
+    return () => {
+      subscription.unsubscribe()
     }
-  }
-
-  const updateProject = async (id: string, updates: Partial<Project>): Promise<void> => {
-    try {
-      const { error } = await supabase
-        .from('projects')
-        .update({
-          name: updates.name,
-          description: updates.description,
-          status: updates.status,
-          priority: updates.priority,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', id)
-
-      if (error) throw error
-
-      setProjects(prev => prev.map(p => 
-        p.id === id ? { ...p, ...updates, updatedAt: new Date().toISOString() } : p
-      ))
-
-      if (currentProject?.id === id) {
-        setCurrentProject(prev => prev ? { ...prev, ...updates, updatedAt: new Date().toISOString() } : null)
-      }
-    } catch (error) {
-      console.error('Error updating project:', error)
-      
-      // Mock update for development
-      setProjects(prev => prev.map(p => 
-        p.id === id ? { ...p, ...updates, updatedAt: new Date().toISOString() } : p
-      ))
-
-      if (currentProject?.id === id) {
-        setCurrentProject(prev => prev ? { ...prev, ...updates, updatedAt: new Date().toISOString() } : null)
-      }
-    }
-  }
-
-  const archiveProject = async (id: string): Promise<void> => {
-    await updateProject(id, { status: 'archived' })
-  }
-
-  const deleteProject = async (id: string): Promise<void> => {
-    await updateProject(id, { status: 'deleted' })
-  }
-
-  const value: ProjectContextType = {
-    currentProject,
-    projects,
-    loading,
-    setCurrentProject,
-    refreshProjects,
-    createProject,
-    updateProject,
-    archiveProject,
-    deleteProject
-  }
+  }, [])
 
   return (
-    <ProjectContext.Provider value={value}>
+    <ProjectContext.Provider value={{
+      projects,
+      currentProject,
+      setCurrentProject,
+      loading,
+      refreshProjects
+    }}>
       {children}
     </ProjectContext.Provider>
   )

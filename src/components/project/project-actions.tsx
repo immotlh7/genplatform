@@ -28,7 +28,7 @@ import {
   Settings,
   AlertTriangle
 } from 'lucide-react'
-import { useProject, type Project } from '@/contexts/project-context'
+import { useProjects, type Project } from '@/contexts/project-context'
 
 interface ProjectActionsProps {
   project: Project
@@ -41,7 +41,7 @@ export function ProjectActions({ project, onActionComplete, trigger }: ProjectAc
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [restoreDialogOpen, setRestoreDialogOpen] = useState(false)
   const [loading, setLoading] = useState(false)
-  const { archiveProject, deleteProject, updateProject } = useProject()
+  const { archiveProject, deleteProject, updateProject } = useProjects()
 
   const handleArchive = async () => {
     try {
@@ -240,7 +240,7 @@ interface QuickArchiveButtonProps {
 
 export function QuickArchiveButton({ project, onActionComplete }: QuickArchiveButtonProps) {
   const [loading, setLoading] = useState(false)
-  const { archiveProject, updateProject } = useProject()
+  const { archiveProject, updateProject } = useProjects()
 
   const isArchived = project.status === 'archived'
 

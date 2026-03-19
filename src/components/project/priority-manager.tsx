@@ -19,7 +19,7 @@ import {
   CardTitle,
 } from '@/components/ui/card'
 import { AlertTriangle, Circle, ArrowUp, Save } from 'lucide-react'
-import { useProject, type Project } from '@/contexts/project-context'
+import { useProjects, type Project } from '@/contexts/project-context'
 
 interface PriorityManagerProps {
   project: Project
@@ -30,7 +30,7 @@ interface PriorityManagerProps {
 export function PriorityManager({ project, onSave, compact = false }: PriorityManagerProps) {
   const [selectedPriority, setSelectedPriority] = useState<'high' | 'medium' | 'low'>(project.priority)
   const [saving, setSaving] = useState(false)
-  const { updateProject } = useProject()
+  const { updateProject } = useProjects()
 
   const handleSave = async () => {
     if (selectedPriority === project.priority) return

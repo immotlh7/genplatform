@@ -19,7 +19,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover'
-import { useProject, type Project } from '@/contexts/project-context'
+import { useProjects, type Project } from '@/contexts/project-context'
 
 interface ProjectSwitcherProps {
   className?: string
@@ -27,7 +27,7 @@ interface ProjectSwitcherProps {
 
 export function ProjectSwitcher({ className }: ProjectSwitcherProps) {
   const [open, setOpen] = useState(false)
-  const { currentProject, projects, setCurrentProject, loading, refreshProjects } = useProject()
+  const { currentProject, projects, setCurrentProject, loading, refreshProjects } = useProjects()
 
   // Sort projects by priority (high -> medium -> low), then by name
   const priorityOrder = { high: 0, medium: 1, low: 2 }

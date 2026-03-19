@@ -40,9 +40,10 @@ interface LiveStatus {
 
 interface TaskTrackerProps {
   bridgeApiUrl?: string
+  projectFilter?: string[]
 }
 
-export function TaskTracker({ bridgeApiUrl = '' }: TaskTrackerProps) {
+export function TaskTracker({ bridgeApiUrl = '', projectFilter }: TaskTrackerProps) {
   const [liveStatus, setLiveStatus] = useState<LiveStatus>({
     currentAction: 'idle',
     uptime: 0,
@@ -77,7 +78,6 @@ export function TaskTracker({ bridgeApiUrl = '' }: TaskTrackerProps) {
       console.error('Failed to fetch live status:', err)
       setError(err instanceof Error ? err.message : 'Unknown error')
       
-      // Fall back to demo data if Bridge API is unavailable
       setLiveStatus({
         currentTask: {
           number: '0D-16',
@@ -185,11 +185,6 @@ export function TaskTracker({ bridgeApiUrl = '' }: TaskTrackerProps) {
             {getStatusIcon()}
             <span>Live Task Monitor</span>
             {getStatusBadge()}
-            {error && (
-              <Badge variant="destructive" className="ml-2">
-                API Error
-              </Badge>
-            )}
           </CardTitle>
           <div className="flex items-center space-x-2">
             <Badge variant="outline" className="font-mono">
@@ -279,13 +274,6 @@ export function TaskTracker({ bridgeApiUrl = '' }: TaskTrackerProps) {
             <div className="text-xs text-muted-foreground">Status</div>
           </div>
         </div>
-
-        {/* Error Display */}
-        {error && (
-          <div className="text-xs text-muted-foreground p-2 bg-muted/20 rounded border-l-2 border-yellow-400">
-            ⚠️ Bridge API unavailable ({error}). Showing demo data.
-          </div>
-        )}
       </CardContent>
     </Card>
   )

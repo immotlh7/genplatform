@@ -23,7 +23,7 @@ import {
 } from '@/components/ui/select'
 import { PriorityBadge } from '@/components/ui/priority-badge'
 import { Plus, AlertTriangle, Circle, ArrowUp, Loader2 } from 'lucide-react'
-import { useProject } from '@/contexts/project-context'
+import { useProjects } from '@/contexts/project-context'
 
 interface CreateProjectDialogProps {
   children?: React.ReactNode
@@ -37,7 +37,7 @@ export function CreateProjectDialog({ children, onSuccess }: CreateProjectDialog
   const [priority, setPriority] = useState<'high' | 'medium' | 'low'>('medium')
   const [creating, setCreating] = useState(false)
   const [error, setError] = useState('')
-  const { createProject } = useProject()
+  const { createProject } = useProjects()
 
   const priorityOptions = [
     {

@@ -24,7 +24,7 @@ import {
 } from '@/components/ui/select'
 import { Card, CardContent } from '@/components/ui/card'
 import { PrioritySelect, ProjectPriority } from './ProjectPrioritySystem'
-import { useProject } from '@/contexts/ProjectContext'
+import { useProjects } from '@/contexts/ProjectContext'
 import { 
   Plus,
   Loader2,
@@ -141,7 +141,7 @@ export function CreateProjectDialog({
   onProjectCreated,
   className = ""
 }: CreateProjectDialogProps) {
-  const { createProject } = useProject()
+  const { createProject } = useProjects()
   
   const [isOpen, setIsOpen] = useState(false)
   const [loading, setLoading] = useState(false)

@@ -39,7 +39,7 @@ import {
 } from '@/components/ui/tooltip'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
-import { useProject } from '@/contexts/ProjectContext'
+import { useProjects } from '@/contexts/ProjectContext'
 import { 
   MoreHorizontal,
   Archive,
@@ -94,7 +94,7 @@ export function ProjectActions({
   compact = false,
   className = ""
 }: ProjectActionsProps) {
-  const { updateProject, deleteProject, archiveProject, starProject, currentProject, setCurrentProject } = useProject()
+  const { updateProject, deleteProject, archiveProject, starProject, currentProject, setCurrentProject } = useProjects()
   
   const [loading, setLoading] = useState('')
   const [showArchiveDialog, setShowArchiveDialog] = useState(false)

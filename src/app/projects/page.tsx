@@ -1,6 +1,6 @@
 "use client"
 
-import { useProject } from '@/contexts/project-context'
+import { useProjects } from '@/contexts/project-context'
 import { CreateProjectDialog } from '@/components/project/create-project-dialog'
 import { ProjectActions } from '@/components/project/project-actions'
 import { PriorityBadge, PriorityIndicator } from '@/components/ui/priority-badge'
@@ -10,7 +10,7 @@ import { Badge } from '@/components/ui/badge'
 import { FolderOpen, Plus, Archive, Clock, Calendar } from 'lucide-react'
 
 export default function ProjectsPage() {
-  const { projects, currentProject, setCurrentProject, loading, refreshProjects } = useProject()
+  const { projects, currentProject, setCurrentProject, loading, refreshProjects } = useProjects()
 
   // Sort projects by priority and status
   const priorityOrder = { high: 0, medium: 1, low: 2 }

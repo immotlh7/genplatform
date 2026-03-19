@@ -34,7 +34,7 @@ import {
   Loader2,
   CheckCircle
 } from 'lucide-react'
-import { useProject } from '@/contexts/project-context'
+import { useProjects } from '@/contexts/project-context'
 
 interface GenerateReportDialogProps {
   children?: React.ReactNode
@@ -60,7 +60,7 @@ export function GenerateReportDialog({ children, onSuccess }: GenerateReportDial
   const [generated, setGenerated] = useState(false)
   const [error, setError] = useState('')
 
-  const { projects } = useProject()
+  const { projects } = useProjects()
 
   const reportTemplates = [
     {

@@ -1,136 +1,157 @@
-"use client"
+'use client'
 
 import { useState, useEffect } from 'react'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { ScrollArea } from '@/components/ui/scroll-area'
-import { 
-  Bell,
-  CheckCircle,
-  AlertTriangle,
-  Lightbulb,
-  Clock,
-  X,
-  Settings,
-  RefreshCw
-} from 'lucide-react'
+import { Bell, Check, AlertTriangle, CheckCircle, Info, Trash2 } from 'lucide-react'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-  DropdownMenuLabel
 } from '@/components/ui/dropdown-menu'
-import { supabaseHelpers } from '@/lib/supabase'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import { supabase } from '@/lib/supabase'
 
 interface Notification {
   id: string
-  type: 'task_complete' | 'alert' | 'improvement' | 'security' | 'system'
+  type: 'task_complete' | 'alert' | 'improvement' | 'report' | 'system'
   title: string
-  description: string
-  severity?: 'info' | 'warning' | 'critical'
+  description?: string
   read: boolean
   created_at: string
-  source: string
+  severity?: 'info' | 'warning' | 'critical'
+  projectId?: string
+  projectName?: string
+  source?: string
 }
 
 export function NotificationBell() {
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [unreadCount, setUnreadCount] = useState(0)
-  const [loading, setLoading] = useState(false)
   const [open, setOpen] = useState(false)
 
   useEffect(() => {
     fetchNotifications()
     
-    // Refresh notifications every 60 seconds
-    const interval = setInterval(fetchNotifications, 60000)
+    const interval = setInterval(fetchNotifications, 30000) // Poll every 30 seconds
     return () => clearInterval(interval)
   }, [])
 
   const fetchNotifications = async () => {
     try {
-      setLoading(true)
-      
-      // In a real implementation, this would fetch from multiple Supabase tables
-      // For now, we'll simulate with realistic notifications
-      const mockNotifications = await generateMockNotifications()
-      
-      setNotifications(mockNotifications)
-      setUnreadCount(mockNotifications.filter(n => !n.read).length)
-      
+      const data = await getNotifications()
+      setNotifications(data)
+      setUnreadCount(data.filter(n => !n.read).length)
     } catch (error) {
-      console.error('Failed to fetch notifications:', error)
-    } finally {
-      setLoading(false)
+      console.error('Error fetching notifications:', error)
     }
   }
 
-  const generateMockNotifications = async (): Promise<Notification[]> => {
+  const getNotifications = async (): Promise<Notification[]> => {
     const now = new Date()
-    
-    // Try to get real data from Supabase
+    const notifications: Notification[] = []
+
     try {
-      const [taskEvents, securityStatus] = await Promise.all([
-        supabaseHelpers.getRecentTaskEvents(5),
-        supabaseHelpers.getLatestSecurityStatus()
+      // Fetch from multiple sources in parallel
+      const [taskEventsResult, securityEventsResult, improvementsResult, reportsResult] = await Promise.all([
+        // Recent task completions
+        supabase
+          .from('task_events')
+          .select('*, project_tasks(title, project_id, projects(name))')
+          .eq('event_type', 'completed')
+          .order('created_at', { ascending: false })
+          .limit(5),
+
+        // Security alerts
+        supabase
+          .from('security_events')
+          .select('*')
+          .in('severity', ['warning', 'critical'])
+          .order('created_at', { ascending: false })
+          .limit(3),
+
+        // New improvement proposals
+        supabase
+          .from('improvement_proposals')
+          .select('*')
+          .eq('status', 'proposed')
+          .order('created_at', { ascending: false })
+          .limit(3),
+
+        // Recent reports
+        supabase
+          .from('reports')
+          .select('*')
+          .order('generated_at', { ascending: false })
+          .limit(2)
       ])
 
-      const notifications: Notification[] = []
-      
-      // Convert task events to notifications
-      taskEvents.forEach((event, index) => {
-        if (event.event_type === 'task_completed') {
+      // Process task events
+      if (taskEventsResult.data) {
+        taskEventsResult.data.forEach(event => {
           notifications.push({
-            id: `task_${event.id}`,
+            id: `task-${event.id}`,
             type: 'task_complete',
-            title: 'Task Completed',
-            description: `Task completed by ${event.actor_role || 'system'}`,
-            read: index > 2, // Mark first 3 as unread
+            title: `Task Completed: ${event.project_tasks?.title || 'Unknown Task'}`,
+            description: `${event.project_tasks?.projects?.name || 'Unknown Project'} - ${event.notes || 'Task completed successfully'}`,
+            read: false,
             created_at: event.created_at,
+            projectId: event.project_tasks?.project_id,
+            projectName: event.project_tasks?.projects?.name,
             source: 'task_events'
           })
-        }
-      })
-
-      // Add security notification if available
-      if (securityStatus && securityStatus.severity !== 'info') {
-        notifications.push({
-          id: `security_${securityStatus.id}`,
-          type: 'alert',
-          title: 'Security Alert',
-          description: securityStatus.description,
-          severity: securityStatus.severity as 'warning' | 'critical',
-          read: false,
-          created_at: securityStatus.created_at,
-          source: 'security_events'
         })
       }
 
-      // Fill with mock notifications if we don't have enough real data
-      while (notifications.length < 8) {
-        const mockIndex = notifications.length
-        notifications.push({
-          id: `mock_${mockIndex}`,
-          type: mockIndex % 4 === 0 ? 'task_complete' : 
-                mockIndex % 4 === 1 ? 'alert' : 
-                mockIndex % 4 === 2 ? 'improvement' : 'system',
-          title: getMockTitle(mockIndex),
-          description: getMockDescription(mockIndex),
-          severity: mockIndex % 3 === 0 ? 'warning' : 'info',
-          read: mockIndex > 3,
-          created_at: new Date(now.getTime() - mockIndex * 15 * 60 * 1000).toISOString(),
-          source: 'mock'
+      // Process security events
+      if (securityEventsResult.data) {
+        securityEventsResult.data.forEach(event => {
+          notifications.push({
+            id: `security-${event.id}`,
+            type: 'alert',
+            title: event.event_type,
+            description: event.description,
+            read: false,
+            created_at: event.created_at,
+            severity: event.severity as 'warning' | 'critical',
+            source: 'security_events'
+          })
         })
       }
 
-      return notifications
+      // Process improvement proposals
+      if (improvementsResult.data) {
+        improvementsResult.data.forEach(improvement => {
+          notifications.push({
+            id: `improvement-${improvement.id}`,
+            type: 'improvement',
+            title: improvement.title,
+            description: improvement.description?.substring(0, 100) + '...',
+            read: false,
+            created_at: improvement.created_at,
+            source: 'improvements'
+          })
+        })
+      }
 
+      // Process reports
+      if (reportsResult.data) {
+        reportsResult.data.forEach(report => {
+          notifications.push({
+            id: `report-${report.id}`,
+            type: 'report',
+            title: `New Report: ${report.title}`,
+            description: `Type: ${report.type} - ${report.summary?.substring(0, 50)}...`,
+            read: false,
+            created_at: report.generated_at || report.created_at,
+            source: 'reports'
+          })
+        })
+      }
     } catch (error) {
       console.error('Error fetching real notifications:', error)
       
-      // Fall back to pure mock data
       return [
         {
           id: '1',
@@ -148,75 +169,39 @@ export function NotificationBell() {
           description: 'All systems secure, no threats detected',
           severity: 'info',
           read: false,
-          created_at: new Date(now.getTime() - 15 * 60 * 1000).toISOString(),
+          created_at: new Date(now.getTime() - 20 * 60 * 1000).toISOString(),
           source: 'security_events'
         },
         {
           id: '3',
           type: 'improvement',
-          title: 'New Improvement Suggested',
-          description: 'Bridge API response optimization proposed',
-          read: false,
-          created_at: new Date(now.getTime() - 25 * 60 * 1000).toISOString(),
-          source: 'improvement_proposals'
+          title: 'New Improvement Proposal',
+          description: 'Optimize database queries for better performance',
+          read: true,
+          created_at: new Date(now.getTime() - 2 * 60 * 60 * 1000).toISOString(),
+          source: 'improvements'
         },
         {
           id: '4',
-          type: 'task_complete',
-          title: 'Sprint 0D Completed',
-          description: 'Live monitoring system fully implemented',
+          type: 'report',
+          title: 'Weekly Progress Report',
+          description: 'Sprint 0D progress: 87% complete',
           read: true,
-          created_at: new Date(now.getTime() - 35 * 60 * 1000).toISOString(),
-          source: 'task_events'
-        },
-        {
-          id: '5',
-          type: 'system',
-          title: 'System Metrics Updated',
-          description: 'Latest performance data collected',
-          read: true,
-          created_at: new Date(now.getTime() - 45 * 60 * 1000).toISOString(),
-          source: 'system_metrics'
+          created_at: new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString(),
+          source: 'reports'
         }
       ]
     }
+
+    // Sort by created_at descending and limit to 10 most recent
+    return notifications
+      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+      .slice(0, 10)
   }
 
-  const getMockTitle = (index: number): string => {
-    const titles = [
-      'Task Completed',
-      'Security Alert',
-      'Improvement Suggested',
-      'System Update',
-      'Deployment Complete',
-      'Health Check Passed',
-      'New Project Created',
-      'Backup Completed'
-    ]
-    return titles[index % titles.length]
-  }
-
-  const getMockDescription = (index: number): string => {
-    const descriptions = [
-      'Sprint 0D task finished successfully',
-      'Routine security scan completed',
-      'Performance optimization identified',
-      'System metrics updated',
-      'Production deployment successful',
-      'All systems operational',
-      'New project initialized',
-      'Data backup completed'
-    ]
-    return descriptions[index % descriptions.length]
-  }
-
-  const markAsRead = (notificationId: string) => {
+  const markAsRead = async (notificationId: string) => {
     setNotifications(prev => 
-      prev.map(notification => 
-        notification.id === notificationId 
-          ? { ...notification, read: true }
-          : notification
-      )
+      prev.map(n => n.id === notificationId ? { ...n, read: true } : n)
     )
     setUnreadCount(prev => Math.max(0, prev - 1))
   }
@@ -226,30 +211,25 @@ export function NotificationBell() {
     setUnreadCount(0)
   }
 
-  const getNotificationIcon = (type: string, severity?: string) => {
+  const clearAll = () => {
+    setNotifications([])
+    setUnreadCount(0)
+  }
+
+  const getNotificationIcon = (type: Notification['type'], severity?: string) => {
     switch (type) {
       case 'task_complete':
         return <CheckCircle className="h-4 w-4 text-green-600" />
       case 'alert':
-        return <AlertTriangle className={`h-4 w-4 ${
-          severity === 'critical' ? 'text-red-600' : 
-          severity === 'warning' ? 'text-yellow-600' : 'text-blue-600'
-        }`} />
+        if (severity === 'critical') return <AlertTriangle className="h-4 w-4 text-red-600" />
+        if (severity === 'warning') return <AlertTriangle className="h-4 w-4 text-yellow-600" />
+        return <Info className="h-4 w-4 text-blue-600" />
       case 'improvement':
-        return <Lightbulb className="h-4 w-4 text-blue-600" />
-      case 'security':
-        return <AlertTriangle className="h-4 w-4 text-red-600" />
+        return <Info className="h-4 w-4 text-purple-600" />
+      case 'report':
+        return <Info className="h-4 w-4 text-blue-600" />
       default:
-        return <Settings className="h-4 w-4 text-gray-600" />
-    }
-  }
-
-  const getNotificationColor = (type: string, severity?: string) => {
-    switch (type) {
-      case 'task_complete': return 'text-green-600'
-      case 'alert': return severity === 'critical' ? 'text-red-600' : 'text-yellow-600'
-      case 'improvement': return 'text-blue-600'
-      default: return 'text-gray-600'
+        return <Bell className="h-4 w-4 text-gray-600" />
     }
   }
 
@@ -266,88 +246,94 @@ export function NotificationBell() {
 
   return (
     <DropdownMenu open={open} onOpenChange={setOpen}>
-      <DropdownMenuTrigger>
-        <Button variant="ghost" size="sm" className="relative">
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" size="icon" className="relative">
           <Bell className="h-5 w-5" />
           {unreadCount > 0 && (
-            <Badge className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-red-500 text-white text-xs p-0 flex items-center justify-center">
-              {unreadCount > 9 ? '9+' : unreadCount}
+            <Badge className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center bg-red-500 text-white">
+              {unreadCount}
             </Badge>
           )}
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent className="w-80" align="end">
-        <DropdownMenuLabel className="flex items-center justify-between">
-          <span>Notifications</span>
-          <div className="flex items-center space-x-2">
+      <DropdownMenuContent align="end" className="w-[400px]">
+        <div className="flex items-center justify-between p-2 pb-0">
+          <h3 className="font-semibold">Notifications</h3>
+          {unreadCount > 0 && (
             <Button
               variant="ghost"
               size="sm"
-              onClick={fetchNotifications}
-              disabled={loading}
+              onClick={markAllAsRead}
+              className="text-xs"
             >
-              <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+              Mark all as read
             </Button>
-            {unreadCount > 0 && (
+          )}
+        </div>
+        
+        <DropdownMenuSeparator />
+        
+        <div className="max-h-[400px] overflow-y-auto">
+          {notifications.length === 0 ? (
+            <div className="p-4 text-center text-sm text-muted-foreground">
+              No notifications
+            </div>
+          ) : (
+            notifications.map((notification) => (
+              <DropdownMenuItem
+                key={notification.id}
+                className={`p-3 cursor-pointer ${!notification.read ? 'bg-muted/50' : ''}`}
+                onClick={() => markAsRead(notification.id)}
+              >
+                <div className="flex gap-3 w-full">
+                  <div className="flex-shrink-0 mt-0.5">
+                    {getNotificationIcon(notification.type, notification.severity)}
+                  </div>
+                  <div className="flex-1 space-y-1">
+                    <div className="flex items-start justify-between">
+                      <p className="font-medium text-sm">{notification.title}</p>
+                      <span className="text-xs text-muted-foreground ml-2 flex-shrink-0">
+                        {formatTimeAgo(notification.created_at)}
+                      </span>
+                    </div>
+                    {notification.description && (
+                      <p className="text-xs text-muted-foreground line-clamp-2">
+                        {notification.description}
+                      </p>
+                    )}
+                    {notification.projectName && (
+                      <p className="text-xs text-blue-600">
+                        Project: {notification.projectName}
+                      </p>
+                    )}
+                  </div>
+                  {!notification.read && (
+                    <div className="flex-shrink-0">
+                      <div className="w-2 h-2 bg-blue-500 rounded-full" />
+                    </div>
+                  )}
+                </div>
+              </DropdownMenuItem>
+            ))
+          )}
+        </div>
+        
+        {notifications.length > 0 && (
+          <>
+            <DropdownMenuSeparator />
+            <div className="p-2">
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={markAllAsRead}
-                className="text-xs"
+                onClick={clearAll}
+                className="w-full justify-start text-xs text-muted-foreground hover:text-destructive"
               >
-                Mark all read
+                <Trash2 className="h-3 w-3 mr-2" />
+                Clear all notifications
               </Button>
-            )}
-          </div>
-        </DropdownMenuLabel>
-        <DropdownMenuSeparator />
-        
-        {notifications.length === 0 ? (
-          <div className="p-4 text-center text-muted-foreground">
-            <Bell className="h-8 w-8 mx-auto mb-2 opacity-50" />
-            <p className="text-sm">No notifications</p>
-          </div>
-        ) : (
-          <ScrollArea className="h-80">
-            {notifications.map((notification) => (
-              <DropdownMenuItem
-                key={notification.id}
-                className={`flex items-start space-x-3 p-3 cursor-pointer ${
-                  !notification.read ? 'bg-muted/30' : ''
-                }`}
-                onClick={() => markAsRead(notification.id)}
-              >
-                <div className="flex-shrink-0 mt-0.5">
-                  {getNotificationIcon(notification.type, notification.severity)}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className={`text-sm font-medium ${getNotificationColor(notification.type, notification.severity)}`}>
-                    {notification.title}
-                  </div>
-                  <div className="text-xs text-muted-foreground mb-1 line-clamp-2">
-                    {notification.description}
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div className="text-xs text-muted-foreground flex items-center space-x-1">
-                      <Clock className="h-3 w-3" />
-                      <span>{formatTimeAgo(notification.created_at)}</span>
-                    </div>
-                    {!notification.read && (
-                      <div className="w-2 h-2 bg-blue-600 rounded-full"></div>
-                    )}
-                  </div>
-                </div>
-              </DropdownMenuItem>
-            ))}
-          </ScrollArea>
+            </div>
+          </>
         )}
-        
-        <DropdownMenuSeparator />
-        <DropdownMenuItem className="text-center">
-          <Button variant="ghost" className="w-full" onClick={() => setOpen(false)}>
-            View All Notifications
-          </Button>
-        </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   )
