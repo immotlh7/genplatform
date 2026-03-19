@@ -16,6 +16,7 @@ import {
 import { ThemeToggle } from '@/components/ui/theme-toggle'
 import { MobileNav } from '@/components/layout/mobile-nav'
 import { NotificationBell } from '@/components/layout/NotificationBell'
+import { LanguageToggle } from '@/components/layout/LanguageToggle'
 import { getCurrentUserClient } from '@/lib/access-control'
 import type { User as UserType } from '@/lib/access-control'
 import { logout } from '@/lib/auth'
@@ -109,24 +110,27 @@ export function Header() {
   return (
     <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="flex h-14 items-center px-4 lg:px-6">
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center space-x-4 rtl:space-x-reverse">
           <MobileNav />
           <h1 className="text-lg font-semibold hidden sm:block">Mission Control Dashboard</h1>
         </div>
         
-        <div className="ml-auto flex items-center space-x-2 md:space-x-4">
+        <div className="ml-auto flex items-center space-x-2 md:space-x-4 rtl:ml-0 rtl:mr-auto rtl:space-x-reverse">
           {/* Notification Bell */}
           <NotificationBell />
+
+          {/* Language Toggle */}
+          <LanguageToggle />
 
           {/* Theme Toggle */}
           <ThemeToggle />
 
           {/* User Avatar, Name, and Role Badge */}
           {!loading && currentUser && (
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-2 rtl:space-x-reverse">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="h-auto p-1.5 hover:bg-transparent flex items-center space-x-2">
+                  <Button variant="ghost" className="h-auto p-1.5 hover:bg-transparent flex items-center space-x-2 rtl:space-x-reverse">
                     {/* Avatar circle - 32x32px */}
                     <Avatar className="h-8 w-8">
                       <AvatarFallback className="bg-zinc-700 text-white text-sm font-medium">
@@ -164,13 +168,13 @@ export function Header() {
                   
                   {/* Profile */}
                   <DropdownMenuItem onClick={() => window.location.href = '/settings'}>
-                    <span className="mr-2">👤</span>
+                    <span className="mr-2 rtl:mr-0 rtl:ml-2">👤</span>
                     Profile
                   </DropdownMenuItem>
                   
                   {/* Settings */}
                   <DropdownMenuItem onClick={() => window.location.href = '/settings'}>
-                    <span className="mr-2">⚙️</span>
+                    <span className="mr-2 rtl:mr-0 rtl:ml-2">⚙️</span>
                     Settings
                   </DropdownMenuItem>
                   
@@ -178,7 +182,7 @@ export function Header() {
                   
                   {/* Logout */}
                   <DropdownMenuItem onClick={handleLogout} className="text-red-600 focus:text-red-600">
-                    <span className="mr-2">🚪</span>
+                    <span className="mr-2 rtl:mr-0 rtl:ml-2">🚪</span>
                     Logout
                   </DropdownMenuItem>
                 </DropdownMenuContent>
@@ -188,7 +192,7 @@ export function Header() {
           
           {/* Loading state */}
           {loading && (
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-2 rtl:space-x-reverse">
               <div className="h-8 w-8 rounded-full bg-muted animate-pulse" />
               <div className="h-4 w-16 rounded bg-muted animate-pulse hidden sm:block" />
               <div className="h-5 w-14 rounded-full bg-muted animate-pulse" />

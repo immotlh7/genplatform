@@ -19,13 +19,30 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en" className="dark">
+    <html lang="en" className="dark" suppressHydrationWarning>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              // Set dir and lang from localStorage before React hydration
+              (function() {
+                const locale = localStorage.getItem('locale') || 'en';
+                document.documentElement.lang = locale;
+                document.documentElement.dir = locale === 'ar' ? 'rtl' : 'ltr';
+                if (locale === 'ar') {
+                  document.documentElement.classList.add('rtl');
+                }
+              })();
+            `,
+          }}
+        />
+      </head>
       <body className={inter.className}>
         <NotificationProvider>
           <ProjectProvider>
             <div className="min-h-screen bg-background">
               <Sidebar />
-              <div className="lg:pl-72">
+              <div className="lg:pl-72 rtl:lg:pr-72 rtl:lg:pl-0">
                 <Navbar />
                 <main className="py-4">
                   {children}
