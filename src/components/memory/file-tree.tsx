@@ -1,86 +1,85 @@
-"use client"
-
 import { useState, useEffect } from 'react'
-import { ChevronRight, ChevronDown, Folder, FileText, FolderOpen } from 'lucide-react'
+import { ChevronRight, ChevronDown, Folder, FolderOpen, FileText, Plus, MoreVertical } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 
-interface FileTreeNode {
+interface FileNode {
+  id: string
   name: string
+  type: 'file' | 'folder'
   path: string
-  type: 'file' | 'directory'
-  children?: FileTreeNode[]
-  expanded?: boolean
+  children?: FileNode[]
   size?: number
   lastModified?: string
 }
 
 interface FileTreeProps {
-  onFileSelect: (path: string, isDirectory: boolean) => void
-  selectedPath: string
+  onFileSelect?: (file: FileNode) => void
+  selectedPath?: string
+  onCreateFile?: (path: string) => void
+  onDeleteFile?: (path: string) => void
+  onRenameFile?: (oldPath: string, newPath: string) => void
+  canEdit?: boolean
 }
 
-export function FileTree({ onFileSelect, selectedPath }: FileTreeProps) {
-  const [treeData, setTreeData] = useState<FileTreeNode[]>([])
+export function FileTree({ 
+  onFileSelect, 
+  selectedPath, 
+  onCreateFile,
+  onDeleteFile,
+  onRenameFile,
+  canEdit = false 
+}: FileTreeProps) {
+  const [tree, setTree] = useState<FileNode[]>([])
+  const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set(['/', '/projects', '/areas', '/resources']))
   const [loading, setLoading] = useState(true)
+  const [searchQuery, setSearchQuery] = useState('')
 
   useEffect(() => {
-    loadTreeData()
+    loadFileTree()
   }, [])
 
-  const loadTreeData = async () => {
+  const loadFileTree = async () => {
+    setLoading(true)
     try {
-      // Load root directory structure
-      const response = await fetch('/api/openclaw/memory/tree')
+      const response = await fetch('/api/bridge/memory')
       const data = await response.json()
-      setTreeData(data.tree || [])
+      
+      if (data.tree) {
+        setTree(data.tree)
+      }
     } catch (error) {
       console.error('Failed to load file tree:', error)
-      // Create demo PARA structure if API fails
-      setTreeData([
+      // Demo fallback
+      setTree([
         {
-          name: 'Projects',
-          path: 'projects',
-          type: 'directory',
-          children: [
-            { name: 'GenPlatform.ai', path: 'projects/genplatform', type: 'directory' },
-            { name: 'Agent Skills', path: 'projects/agent-skills', type: 'directory' }
-          ]
+          id: 'projects',
+          name: 'projects',
+          type: 'folder',
+          path: '/projects',
+          children: []
         },
         {
-          name: 'Areas',
-          path: 'areas',
-          type: 'directory', 
-          children: [
-            { name: 'Development', path: 'areas/development', type: 'directory' },
-            { name: 'Research', path: 'areas/research', type: 'directory' }
-          ]
+          id: 'areas',
+          name: 'areas',
+          type: 'folder',
+          path: '/areas',
+          children: []
         },
         {
-          name: 'Resources',
-          path: 'resources',
-          type: 'directory',
-          children: [
-            { name: 'Documentation', path: 'resources/docs', type: 'directory' },
-            { name: 'Templates', path: 'resources/templates', type: 'directory' }
-          ]
-        },
-        {
-          name: 'Archive',
-          path: 'archive',
-          type: 'directory',
-          children: [
-            { name: '2026', path: 'archive/2026', type: 'directory' },
-            { name: '2025', path: 'archive/2025', type: 'directory' }
-          ]
-        },
-        {
-          name: 'daily',
-          path: 'daily', 
-          type: 'directory',
-          children: [
-            { name: '2026-03-18.md', path: 'daily/2026-03-18.md', type: 'file' },
-            { name: '2026-03-17.md', path: 'daily/2026-03-17.md', type: 'file' }
-          ]
+          id: 'resources',
+          name: 'resources',
+          type: 'folder',
+          path: '/resources',
+          children: []
         }
       ])
     } finally {
@@ -88,95 +87,182 @@ export function FileTree({ onFileSelect, selectedPath }: FileTreeProps) {
     }
   }
 
-  const toggleExpanded = async (node: FileTreeNode) => {
-    if (node.type === 'file') return
-
-    const updateNode = (nodes: FileTreeNode[]): FileTreeNode[] => {
-      return nodes.map(n => {
-        if (n.path === node.path) {
-          return { ...n, expanded: !n.expanded }
-        }
-        if (n.children) {
-          return { ...n, children: updateNode(n.children) }
-        }
-        return n
-      })
-    }
-
-    setTreeData(updateNode)
-
-    // Load children if expanding and not already loaded
-    if (!node.expanded && (!node.children || node.children.length === 0)) {
-      try {
-        const response = await fetch(`/api/openclaw/memory/tree?path=${encodeURIComponent(node.path)}`)
-        const data = await response.json()
-        
-        const updateWithChildren = (nodes: FileTreeNode[]): FileTreeNode[] => {
-          return nodes.map(n => {
-            if (n.path === node.path) {
-              return { ...n, children: data.children || [], expanded: true }
-            }
-            if (n.children) {
-              return { ...n, children: updateWithChildren(n.children) }
-            }
-            return n
-          })
-        }
-        
-        setTreeData(updateWithChildren)
-      } catch (error) {
-        console.error('Failed to load directory contents:', error)
+  const toggleNode = (nodeId: string) => {
+    setExpandedNodes(prev => {
+      const newSet = new Set(prev)
+      if (newSet.has(nodeId)) {
+        newSet.delete(nodeId)
+      } else {
+        newSet.add(nodeId)
       }
+      return newSet
+    })
+  }
+
+  const handleNodeClick = async (node: FileNode) => {
+    if (node.type === 'folder') {
+      toggleNode(node.id)
+      
+      // Load children if not loaded
+      if (!node.children && expandedNodes.has(node.id)) {
+        try {
+          const response = await fetch(`/api/bridge/memory?path=${encodeURIComponent(node.path)}`)
+          const data = await response.json()
+          
+          if (data.children) {
+            // Update the tree with loaded children
+            updateNodeChildren(node.id, data.children)
+          }
+        } catch (error) {
+          console.error('Failed to load folder contents:', error)
+        }
+      }
+    } else {
+      onFileSelect?.(node)
     }
   }
 
-  const renderNode = (node: FileTreeNode, depth: number = 0): React.ReactNode => {
+  const updateNodeChildren = (nodeId: string, children: FileNode[]) => {
+    setTree(prevTree => {
+      const updateNode = (nodes: FileNode[]): FileNode[] => {
+        return nodes.map(node => {
+          if (node.id === nodeId) {
+            return { ...node, children }
+          }
+          if (node.children) {
+            return { ...node, children: updateNode(node.children) }
+          }
+          return node
+        })
+      }
+      return updateNode(prevTree)
+    })
+  }
+
+  const handleCreateFile = (parentPath: string) => {
+    const fileName = prompt('Enter file name:')
+    if (fileName) {
+      const fullPath = parentPath === '/' ? `/${fileName}` : `${parentPath}/${fileName}`
+      onCreateFile?.(fullPath)
+      // Refresh tree after creation
+      setTimeout(loadFileTree, 500)
+    }
+  }
+
+  const handleDeleteFile = (path: string) => {
+    if (confirm(`Are you sure you want to delete ${path}?`)) {
+      onDeleteFile?.(path)
+      // Refresh tree after deletion
+      setTimeout(loadFileTree, 500)
+    }
+  }
+
+  const handleRenameFile = (oldPath: string) => {
+    const parts = oldPath.split('/')
+    const oldName = parts[parts.length - 1]
+    const newName = prompt('Enter new name:', oldName)
+    if (newName && newName !== oldName) {
+      parts[parts.length - 1] = newName
+      const newPath = parts.join('/')
+      onRenameFile?.(oldPath, newPath)
+      // Refresh tree after rename
+      setTimeout(loadFileTree, 500)
+    }
+  }
+
+  const renderNode = (node: FileNode, level: number = 0) => {
+    const isExpanded = expandedNodes.has(node.id)
     const isSelected = selectedPath === node.path
-    const isExpanded = node.expanded || false
+    const isFolder = node.type === 'folder'
+    
+    // Filter by search
+    if (searchQuery && !node.name.toLowerCase().includes(searchQuery.toLowerCase())) {
+      // Still render if children match
+      if (!isFolder || !node.children?.some(child => 
+        child.name.toLowerCase().includes(searchQuery.toLowerCase())
+      )) {
+        return null
+      }
+    }
 
     return (
-      <div key={node.path}>
-        <div 
+      <div key={node.id}>
+        <div
           className={cn(
-            "flex items-center py-1 px-2 hover:bg-muted/50 cursor-pointer rounded-sm",
-            isSelected && "bg-accent text-accent-foreground"
+            "flex items-center py-1.5 px-2 hover:bg-muted/50 rounded-md cursor-pointer group",
+            isSelected && "bg-muted"
           )}
-          style={{ paddingLeft: `${depth * 12 + 8}px` }}
-          onClick={() => {
-            if (node.type === 'directory') {
-              toggleExpanded(node)
-            }
-            onFileSelect(node.path, node.type === 'directory')
-          }}
+          style={{ paddingLeft: `${level * 16 + 8}px` }}
+          onClick={() => handleNodeClick(node)}
         >
-          {node.type === 'directory' && (
-            <div className="mr-1 flex-shrink-0">
+          {isFolder && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-4 w-4 p-0 mr-1"
+              onClick={(e) => {
+                e.stopPropagation()
+                toggleNode(node.id)
+              }}
+            >
               {isExpanded ? (
-                <ChevronDown className="h-4 w-4" />
+                <ChevronDown className="h-3 w-3" />
               ) : (
-                <ChevronRight className="h-4 w-4" />
+                <ChevronRight className="h-3 w-3" />
               )}
-            </div>
+            </Button>
           )}
           
-          <div className="mr-2 flex-shrink-0">
-            {node.type === 'directory' ? (
+          <div className="flex items-center flex-1 min-w-0">
+            {isFolder ? (
               isExpanded ? (
-                <FolderOpen className="h-4 w-4 text-blue-600" />
+                <FolderOpen className="h-4 w-4 mr-2 text-muted-foreground" />
               ) : (
-                <Folder className="h-4 w-4 text-blue-600" />
+                <Folder className="h-4 w-4 mr-2 text-muted-foreground" />
               )
             ) : (
-              <FileText className="h-4 w-4 text-gray-600" />
+              <FileText className="h-4 w-4 mr-2 text-muted-foreground" />
             )}
+            <span className="text-sm truncate">{node.name}</span>
           </div>
-          
-          <span className="text-sm truncate">{node.name}</span>
+
+          {canEdit && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <MoreVertical className="h-3 w-3" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                {isFolder && (
+                  <DropdownMenuItem onClick={() => handleCreateFile(node.path)}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    New File
+                  </DropdownMenuItem>
+                )}
+                <DropdownMenuItem onClick={() => handleRenameFile(node.path)}>
+                  Rename
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem 
+                  className="text-red-600"
+                  onClick={() => handleDeleteFile(node.path)}
+                >
+                  Delete
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
         </div>
-        
-        {node.type === 'directory' && isExpanded && node.children && (
+
+        {isFolder && isExpanded && node.children && (
           <div>
-            {node.children.map(child => renderNode(child, depth + 1))}
+            {node.children.map(child => renderNode(child, level + 1))}
           </div>
         )}
       </div>
@@ -185,25 +271,46 @@ export function FileTree({ onFileSelect, selectedPath }: FileTreeProps) {
 
   if (loading) {
     return (
-      <div className="p-4">
-        <div className="space-y-2">
-          {[1, 2, 3, 4, 5].map(i => (
-            <div key={i} className="animate-pulse flex items-center space-x-2">
-              <div className="w-4 h-4 bg-muted rounded"></div>
-              <div className="w-16 h-4 bg-muted rounded"></div>
-            </div>
-          ))}
-        </div>
+      <div className="p-4 text-center text-muted-foreground">
+        Loading file tree...
       </div>
     )
   }
 
   return (
-    <div className="h-full overflow-y-auto">
-      <div className="p-2">
-        <h3 className="text-sm font-medium mb-2 text-muted-foreground">PARA Structure</h3>
-        {treeData.map(node => renderNode(node))}
+    <div className="h-full flex flex-col">
+      <div className="p-2 border-b">
+        <Input
+          placeholder="Search files..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="h-8"
+        />
       </div>
+      
+      <div className="flex-1 overflow-y-auto p-2">
+        {tree.length > 0 ? (
+          tree.map(node => renderNode(node))
+        ) : (
+          <div className="text-center text-muted-foreground p-4">
+            No files found
+          </div>
+        )}
+      </div>
+
+      {canEdit && (
+        <div className="p-2 border-t">
+          <Button
+            variant="outline"
+            size="sm"
+            className="w-full"
+            onClick={() => handleCreateFile('/')}
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            New File
+          </Button>
+        </div>
+      )}
     </div>
   )
 }
