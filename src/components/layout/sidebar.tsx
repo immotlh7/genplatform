@@ -21,15 +21,10 @@ import {
   HelpCircle,
   ChevronRight,
   Folder,
+  Database,
   Shield,
   Users,
-  TrendingUp,
-  MessageSquare,
-  Lightbulb,
-  CheckSquare,
-  Bot,
-  Wifi,
-  WifiOff
+  TrendingUp
 } from 'lucide-react'
 
 interface AutomationStatus {
@@ -37,108 +32,11 @@ interface AutomationStatus {
   waiting_approval: number
 }
 
-interface SystemStatus {
-  isOnline: boolean
-  lastChecked: Date
-}
-
 export function Sidebar() {
   const pathname = usePathname()
   const [automationStatus, setAutomationStatus] = useState<AutomationStatus>({ running_workflows: 0, waiting_approval: 0 })
-  const [systemStatus, setSystemStatus] = useState<SystemStatus>({ isOnline: true, lastChecked: new Date() })
-  const [taskCount, setTaskCount] = useState(0)
-  const [reportCount, setReportCount] = useState(0)
-  const [ideaCount, setIdeaCount] = useState(0)
 
-  // Fetch system health status with error handling
-  useEffect(() => {
-    const checkSystemHealth = async () => {
-      try {
-        const response = await fetch('/api/bridge/health', { 
-          method: 'GET',
-          cache: 'no-cache'
-        })
-        setSystemStatus({
-          isOnline: response.ok,
-          lastChecked: new Date()
-        })
-      } catch (error) {
-        console.error('System health check error:', error)
-        setSystemStatus({
-          isOnline: false,
-          lastChecked: new Date()
-        })
-      }
-    }
-
-    checkSystemHealth()
-    const interval = setInterval(checkSystemHealth, 60000) // Every 60 seconds
-    return () => clearInterval(interval)
-  }, [])
-
-  // Fetch task count with error handling
-  useEffect(() => {
-    const fetchTaskCount = async () => {
-      try {
-        const response = await fetch('/api/tasks')
-        if (response.ok) {
-          const data = await response.json()
-          const inProgressTasks = data.tasks?.filter((t: any) => t.status === 'in_progress').length || 0
-          setTaskCount(inProgressTasks)
-        }
-      } catch (error) {
-        console.error('Error fetching task count:', error)
-        setTaskCount(0)
-      }
-    }
-
-    fetchTaskCount()
-    const interval = setInterval(fetchTaskCount, 30000)
-    return () => clearInterval(interval)
-  }, [])
-
-  // Fetch report count with error handling
-  useEffect(() => {
-    const fetchReportCount = async () => {
-      try {
-        const response = await fetch('/api/reports')
-        if (response.ok) {
-          const data = await response.json()
-          setReportCount(data.reports?.length || 0)
-        }
-      } catch (error) {
-        console.error('Error fetching report count:', error)
-        setReportCount(0)
-      }
-    }
-
-    fetchReportCount()
-    const interval = setInterval(fetchReportCount, 30000)
-    return () => clearInterval(interval)
-  }, [])
-
-  // Fetch ideas count with error handling
-  useEffect(() => {
-    const fetchIdeaCount = async () => {
-      try {
-        const response = await fetch('/api/ideas')
-        if (response.ok) {
-          const data = await response.json()
-          const pendingIdeas = data.stats?.pending || 0
-          setIdeaCount(pendingIdeas)
-        }
-      } catch (error) {
-        console.error('Error fetching idea count:', error)
-        setIdeaCount(0)
-      }
-    }
-
-    fetchIdeaCount()
-    const interval = setInterval(fetchIdeaCount, 30000)
-    return () => clearInterval(interval)
-  }, [])
-
-  // Fetch automation status with error handling
+  // Fetch automation status for badge
   useEffect(() => {
     const fetchAutomationStatus = async () => {
       try {
@@ -146,17 +44,18 @@ export function Sidebar() {
         if (response.ok) {
           const data = await response.json()
           setAutomationStatus({
-            running_workflows: data.status?.running_workflows || 0,
-            waiting_approval: data.status?.waiting_approval || 0
+            running_workflows: data.status.running_workflows || 0,
+            waiting_approval: data.status.waiting_approval || 0
           })
         }
       } catch (error) {
         console.error('Error fetching automation status:', error)
-        setAutomationStatus({ running_workflows: 0, waiting_approval: 0 })
       }
     }
 
     fetchAutomationStatus()
+    
+    // Refresh every 30 seconds
     const interval = setInterval(fetchAutomationStatus, 30000)
     return () => clearInterval(interval)
   }, [])
@@ -190,8 +89,8 @@ export function Sidebar() {
       name: 'Overview',
       items: [
         { name: 'Dashboard', href: '/dashboard', icon: Home },
-        { name: 'Command Center', href: '/dashboard/command-center', icon: Terminal },
-        { name: 'Chat', href: '/dashboard/chat', icon: MessageSquare },
+        { name: 'Command Center', href: '/dashboard/command-center', icon: Terminal, badge: 'New' },
+        { name: 'Chat', href: '/dashboard/chat', icon: Terminal },
       ]
     },
     {
@@ -200,34 +99,14 @@ export function Sidebar() {
         { name: 'Skills', href: '/dashboard/skills', icon: Zap },
         { name: 'Memory', href: '/dashboard/memory', icon: Brain },
         { name: 'Cron Jobs', href: '/dashboard/cron', icon: Clock },
-        { name: 'Projects', href: '/projects', icon: Folder },
-        { 
-          name: 'Tasks', 
-          href: '/dashboard/tasks', 
-          icon: CheckSquare,
-          badge: taskCount > 0 ? taskCount.toString() : undefined,
-          badgeVariant: 'default' as const
-        },
-        { 
-          name: 'Ideas', 
-          href: '/ideas', 
-          icon: Lightbulb,
-          badge: ideaCount > 0 ? ideaCount.toString() : undefined,
-          badgeVariant: 'secondary' as const
-        },
+        { name: 'Projects', href: '/dashboard/projects', icon: Folder },
         { 
           name: 'Automations', 
-          href: '/automations',
+          href: '/automations', // Correct path for automations
           icon: Zap, 
           badge: getAutomationBadge(),
-          badgeVariant: getAutomationBadgeVariant() as any,
-        },
-        { 
-          name: 'Agents', 
-          href: '/agents', 
-          icon: Bot,
-          badge: 'Soon',
-          badgeVariant: 'outline' as const
+          badgeVariant: getAutomationBadgeVariant(),
+          requiresOwnerAdmin: true // Only show to OWNER and ADMIN
         },
       ]
     },
@@ -236,14 +115,7 @@ export function Sidebar() {
       items: [
         { name: 'System Monitor', href: '/dashboard/monitoring', icon: Activity },
         { name: 'Analytics', href: '/dashboard/analytics', icon: BarChart3 },
-        { 
-          name: 'Reports', 
-          href: '/dashboard/reports', 
-          icon: FileText, 
-          showImprovements: true,
-          badge: reportCount > 0 ? reportCount.toString() : undefined,
-          badgeVariant: 'outline' as const
-        },
+        { name: 'Reports', href: '/dashboard/reports', icon: FileText, showImprovements: true },
       ]
     },
     {
@@ -252,7 +124,6 @@ export function Sidebar() {
         { name: 'Settings', href: '/dashboard/settings', icon: Settings },
         { name: 'Users', href: '/dashboard/users', icon: Users },
         { name: 'Security', href: '/dashboard/security', icon: Shield },
-        { name: 'Help', href: '/help', icon: HelpCircle },
       ]
     }
   ]
@@ -296,30 +167,26 @@ export function Sidebar() {
                         >
                           <item.icon className={cn(
                             "mr-3 h-4 w-4 flex-shrink-0",
-                            item.name === 'Automations' && automationStatus.running_workflows > 0 && "animate-pulse",
-                            item.name === 'Tasks' && taskCount > 0 && "text-blue-500",
-                            item.name === 'Ideas' && ideaCount > 0 && "text-yellow-500"
+                            item.name === 'Automations' && automationStatus.running_workflows > 0 && "animate-pulse"
                           )} />
                           <span className="flex-1">{item.name}</span>
                           
                           {/* Show improvements badge for Reports page */}
-                          {(item as any).showImprovements && (
+                          {item.showImprovements && (
                             <SidebarImprovementIndicator className="mr-2" />
                           )}
                           
                           {/* Dynamic badge with different variants */}
-                          {(item as any).badge && (
+                          {item.badge && (
                             <Badge 
                               variant={(item as any).badgeVariant || "secondary"} 
                               className={cn(
                                 "ml-auto text-xs",
                                 item.name === 'Automations' && automationStatus.running_workflows > 0 && "bg-blue-500 text-white",
-                                item.name === 'Automations' && automationStatus.waiting_approval > 0 && "bg-amber-500 text-white",
-                                item.name === 'Tasks' && taskCount > 0 && "bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300",
-                                item.name === 'Ideas' && ideaCount > 0 && "bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300"
+                                item.name === 'Automations' && automationStatus.waiting_approval > 0 && "bg-amber-500 text-white"
                               )}
                             >
-                              {(item as any).badge}
+                              {item.badge}
                             </Badge>
                           )}
                           
@@ -329,7 +196,7 @@ export function Sidebar() {
                           )}
                           
                           {/* Running indicator for automations */}
-                          {item.name === 'Automations' && automationStatus.running_workflows > 0 && !(item as any).badge && (
+                          {item.name === 'Automations' && automationStatus.running_workflows > 0 && !item.badge && (
                             <div className="ml-auto w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
                           )}
                         </Link>
@@ -341,40 +208,37 @@ export function Sidebar() {
             </div>
           </ScrollArea>
 
-          {/* Bottom section - System Status */}
-          <div className="mt-auto pt-4 border-t">
-            <div className="px-2 py-3">
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium">System Status</span>
-                <div className="flex items-center space-x-2">
-                  {systemStatus.isOnline ? (
-                    <>
-                      <Wifi className="w-4 h-4 text-green-500" />
-                      <span className="text-sm text-green-600 dark:text-green-400">Online</span>
-                    </>
-                  ) : (
-                    <>
-                      <WifiOff className="w-4 h-4 text-red-500 animate-pulse" />
-                      <span className="text-sm text-red-600 dark:text-red-400">Offline</span>
-                    </>
-                  )}
+          {/* Bottom section */}
+          <div className="mt-auto space-y-2 pt-4 border-t">
+            <Link
+              href="/help"
+              className="group flex w-full items-center rounded-md px-2 py-2 text-sm font-medium text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
+            >
+              <HelpCircle className="mr-3 h-4 w-4 flex-shrink-0" />
+              Help & Support
+            </Link>
+            
+            {/* System Status */}
+            <div className="px-2 py-2">
+              <div className="flex items-center justify-between text-xs text-muted-foreground">
+                <span>System Status</span>
+                <div className="flex items-center space-x-1">
+                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                  <span>Online</span>
                 </div>
-              </div>
-              <div className="text-xs text-muted-foreground mt-1">
-                Last checked: {systemStatus.lastChecked.toLocaleTimeString()}
               </div>
             </div>
             
             {/* Automation Quick Status */}
             {(automationStatus.running_workflows > 0 || automationStatus.waiting_approval > 0) && (
-              <div className="px-2 py-3 border-t">
-                <div className="text-xs text-muted-foreground space-y-2">
+              <div className="px-2 py-2 border-t">
+                <div className="text-xs text-muted-foreground space-y-1">
                   {automationStatus.running_workflows > 0 && (
                     <div className="flex items-center justify-between">
                       <span>Workflows Running</span>
                       <div className="flex items-center space-x-1">
                         <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
-                        <span className="font-medium">{automationStatus.running_workflows}</span>
+                        <span>{automationStatus.running_workflows}</span>
                       </div>
                     </div>
                   )}
@@ -383,7 +247,7 @@ export function Sidebar() {
                       <span>Need Approval</span>
                       <div className="flex items-center space-x-1">
                         <div className="w-2 h-2 bg-amber-500 rounded-full animate-pulse"></div>
-                        <span className="font-medium">{automationStatus.waiting_approval}</span>
+                        <span>{automationStatus.waiting_approval}</span>
                       </div>
                     </div>
                   )}
