@@ -1,5 +1,7 @@
 "use client"
 
+import { NoProjectsEmptyState } from "@/components/ui/empty-states"
+import { CardGridSkeleton } from "@/components/ui/page-skeleton"
 import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -182,6 +184,13 @@ export default function ProjectsPage() {
         </div>
 
         {/* Projects Grid */}
+        {loading ? (
+          <CardGridSkeleton count={6} />
+        ) : filteredProjects.length === 0 ? (
+          <div className="col-span-full">
+            <NoProjectsEmptyState />
+          </div>
+        ) : (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {filteredProjects.map(project => (
             <Card key={project.id} className="hover:shadow-lg transition-shadow">
@@ -307,24 +316,6 @@ export default function ProjectsPage() {
           ))}
         </div>
 
-        {/* Empty State */}
-        {filteredProjects.length === 0 && (
-          <div className="text-center py-12">
-            <FolderOpen className="mx-auto h-12 w-12 text-muted-foreground" />
-            <h3 className="mt-4 text-lg font-semibold">No projects found</h3>
-            <p className="mt-2 text-muted-foreground">
-              {filter === 'all' 
-                ? 'Create your first project to get started'
-                : `No ${filter} projects`
-              }
-            </p>
-            {filter === 'all' && (
-              <Button className="mt-4">
-                <Plus className="mr-2 h-4 w-4" />
-                Create Project
-              </Button>
-            )}
-          </div>
         )}
       </div>
     </div>

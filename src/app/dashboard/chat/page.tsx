@@ -1,5 +1,7 @@
 "use client"
 
+import { NoChatMessagesEmptyState } from "@/components/ui/empty-states"
+import { ChatSkeleton } from "@/components/ui/page-skeleton"
 import { useState, useEffect, useRef } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'

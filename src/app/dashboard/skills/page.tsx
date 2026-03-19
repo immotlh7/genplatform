@@ -1,5 +1,6 @@
 "use client"
 
+import { CardGridSkeleton } from "@/components/ui/page-skeleton"
 import { useState, useEffect } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -302,9 +303,7 @@ export default function SkillsPage() {
         </TabsList>
 
         {loading ? (
-          <div className="flex items-center justify-center h-64">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-          </div>
+          <CardGridSkeleton count={9} />
         ) : (
           <>
             <TabsContent value="grid">

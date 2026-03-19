@@ -1,5 +1,6 @@
 'use client'
 
+import { CardGridSkeleton } from "@/components/ui/page-skeleton"
 import { useState, useEffect } from 'react'
 import { 
   FlaskConical, 

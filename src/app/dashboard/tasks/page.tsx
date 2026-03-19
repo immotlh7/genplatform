@@ -1,5 +1,6 @@
 'use client'
 
+import { KanbanSkeleton, TableSkeleton } from "@/components/ui/page-skeleton"
 import { useState, useEffect } from 'react'
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd'
 import { Button } from '@/components/ui/button'
@@ -581,8 +582,8 @@ export default function TasksPage({ projectId, embedded = false }: TasksPageProp
   
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-96">
-        <Loader2 className="w-8 h-8 animate-spin" />
+      <div className="space-y-6">
+        <KanbanSkeleton />
       </div>
     )
   }
