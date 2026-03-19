@@ -12,6 +12,10 @@ interface Project {
   techStack: string[]
   createdAt: string
   lastActivity: string
+  teamSize?: number
+  tasksCompleted?: number
+  totalTasks?: number
+  lastDeployedAt?: string
 }
 
 // This will be shared with the main projects route (temporary until we move to Supabase)
@@ -36,7 +40,11 @@ function getProjects(): Project[] {
         previewUrl: 'https://app.gen3.ai',
         techStack: ['Next.js', 'TypeScript', 'Tailwind CSS', 'Bridge API', 'PM2'],
         createdAt: '2024-01-15T08:00:00Z',
-        lastActivity: new Date().toISOString()
+        lastActivity: new Date().toISOString(),
+        teamSize: 4,
+        tasksCompleted: 12,
+        totalTasks: 16,
+        lastDeployedAt: new Date().toISOString()
       },
       {
         id: 'proj-agent-skills',
@@ -48,7 +56,10 @@ function getProjects(): Project[] {
         githubUrl: 'https://github.com/openclaw/skills',
         techStack: ['Node.js', 'TypeScript', 'OpenClaw SDK', 'Markdown'],
         createdAt: '2024-02-20T10:30:00Z',
-        lastActivity: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString()
+        lastActivity: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+        teamSize: 2,
+        tasksCompleted: 8,
+        totalTasks: 18
       },
       {
         id: 'proj-memory-system',
@@ -59,7 +70,10 @@ function getProjects(): Project[] {
         priority: 'low',
         techStack: ['Rust', 'Redis', 'WebSocket', 'Protocol Buffers'],
         createdAt: '2024-03-01T14:00:00Z',
-        lastActivity: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
+        lastActivity: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
+        teamSize: 3,
+        tasksCompleted: 4,
+        totalTasks: 20
       }
     ]
   }
@@ -82,7 +96,8 @@ export async function GET(
       )
     }
 
-    return NextResponse.json({ project })
+    // Return the project directly, not wrapped in an object
+    return NextResponse.json(project)
   } catch (error) {
     console.error('Failed to fetch project:', error)
     return NextResponse.json(
@@ -175,10 +190,8 @@ export async function PUT(
     // Replace in array
     projects[projectIndex] = updatedProject
 
-    return NextResponse.json({
-      project: updatedProject,
-      message: 'Project updated successfully'
-    })
+    // Return the updated project directly
+    return NextResponse.json(updatedProject)
   } catch (error) {
     console.error('Failed to update project:', error)
     return NextResponse.json(
