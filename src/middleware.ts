@@ -269,7 +269,8 @@ function shouldSkipCSRF(pathname: string): boolean {
     '/api/auth/check',   // Session check
     '/api/bridge/',      // Bridge API data routes
     '/api/team',         // Team data
-    '/api/workflows'     // Workflows data
+    '/api/workflows',    // Workflows data
+    '/api/projects'      // Projects data
   ]
   
   return skipPaths.some(path => pathname.startsWith(path))
