@@ -19,138 +19,97 @@ import {
 interface Department {
   id: string
   name: string
-  icon: any
+  icon: string
   description: string
-  skills: string[]
+  skills?: string[]
   status: 'active' | 'idle'
   currentTask?: string
   lastAction?: { text: string; time: string }
   taskCount: number
-  weeklyActivity: number[]
+  weeklyActivity?: number[]
 }
 
-const departments: Department[] = [
-  {
-    id: 'research',
-    name: 'Research Analyst',
-    icon: FlaskConical,
-    description: 'Conducts market research and competitive analysis',
-    skills: ['deep-research-pro', 'exa-search', 'tavily-search'],
-    status: 'idle',
-    taskCount: 127,
-    weeklyActivity: [4, 7, 3, 9, 5, 8, 6],
-    lastAction: { text: 'Completed market analysis', time: '2 hours ago' }
-  },
-  {
-    id: 'architect',
-    name: 'Architecture & Planning',
-    icon: ClipboardList,
-    description: 'Designs system architecture and sprint roadmaps',
-    skills: ['task-planner', 'project-architect'],
-    status: 'idle',
-    taskCount: 89,
-    weeklyActivity: [6, 5, 8, 4, 7, 3, 9],
-    lastAction: { text: 'Updated Phase 3 roadmap', time: '4 hours ago' }
-  },
-  {
-    id: 'frontend',
-    name: 'Frontend Development',
-    icon: Monitor,
-    description: 'Builds React components and UI features',
-    skills: ['developer', 'senior-dev', 'coding-agent'],
-    status: 'idle',
-    taskCount: 234,
-    weeklyActivity: [12, 15, 9, 18, 14, 16, 20],
-    lastAction: { text: 'Deployed Agents page', time: 'Just now' }
-  },
-  {
-    id: 'backend',
-    name: 'Backend Development',
-    icon: Cog,
-    description: 'Creates API endpoints and server logic',
-    skills: ['developer', 'api-builder'],
-    status: 'idle',
-    taskCount: 156,
-    weeklyActivity: [8, 10, 7, 11, 9, 13, 8],
-    lastAction: { text: 'Created /api/agents endpoint', time: '1 hour ago' }
-  },
-  {
-    id: 'qa',
-    name: 'Quality Assurance',
-    icon: Search,
-    description: 'Reviews code quality and runs tests',
-    skills: ['critical-code-reviewer'],
-    status: 'idle',
-    taskCount: 98,
-    weeklyActivity: [5, 4, 6, 5, 7, 4, 6],
-    lastAction: { text: 'Reviewed PR #42', time: '3 hours ago' }
-  },
-  {
-    id: 'security',
-    name: 'Security',
-    icon: Shield,
-    description: 'Scans vulnerabilities and audits code',
-    skills: ['security-scanner', 'security-audit-toolkit'],
-    status: 'idle',
-    taskCount: 45,
-    weeklyActivity: [2, 3, 2, 4, 3, 2, 3],
-    lastAction: { text: 'Completed security audit', time: '6 hours ago' }
-  },
-  {
-    id: 'improvement',
-    name: 'Self-Improvement',
-    icon: TrendingUp,
-    description: 'Analyzes performance and suggests improvements',
-    skills: ['self-improving-agent'],
-    status: 'idle',
-    taskCount: 67,
-    weeklyActivity: [3, 4, 5, 3, 4, 5, 4],
-    lastAction: { text: 'Generated performance report', time: '5 hours ago' }
-  }
-]
+// Icon mapping from emoji to component
+const iconMap: { [key: string]: any } = {
+  '🔬': FlaskConical,
+  '📋': ClipboardList,
+  '💻': Monitor,
+  '⚙️': Cog,
+  '🔍': Search,
+  '🛡️': Shield,
+  '📈': TrendingUp
+}
 
-// All unique skills for the matrix view
-const allSkills = Array.from(new Set(departments.flatMap(d => d.skills))).sort()
+// Default skills for each department (used for matrix view)
+const departmentSkills: { [key: string]: string[] } = {
+  'research': ['deep-research-pro', 'exa-search', 'tavily-search'],
+  'architect': ['task-planner', 'project-architect'],
+  'frontend': ['developer', 'senior-dev', 'coding-agent'],
+  'backend': ['developer', 'api-builder'],
+  'qa': ['critical-code-reviewer'],
+  'security': ['security-scanner', 'security-audit-toolkit'],
+  'improvement': ['self-improving-agent']
+}
+
+// Default weekly activity (used if not provided by API)
+const defaultWeeklyActivity = {
+  'research': [4, 7, 3, 9, 5, 8, 6],
+  'architect': [6, 5, 8, 4, 7, 3, 9],
+  'frontend': [12, 15, 9, 18, 14, 16, 20],
+  'backend': [8, 10, 7, 11, 9, 13, 8],
+  'qa': [5, 4, 6, 5, 7, 4, 6],
+  'security': [2, 3, 2, 4, 3, 2, 3],
+  'improvement': [3, 4, 5, 3, 4, 5, 4]
+}
 
 export default function AgentsPage() {
-  const [depts, setDepts] = useState(departments)
+  const [departments, setDepartments] = useState<Department[]>([])
   const [view, setView] = useState<'cards' | 'matrix'>('cards')
   const [totalActive, setTotalActive] = useState(0)
+  const [loading, setLoading] = useState(true)
 
-  // Check Bridge API status
+  // Fetch agent status from API
   useEffect(() => {
-    const checkStatus = async () => {
+    const fetchAgentStatus = async () => {
       try {
-        const response = await fetch('/api/bridge/status')
+        const response = await fetch('/api/bridge/agents')
         if (response.ok) {
           const data = await response.json()
-          if (data.status === 'ok') {
-            // Set frontend development as active when gateway is running
-            setDepts(prev => prev.map(dept => ({
-              ...dept,
-              status: dept.id === 'frontend' ? 'active' : 'idle',
-              currentTask: dept.id === 'frontend' ? 'Building UI components...' : undefined
-            })))
-          }
+          
+          // Enhance departments with skills and weekly activity
+          const enhancedDepts = data.departments.map((dept: Department) => ({
+            ...dept,
+            skills: departmentSkills[dept.id] || [],
+            weeklyActivity: defaultWeeklyActivity[dept.id as keyof typeof defaultWeeklyActivity] || [0, 0, 0, 0, 0, 0, 0]
+          }))
+          
+          setDepartments(enhancedDepts)
+          setTotalActive(data.activeDepartments)
         }
       } catch (error) {
-        console.error('Failed to fetch Bridge status:', error)
+        console.error('Failed to fetch agent status:', error)
+      } finally {
+        setLoading(false)
       }
     }
 
-    checkStatus()
-    const interval = setInterval(checkStatus, 30000) // Poll every 30 seconds
+    fetchAgentStatus()
+    const interval = setInterval(fetchAgentStatus, 30000) // Poll every 30 seconds
     return () => clearInterval(interval)
   }, [])
 
-  // Count active departments
-  useEffect(() => {
-    setTotalActive(depts.filter(d => d.status === 'active').length)
-  }, [depts])
-
   // Calculate total stats
-  const totalTasks = depts.reduce((sum, d) => sum + d.taskCount, 0)
+  const totalTasks = departments.reduce((sum, d) => sum + d.taskCount, 0)
+  const allSkills = Array.from(new Set(departments.flatMap(d => d.skills || []))).sort()
   const totalSkills = allSkills.length
+
+  if (loading) {
+    return (
+      <div className="p-6 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 dark:border-gray-100"></div>
+      </div>
+    )
+  }
 
   return (
     <div className="p-6 space-y-6">
@@ -199,9 +158,10 @@ export default function AgentsPage() {
       {/* Cards View */}
       {view === 'cards' ? (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {depts.map((dept) => {
-            const Icon = dept.icon
-            const maxActivity = Math.max(...dept.weeklyActivity)
+          {departments.map((dept) => {
+            const Icon = iconMap[dept.icon] || Monitor
+            const weeklyActivity = dept.weeklyActivity || [0, 0, 0, 0, 0, 0, 0]
+            const maxActivity = Math.max(...weeklyActivity, 1)
             
             return (
               <div key={dept.id} className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border border-gray-200 dark:border-gray-700">
@@ -241,16 +201,18 @@ export default function AgentsPage() {
                 )}
 
                 {/* Skills */}
-                <div className="flex flex-wrap gap-2 mb-4">
-                  {dept.skills.map((skill) => (
-                    <span
-                      key={skill}
-                      className="px-2 py-1 text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full"
-                    >
-                      {skill}
-                    </span>
-                  ))}
-                </div>
+                {dept.skills && dept.skills.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mb-4">
+                    {dept.skills.map((skill) => (
+                      <span
+                        key={skill}
+                        className="px-2 py-1 text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full"
+                      >
+                        {skill}
+                      </span>
+                    ))}
+                  </div>
+                )}
 
                 {/* Last Action */}
                 {dept.lastAction && (
@@ -265,7 +227,7 @@ export default function AgentsPage() {
                 <div className="mt-4">
                   <div className="text-xs text-gray-500 mb-2">Activity (last 7 days)</div>
                   <div className="flex items-end gap-1 h-12">
-                    {dept.weeklyActivity.map((activity, index) => (
+                    {weeklyActivity.map((activity, index) => (
                       <div
                         key={index}
                         className="flex-1 bg-blue-500 dark:bg-blue-600 rounded-t"
@@ -301,25 +263,28 @@ export default function AgentsPage() {
               </tr>
             </thead>
             <tbody>
-              {depts.map((dept) => (
-                <tr key={dept.id} className="border-b border-gray-200 dark:border-gray-700">
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center gap-3">
-                      <dept.icon className="h-5 w-5 text-gray-600 dark:text-gray-400" />
-                      <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                        {dept.name}
-                      </span>
-                    </div>
-                  </td>
-                  {allSkills.map((skill) => (
-                    <td key={skill} className="px-3 py-4 text-center">
-                      {dept.skills.includes(skill) && (
-                        <CheckCircle className="h-5 w-5 text-green-500 mx-auto" />
-                      )}
+              {departments.map((dept) => {
+                const Icon = iconMap[dept.icon] || Monitor
+                return (
+                  <tr key={dept.id} className="border-b border-gray-200 dark:border-gray-700">
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center gap-3">
+                        <Icon className="h-5 w-5 text-gray-600 dark:text-gray-400" />
+                        <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                          {dept.name}
+                        </span>
+                      </div>
                     </td>
-                  ))}
-                </tr>
-              ))}
+                    {allSkills.map((skill) => (
+                      <td key={skill} className="px-3 py-4 text-center">
+                        {dept.skills?.includes(skill) && (
+                          <CheckCircle className="h-5 w-5 text-green-500 mx-auto" />
+                        )}
+                      </td>
+                    ))}
+                  </tr>
+                )
+              })}
             </tbody>
           </table>
         </div>
