@@ -108,8 +108,6 @@ export default function TasksPage({ projectId, embedded = false }: TasksPageProp
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isNewTaskModalOpen, setIsNewTaskModalOpen] = useState(false)
   const [sendingToAgent, setSendingToAgent] = useState(false)
-  const [sendingAllToAgents, setSendingAllToAgents] = useState(false)
-  const [sendProgress, setSendProgress] = useState({ current: 0, total: 0 })
   const { toast } = useToast()
   
   const [newTask, setNewTask] = useState({
@@ -146,61 +144,37 @@ export default function TasksPage({ projectId, embedded = false }: TasksPageProp
     }
   }
   
-  // Auto-assign departments using intelligent routing
+  // Auto-assign departments based on keywords
   const autoAssignDepartments = async () => {
-    try {
-      // Get unassigned tasks
-      const unassignedTasks = tasks.filter(task => 
-        !task.assignedRole || task.assignedRole.id === 'frontend' || task.assignedRole.id === 'architect'
-      )
-      
-      if (unassignedTasks.length === 0) {
-        toast({
-          title: 'No tasks to assign',
-          description: 'All tasks are already assigned to departments',
-        })
-        return
-      }
-
-      // Call auto-assign API
-      const response = await fetch('/api/tasks/auto-assign', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          tasks: unassignedTasks.map(t => ({ 
-            id: t.id, 
-            name: t.name, 
-            description: t.description 
-          }))
-        })
-      })
-      
-      if (!response.ok) {
-        throw new Error('Auto-assign failed')
-      }
-      
-      const { assignments } = await response.json()
-      
-      // Update each task with assigned role
-      for (const assignment of assignments) {
-        await updateTaskAssignment(assignment.taskId, assignment.role)
-      }
-      
-      // Refresh tasks
-      await fetchTasks()
-      
-      toast({
-        title: 'Auto-assignment complete',
-        description: `Intelligently assigned ${assignments.length} tasks to departments`,
-      })
-    } catch (error) {
-      console.error('Error in auto-assign:', error)
-      toast({
-        title: 'Auto-assignment failed',
-        description: 'Please try again',
-        variant: 'destructive',
-      })
+    const keywordMap: Record<string, string> = {
+      'frontend|ui|page|component|style|css|design': 'frontend',
+      'backend|api|database|route|server|endpoint': 'backend',
+      'test|review|audit|qa': 'qa',
+      'security|scan|vulnerability|auth': 'security',
+      'research|analyze|investigate': 'research',
+      'plan|architecture|design': 'planning',
+      'improve|optimize|refactor': 'improvement'
     }
+    
+    const unassignedTasks = tasks.filter(task => !task.assignedRole || task.assignedRole.id === 'frontend')
+    
+    for (const task of unassignedTasks) {
+      const taskText = `${task.name} ${task.description}`.toLowerCase()
+      
+      for (const [pattern, roleId] of Object.entries(keywordMap)) {
+        const regex = new RegExp(pattern, 'i')
+        if (regex.test(taskText)) {
+          await updateTaskAssignment(task.id, roleId)
+          break
+        }
+      }
+    }
+    
+    fetchTasks()
+    toast({
+      title: 'Auto-assignment complete',
+      description: `Analyzed and assigned ${unassignedTasks.length} tasks`,
+    })
   }
   
   // Update task assignment
@@ -260,92 +234,6 @@ export default function TasksPage({ projectId, embedded = false }: TasksPageProp
       })
     } finally {
       setSendingToAgent(false)
-    }
-  }
-  
-  // Send all planned tasks to agents
-  const sendAllToAgents = async () => {
-    const plannedTasks = tasks.filter(task => task.status === 'planned')
-    
-    if (plannedTasks.length === 0) {
-      toast({
-        title: 'No tasks to send',
-        description: 'No tasks in Planned status',
-      })
-      return
-    }
-    
-    try {
-      setSendingAllToAgents(true)
-      setSendProgress({ current: 0, total: plannedTasks.length })
-      
-      for (let i = 0; i < plannedTasks.length; i++) {
-        const task = plannedTasks[i]
-        setSendProgress({ current: i + 1, total: plannedTasks.length })
-        
-        // Get project name
-        const projectResponse = await fetch(`/api/projects/${task.projectId || projectId}`)
-        const project = projectResponse.ok ? await projectResponse.json() : { name: 'Unknown Project' }
-        
-        // Create department-specific prompt
-        let departmentPrompt = ''
-        switch (task.assignedRole.id) {
-          case 'frontend':
-            departmentPrompt = '💻 Frontend Development Task'
-            break
-          case 'backend':
-            departmentPrompt = '⚙️ Backend Engineering Task'
-            break
-          case 'qa':
-            departmentPrompt = '🔍 Quality Assurance Task'
-            break
-          case 'security':
-            departmentPrompt = '🛡️ Security Audit Task'
-            break
-          case 'research':
-            departmentPrompt = '🔬 Research & Analysis Task'
-            break
-          case 'architect':
-            departmentPrompt = '📋 Architecture & Planning Task'
-            break
-          case 'improvement':
-            departmentPrompt = '📈 Performance Optimization Task'
-            break
-          default:
-            departmentPrompt = '🎯 Task Assignment'
-        }
-        
-        const message = `${departmentPrompt}: [${task.assignedRole.name}] ${task.name}\n\nDescription: ${task.description}\n\nEstimated Time: ${task.estimatedTime} hours\nPriority: ${task.priority}\n\nPlease complete this task. Project: ${project.name}`
-        
-        const response = await fetch('/api/chat/send', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ message, projectId: task.projectId || projectId })
-        })
-        
-        if (response.ok) {
-          // Update task status to in_progress
-          await updateTaskStatus(task, 'start')
-        }
-        
-        // Small delay to avoid rate limiting
-        await new Promise(resolve => setTimeout(resolve, 1000))
-      }
-      
-      toast({
-        title: 'All tasks sent successfully',
-        description: `${plannedTasks.length} tasks sent to agent departments`,
-      })
-    } catch (error) {
-      console.error('Error sending tasks:', error)
-      toast({
-        title: 'Failed to send some tasks',
-        description: 'Please try again',
-        variant: 'destructive',
-      })
-    } finally {
-      setSendingAllToAgents(false)
-      setSendProgress({ current: 0, total: 0 })
     }
   }
   
@@ -620,33 +508,10 @@ export default function TasksPage({ projectId, embedded = false }: TasksPageProp
       )}
       
       {/* Task Assignment Panel */}
-      <div className="space-y-4">
       <TaskAssignmentPanel
         tasks={tasks}
         onAutoAssign={autoAssignDepartments}
       />
-      
-      {/* Send to Agents Button */}
-      <div className="flex justify-end">
-        <Button
-          onClick={sendAllToAgents}
-          disabled={sendingAllToAgents || tasks.filter(t => t.status === 'planned').length === 0}
-          className="gap-2"
-        >
-          {sendingAllToAgents ? (
-            <>
-              <Loader2 className="w-4 h-4 animate-spin" />
-              Sending task {sendProgress.current}/{sendProgress.total}...
-            </>
-          ) : (
-            <>
-              <Send className="w-4 h-4" />
-              Send All Planned Tasks to Agents
-            </>
-          )}
-        </Button>
-      </div>
-    </div>
       
       {/* Filters and View Toggle */}
       <div className="flex items-center gap-4">
