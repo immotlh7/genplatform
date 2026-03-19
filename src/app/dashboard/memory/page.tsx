@@ -6,6 +6,8 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
+import { Textarea } from '@/components/ui/textarea'
+import { useToast } from '@/hooks/use-toast'
 import { 
   Search, 
   Plus, 
@@ -30,7 +32,9 @@ import {
   Home,
   Eye,
   Lock,
-  AlertCircle
+  AlertCircle,
+  Save,
+  X
 } from 'lucide-react'
 import {
   DropdownMenu,
@@ -39,19 +43,66 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { memoryData, getMemoryStats, searchMemoryFiles, type MemoryFile } from '@/lib/memory-data'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
+import { Label } from '@/components/ui/label'
 import { getCurrentUserClient } from '@/lib/access-control'
 import type { User } from '@/lib/access-control'
+import ReactMarkdown from 'react-markdown'
+
+interface MemoryFile {
+  id: string
+  name: string
+  type: 'folder' | 'file'
+  path: string
+  size?: number
+  lastModified?: string
+  content?: string
+  children?: MemoryFile[]
+}
+
+interface MemoryStats {
+  files: number
+  totalSize: number
+  categories: {
+    projects: number
+    areas: number
+    resources: number
+    tacit: number
+  }
+}
 
 export default function MemoryPage() {
   const [currentUser, setCurrentUser] = useState<User | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [currentPath, setCurrentPath] = useState('/')
-  const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set(['/', '/projects', '/areas', '/resources']))
+  const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set(['/']))
   const [selectedFile, setSelectedFile] = useState<MemoryFile | null>(null)
   const [isLoading, setIsLoading] = useState(true)
-  
-  const stats = useMemo(() => getMemoryStats(), [])
+  const [isEditMode, setIsEditMode] = useState(false)
+  const [editContent, setEditContent] = useState('')
+  const [isSaving, setIsSaving] = useState(false)
+  const [isNewFileModalOpen, setIsNewFileModalOpen] = useState(false)
+  const [newFilePath, setNewFilePath] = useState('')
+  const [newFileContent, setNewFileContent] = useState('')
+  const [memoryData, setMemoryData] = useState<MemoryFile[]>([])
+  const [stats, setStats] = useState<MemoryStats>({
+    files: 0,
+    totalSize: 0,
+    categories: {
+      projects: 0,
+      areas: 0,
+      resources: 0,
+      tacit: 0
+    }
+  })
+  const { toast } = useToast()
   
   useEffect(() => {
     loadUserAndMemory()
@@ -63,13 +114,124 @@ export default function MemoryPage() {
       const user = await getCurrentUserClient()
       setCurrentUser(user)
 
-      // Simulate loading
-      setTimeout(() => {
-        setIsLoading(false)
-      }, 300)
+      // Fetch real memory data from Bridge API
+      const response = await fetch('/api/bridge/memory')
+      const data = await response.json()
+      
+      if (data.tree) {
+        setMemoryData(data.tree)
+      }
+      
+      if (data.stats) {
+        setStats(data.stats)
+      }
+
+      setIsLoading(false)
     } catch (error) {
       console.error('Error loading user and memory data:', error)
+      toast({
+        title: "Error",
+        description: "Failed to load memory data",
+        variant: "destructive",
+      })
       setIsLoading(false)
+    }
+  }
+
+  const loadFileContent = async (filePath: string) => {
+    try {
+      const response = await fetch('/api/bridge/memory?path=' + encodeURIComponent(filePath))
+      const data = await response.json()
+      
+      if (data.content !== undefined) {
+        setSelectedFile(prev => prev ? { ...prev, content: data.content } : null)
+      }
+    } catch (error) {
+      console.error('Error loading file content:', error)
+      toast({
+        title: "Error",
+        description: "Failed to load file content",
+        variant: "destructive",
+      })
+    }
+  }
+
+  const saveFileContent = async () => {
+    if (!selectedFile) return
+    
+    setIsSaving(true)
+    try {
+      const response = await fetch('/api/bridge/memory', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          path: selectedFile.path,
+          content: editContent
+        })
+      })
+      
+      if (response.ok) {
+        setSelectedFile({ ...selectedFile, content: editContent })
+        setIsEditMode(false)
+        toast({
+          title: "Success",
+          description: "File saved successfully",
+        })
+      } else {
+        throw new Error('Failed to save file')
+      }
+    } catch (error) {
+      console.error('Error saving file:', error)
+      toast({
+        title: "Error",
+        description: "Failed to save file",
+        variant: "destructive",
+      })
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+  const createNewFile = async () => {
+    if (!newFilePath.trim()) return
+    
+    setIsSaving(true)
+    try {
+      const response = await fetch('/api/bridge/memory', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          path: newFilePath,
+          content: newFileContent
+        })
+      })
+      
+      if (response.ok) {
+        toast({
+          title: "Success",
+          description: "File created successfully",
+        })
+        setIsNewFileModalOpen(false)
+        setNewFilePath('')
+        setNewFileContent('')
+        // Refresh the file tree
+        await loadUserAndMemory()
+      } else {
+        throw new Error('Failed to create file')
+      }
+    } catch (error) {
+      console.error('Error creating file:', error)
+      toast({
+        title: "Error",
+        description: "Failed to create file",
+        variant: "destructive",
+      })
+    } finally {
+      setIsSaving(false)
     }
   }
 
@@ -190,7 +352,8 @@ export default function MemoryPage() {
           alert('You do not have permission to edit files')
           return
         }
-        // Handle edit
+        setEditContent(file.content || '')
+        setIsEditMode(true)
         break
       case 'delete':
         if (!canUserDelete()) {
@@ -226,6 +389,9 @@ export default function MemoryPage() {
                 toggleFolder(item.id)
               } else {
                 setSelectedFile(item)
+                if (item.path) {
+                  loadFileContent(item.path)
+                }
               }
             }}
           >
@@ -313,18 +479,6 @@ export default function MemoryPage() {
     }).filter(Boolean) // Remove null items
   }
 
-  const filteredResults = useMemo(() => {
-    if (!searchQuery) return []
-    const results = searchMemoryFiles(searchQuery)
-    
-    // Filter search results based on user access
-    return results.filter(file => {
-      const pathParts = file.path.split('/')
-      const hasPersonalFolder = pathParts.some(part => isPersonalMemoryFolder(part))
-      return !hasPersonalFolder || canAccessPersonalMemory()
-    })
-  }, [searchQuery, currentUser])
-
   // Show access denied for non-authenticated users
   if (!canUserRead()) {
     return (
@@ -381,7 +535,7 @@ export default function MemoryPage() {
             </Button>
           )}
           {canUserCreate() && (
-            <Button>
+            <Button onClick={() => setIsNewFileModalOpen(true)}>
               <Plus className="h-4 w-4 mr-2" />
               New File
             </Button>
@@ -424,7 +578,7 @@ export default function MemoryPage() {
         </div>
       )}
 
-      {/* Stats Overview - Adjusted for filtered access */}
+      {/* Stats Overview - Using real data from Bridge API */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -483,21 +637,6 @@ export default function MemoryPage() {
         </Card>
       </div>
 
-      {/* Search */}
-      <div className="flex flex-col sm:flex-row gap-4">
-        <div className="flex-1">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search files and content..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10"
-            />
-          </div>
-        </div>
-      </div>
-
       {/* Main Content */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* File Tree */}
@@ -518,34 +657,9 @@ export default function MemoryPage() {
           </CardHeader>
           <CardContent className="p-0">
             <div className="max-h-96 overflow-y-auto">
-              {searchQuery ? (
-                <div className="p-4">
-                  <h3 className="font-medium mb-3 text-sm">Search Results ({filteredResults.length})</h3>
-                  {filteredResults.length === 0 ? (
-                    <p className="text-muted-foreground text-sm">No results found</p>
-                  ) : (
-                    <div className="space-y-1">
-                      {filteredResults.map(file => (
-                        <div 
-                          key={file.id}
-                          className="flex items-center space-x-2 p-2 hover:bg-muted/50 rounded-md cursor-pointer"
-                          onClick={() => setSelectedFile(file)}
-                        >
-                          <FileText className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-sm truncate">{file.name}</span>
-                          <span className="text-xs text-muted-foreground ml-auto">
-                            {file.path.split('/').slice(0, -1).join('/') || '/'}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <div className="p-2">
-                  {renderFileTree(filteredMemoryData)}
-                </div>
-              )}
+              <div className="p-2">
+                {renderFileTree(filteredMemoryData)}
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -568,10 +682,17 @@ export default function MemoryPage() {
                   </>
                 )}
               </div>
-              {selectedFile && (
+              {selectedFile && !isEditMode && (
                 <div className="flex items-center space-x-2">
                   {canUserEdit() && (
-                    <Button variant="outline" size="sm">
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => {
+                        setEditContent(selectedFile.content || '')
+                        setIsEditMode(true)
+                      }}
+                    >
                       <Edit className="h-4 w-4 mr-1" />
                       Edit
                     </Button>
@@ -582,11 +703,32 @@ export default function MemoryPage() {
                   </Button>
                 </div>
               )}
+              {isEditMode && (
+                <div className="flex items-center space-x-2">
+                  <Button 
+                    size="sm"
+                    onClick={saveFileContent}
+                    disabled={isSaving}
+                  >
+                    <Save className="h-4 w-4 mr-1" />
+                    {isSaving ? 'Saving...' : 'Save'}
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => setIsEditMode(false)}
+                    disabled={isSaving}
+                  >
+                    <X className="h-4 w-4 mr-1" />
+                    Cancel
+                  </Button>
+                </div>
+              )}
             </CardTitle>
             {selectedFile && (
               <CardDescription className="flex items-center space-x-4 text-xs">
                 <span>{formatFileSize(selectedFile.size || 0)}</span>
-                <span>Modified {formatDate(selectedFile.lastModified || '')}</span>
+                {selectedFile.lastModified && <span>Modified {formatDate(selectedFile.lastModified)}</span>}
                 <Badge variant="outline">{selectedFile.type}</Badge>
                 {!canUserEdit() && (
                   <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
@@ -599,20 +741,39 @@ export default function MemoryPage() {
           <CardContent>
             {selectedFile ? (
               <div className="space-y-4">
-                {/* File content preview */}
-                <div className={`rounded-lg p-4 max-h-96 overflow-y-auto ${
-                  canUserEdit() ? 'bg-muted/30' : 'bg-blue-50/50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800'
-                }`}>
-                  {!canUserEdit() && (
-                    <div className="mb-3 text-xs text-blue-600 bg-blue-100 dark:bg-blue-900/30 px-2 py-1 rounded">
-                      <Eye className="h-3 w-3 inline mr-1" />
-                      Viewing in read-only mode
-                    </div>
-                  )}
-                  <pre className="whitespace-pre-wrap text-sm font-mono">
-                    {selectedFile.content || 'No content available'}
-                  </pre>
-                </div>
+                {/* File content preview/edit */}
+                {isEditMode ? (
+                  <div className="space-y-2">
+                    <Textarea
+                      value={editContent}
+                      onChange={(e) => setEditContent(e.target.value)}
+                      className="min-h-[400px] font-mono text-sm"
+                      placeholder="Enter file content..."
+                    />
+                  </div>
+                ) : (
+                  <div className={`rounded-lg p-4 max-h-96 overflow-y-auto ${
+                    canUserEdit() ? 'bg-muted/30' : 'bg-blue-50/50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800'
+                  }`}>
+                    {!canUserEdit() && (
+                      <div className="mb-3 text-xs text-blue-600 bg-blue-100 dark:bg-blue-900/30 px-2 py-1 rounded">
+                        <Eye className="h-3 w-3 inline mr-1" />
+                        Viewing in read-only mode
+                      </div>
+                    )}
+                    {selectedFile.path && selectedFile.path.endsWith('.md') ? (
+                      <div className="prose prose-sm dark:prose-invert max-w-none">
+                        <ReactMarkdown>
+                          {selectedFile.content || 'No content available'}
+                        </ReactMarkdown>
+                      </div>
+                    ) : (
+                      <pre className="whitespace-pre-wrap text-sm font-mono">
+                        {selectedFile.content || 'No content available'}
+                      </pre>
+                    )}
+                  </div>
+                )}
               </div>
             ) : (
               <div className="space-y-6">
@@ -688,6 +849,54 @@ export default function MemoryPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* New File Modal */}
+      <Dialog open={isNewFileModalOpen} onOpenChange={setIsNewFileModalOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Create New File</DialogTitle>
+            <DialogDescription>
+              Create a new memory file in your knowledge base.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="filepath">File Path</Label>
+              <Input
+                id="filepath"
+                value={newFilePath}
+                onChange={(e) => setNewFilePath(e.target.value)}
+                placeholder="e.g., projects/my-project.md"
+                className="w-full"
+              />
+              <p className="text-xs text-muted-foreground">
+                Use forward slashes for folders (e.g., areas/health/fitness.md)
+              </p>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="filecontent">Content</Label>
+              <Textarea
+                id="filecontent"
+                value={newFileContent}
+                onChange={(e) => setNewFileContent(e.target.value)}
+                placeholder="Enter file content..."
+                className="min-h-[200px] font-mono text-sm"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsNewFileModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={createNewFile} 
+              disabled={isSaving || !newFilePath.trim()}
+            >
+              {isSaving ? 'Creating...' : 'Create File'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
