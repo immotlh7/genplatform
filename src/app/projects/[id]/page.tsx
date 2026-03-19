@@ -384,11 +384,7 @@ export default function ProjectDetailPage() {
         </TabsContent>
 
         <TabsContent value="tasks">
-          <Card>
-            <CardContent className="p-6">
-              <p className="text-muted-foreground">Tasks functionality coming soon...</p>
-            </CardContent>
-          </Card>
+          <TasksPage projectId={params.id as string} embedded={true} />
         </TabsContent>
 
         <TabsContent value="chat" className="h-[calc(100vh-12rem)]">

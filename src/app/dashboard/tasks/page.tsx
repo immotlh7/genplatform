@@ -11,6 +11,7 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
+import { useToast } from '@/components/ui/use-toast'
 import { 
   Search, 
   Plus, 
@@ -25,8 +26,12 @@ import {
   RotateCcw,
   Ban,
   Calendar,
-  Loader2
+  Loader2,
+  Send,
+  Bot,
+  Wand2
 } from 'lucide-react'
+import TaskAssignmentPanel from '@/components/tasks/TaskAssignmentPanel'
 
 interface Task {
   id: string
@@ -58,13 +63,14 @@ interface Column {
   tasks: Task[]
 }
 
+// Updated roles with full department list
 const roles: Role[] = [
-  { id: 'frontend', name: 'Frontend', icon: '💻' },
-  { id: 'backend', name: 'Backend', icon: '⚙️' },
+  { id: 'research', name: 'Research Analyst', icon: '🔬' },
+  { id: 'planning', name: 'Architecture & Planning', icon: '📋' },
+  { id: 'frontend', name: 'Frontend Development', icon: '💻' },
+  { id: 'backend', name: 'Backend Development', icon: '⚙️' },
+  { id: 'qa', name: 'Quality Assurance', icon: '🔍' },
   { id: 'security', name: 'Security', icon: '🛡️' },
-  { id: 'qa', name: 'QA', icon: '🔍' },
-  { id: 'research', name: 'Research', icon: '🔬' },
-  { id: 'planning', name: 'Planning', icon: '📋' },
   { id: 'improvement', name: 'Self-Improvement', icon: '📈' }
 ]
 
@@ -101,6 +107,9 @@ export default function TasksPage({ projectId, embedded = false }: TasksPageProp
   const [selectedTask, setSelectedTask] = useState<Task | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isNewTaskModalOpen, setIsNewTaskModalOpen] = useState(false)
+  const [sendingToAgent, setSendingToAgent] = useState(false)
+  const { toast } = useToast()
+  
   const [newTask, setNewTask] = useState({
     name: '',
     description: '',
@@ -132,6 +141,99 @@ export default function TasksPage({ projectId, embedded = false }: TasksPageProp
       console.error('Error fetching tasks:', error)
     } finally {
       setLoading(false)
+    }
+  }
+  
+  // Auto-assign departments based on keywords
+  const autoAssignDepartments = async () => {
+    const keywordMap: Record<string, string> = {
+      'frontend|ui|page|component|style|css|design': 'frontend',
+      'backend|api|database|route|server|endpoint': 'backend',
+      'test|review|audit|qa': 'qa',
+      'security|scan|vulnerability|auth': 'security',
+      'research|analyze|investigate': 'research',
+      'plan|architecture|design': 'planning',
+      'improve|optimize|refactor': 'improvement'
+    }
+    
+    const unassignedTasks = tasks.filter(task => !task.assignedRole || task.assignedRole.id === 'frontend')
+    
+    for (const task of unassignedTasks) {
+      const taskText = `${task.name} ${task.description}`.toLowerCase()
+      
+      for (const [pattern, roleId] of Object.entries(keywordMap)) {
+        const regex = new RegExp(pattern, 'i')
+        if (regex.test(taskText)) {
+          await updateTaskAssignment(task.id, roleId)
+          break
+        }
+      }
+    }
+    
+    fetchTasks()
+    toast({
+      title: 'Auto-assignment complete',
+      description: `Analyzed and assigned ${unassignedTasks.length} tasks`,
+    })
+  }
+  
+  // Update task assignment
+  const updateTaskAssignment = async (taskId: string, roleId: string) => {
+    try {
+      const response = await fetch(`/api/tasks/${taskId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ assignedRoleId: roleId })
+      })
+      
+      if (response.ok) {
+        const { task: updatedTask } = await response.json()
+        setTasks(prevTasks => prevTasks.map(t => 
+          t.id === taskId ? updatedTask : t
+        ))
+      }
+    } catch (error) {
+      console.error('Error updating task assignment:', error)
+    }
+  }
+  
+  // Send task to agent
+  const sendTaskToAgent = async () => {
+    if (!selectedTask) return
+    
+    try {
+      setSendingToAgent(true)
+      
+      // Get project name
+      const projectResponse = await fetch(`/api/projects/${selectedTask.projectId || projectId}`)
+      const project = projectResponse.ok ? await projectResponse.json() : { name: 'Unknown Project' }
+      
+      const message = `🎯 Task Assignment: [${selectedTask.assignedRole.name}] ${selectedTask.name}\n\nDescription: ${selectedTask.description}\n\nPlease complete this task. Project: ${project.name}`
+      
+      const response = await fetch('/api/chat/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message, projectId: selectedTask.projectId || projectId })
+      })
+      
+      if (response.ok) {
+        // Update task status to in_progress
+        await updateTaskStatus(selectedTask, 'start')
+        
+        toast({
+          title: 'Task sent successfully',
+          description: `Task sent to ${selectedTask.assignedRole.name} department`,
+        })
+      }
+    } catch (error) {
+      console.error('Error sending task to agent:', error)
+      toast({
+        title: 'Failed to send task',
+        description: 'Please try again',
+        variant: 'destructive',
+      })
+    } finally {
+      setSendingToAgent(false)
     }
   }
   
@@ -405,6 +507,12 @@ export default function TasksPage({ projectId, embedded = false }: TasksPageProp
         </>
       )}
       
+      {/* Task Assignment Panel */}
+      <TaskAssignmentPanel
+        tasks={tasks}
+        onAutoAssign={autoAssignDepartments}
+      />
+      
       {/* Filters and View Toggle */}
       <div className="flex items-center gap-4">
         <div className="flex-1 flex items-center gap-4">
@@ -423,7 +531,7 @@ export default function TasksPage({ projectId, embedded = false }: TasksPageProp
               <SelectValue placeholder="All Roles" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Roles</SelectItem>
+              <SelectItem value="all">All Departments</SelectItem>
               {roles.map(role => (
                 <SelectItem key={role.id} value={role.id}>
                   {role.icon} {role.name}
@@ -614,10 +722,22 @@ export default function TasksPage({ projectId, embedded = false }: TasksPageProp
                   </Badge>
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Assigned To</p>
-                  <p className="mt-1">
-                    {selectedTask.assignedRole.icon} {selectedTask.assignedRole.name}
-                  </p>
+                  <p className="text-sm text-muted-foreground mb-2">Assign to Department</p>
+                  <Select 
+                    value={selectedTask.assignedRole.id} 
+                    onValueChange={(value) => updateTaskAssignment(selectedTask.id, value)}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {roles.map(role => (
+                        <SelectItem key={role.id} value={role.id}>
+                          {role.icon} {role.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Sprint</p>
@@ -669,6 +789,33 @@ export default function TasksPage({ projectId, embedded = false }: TasksPageProp
                   </p>
                 </div>
               )}
+              
+              {/* Send to Agent section */}
+              <div className="border-t pt-4">
+                <Button
+                  onClick={sendTaskToAgent}
+                  disabled={sendingToAgent || selectedTask.status === 'done'}
+                  className="w-full gap-2"
+                  variant="outline"
+                >
+                  {sendingToAgent ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Sending...
+                    </>
+                  ) : (
+                    <>
+                      <Send className="w-4 h-4" />
+                      Send to {selectedTask.assignedRole.name}
+                    </>
+                  )}
+                </Button>
+                {selectedTask.status === 'done' && (
+                  <p className="text-xs text-muted-foreground text-center mt-2">
+                    Task is already completed
+                  </p>
+                )}
+              </div>
             </div>
             
             <DialogFooter>
@@ -737,7 +884,7 @@ export default function TasksPage({ projectId, embedded = false }: TasksPageProp
             
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="assigned-role">Assigned Role</Label>
+                <Label htmlFor="assigned-role">Assigned Department</Label>
                 <Select value={newTask.assignedRoleId} onValueChange={(value) => setNewTask({ ...newTask, assignedRoleId: value })}>
                   <SelectTrigger>
                     <SelectValue />
