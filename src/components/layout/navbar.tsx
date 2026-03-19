@@ -28,7 +28,7 @@ import { Badge } from '@/components/ui/badge'
 import { ProjectSwitcher } from './ProjectSwitcher'
 import type { UserRole, AuthUser } from '@/types/auth'
 
-export default function Navbar() {
+export function Navbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [user, setUser] = useState<AuthUser | null>(null)
   const pathname = usePathname()

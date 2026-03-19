@@ -21,7 +21,6 @@ import {
   HelpCircle,
   ChevronRight,
   Folder,
-  Database,
   Shield,
   Users,
   TrendingUp,
@@ -51,7 +50,7 @@ export function Sidebar() {
   const [reportCount, setReportCount] = useState(0)
   const [ideaCount, setIdeaCount] = useState(0)
 
-  // Fetch system health status
+  // Fetch system health status with error handling
   useEffect(() => {
     const checkSystemHealth = async () => {
       try {
@@ -64,6 +63,7 @@ export function Sidebar() {
           lastChecked: new Date()
         })
       } catch (error) {
+        console.error('System health check error:', error)
         setSystemStatus({
           isOnline: false,
           lastChecked: new Date()
@@ -76,7 +76,7 @@ export function Sidebar() {
     return () => clearInterval(interval)
   }, [])
 
-  // Fetch task count
+  // Fetch task count with error handling
   useEffect(() => {
     const fetchTaskCount = async () => {
       try {
@@ -88,6 +88,7 @@ export function Sidebar() {
         }
       } catch (error) {
         console.error('Error fetching task count:', error)
+        setTaskCount(0)
       }
     }
 
@@ -96,7 +97,7 @@ export function Sidebar() {
     return () => clearInterval(interval)
   }, [])
 
-  // Fetch report count
+  // Fetch report count with error handling
   useEffect(() => {
     const fetchReportCount = async () => {
       try {
@@ -107,6 +108,7 @@ export function Sidebar() {
         }
       } catch (error) {
         console.error('Error fetching report count:', error)
+        setReportCount(0)
       }
     }
 
@@ -115,7 +117,7 @@ export function Sidebar() {
     return () => clearInterval(interval)
   }, [])
 
-  // Fetch ideas count
+  // Fetch ideas count with error handling
   useEffect(() => {
     const fetchIdeaCount = async () => {
       try {
@@ -127,6 +129,7 @@ export function Sidebar() {
         }
       } catch (error) {
         console.error('Error fetching idea count:', error)
+        setIdeaCount(0)
       }
     }
 
@@ -135,7 +138,7 @@ export function Sidebar() {
     return () => clearInterval(interval)
   }, [])
 
-  // Fetch automation status for badge
+  // Fetch automation status with error handling
   useEffect(() => {
     const fetchAutomationStatus = async () => {
       try {
@@ -143,12 +146,13 @@ export function Sidebar() {
         if (response.ok) {
           const data = await response.json()
           setAutomationStatus({
-            running_workflows: data.status.running_workflows || 0,
-            waiting_approval: data.status.waiting_approval || 0
+            running_workflows: data.status?.running_workflows || 0,
+            waiting_approval: data.status?.waiting_approval || 0
           })
         }
       } catch (error) {
         console.error('Error fetching automation status:', error)
+        setAutomationStatus({ running_workflows: 0, waiting_approval: 0 })
       }
     }
 
@@ -202,28 +206,28 @@ export function Sidebar() {
           href: '/dashboard/tasks', 
           icon: CheckSquare,
           badge: taskCount > 0 ? taskCount.toString() : undefined,
-          badgeVariant: 'default'
+          badgeVariant: 'default' as const
         },
         { 
           name: 'Ideas', 
           href: '/ideas', 
           icon: Lightbulb,
           badge: ideaCount > 0 ? ideaCount.toString() : undefined,
-          badgeVariant: 'secondary'
+          badgeVariant: 'secondary' as const
         },
         { 
           name: 'Automations', 
           href: '/automations',
           icon: Zap, 
           badge: getAutomationBadge(),
-          badgeVariant: getAutomationBadgeVariant(),
+          badgeVariant: getAutomationBadgeVariant() as any,
         },
         { 
           name: 'Agents', 
           href: '/agents', 
           icon: Bot,
           badge: 'Soon',
-          badgeVariant: 'outline'
+          badgeVariant: 'outline' as const
         },
       ]
     },
@@ -238,7 +242,7 @@ export function Sidebar() {
           icon: FileText, 
           showImprovements: true,
           badge: reportCount > 0 ? reportCount.toString() : undefined,
-          badgeVariant: 'outline'
+          badgeVariant: 'outline' as const
         },
       ]
     },
@@ -299,12 +303,12 @@ export function Sidebar() {
                           <span className="flex-1">{item.name}</span>
                           
                           {/* Show improvements badge for Reports page */}
-                          {item.showImprovements && (
+                          {(item as any).showImprovements && (
                             <SidebarImprovementIndicator className="mr-2" />
                           )}
                           
                           {/* Dynamic badge with different variants */}
-                          {item.badge && (
+                          {(item as any).badge && (
                             <Badge 
                               variant={(item as any).badgeVariant || "secondary"} 
                               className={cn(
@@ -315,7 +319,7 @@ export function Sidebar() {
                                 item.name === 'Ideas' && ideaCount > 0 && "bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300"
                               )}
                             >
-                              {item.badge}
+                              {(item as any).badge}
                             </Badge>
                           )}
                           
@@ -325,7 +329,7 @@ export function Sidebar() {
                           )}
                           
                           {/* Running indicator for automations */}
-                          {item.name === 'Automations' && automationStatus.running_workflows > 0 && !item.badge && (
+                          {item.name === 'Automations' && automationStatus.running_workflows > 0 && !(item as any).badge && (
                             <div className="ml-auto w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
                           )}
                         </Link>
