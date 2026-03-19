@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { ideaSchema } from '@/lib/validators'
+import { z } from 'zod'
 
 export interface Idea {
   id: string
@@ -14,6 +16,7 @@ export interface Idea {
   estimatedEffort?: string
   recommendedTechStack?: string[]
   goNoGoRecommendation?: 'go' | 'no-go' | 'needs-review'
+  category?: 'feature' | 'improvement' | 'bug' | 'research'
   createdAt: string
   updatedAt: string
 }
@@ -32,6 +35,7 @@ if (!global.ideasStore) {
       description: 'Integrate AI to automatically review code changes, suggest improvements, and catch potential bugs before they reach production.',
       status: 'approved',
       priority: 'high',
+      category: 'feature',
       votes: 15,
       submittedBy: 'Med',
       submittedAt: '2024-01-15T10:00:00Z',
@@ -49,6 +53,7 @@ if (!global.ideasStore) {
       description: 'Build a collaborative whiteboard where team members can brainstorm, draw diagrams, and share ideas in real-time during video calls.',
       status: 'researching',
       priority: 'medium',
+      category: 'feature',
       votes: 8,
       submittedBy: 'Sarah',
       submittedAt: '2024-01-20T09:00:00Z',
@@ -61,6 +66,7 @@ if (!global.ideasStore) {
       description: 'Create a comprehensive dashboard to monitor mobile app performance metrics, crash reports, and user behavior analytics in real-time.',
       status: 'planning',
       priority: 'high',
+      category: 'improvement',
       votes: 12,
       submittedBy: 'Ahmed',
       submittedAt: '2024-01-18T11:00:00Z',
@@ -77,6 +83,7 @@ if (!global.ideasStore) {
       description: 'Enable users to create, update, and manage tasks using voice commands through integration with voice assistants.',
       status: 'pending',
       priority: 'low',
+      category: 'feature',
       votes: 5,
       submittedBy: 'Lisa',
       submittedAt: '2024-01-22T13:00:00Z',
@@ -126,19 +133,21 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
     
-    // Validate required fields
-    if (!body.title || typeof body.title !== 'string' || body.title.trim().length < 3) {
-      return NextResponse.json(
-        { error: 'Title is required and must be at least 3 characters' },
-        { status: 400 }
-      )
-    }
-    
-    if (!body.description || typeof body.description !== 'string' || body.description.trim().length < 10) {
-      return NextResponse.json(
-        { error: 'Description is required and must be at least 10 characters' },
-        { status: 400 }
-      )
+    // Validate with Zod schema
+    let validatedData
+    try {
+      validatedData = ideaSchema.parse(body)
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return NextResponse.json(
+          { 
+            error: 'Validation failed', 
+            details: error.errors.map(e => e.message).join(', ') 
+          },
+          { status: 400 }
+        )
+      }
+      throw error
     }
     
     const ideas = getIdeas()
@@ -147,10 +156,11 @@ export async function POST(request: NextRequest) {
     // Create new idea
     const newIdea: Idea = {
       id: `idea-${Date.now()}`,
-      title: body.title.trim(),
-      description: body.description.trim(),
+      title: validatedData.title.trim(),
+      description: validatedData.description?.trim() || '',
       status: 'pending',
-      priority: body.priority || 'medium',
+      priority: validatedData.priority,
+      category: validatedData.category,
       votes: 0,
       submittedBy: body.submittedBy || 'Anonymous',
       submittedAt: now,

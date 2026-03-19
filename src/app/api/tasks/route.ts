@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { taskSchema } from '@/lib/validators'
+import { z } from 'zod'
 
 interface Task {
   id: string
@@ -98,8 +100,9 @@ function getTasks(): Task[] {
         actualTime: 14,
         sprint: 'Sprint 1',
         priority: 'high',
-        completedAt: '2024-03-18T18:00:00Z',
-        createdAt: '2024-03-10T08:00:00Z',
+        completedAt: '2024-03-17T18:00:00Z',
+        startedAt: '2024-03-16T09:00:00Z',
+        createdAt: '2024-03-03T10:00:00Z',
         updatedAt: now,
         projectId: 'proj-genplatform-ai'
       },
@@ -108,46 +111,46 @@ function getTasks(): Task[] {
       {
         id: '4',
         number: 'T-04',
-        name: 'Create dashboard layout',
-        description: 'Implement responsive dashboard layout with sidebar navigation and header',
+        name: 'Build dashboard UI components',
+        description: 'Create reusable React components for the main dashboard with TypeScript',
         status: 'in_progress',
         assignedRole: roles[0],
-        estimatedTime: 12,
+        estimatedTime: 20,
         sprint: 'Sprint 2',
-        priority: 'medium',
+        priority: 'high',
         startedAt: '2024-03-19T09:00:00Z',
-        createdAt: '2024-03-15T10:00:00Z',
+        createdAt: '2024-03-10T11:00:00Z',
         updatedAt: now,
         projectId: 'proj-genplatform-ai'
       },
       {
         id: '5',
         number: 'T-05',
-        name: 'API rate limiting',
-        description: 'Implement rate limiting for all API endpoints to prevent abuse',
+        name: 'API endpoint development',
+        description: 'Develop RESTful API endpoints for user management and data operations',
         status: 'in_progress',
-        assignedRole: roles[2],
-        estimatedTime: 6,
+        assignedRole: roles[1],
+        estimatedTime: 24,
         sprint: 'Sprint 2',
-        priority: 'high',
-        startedAt: '2024-03-19T08:00:00Z',
-        createdAt: '2024-03-16T11:00:00Z',
+        priority: 'medium',
+        startedAt: '2024-03-18T14:00:00Z',
+        createdAt: '2024-03-11T09:00:00Z',
         updatedAt: now,
-        projectId: 'proj-agent-skills'
+        projectId: 'proj-genplatform-ai'
       },
       
       // Review tasks
       {
         id: '6',
         number: 'T-06',
-        name: 'User profile management',
-        description: 'Create user profile pages with edit functionality and avatar upload',
+        name: 'Security audit preparation',
+        description: 'Prepare codebase for security audit, document security measures and create threat model',
         status: 'review',
-        assignedRole: roles[0],
-        estimatedTime: 8,
+        assignedRole: roles[2],
+        estimatedTime: 12,
         sprint: 'Sprint 2',
-        priority: 'medium',
-        createdAt: '2024-03-14T09:00:00Z',
+        priority: 'high',
+        createdAt: '2024-03-12T14:00:00Z',
         updatedAt: now,
         projectId: 'proj-genplatform-ai'
       },
@@ -155,43 +158,43 @@ function getTasks(): Task[] {
         id: '7',
         number: 'T-07',
         name: 'Database optimization',
-        description: 'Optimize database queries and add proper indexing for performance',
+        description: 'Optimize database queries, add proper indexes, and implement caching strategy',
         status: 'review',
         assignedRole: roles[1],
-        estimatedTime: 10,
+        estimatedTime: 16,
         sprint: 'Sprint 2',
         priority: 'medium',
-        createdAt: '2024-03-13T14:00:00Z',
+        createdAt: '2024-03-13T10:00:00Z',
         updatedAt: now,
-        projectId: 'proj-agent-skills'
+        projectId: 'proj-memory-system'
       },
       
       // Planned tasks
       {
         id: '8',
         number: 'T-08',
-        name: 'Real-time notifications',
-        description: 'Implement WebSocket-based real-time notifications system',
+        name: 'User onboarding flow',
+        description: 'Design and implement a smooth user onboarding experience with tutorials',
         status: 'planned',
-        assignedRole: roles[1],
+        assignedRole: roles[0],
         estimatedTime: 20,
         sprint: 'Sprint 3',
         priority: 'medium',
-        createdAt: '2024-03-17T08:00:00Z',
+        createdAt: '2024-03-15T08:00:00Z',
         updatedAt: now,
         projectId: 'proj-genplatform-ai'
       },
       {
         id: '9',
         number: 'T-09',
-        name: 'Security audit',
-        description: 'Perform comprehensive security audit of the application',
+        name: 'Integration testing',
+        description: 'Write comprehensive integration tests for all API endpoints',
         status: 'planned',
-        assignedRole: roles[2],
-        estimatedTime: 16,
+        assignedRole: roles[3],
+        estimatedTime: 18,
         sprint: 'Sprint 3',
         priority: 'high',
-        createdAt: '2024-03-17T10:00:00Z',
+        createdAt: '2024-03-16T13:00:00Z',
         updatedAt: now,
         projectId: 'proj-genplatform-ai'
       },
@@ -328,34 +331,37 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
+    
+    // Validate with Zod schema
+    let validatedData
+    try {
+      validatedData = taskSchema.parse(body)
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return NextResponse.json(
+          { 
+            error: 'Validation failed', 
+            details: error.errors.map(e => e.message).join(', ') 
+          },
+          { status: 400 }
+        )
+      }
+      throw error
+    }
+    
     const tasks = getTasks()
     
-    // Validate required fields
-    if (!body.name || typeof body.name !== 'string') {
-      return NextResponse.json(
-        { error: 'Task name is required' },
-        { status: 400 }
-      )
-    }
-    
-    if (body.name.length < 3) {
-      return NextResponse.json(
-        { error: 'Task name must be at least 3 characters' },
-        { status: 400 }
-      )
-    }
-    
     // Find role
-    const assignedRole = body.assignedRoleId ? 
-      roles.find(r => r.id === body.assignedRoleId) || roles[0] : 
+    const assignedRole = validatedData.assignedRole ? 
+      roles.find(r => r.id === validatedData.assignedRole) || roles[0] : 
       roles[0]
     
     const now = new Date().toISOString()
     const newTask: Task = {
       id: String(Date.now()),
       number: getTaskNumber(),
-      name: body.name.trim(),
-      description: body.description || '',
+      name: validatedData.name.trim(),
+      description: validatedData.description?.trim() || '',
       status: body.status || 'backlog',
       assignedRole,
       estimatedTime: body.estimatedTime || 8,

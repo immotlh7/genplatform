@@ -1,12 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { chatMessageSchema } from '@/lib/validators'
+import { scanForInjection } from '@/lib/prompt-scanner'
+import { z } from 'zod'
 
 const BOT_TOKEN = '8635233052:AAGsuMzqhTHwQsFg4qGYPfUEyZPiLsAceA4'
 const CHAT_ID = '510906393'
-
-interface ChatSendRequest {
-  message: string
-  projectId?: string
-}
 
 interface Project {
   id: string
@@ -29,20 +27,35 @@ async function getProjectName(projectId: string): Promise<string | null> {
 
 export async function POST(request: NextRequest) {
   try {
-    const body: ChatSendRequest = await request.json()
-    const { message, projectId } = body
+    const body = await request.json()
 
-    // Validate message
-    if (!message || typeof message !== 'string') {
-      return NextResponse.json(
-        { error: 'Message is required' },
-        { status: 400 }
-      )
+    // Validate with Zod schema
+    let validatedData
+    try {
+      validatedData = chatMessageSchema.parse(body)
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return NextResponse.json(
+          { 
+            error: 'Validation failed', 
+            details: error.errors.map(e => e.message).join(', ') 
+          },
+          { status: 400 }
+        )
+      }
+      throw error
     }
 
-    if (message.length > 4000) {
+    const { message, projectId } = validatedData
+
+    // Scan for prompt injection
+    const scanResult = scanForInjection(message)
+    if (!scanResult.safe) {
       return NextResponse.json(
-        { error: 'Message must be less than 4000 characters' },
+        { 
+          error: 'Message contains potentially harmful content',
+          threats: scanResult.threats 
+        },
         { status: 400 }
       )
     }
