@@ -7,6 +7,8 @@ import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { useRouter } from 'next/navigation'
+import { useToast } from '@/hooks/use-toast'
 import { 
   Zap, 
   Terminal, 
@@ -41,6 +43,7 @@ interface QuickAction {
   category: 'system' | 'skills' | 'memory' | 'monitoring' | 'maintenance'
   icon: React.ReactNode
   command?: string
+  action?: () => Promise<void>
   status: 'available' | 'running' | 'disabled'
   lastUsed?: string
   shortcut?: string
@@ -71,6 +74,8 @@ export default function CommandCenterPage() {
   const [commandOutput, setCommandOutput] = useState<string[]>([])
   const [selectedCategory, setSelectedCategory] = useState<string>('all')
   const [loading, setLoading] = useState(true)
+  const router = useRouter()
+  const { toast } = useToast()
 
   useEffect(() => {
     loadSystemStatus()
@@ -79,40 +84,81 @@ export default function CommandCenterPage() {
 
   const loadSystemStatus = async () => {
     try {
-      // In production, fetch from system APIs
+      // Fetch real system metrics from Bridge API
+      const metricsResponse = await fetch('/api/bridge/metrics')
+      const metricsData = await metricsResponse.json()
+      
+      // Fetch real service status from Bridge API
+      const statusResponse = await fetch('/api/bridge/status')
+      const statusData = await statusResponse.json()
+      
+      // Process the data
+      const cpuPercent = metricsData.cpu ? Math.round(metricsData.cpu.percent || 0) : 0
+      const memoryUsed = metricsData.memory ? Math.round((metricsData.memory.used / metricsData.memory.total) * 100) : 0
+      const diskUsed = metricsData.disk ? Math.round((metricsData.disk.used / metricsData.disk.total) * 100) : 0
+      
       setSystemStatus({
-        overall: 'healthy',
+        overall: statusData.status === 'running' ? 'healthy' : 'warning',
         services: [
-          { name: 'OpenClaw Core', status: 'active', uptime: '2d 14h 30m' },
-          { name: 'Gateway Service', status: 'active', uptime: '2d 14h 25m' },
+          { 
+            name: 'OpenClaw Core', 
+            status: statusData.status === 'running' ? 'active' : 'inactive',
+            uptime: statusData.uptime || '0s'
+          },
+          { 
+            name: 'Gateway Service', 
+            status: statusData.gateway?.status === 'running' ? 'active' : 'inactive',
+            uptime: statusData.uptime || '0s'
+          },
           { name: 'Database', status: 'active', uptime: '15d 8h 45m' },
           { name: 'Cache Service', status: 'active', uptime: '7d 12h 15m' }
         ],
         resources: {
-          cpu: 45,
-          memory: 62,
-          disk: 73
+          cpu: cpuPercent,
+          memory: memoryUsed,
+          disk: diskUsed
         },
         activeUsers: 12,
-        activeTasks: 8
+        activeTasks: statusData.activeSessions || 8
       })
     } catch (error) {
       console.error('Failed to load system status:', error)
+      toast({
+        title: "Error",
+        description: "Failed to load system status",
+        variant: "destructive",
+      })
     }
   }
 
   const loadQuickActions = async () => {
     setLoading(true)
     try {
-      // In production, fetch from API
       setQuickActions([
         {
           id: 'restart-services',
-          title: 'Restart Core Services',
-          description: 'Restart OpenClaw core services',
+          title: 'Restart Gateway',
+          description: 'Restart OpenClaw gateway service',
           category: 'system',
           icon: <RefreshCw className="h-4 w-4" />,
-          command: 'systemctl restart openclaw',
+          action: async () => {
+            try {
+              const response = await fetch('/api/bridge/gateway', { method: 'POST' })
+              if (!response.ok) throw new Error('Failed to restart gateway')
+              toast({
+                title: "Success",
+                description: "Gateway service restarted successfully",
+              })
+              await loadSystemStatus()
+            } catch (error) {
+              toast({
+                title: "Error",
+                description: "Failed to restart gateway service",
+                variant: "destructive",
+              })
+              throw error
+            }
+          },
           status: 'available',
           shortcut: 'Ctrl+R',
           dangerous: true
@@ -120,12 +166,29 @@ export default function CommandCenterPage() {
         {
           id: 'health-check',
           title: 'System Health Check',
-          description: 'Run comprehensive system diagnostics',
+          description: 'View system health metrics',
           category: 'monitoring',
           icon: <Activity className="h-4 w-4" />,
-          command: 'openclaw status --health-check',
+          action: async () => {
+            await loadSystemStatus()
+            toast({
+              title: "Health Check Complete",
+              description: "System status refreshed",
+            })
+          },
           status: 'available',
           shortcut: 'Ctrl+H'
+        },
+        {
+          id: 'view-logs',
+          title: 'View Logs',
+          description: 'Open system monitoring dashboard',
+          category: 'monitoring',
+          icon: <FileText className="h-4 w-4" />,
+          action: async () => {
+            router.push('/dashboard/monitoring')
+          },
+          status: 'available'
         },
         {
           id: 'clear-cache',
@@ -219,16 +282,21 @@ export default function CommandCenterPage() {
     ))
 
     try {
-      // In production, execute the actual command
-      console.log(`Executing: ${action.command}`)
-      
-      // Add to command output
-      setCommandOutput(prev => [...prev, `> ${action.command}`, `Executing ${action.title}...`])
-      
-      // Simulate command execution
-      await new Promise(resolve => setTimeout(resolve, 2000))
-      
-      setCommandOutput(prev => [...prev, `✓ ${action.title} completed successfully`])
+      // Execute custom action if defined
+      if (action.action) {
+        await action.action()
+      } else {
+        // Execute command
+        console.log(`Executing: ${action.command}`)
+        
+        // Add to command output
+        setCommandOutput(prev => [...prev, `> ${action.command}`, `Executing ${action.title}...`])
+        
+        // Simulate command execution
+        await new Promise(resolve => setTimeout(resolve, 2000))
+        
+        setCommandOutput(prev => [...prev, `✓ ${action.title} completed successfully`])
+      }
       
       // Update last used time
       setQuickActions(prev => prev.map(a => 
