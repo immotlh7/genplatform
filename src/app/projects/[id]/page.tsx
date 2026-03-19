@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -9,6 +9,9 @@ import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Card, CardContent } from '@/components/ui/card'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Avatar, AvatarFallback } from '@/components/ui/avatar-simple'
+import { ScrollArea } from '@/components/ui/scroll-area'
 import { 
   Monitor, 
   Tablet, 
@@ -27,7 +30,11 @@ import {
   Settings,
   MessageSquare,
   Eye,
-  Clipboard
+  Clipboard,
+  Send,
+  Bot,
+  User,
+  Globe
 } from 'lucide-react'
 
 interface Project {
@@ -48,12 +55,24 @@ interface Project {
   lastDeployedAt?: string
 }
 
+interface Message {
+  id: string
+  content: string
+  sender: 'user' | 'agent' | 'system'
+  timestamp: Date
+  projectName?: string
+}
+
 type DeviceSize = 'desktop' | 'tablet' | 'mobile'
 
 const deviceSizes: Record<DeviceSize, number> = {
   desktop: 1440,
   tablet: 768,
   mobile: 375
+}
+
+function hasArabic(text: string): boolean {
+  return /[\u0600-\u06FF]/.test(text)
 }
 
 export default function ProjectDetailPage() {
@@ -65,6 +84,14 @@ export default function ProjectDetailPage() {
   const [activeTab, setActiveTab] = useState('overview')
   const [deviceSize, setDeviceSize] = useState<DeviceSize>('desktop')
   const [iframeKey, setIframeKey] = useState(0)
+  
+  // Chat state
+  const [messages, setMessages] = useState<Message[]>([])
+  const [inputMessage, setInputMessage] = useState('')
+  const [sending, setSending] = useState(false)
+  const [showThinking, setShowThinking] = useState(false)
+  const messagesEndRef = useRef<HTMLDivElement>(null)
+  const inputRef = useRef<HTMLInputElement>(null)
   
   // Form state for settings
   const [formData, setFormData] = useState({
@@ -80,6 +107,14 @@ export default function ProjectDetailPage() {
     fetchProject()
   }, [params.id])
 
+  useEffect(() => {
+    scrollToBottom()
+  }, [messages])
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }
+
   const fetchProject = async () => {
     try {
       const response = await fetch(`/api/projects/${params.id}`)
@@ -94,10 +129,75 @@ export default function ProjectDetailPage() {
         priority: data.priority,
         status: data.status
       })
+      
+      // Add welcome message
+      setMessages([{
+        id: 'welcome',
+        content: `Welcome to ${data.name} chat! I'm here to help with your project.`,
+        sender: 'system',
+        timestamp: new Date()
+      }])
     } catch (error) {
       console.error('Error fetching project:', error)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const sendMessage = async () => {
+    if (!inputMessage.trim() || sending) return
+    
+    const userMessage: Message = {
+      id: `user-${Date.now()}`,
+      content: inputMessage,
+      sender: 'user',
+      timestamp: new Date(),
+      projectName: project?.name
+    }
+    
+    setMessages(prev => [...prev, userMessage])
+    setInputMessage('')
+    setSending(true)
+    setShowThinking(true)
+    
+    try {
+      const response = await fetch('/api/chat/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: inputMessage,
+          projectId: project?.id
+        })
+      })
+      
+      if (!response.ok) throw new Error('Failed to send message')
+      
+      const result = await response.json()
+      
+      // Simulate agent thinking for 2-3 seconds
+      setTimeout(() => {
+        const agentMessage: Message = {
+          id: `agent-${Date.now()}`,
+          content: 'Message sent to OpenClaw via Telegram. The agent will process your request.',
+          sender: 'agent',
+          timestamp: new Date()
+        }
+        setMessages(prev => [...prev, agentMessage])
+        setShowThinking(false)
+      }, 2000)
+      
+    } catch (error) {
+      console.error('Error sending message:', error)
+      const errorMessage: Message = {
+        id: `error-${Date.now()}`,
+        content: 'Failed to send message. Please try again.',
+        sender: 'system',
+        timestamp: new Date()
+      }
+      setMessages(prev => [...prev, errorMessage])
+      setShowThinking(false)
+    } finally {
+      setSending(false)
     }
   }
 
@@ -167,6 +267,8 @@ export default function ProjectDetailPage() {
     { id: 9, action: 'deployed to staging', user: 'System', time: '2 days ago', icon: PlayCircle },
     { id: 10, action: 'created issue: Phase 2 planning', user: 'Med', time: '3 days ago', icon: Clipboard }
   ]
+
+  const isArabic = hasArabic(inputMessage)
 
   return (
     <div className="space-y-6">
@@ -286,10 +388,105 @@ export default function ProjectDetailPage() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="chat">
-          <Card>
-            <CardContent className="p-6">
-              <p className="text-muted-foreground">Chat integration coming soon...</p>
+        <TabsContent value="chat" className="h-[calc(100vh-12rem)]">
+          <Card className="h-full flex flex-col">
+            <CardContent className="flex-1 flex flex-col p-0">
+              {/* Commander Mode Banner */}
+              {isArabic && (
+                <Alert className="m-4 mb-0 bg-blue-50 dark:bg-blue-950 border-blue-200">
+                  <Globe className="h-4 w-4" />
+                  <AlertDescription>
+                    Commander Mode — Message will be translated to English command
+                  </AlertDescription>
+                </Alert>
+              )}
+              
+              {/* Messages Area */}
+              <ScrollArea className="flex-1 p-4">
+                <div className="space-y-4">
+                  {messages.map((message) => (
+                    <div
+                      key={message.id}
+                      className={`flex items-start gap-3 ${
+                        message.sender === 'user' ? 'flex-row-reverse' : ''
+                      } ${message.sender === 'system' ? 'justify-center' : ''}`}
+                    >
+                      {message.sender !== 'system' && (
+                        <Avatar className="w-8 h-8">
+                          <AvatarFallback>
+                            {message.sender === 'user' ? <User className="w-4 h-4" /> : <Bot className="w-4 h-4" />}
+                          </AvatarFallback>
+                        </Avatar>
+                      )}
+                      <div
+                        className={`max-w-[70%] ${
+                          message.sender === 'user'
+                            ? 'bg-blue-500 text-white rounded-l-lg rounded-br-lg px-4 py-2'
+                            : message.sender === 'agent'
+                            ? 'bg-gray-100 dark:bg-gray-800 rounded-r-lg rounded-bl-lg px-4 py-2'
+                            : 'text-sm text-muted-foreground'
+                        }`}
+                      >
+                        {message.projectName && message.sender === 'user' && (
+                          <p className="text-xs opacity-80 mb-1">[Project: {message.projectName}]</p>
+                        )}
+                        <p className={message.sender === 'system' ? 'text-center' : ''}>
+                          {message.content}
+                        </p>
+                        {message.sender !== 'system' && (
+                          <p className={`text-xs mt-1 ${
+                            message.sender === 'user' ? 'text-blue-100' : 'text-muted-foreground'
+                          }`}>
+                            {message.timestamp.toLocaleTimeString()}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                  {showThinking && (
+                    <div className="flex items-start gap-3">
+                      <Avatar className="w-8 h-8">
+                        <AvatarFallback>
+                          <Bot className="w-4 h-4" />
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="bg-gray-100 dark:bg-gray-800 rounded-r-lg rounded-bl-lg px-4 py-2">
+                        <p className="text-sm">
+                          <span className="animate-pulse">Thinking...</span>
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                  <div ref={messagesEndRef} />
+                </div>
+              </ScrollArea>
+              
+              {/* Input Area */}
+              <div className="p-4 border-t">
+                <div className="flex gap-2">
+                  <Input
+                    ref={inputRef}
+                    value={inputMessage}
+                    onChange={(e) => setInputMessage(e.target.value)}
+                    onKeyPress={(e) => e.key === 'Enter' && !e.shiftKey && sendMessage()}
+                    placeholder="Type your message..."
+                    disabled={sending}
+                    dir={isArabic ? 'rtl' : 'ltr'}
+                    className="flex-1"
+                    maxLength={4000}
+                  />
+                  <Button 
+                    onClick={sendMessage} 
+                    disabled={sending || !inputMessage.trim()}
+                    size="icon"
+                  >
+                    <Send className="w-4 h-4" />
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground mt-2">
+                  Messages are sent to OpenClaw via Telegram
+                </p>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
