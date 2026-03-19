@@ -1,206 +1,175 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabase } from '@/lib/supabase'
-import { triggerNewIdeaWorkflows } from '@/lib/workflow-triggers'
 
-export async function GET(req: NextRequest) {
+export interface Idea {
+  id: string
+  title: string
+  description: string
+  status: 'pending' | 'researching' | 'planning' | 'approved' | 'in_development' | 'rejected'
+  priority: 'low' | 'medium' | 'high'
+  votes: number
+  submittedBy: string
+  submittedAt: string
+  researchNotes?: string
+  technicalFeasibility?: 'low' | 'medium' | 'high'
+  estimatedEffort?: string
+  recommendedTechStack?: string[]
+  goNoGoRecommendation?: 'go' | 'no-go' | 'needs-review'
+  createdAt: string
+  updatedAt: string
+}
+
+// Global in-memory store for ideas
+declare global {
+  var ideasStore: Idea[] | undefined
+}
+
+// Initialize with sample ideas
+if (!global.ideasStore) {
+  global.ideasStore = [
+    {
+      id: 'idea-1',
+      title: 'AI-Powered Code Review Assistant',
+      description: 'Integrate AI to automatically review code changes, suggest improvements, and catch potential bugs before they reach production.',
+      status: 'approved',
+      priority: 'high',
+      votes: 15,
+      submittedBy: 'Med',
+      submittedAt: '2024-01-15T10:00:00Z',
+      researchNotes: 'Strong market demand. Multiple API options available (GitHub Copilot, CodeRabbit). High technical feasibility.',
+      technicalFeasibility: 'high',
+      estimatedEffort: '2-3 weeks',
+      recommendedTechStack: ['GitHub API', 'OpenAI API', 'Node.js', 'TypeScript'],
+      goNoGoRecommendation: 'go',
+      createdAt: '2024-01-15T10:00:00Z',
+      updatedAt: '2024-01-16T14:30:00Z'
+    },
+    {
+      id: 'idea-2',
+      title: 'Real-time Collaboration Canvas',
+      description: 'Build a collaborative whiteboard where team members can brainstorm, draw diagrams, and share ideas in real-time during video calls.',
+      status: 'researching',
+      priority: 'medium',
+      votes: 8,
+      submittedBy: 'Sarah',
+      submittedAt: '2024-01-20T09:00:00Z',
+      createdAt: '2024-01-20T09:00:00Z',
+      updatedAt: '2024-01-20T09:00:00Z'
+    },
+    {
+      id: 'idea-3',
+      title: 'Mobile App Performance Dashboard',
+      description: 'Create a comprehensive dashboard to monitor mobile app performance metrics, crash reports, and user behavior analytics in real-time.',
+      status: 'planning',
+      priority: 'high',
+      votes: 12,
+      submittedBy: 'Ahmed',
+      submittedAt: '2024-01-18T11:00:00Z',
+      researchNotes: 'Growing need for mobile analytics. Can integrate with Firebase, Sentry, and custom metrics.',
+      technicalFeasibility: 'medium',
+      estimatedEffort: '4 weeks',
+      recommendedTechStack: ['React Native', 'Firebase', 'Chart.js', 'WebSocket'],
+      createdAt: '2024-01-18T11:00:00Z',
+      updatedAt: '2024-01-19T15:00:00Z'
+    },
+    {
+      id: 'idea-4',
+      title: 'Voice-Controlled Task Management',
+      description: 'Enable users to create, update, and manage tasks using voice commands through integration with voice assistants.',
+      status: 'pending',
+      priority: 'low',
+      votes: 5,
+      submittedBy: 'Lisa',
+      submittedAt: '2024-01-22T13:00:00Z',
+      createdAt: '2024-01-22T13:00:00Z',
+      updatedAt: '2024-01-22T13:00:00Z'
+    }
+  ]
+}
+
+function getIdeas(): Idea[] {
+  return global.ideasStore || []
+}
+
+// GET /api/ideas
+export async function GET() {
   try {
-    const { searchParams } = new URL(req.url)
-    const status = searchParams.get('status')
-    const limit = parseInt(searchParams.get('limit') || '20')
-    const offset = parseInt(searchParams.get('offset') || '0')
-
-    let query = supabase
-      .from('ideas')
-      .select('*')
-      .order('created_at', { ascending: false })
-
-    if (status) {
-      query = query.eq('status', status)
+    const ideas = getIdeas()
+    
+    // Calculate statistics
+    const stats = {
+      total: ideas.length,
+      pending: ideas.filter(i => i.status === 'pending').length,
+      researching: ideas.filter(i => i.status === 'researching').length,
+      planning: ideas.filter(i => i.status === 'planning').length,
+      approved: ideas.filter(i => i.status === 'approved').length,
+      inDevelopment: ideas.filter(i => i.status === 'in_development').length,
+      rejected: ideas.filter(i => i.status === 'rejected').length,
+      highPriority: ideas.filter(i => i.priority === 'high').length,
+      totalVotes: ideas.reduce((sum, i) => sum + i.votes, 0)
     }
-
-    const { data: ideas, error } = await query
-      .range(offset, offset + limit - 1)
-
-    if (error) {
-      console.error('Error fetching ideas:', error)
-      return NextResponse.json({
-        success: false,
-        message: 'Failed to fetch ideas',
-        error: error.message
-      }, { status: 500 })
-    }
-
+    
     return NextResponse.json({
-      success: true,
-      ideas: ideas || [],
-      count: ideas?.length || 0
+      ideas: ideas.sort((a, b) => b.votes - a.votes),
+      stats
     })
-
   } catch (error) {
-    console.error('Ideas GET API error:', error)
-    return NextResponse.json({
-      success: false,
-      message: 'Internal server error',
-      error: error instanceof Error ? error.message : 'Unknown error'
-    }, { status: 500 })
+    console.error('Failed to fetch ideas:', error)
+    return NextResponse.json(
+      { error: 'Failed to retrieve ideas' },
+      { status: 500 }
+    )
   }
 }
 
-export async function POST(req: NextRequest) {
+// POST /api/ideas
+export async function POST(request: NextRequest) {
   try {
-    const ideaData = await req.json()
-
-    console.log('💡 Creating new idea:', ideaData.title)
-
+    const body = await request.json()
+    
     // Validate required fields
-    if (!ideaData.title || !ideaData.description) {
-      return NextResponse.json({
-        success: false,
-        message: 'Title and description are required'
-      }, { status: 400 })
-    }
-
-    // Create the idea
-    const { data: idea, error: createError } = await supabase
-      .from('ideas')
-      .insert({
-        title: ideaData.title,
-        description: ideaData.description,
-        category: ideaData.category || 'general',
-        priority: ideaData.priority || 'MEDIUM',
-        status: ideaData.status || 'proposed',
-        tags: ideaData.tags || [],
-        metadata: ideaData.metadata || {},
-        user_id: ideaData.user_id || null
-      })
-      .select()
-      .single()
-
-    if (createError) {
-      console.error('Error creating idea:', createError)
-      return NextResponse.json({
-        success: false,
-        message: 'Failed to create idea',
-        error: createError.message
-      }, { status: 500 })
-    }
-
-    console.log(`✅ Created idea: ${idea.id}`)
-
-    // Task 7-17: Check if "Idea to MVP" workflow is active and trigger it
-    try {
-      const workflowTriggerResult = await triggerNewIdeaWorkflows(
-        idea.id, 
-        idea, 
-        ideaData.user_id
+    if (!body.title || typeof body.title !== 'string' || body.title.trim().length < 3) {
+      return NextResponse.json(
+        { error: 'Title is required and must be at least 3 characters' },
+        { status: 400 }
       )
-
-      if (workflowTriggerResult.success && workflowTriggerResult.triggeredWorkflows.length > 0) {
-        console.log(`🚀 Triggered ${workflowTriggerResult.triggeredWorkflows.length} workflow(s) for idea: ${idea.id}`)
-        
-        // Add workflow trigger information to response
-        return NextResponse.json({
-          success: true,
-          message: 'Idea created successfully',
-          idea: {
-            ...idea,
-            automatedPipelineStarted: true,
-            triggeredWorkflows: workflowTriggerResult.triggeredWorkflows
-          },
-          automation: {
-            enabled: true,
-            message: workflowTriggerResult.message,
-            triggeredWorkflows: workflowTriggerResult.triggeredWorkflows
-          }
-        })
-      } else {
-        // No workflows triggered, return standard response
-        return NextResponse.json({
-          success: true,
-          message: 'Idea created successfully',
-          idea: {
-            ...idea,
-            automatedPipelineStarted: false
-          },
-          automation: {
-            enabled: false,
-            message: 'No automated workflows are currently active for new ideas'
-          }
-        })
-      }
-
-    } catch (triggerError) {
-      console.error('Error triggering workflows for new idea:', triggerError)
-      
-      // Don't fail the idea creation if workflow trigger fails
-      return NextResponse.json({
-        success: true,
-        message: 'Idea created successfully (automation trigger failed)',
-        idea: {
-          ...idea,
-          automatedPipelineStarted: false
-        },
-        automation: {
-          enabled: false,
-          error: 'Failed to trigger automated workflows',
-          details: triggerError instanceof Error ? triggerError.message : 'Unknown error'
-        }
-      })
     }
-
+    
+    if (!body.description || typeof body.description !== 'string' || body.description.trim().length < 10) {
+      return NextResponse.json(
+        { error: 'Description is required and must be at least 10 characters' },
+        { status: 400 }
+      )
+    }
+    
+    const ideas = getIdeas()
+    const now = new Date().toISOString()
+    
+    // Create new idea
+    const newIdea: Idea = {
+      id: `idea-${Date.now()}`,
+      title: body.title.trim(),
+      description: body.description.trim(),
+      status: 'pending',
+      priority: body.priority || 'medium',
+      votes: 0,
+      submittedBy: body.submittedBy || 'Anonymous',
+      submittedAt: now,
+      createdAt: now,
+      updatedAt: now
+    }
+    
+    // Add to store
+    ideas.push(newIdea)
+    
+    return NextResponse.json({
+      idea: newIdea,
+      message: 'Idea created successfully'
+    }, { status: 201 })
   } catch (error) {
-    console.error('Ideas POST API error:', error)
-    return NextResponse.json({
-      success: false,
-      message: 'Internal server error',
-      error: error instanceof Error ? error.message : 'Unknown error'
-    }, { status: 500 })
-  }
-}
-
-export async function PATCH(req: NextRequest) {
-  try {
-    const { id, ...updates } = await req.json()
-
-    if (!id) {
-      return NextResponse.json({
-        success: false,
-        message: 'Idea ID is required'
-      }, { status: 400 })
-    }
-
-    console.log(`🔄 Updating idea: ${id}`)
-
-    const { data: idea, error: updateError } = await supabase
-      .from('ideas')
-      .update(updates)
-      .eq('id', id)
-      .select()
-      .single()
-
-    if (updateError) {
-      console.error('Error updating idea:', updateError)
-      return NextResponse.json({
-        success: false,
-        message: 'Failed to update idea',
-        error: updateError.message
-      }, { status: 500 })
-    }
-
-    console.log(`✅ Updated idea: ${idea.id}`)
-
-    return NextResponse.json({
-      success: true,
-      message: 'Idea updated successfully',
-      idea
-    })
-
-  } catch (error) {
-    console.error('Ideas PATCH API error:', error)
-    return NextResponse.json({
-      success: false,
-      message: 'Internal server error',
-      error: error instanceof Error ? error.message : 'Unknown error'
-    }, { status: 500 })
+    console.error('Failed to create idea:', error)
+    return NextResponse.json(
+      { error: 'Failed to create idea' },
+      { status: 500 }
+    )
   }
 }
