@@ -90,20 +90,7 @@ export function NotificationProvider({ children }: NotificationProviderProps) {
           { label: 'Dismiss', action: () => removeNotification('demo-1') }
         ]
       },
-      {
-        id: 'demo-2',
-        title: 'High CPU Usage Detected',
-        message: '',
-        type: 'warning',
-        timestamp: new Date(Date.now() - 25 * 60 * 1000).toISOString(),
-        read: false,
-        source: 'System Monitor',
-        persistent: true,
-        actions: [
-          { label: 'View Details', action: () => console.log('View CPU details') },
-          { label: 'Acknowledge', action: () => markAsRead('demo-2') }
-        ]
-      },
+
       {
         id: 'demo-3',
         title: 'Skill Update Available',
