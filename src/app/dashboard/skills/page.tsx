@@ -23,7 +23,10 @@ import {
   Code,
   RefreshCw,
   Play,
-  Pause
+  Pause,
+  X,
+  BookOpen,
+  Filter
 } from 'lucide-react'
 import {
   DropdownMenu,
@@ -33,6 +36,9 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { getDepartmentsForSkill, getCategoryForSkill } from '@/lib/skill-department-mapping'
 import { 
   type Skill, 
   skillsData,
@@ -40,11 +46,21 @@ import {
   getSkillsByCategory
 } from '@/lib/skills-data'
 
+interface SkillDetail {
+  name: string
+  description: string
+  content: string
+  path: string
+}
+
 export default function SkillsPage() {
   const [skills, setSkills] = useState<Skill[]>([])
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedCategory, setSelectedCategory] = useState<string>('all')
   const [loading, setLoading] = useState(true)
+  const [selectedSkill, setSelectedSkill] = useState<SkillDetail | null>(null)
+  const [loadingDetail, setLoadingDetail] = useState(false)
+  const [lastRefresh, setLastRefresh] = useState<Date | null>(null)
 
   useEffect(() => {
     loadSkills()
@@ -52,6 +68,7 @@ export default function SkillsPage() {
 
   const loadSkills = async () => {
     try {
+      setLoading(true)
       // Fetch real skills from Bridge API
       const response = await fetch('/api/bridge/skills')
       const data = await response.json()
@@ -62,8 +79,8 @@ export default function SkillsPage() {
           id: skill.name,
           name: skill.displayName || skill.name,
           description: skill.description || '',
-          category: skill.category || 'utility',
-          status: skill.enabled ? 'active' : 'inactive',
+          category: getCategoryForSkill(skill.name),
+          status: skill.status === 'active' ? 'active' : 'inactive',
           version: skill.version || '1.0.0',
           author: skill.author || 'OpenClaw',
           lastUsed: skill.lastUsed || null,
@@ -73,6 +90,7 @@ export default function SkillsPage() {
         }))
         
         setSkills(transformedSkills)
+        setLastRefresh(new Date())
       }
     } catch (error) {
       console.error('Failed to load skills:', error)
@@ -83,105 +101,103 @@ export default function SkillsPage() {
     }
   }
 
+  const loadSkillDetail = async (skillName: string) => {
+    try {
+      setLoadingDetail(true)
+      const response = await fetch(`/api/bridge/skills/${encodeURIComponent(skillName)}`)
+      const data = await response.json()
+      
+      if (data.content) {
+        setSelectedSkill(data)
+      } else {
+        throw new Error('No content found')
+      }
+    } catch (error) {
+      console.error('Failed to load skill detail:', error)
+      setSelectedSkill({
+        name: skillName,
+        description: 'Failed to load skill details',
+        content: 'Error loading skill markdown content',
+        path: ''
+      })
+    } finally {
+      setLoadingDetail(false)
+    }
+  }
+
+  // Calculate stats with category breakdown
   const stats = getSkillsStats(skills)
+  const categoryStats = {
+    development: skills.filter(s => s.category === 'development').length,
+    research: skills.filter(s => s.category === 'research').length,
+    security: skills.filter(s => s.category === 'security').length,
+    productivity: skills.filter(s => s.category === 'productivity').length
+  }
+
   const categories = [
-    { id: 'all', name: 'All' },
-    { id: 'productivity', name: 'Productivity' },
+    { id: 'all', name: 'All Categories' },
     { id: 'development', name: 'Development' },
-    { id: 'communication', name: 'Communication' },
-    { id: 'analytics', name: 'Analytics' },
+    { id: 'research', name: 'Research' },
+    { id: 'security', name: 'Security' },
+    { id: 'productivity', name: 'Productivity' },
     { id: 'utility', name: 'Utility' }
   ]
 
-  const filteredSkills = selectedCategory === 'all'
-    ? skills.filter(skill => 
-        !searchQuery || skill.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        skill.description.toLowerCase().includes(searchQuery.toLowerCase())
-      )
-    : skills.filter(skill => 
-        skill.category === selectedCategory &&
-        (!searchQuery || skill.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        skill.description.toLowerCase().includes(searchQuery.toLowerCase()))
-      )
+  const filteredSkills = skills.filter(skill => {
+    const matchesSearch = !searchQuery || 
+      skill.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      skill.description.toLowerCase().includes(searchQuery.toLowerCase())
+    
+    const matchesCategory = selectedCategory === 'all' || skill.category === selectedCategory
+    
+    return matchesSearch && matchesCategory
+  })
 
-  const handleToggleSkill = async (skillId: string, currentStatus: string) => {
-    try {
-      const newStatus = currentStatus === 'active' ? 'inactive' : 'active'
-      
-      // Update local state optimistically
-      setSkills(prev => prev.map(skill => 
-        skill.id === skillId ? { ...skill, status: newStatus as 'active' | 'inactive' } : skill
-      ))
-
-      // Note: In production, this would call the actual Bridge API endpoint
-      console.log(`Toggling skill ${skillId} to ${newStatus}`)
-    } catch (error) {
-      console.error('Failed to toggle skill:', error)
-      // Revert on error
-      setSkills(prev => prev.map(skill => 
-        skill.id === skillId ? { ...skill, status: currentStatus as 'active' | 'inactive' } : skill
-      ))
-    }
+  const toggleSkill = async (skillId: string) => {
+    // In real implementation, this would call the API
+    setSkills(skills.map(skill =>
+      skill.id === skillId
+        ? { ...skill, status: skill.status === 'active' ? 'inactive' : 'active' }
+        : skill
+    ))
   }
 
-  const handleBulkAction = async (action: 'enable' | 'disable', skillIds: string[]) => {
-    try {
-      const newStatus = action === 'enable' ? 'active' : 'inactive'
-      
-      // Update local state
-      setSkills(prev => prev.map(skill => 
-        skillIds.includes(skill.id) ? { ...skill, status: newStatus } : skill
-      ))
-
-      // Note: In production, this would call the actual Bridge API endpoint
-      console.log(`Bulk ${action} for skills:`, skillIds)
-    } catch (error) {
-      console.error('Failed to perform bulk action:', error)
-    }
-  }
-
-  if (loading) {
-    return (
-      <div className="space-y-6 p-6">
-        <div className="animate-pulse">
-          <div className="h-8 bg-muted rounded w-64 mb-2"></div>
-          <div className="h-4 bg-muted rounded w-96"></div>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          {[1, 2, 3, 4].map(i => (
-            <div key={i} className="animate-pulse">
-              <div className="h-24 bg-muted rounded-lg"></div>
-            </div>
-          ))}
-        </div>
-      </div>
-    )
+  const formatLastRefresh = () => {
+    if (!lastRefresh) return 'Never'
+    const now = new Date()
+    const diff = Math.floor((now.getTime() - lastRefresh.getTime()) / 1000)
+    if (diff < 60) return 'Just now'
+    if (diff < 3600) return `${Math.floor(diff / 60)} minutes ago`
+    return `${Math.floor(diff / 3600)} hours ago`
   }
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Skills</h1>
+          <h1 className="text-3xl font-bold">Skills Library</h1>
           <p className="text-muted-foreground">
-            Manage and configure your AI assistant's capabilities
+            35 skills installed from OpenClaw workspace
           </p>
         </div>
-        <div className="flex items-center space-x-2">
-          <Button variant="outline">
-            <Upload className="h-4 w-4 mr-2" />
-            Import
+        <div className="flex items-center gap-4">
+          <div className="text-sm text-muted-foreground">
+            Last refresh: {formatLastRefresh()}
+          </div>
+          <Button onClick={loadSkills} variant="outline" className="gap-2">
+            <RefreshCw className="w-4 h-4" />
+            Refresh Skills
           </Button>
-          <Button>
-            <Plus className="h-4 w-4 mr-2" />
-            Install Skill
+          <Button className="gap-2">
+            <Plus className="w-4 h-4" />
+            Add Skill
           </Button>
         </div>
       </div>
 
-      {/* Stats Overview */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      {/* Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Skills</CardTitle>
@@ -190,215 +206,381 @@ export default function SkillsPage() {
           <CardContent>
             <div className="text-2xl font-bold">{stats.total}</div>
             <p className="text-xs text-muted-foreground">
-              {stats.installed} installed
+              {stats.active} active
+            </p>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Development</CardTitle>
+            <Code className="h-4 w-4 text-blue-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{categoryStats.development}</div>
+            <p className="text-xs text-muted-foreground">
+              coding & tools
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Active Skills</CardTitle>
-            <CheckCircle className="h-4 w-4 text-green-600" />
+            <CardTitle className="text-sm font-medium">Research</CardTitle>
+            <Search className="h-4 w-4 text-purple-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.active}</div>
+            <div className="text-2xl font-bold">{categoryStats.research}</div>
             <p className="text-xs text-muted-foreground">
-              {Math.round((stats.active / stats.total) * 100)}% enabled
+              search & analysis
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Usage Today</CardTitle>
-            <Activity className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">Security</CardTitle>
+            <Shield className="h-4 w-4 text-red-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.usageToday}</div>
+            <div className="text-2xl font-bold">{categoryStats.security}</div>
             <p className="text-xs text-muted-foreground">
-              executions
+              audit & protection
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Categories</CardTitle>
-            <Zap className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">Productivity</CardTitle>
+            <Zap className="h-4 w-4 text-yellow-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{categories.length - 1}</div>
+            <div className="text-2xl font-bold">{categoryStats.productivity}</div>
             <p className="text-xs text-muted-foreground">
-              skill types
+              automation & tools
             </p>
           </CardContent>
         </Card>
       </div>
 
-      {/* Search and Filters */}
-      <div className="flex flex-col sm:flex-row gap-4">
-        <div className="flex-1">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search skills..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10"
-            />
-          </div>
+      {/* Filters */}
+      <div className="flex items-center gap-4">
+        <div className="relative flex-1 max-w-sm">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+          <Input
+            placeholder="Search skills..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-10"
+          />
         </div>
-        <div className="flex items-center space-x-2">
-          <Button variant="outline" onClick={() => loadSkills()}>
-            <RefreshCw className="h-4 w-4 mr-2" />
-            Refresh
-          </Button>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline">
-                <MoreVertical className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem 
-                onClick={() => handleBulkAction('enable', filteredSkills.map(s => s.id))}
-              >
-                Enable All
-              </DropdownMenuItem>
-              <DropdownMenuItem 
-                onClick={() => handleBulkAction('disable', filteredSkills.map(s => s.id))}
-              >
-                Disable All
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem>Export Configuration</DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
+        
+        <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+          <SelectTrigger className="w-48">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {categories.map(category => (
+              <SelectItem key={category.id} value={category.id}>
+                <div className="flex items-center gap-2">
+                  <Filter className="w-4 h-4" />
+                  {category.name}
+                </div>
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
-      {/* Skills Tabs */}
-      <Tabs defaultValue="all" className="space-y-4">
-        <TabsList>
-          {categories.map(category => (
-            <TabsTrigger 
-              key={category.id} 
-              value={category.id}
-              onClick={() => setSelectedCategory(category.id)}
-            >
-              {category.name}
-              {category.id !== 'all' && (
-                <Badge variant="secondary" className="ml-2">
-                  {skills.filter(s => s.category === category.id).length}
-                </Badge>
-              )}
-            </TabsTrigger>
-          ))}
+      {/* Skills Grid */}
+      <Tabs defaultValue="grid">
+        <TabsList className="mb-4">
+          <TabsTrigger value="grid">Grid View</TabsTrigger>
+          <TabsTrigger value="list">List View</TabsTrigger>
+          <TabsTrigger value="categories">By Category</TabsTrigger>
         </TabsList>
 
-        <TabsContent value={selectedCategory} className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filteredSkills.map((skill) => (
-              <Card key={skill.id} className="hover:shadow-md transition-shadow">
-                <CardHeader className="pb-4">
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-center space-x-2">
-                      <div className="text-2xl">{skill.icon}</div>
-                      <div>
-                        <CardTitle className="text-base">{skill.name}</CardTitle>
-                        <div className="flex items-center space-x-2 mt-1">
-                          <Badge variant="outline" className="text-xs">
-                            {skill.category}
-                          </Badge>
-                          <span className="text-xs text-muted-foreground">
-                            v{skill.version}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                          <MoreVertical className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem>
-                          <Settings className="h-4 w-4 mr-2" />
-                          Configure
-                        </DropdownMenuItem>
-                        <DropdownMenuItem>
-                          <Code className="h-4 w-4 mr-2" />
-                          View Code
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem className="text-red-600">
-                          Uninstall
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <p className="text-sm text-muted-foreground">{skill.description}</p>
+        {loading ? (
+          <div className="flex items-center justify-center h-64">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          </div>
+        ) : (
+          <>
+            <TabsContent value="grid">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {filteredSkills.map((skill) => {
+                  const departments = getDepartmentsForSkill(skill.id)
                   
-                  <div className="flex items-center justify-between">
-                    <div className="text-xs text-muted-foreground">
-                      {skill.lastUsed ? (
-                        <span>Last used: {new Date(skill.lastUsed).toLocaleDateString()}</span>
-                      ) : (
-                        <span>Never used</span>
-                      )}
-                    </div>
-                    <Button
-                      variant={skill.status === 'active' ? 'default' : 'outline'}
-                      size="sm"
-                      onClick={() => handleToggleSkill(skill.id, skill.status)}
+                  return (
+                    <Card 
+                      key={skill.id} 
+                      className={`cursor-pointer hover:shadow-lg transition-shadow ${
+                        skill.status === 'inactive' ? 'opacity-60' : ''
+                      }`}
+                      onClick={() => loadSkillDetail(skill.id)}
                     >
-                      {skill.status === 'active' ? (
-                        <>
-                          <Pause className="h-3 w-3 mr-1" />
-                          Enabled
-                        </>
-                      ) : (
-                        <>
-                          <Play className="h-3 w-3 mr-1" />
-                          Enable
-                        </>
-                      )}
-                    </Button>
-                  </div>
+                      <CardHeader>
+                        <div className="flex items-start justify-between">
+                          <div className="flex items-center gap-3">
+                            <div className="text-2xl">{skill.icon}</div>
+                            <div className="flex-1">
+                              <CardTitle className="text-lg">{skill.name}</CardTitle>
+                              <div className="flex items-center gap-2 mt-1">
+                                <Badge variant={skill.status === 'active' ? 'default' : 'secondary'}>
+                                  {skill.status}
+                                </Badge>
+                                <Badge variant="outline">{skill.category}</Badge>
+                              </div>
+                            </div>
+                          </div>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                              <Button variant="ghost" size="icon">
+                                <MoreVertical className="w-4 h-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem onClick={(e) => { e.stopPropagation(); toggleSkill(skill.id); }}>
+                                {skill.status === 'active' ? (
+                                  <>
+                                    <Pause className="w-4 h-4 mr-2" />
+                                    Disable
+                                  </>
+                                ) : (
+                                  <>
+                                    <Play className="w-4 h-4 mr-2" />
+                                    Enable
+                                  </>
+                                )}
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={(e) => e.stopPropagation()}>
+                                <Settings className="w-4 h-4 mr-2" />
+                                Configure
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem className="text-destructive" onClick={(e) => e.stopPropagation()}>
+                                <XCircle className="w-4 h-4 mr-2" />
+                                Uninstall
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
+                        <CardDescription className="mt-2 line-clamp-2">
+                          {skill.description}
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        {/* Department badges */}
+                        {departments.length > 0 && (
+                          <div className="flex items-center gap-2 mb-3">
+                            <span className="text-sm text-muted-foreground">Used by:</span>
+                            <div className="flex gap-1">
+                              {departments.map(dept => (
+                                <Badge 
+                                  key={dept.id} 
+                                  variant="outline" 
+                                  className="text-xs px-2 py-0"
+                                >
+                                  {dept.icon} {dept.name}
+                                </Badge>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="text-muted-foreground">
+                            v{skill.version} • {skill.author}
+                          </span>
+                          {skill.usageCount > 0 && (
+                            <span className="text-muted-foreground">
+                              {skill.usageCount} uses
+                            </span>
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )
+                })}
+              </div>
+            </TabsContent>
 
-                  {skill.permissions.length > 0 && (
-                    <div className="pt-2 border-t">
-                      <div className="text-xs font-medium mb-1">Permissions:</div>
-                      <div className="flex flex-wrap gap-1">
-                        {skill.permissions.map(perm => (
-                          <Badge key={perm} variant="secondary" className="text-xs">
-                            {perm}
-                          </Badge>
-                        ))}
-                      </div>
-                    </div>
-                  )}
+            <TabsContent value="list">
+              <Card>
+                <CardContent className="p-0">
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead>
+                        <tr className="border-b">
+                          <th className="px-4 py-3 text-left font-medium">Skill</th>
+                          <th className="px-4 py-3 text-left font-medium">Category</th>
+                          <th className="px-4 py-3 text-left font-medium">Departments</th>
+                          <th className="px-4 py-3 text-left font-medium">Status</th>
+                          <th className="px-4 py-3 text-left font-medium">Version</th>
+                          <th className="px-4 py-3 text-left font-medium">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {filteredSkills.map((skill) => {
+                          const departments = getDepartmentsForSkill(skill.id)
+                          
+                          return (
+                            <tr key={skill.id} className="border-b hover:bg-muted/50">
+                              <td className="px-4 py-3">
+                                <div className="flex items-center gap-3">
+                                  <span className="text-xl">{skill.icon}</span>
+                                  <div>
+                                    <div 
+                                      className="font-medium hover:underline cursor-pointer"
+                                      onClick={() => loadSkillDetail(skill.id)}
+                                    >
+                                      {skill.name}
+                                    </div>
+                                    <div className="text-sm text-muted-foreground line-clamp-1 max-w-md">
+                                      {skill.description}
+                                    </div>
+                                  </div>
+                                </div>
+                              </td>
+                              <td className="px-4 py-3">
+                                <Badge variant="outline">{skill.category}</Badge>
+                              </td>
+                              <td className="px-4 py-3">
+                                <div className="flex gap-1 flex-wrap">
+                                  {departments.map(dept => (
+                                    <span key={dept.id} className="text-sm">
+                                      {dept.icon}
+                                    </span>
+                                  ))}
+                                </div>
+                              </td>
+                              <td className="px-4 py-3">
+                                <Badge
+                                  variant={skill.status === 'active' ? 'default' : 'secondary'}
+                                >
+                                  {skill.status}
+                                </Badge>
+                              </td>
+                              <td className="px-4 py-3 text-sm text-muted-foreground">
+                                v{skill.version}
+                              </td>
+                              <td className="px-4 py-3">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => toggleSkill(skill.id)}
+                                >
+                                  {skill.status === 'active' ? 'Disable' : 'Enable'}
+                                </Button>
+                              </td>
+                            </tr>
+                          )
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
                 </CardContent>
               </Card>
-            ))}
-          </div>
+            </TabsContent>
 
-          {filteredSkills.length === 0 && (
-            <div className="text-center py-8">
-              <Package className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
-              <h3 className="font-semibold text-lg">No skills found</h3>
-              <p className="text-muted-foreground">
-                {searchQuery 
-                  ? "Try adjusting your search terms" 
-                  : "Install skills to extend your assistant's capabilities"}
-              </p>
-            </div>
-          )}
-        </TabsContent>
+            <TabsContent value="categories">
+              <div className="space-y-6">
+                {categories.filter(cat => cat.id !== 'all').map(category => {
+                  const categorySkills = filteredSkills.filter(skill => skill.category === category.id)
+                  
+                  if (categorySkills.length === 0) return null
+                  
+                  return (
+                    <div key={category.id}>
+                      <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
+                        {category.name}
+                        <Badge variant="secondary">{categorySkills.length}</Badge>
+                      </h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {categorySkills.map((skill) => {
+                          const departments = getDepartmentsForSkill(skill.id)
+                          
+                          return (
+                            <Card 
+                              key={skill.id}
+                              className="cursor-pointer hover:shadow-lg transition-shadow"
+                              onClick={() => loadSkillDetail(skill.id)}
+                            >
+                              <CardHeader>
+                                <div className="flex items-center gap-3">
+                                  <span className="text-2xl">{skill.icon}</span>
+                                  <div className="flex-1">
+                                    <CardTitle className="text-lg">{skill.name}</CardTitle>
+                                    <CardDescription className="line-clamp-2 mt-1">
+                                      {skill.description}
+                                    </CardDescription>
+                                  </div>
+                                </div>
+                              </CardHeader>
+                              {departments.length > 0 && (
+                                <CardContent className="pt-0">
+                                  <div className="flex gap-1">
+                                    {departments.map(dept => (
+                                      <Badge key={dept.id} variant="outline" className="text-xs">
+                                        {dept.icon}
+                                      </Badge>
+                                    ))}
+                                  </div>
+                                </CardContent>
+                              )}
+                            </Card>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </TabsContent>
+          </>
+        )}
       </Tabs>
+
+      {/* Skill Detail Modal */}
+      <Dialog open={!!selectedSkill} onOpenChange={() => setSelectedSkill(null)}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-hidden">
+          <DialogHeader>
+            <DialogTitle className="flex items-center justify-between">
+              <span className="text-xl">{selectedSkill?.name}</span>
+              <Button 
+                variant="ghost" 
+                size="icon"
+                onClick={() => setSelectedSkill(null)}
+              >
+                <X className="w-4 h-4" />
+              </Button>
+            </DialogTitle>
+            <DialogDescription>
+              {selectedSkill?.description}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="overflow-y-auto max-h-[60vh] mt-4">
+            {loadingDetail ? (
+              <div className="flex items-center justify-center h-32">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {selectedSkill?.path && (
+                  <div className="text-sm text-muted-foreground">
+                    Path: {selectedSkill.path}
+                  </div>
+                )}
+                <pre className="bg-muted p-4 rounded-lg overflow-x-auto text-sm whitespace-pre-wrap">
+                  {selectedSkill?.content}
+                </pre>
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
