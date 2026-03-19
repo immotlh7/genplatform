@@ -1,16 +1,16 @@
-export const dynamic = 'force-dynamic'
+import type { Metadata } from 'next'
+import { Inter } from 'next/font/google'
+import './globals.css'
+import { Sidebar } from '@/components/layout/sidebar'
+import { Navbar } from '@/components/layout/navbar'
+import { NotificationProvider, NotificationToast } from '@/components/notifications/notification-system'
+import { ProjectProvider } from '@/contexts/project-context'
 
-import "./globals.css"
-import { Inter } from "next/font/google"
-import { Navbar } from "@/components/layout/navbar"
-import { NotificationProvider } from "@/components/notifications/notification-provider"
-import { ProjectProvider } from "@/contexts/project-context"
+const inter = Inter({ subsets: ['latin'] })
 
-const inter = Inter({ subsets: ["latin"] })
-
-export const metadata = {
-  title: "GenPlatform - AI-Powered Business Intelligence",
-  description: "Next-generation platform for AI-driven business operations and analytics",
+export const metadata: Metadata = {
+  title: 'GenPlatform.ai - Mission Control Dashboard',
+  description: 'AI Agent Management Platform',
 }
 
 export default function RootLayout({
@@ -19,16 +19,22 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" className="dark">
       <body className={inter.className}>
-        <ProjectProvider>
-          <NotificationProvider>
-            <div className="flex flex-col min-h-screen">
-              <Navbar />
-              <main className="flex-1">{children}</main>
+        <NotificationProvider>
+          <ProjectProvider>
+            <div className="min-h-screen bg-background">
+              <Sidebar />
+              <div className="lg:pl-72">
+                <Navbar />
+                <main className="py-4">
+                  {children}
+                </main>
+              </div>
+              <NotificationToast />
             </div>
-          </NotificationProvider>
-        </ProjectProvider>
+          </ProjectProvider>
+        </NotificationProvider>
       </body>
     </html>
   )
