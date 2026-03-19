@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, createContext, useContext } from 'react'
+import { useState, useEffect, createContext, useContext, useCallback } from 'react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { ScrollArea } from '@/components/ui/scroll-area'
@@ -11,7 +11,9 @@ import {
   AlertTriangle,
   Info,
   XCircle,
-  Settings
+  Settings,
+  RefreshCw,
+  CheckCheck
 } from 'lucide-react'
 import {
   DropdownMenu,
@@ -44,6 +46,7 @@ interface NotificationContextType {
   markAllAsRead: () => void
   removeNotification: (id: string) => void
   clearAll: () => void
+  unreadCount: number
 }
 
 const NotificationContext = createContext<NotificationContextType | null>(null)
@@ -62,101 +65,82 @@ interface NotificationProviderProps {
 
 export function NotificationProvider({ children }: NotificationProviderProps) {
   const [notifications, setNotifications] = useState<Notification[]>([])
+  const [unreadCount, setUnreadCount] = useState(0)
+  const [lastFetchTime, setLastFetchTime] = useState<Date | null>(null)
 
-  // Load initial notifications
-  useEffect(() => {
-    // In production, load from localStorage or API
-    const stored = localStorage.getItem('genplatform-notifications')
-    if (stored) {
-      try {
-        setNotifications(JSON.parse(stored))
-      } catch (error) {
-        console.error('Failed to load notifications:', error)
+  // Fetch notifications from API
+  const fetchNotifications = useCallback(async () => {
+    try {
+      const response = await fetch('/api/notifications', { cache: 'no-store' })
+      if (response.ok) {
+        const data = await response.json()
+        
+        // Merge with existing notifications (avoid duplicates)
+        setNotifications(prev => {
+          const existingIds = new Set(prev.map(n => n.id))
+          const newNotifications = data.notifications.filter((n: Notification) => 
+            !existingIds.has(n.id) && 
+            !n.id.startsWith('demo-') // Filter out any demo notifications
+          )
+          
+          // Combine and sort by timestamp
+          const combined = [...prev, ...newNotifications]
+            .filter(n => !n.id.startsWith('demo-')) // Remove demo notifications
+            .sort((a, b) => 
+              new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+            )
+            .slice(0, 50) // Keep only the 50 most recent
+          
+          return combined
+        })
+        
+        setLastFetchTime(new Date())
       }
+    } catch (error) {
+      console.error('Failed to fetch notifications:', error)
     }
-
-    // Add some demo notifications
-    const demoNotifications: Notification[] = [
-      {
-        id: 'demo-1',
-        title: 'System Updated',
-        message: 'GenPlatform.ai is running on app.gen3.ai with live data from Bridge API.',
-        type: 'success',
-        timestamp: new Date(Date.now() - 10 * 60 * 1000).toISOString(),
-        read: false,
-        source: 'System',
-        actions: [
-          { label: 'View Changes', action: () => console.log('View changes') },
-          { label: 'Dismiss', action: () => removeNotification('demo-1') }
-        ]
-      },
-
-      {
-        id: 'demo-3',
-        title: 'Skill Update Available',
-        message: 'Weather skill has an update available with improved accuracy.',
-        type: 'info',
-        timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-        read: true,
-        source: 'Skills Manager'
-      },
-      {
-        id: 'demo-4',
-        title: 'Backup Completed',
-        message: 'Weekly memory backup completed successfully. 156 files backed up.',
-        type: 'success',
-        timestamp: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-        read: true,
-        source: 'Backup Service'
-      }
-    ]
-
-    setNotifications(prev => prev.length === 0 ? demoNotifications : prev)
   }, [])
 
-  // Save notifications to localStorage
+  // Initial fetch and periodic updates
   useEffect(() => {
+    fetchNotifications()
+    
+    // Fetch every 60 seconds
+    const interval = setInterval(fetchNotifications, 60000)
+    
+    return () => clearInterval(interval)
+  }, [fetchNotifications])
+
+  // Update unread count whenever notifications change
+  useEffect(() => {
+    const count = notifications.filter(n => !n.read).length
+    setUnreadCount(count)
+    
+    // Save to localStorage
     localStorage.setItem('genplatform-notifications', JSON.stringify(notifications))
   }, [notifications])
-
-  // Auto-remove old notifications (older than 7 days)
-  useEffect(() => {
-    const interval = setInterval(() => {
-      const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000
-      setNotifications(prev => prev.filter(n => 
-        n.persistent || new Date(n.timestamp).getTime() > sevenDaysAgo
-      ))
-    }, 60 * 60 * 1000) // Check every hour
-
-    return () => clearInterval(interval)
-  }, [])
 
   const addNotification = (notification: Omit<Notification, 'id' | 'timestamp' | 'read'>) => {
     const newNotification: Notification = {
       ...notification,
-      id: `notification-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      id: `local-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
       timestamp: new Date().toISOString(),
       read: false
     }
 
     setNotifications(prev => [newNotification, ...prev])
-
-    // Auto-remove non-persistent notifications after 5 minutes
-    if (!notification.persistent) {
-      setTimeout(() => {
-        setNotifications(prev => prev.filter(n => n.id !== newNotification.id))
-      }, 5 * 60 * 1000)
-    }
   }
 
   const markAsRead = (id: string) => {
-    setNotifications(prev => prev.map(n => 
-      n.id === id ? { ...n, read: true } : n
-    ))
+    setNotifications(prev => 
+      prev.map(n => n.id === id ? { ...n, read: true } : n)
+    )
   }
 
   const markAllAsRead = () => {
-    setNotifications(prev => prev.map(n => ({ ...n, read: true })))
+    setNotifications(prev => 
+      prev.map(n => ({ ...n, read: true }))
+    )
   }
 
   const removeNotification = (id: string) => {
@@ -167,234 +151,269 @@ export function NotificationProvider({ children }: NotificationProviderProps) {
     setNotifications([])
   }
 
-  const value: NotificationContextType = {
+  const contextValue: NotificationContextType = {
     notifications,
     addNotification,
     markAsRead,
     markAllAsRead,
     removeNotification,
-    clearAll
+    clearAll,
+    unreadCount
   }
 
   return (
-    <NotificationContext.Provider value={value}>
+    <NotificationContext.Provider value={contextValue}>
       {children}
     </NotificationContext.Provider>
   )
 }
 
 export function NotificationBell() {
-  const { notifications, markAsRead, markAllAsRead, removeNotification, clearAll } = useNotifications()
+  const { notifications, markAsRead, markAllAsRead, removeNotification, unreadCount } = useNotifications()
+  const [isOpen, setIsOpen] = useState(false)
+  const [isRefreshing, setIsRefreshing] = useState(false)
   
-  const unreadCount = notifications.filter(n => !n.read).length
-  const hasUnread = unreadCount > 0
-
-  const getNotificationIcon = (type: string) => {
+  const getIcon = (type: Notification['type']) => {
     switch (type) {
-      case 'success': return <CheckCircle className="h-4 w-4 text-green-600" />
-      case 'warning': return <AlertTriangle className="h-4 w-4 text-yellow-600" />
-      case 'error': return <XCircle className="h-4 w-4 text-red-600" />
-      default: return <Info className="h-4 w-4 text-blue-600" />
+      case 'success':
+        return <CheckCircle className="w-4 h-4 text-green-500" />
+      case 'warning':
+        return <AlertTriangle className="w-4 h-4 text-yellow-500" />
+      case 'error':
+        return <XCircle className="w-4 h-4 text-red-500" />
+      default:
+        return <Info className="w-4 h-4 text-blue-500" />
     }
   }
 
-  const formatTimeAgo = (timestamp: string) => {
+  const formatTime = (timestamp: string) => {
+    const date = new Date(timestamp)
     const now = new Date()
-    const time = new Date(timestamp)
-    const diffInMinutes = Math.floor((now.getTime() - time.getTime()) / (1000 * 60))
-    
-    if (diffInMinutes < 1) return 'Just now'
-    if (diffInMinutes < 60) return `${diffInMinutes}m ago`
-    if (diffInMinutes < 1440) return `${Math.floor(diffInMinutes / 60)}h ago`
-    return `${Math.floor(diffInMinutes / 1440)}d ago`
+    const diffMs = now.getTime() - date.getTime()
+    const diffMins = Math.floor(diffMs / 60000)
+    const diffHours = Math.floor(diffMs / 3600000)
+    const diffDays = Math.floor(diffMs / 86400000)
+
+    if (diffMins < 1) return 'just now'
+    if (diffMins < 60) return `${diffMins}m ago`
+    if (diffHours < 24) return `${diffHours}h ago`
+    if (diffDays < 7) return `${diffDays}d ago`
+    return date.toLocaleDateString()
+  }
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true)
+    try {
+      // Force refresh by calling the API directly
+      await fetch('/api/notifications', { cache: 'no-store' })
+      window.location.reload() // Simple way to trigger context refresh
+    } catch (error) {
+      console.error('Failed to refresh:', error)
+    } finally {
+      setTimeout(() => setIsRefreshing(false), 500)
+    }
+  }
+
+  const handleNotificationClick = (notification: Notification) => {
+    if (!notification.read) {
+      markAsRead(notification.id)
+    }
   }
 
   return (
-    <DropdownMenu>
-      <Button variant="ghost" size="sm" className="relative">
-        <Bell className="h-4 w-4" />
-        {hasUnread && (
-          <Badge 
-            variant="destructive" 
-            className="absolute -top-2 -right-2 h-5 w-5 p-0 flex items-center justify-center text-xs"
-          >
-            {unreadCount > 9 ? '9+' : unreadCount}
-          </Badge>
-        )}
-      </Button>
-      
-      <DropdownMenuContent align="end" className="w-80">
+    <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
+      <DropdownMenuTrigger asChild>
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          className="relative"
+        >
+          <Bell className="h-5 w-5" />
+          {unreadCount > 0 && (
+            <Badge 
+              variant="destructive" 
+              className="absolute -top-1 -right-1 px-1 min-w-[1.25rem] h-5"
+            >
+              {unreadCount > 99 ? '99+' : unreadCount}
+            </Badge>
+          )}
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-96">
         <div className="flex items-center justify-between p-4 border-b">
           <h3 className="font-semibold">Notifications</h3>
-          <div className="flex space-x-1">
-            {hasUnread && (
-              <Button size="sm" variant="ghost" onClick={markAllAsRead}>
+          <div className="flex gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleRefresh}
+              disabled={isRefreshing}
+              className="h-8 px-2"
+            >
+              <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+            </Button>
+            {unreadCount > 0 && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={markAllAsRead}
+                className="h-8 px-2"
+              >
+                <CheckCheck className="h-4 w-4 mr-1" />
                 Mark all read
               </Button>
             )}
-            <Button size="sm" variant="ghost" onClick={clearAll}>
-              Clear all
-            </Button>
           </div>
         </div>
-
-        <ScrollArea className="h-96">
+        
+        <ScrollArea className="h-[400px]">
           {notifications.length === 0 ? (
             <div className="p-8 text-center text-muted-foreground">
               <Bell className="h-8 w-8 mx-auto mb-2 opacity-50" />
               <p>No notifications</p>
             </div>
           ) : (
-            <div className="space-y-1 p-2">
+            <div className="divide-y">
               {notifications.map((notification) => (
                 <div
                   key={notification.id}
-                  className={`p-3 rounded-lg border transition-colors cursor-pointer ${
-                    notification.read 
-                      ? 'bg-background hover:bg-muted/50' 
-                      : 'bg-muted/30 hover:bg-muted/50 border-primary/20'
+                  className={`p-4 hover:bg-muted/50 cursor-pointer transition-colors ${
+                    !notification.read ? 'bg-muted/20' : ''
                   }`}
-                  onClick={() => !notification.read && markAsRead(notification.id)}
+                  onClick={() => handleNotificationClick(notification)}
                 >
-                  <div className="flex items-start justify-between mb-2">
-                    <div className="flex items-center space-x-2">
-                      {getNotificationIcon(notification.type)}
-                      <span className="font-medium text-sm">{notification.title}</span>
-                      {!notification.read && (
-                        <div className="w-2 h-2 bg-primary rounded-full" />
-                      )}
+                  <div className="flex gap-3">
+                    <div className="pt-1">
+                      {getIcon(notification.type)}
                     </div>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="h-6 w-6 p-0 opacity-50 hover:opacity-100"
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        removeNotification(notification.id)
-                      }}
-                    >
-                      <X className="h-3 w-3" />
-                    </Button>
-                  </div>
-
-                  <p className="text-sm text-muted-foreground mb-2">{notification.message}</p>
-
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-2 text-xs text-muted-foreground">
-                      <span>{formatTimeAgo(notification.timestamp)}</span>
-                      {notification.source && (
-                        <>
-                          <span>•</span>
-                          <span>{notification.source}</span>
-                        </>
-                      )}
-                    </div>
-                  </div>
-
-                  {notification.actions && notification.actions.length > 0 && (
-                    <div className="flex space-x-2 mt-2">
-                      {notification.actions.map((action, index) => (
+                    <div className="flex-1 space-y-1">
+                      <div className="flex items-start justify-between">
+                        <p className="text-sm font-medium leading-none">
+                          {notification.title}
+                        </p>
                         <Button
-                          key={index}
-                          size="sm"
-                          variant={action.variant || "outline"}
+                          variant="ghost"
+                          size="icon"
+                          className="h-6 w-6 -mt-1 -mr-2"
                           onClick={(e) => {
                             e.stopPropagation()
-                            action.action()
+                            removeNotification(notification.id)
                           }}
                         >
-                          {action.label}
+                          <X className="h-3 w-3" />
                         </Button>
-                      ))}
+                      </div>
+                      <p className="text-sm text-muted-foreground">
+                        {notification.message}
+                      </p>
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                        <span>{formatTime(notification.timestamp)}</span>
+                        {notification.source && (
+                          <>
+                            <span>•</span>
+                            <span>{notification.source}</span>
+                          </>
+                        )}
+                        {!notification.read && (
+                          <>
+                            <span>•</span>
+                            <span className="text-blue-500">New</span>
+                          </>
+                        )}
+                      </div>
+                      {notification.actions && notification.actions.length > 0 && (
+                        <div className="flex gap-2 mt-2">
+                          {notification.actions.map((action, index) => (
+                            <Button
+                              key={index}
+                              variant={action.variant || 'secondary'}
+                              size="sm"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                action.action()
+                              }}
+                            >
+                              {action.label}
+                            </Button>
+                          ))}
+                        </div>
+                      )}
                     </div>
-                  )}
+                  </div>
                 </div>
               ))}
             </div>
           )}
         </ScrollArea>
-
-        {notifications.length > 0 && (
-          <>
-            <DropdownMenuSeparator />
-            <div className="p-2">
-              <Button variant="ghost" size="sm" className="w-full justify-start">
-                <Settings className="h-4 w-4 mr-2" />
-                Notification Settings
-              </Button>
-            </div>
-          </>
-        )}
+        
+        <DropdownMenuSeparator />
+        <DropdownMenuItem
+          className="justify-center cursor-pointer"
+          onClick={() => setIsOpen(false)}
+        >
+          <Settings className="mr-2 h-4 w-4" />
+          Notification Settings
+        </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   )
 }
 
-// Toast notifications component
 export function NotificationToast() {
-  const { notifications, removeNotification } = useNotifications()
-  
-  // Show only unread notifications as toasts for 5 seconds
-  const [visibleToasts, setVisibleToasts] = useState<string[]>([])
+  const { notifications } = useNotifications()
+  const [toastNotification, setToastNotification] = useState<Notification | null>(null)
 
   useEffect(() => {
-    const unreadNotifications = notifications.filter(n => !n.read && !visibleToasts.includes(n.id))
-    
-    unreadNotifications.forEach(notification => {
-      setVisibleToasts(prev => [...prev, notification.id])
+    // Show toast for new unread notifications
+    const latestUnread = notifications.find(n => !n.read && !n.id.startsWith('demo-'))
+    if (latestUnread && latestUnread.id !== toastNotification?.id) {
+      setToastNotification(latestUnread)
       
-      // Auto-hide toast after 5 seconds
-      setTimeout(() => {
-        setVisibleToasts(prev => prev.filter(id => id !== notification.id))
+      // Auto hide after 5 seconds
+      const timeout = setTimeout(() => {
+        setToastNotification(null)
       }, 5000)
-    })
-  }, [notifications, visibleToasts])
+      
+      return () => clearTimeout(timeout)
+    }
+  }, [notifications, toastNotification])
 
-  const toastNotifications = notifications.filter(n => visibleToasts.includes(n.id))
+  if (!toastNotification) return null
 
-  if (toastNotifications.length === 0) return null
-
-  return (
-    <div className="fixed bottom-4 right-4 z-50 space-y-2">
-      {toastNotifications.map((notification) => (
-        <div
-          key={notification.id}
-          className={`bg-background border rounded-lg shadow-lg p-4 max-w-sm animate-in slide-in-from-right ${
-            notification.type === 'error' ? 'border-red-200 bg-red-50' :
-            notification.type === 'warning' ? 'border-yellow-200 bg-yellow-50' :
-            notification.type === 'success' ? 'border-green-200 bg-green-50' :
-            'border-blue-200 bg-blue-50'
-          }`}
-        >
-          <div className="flex items-start justify-between mb-2">
-            <div className="flex items-center space-x-2">
-              {getNotificationIcon(notification.type)}
-              <span className="font-medium text-sm">{notification.title}</span>
-            </div>
-            <Button
-              size="sm"
-              variant="ghost"
-              className="h-6 w-6 p-0"
-              onClick={() => {
-                setVisibleToasts(prev => prev.filter(id => id !== notification.id))
-                removeNotification(notification.id)
-              }}
-            >
-              <X className="h-3 w-3" />
-            </Button>
-          </div>
-          <p className="text-sm text-muted-foreground">{notification.message}</p>
-        </div>
-      ))}
-    </div>
-  )
-
-  function getNotificationIcon(type: string) {
+  const getIcon = (type: Notification['type']) => {
     switch (type) {
-      case 'success': return <CheckCircle className="h-4 w-4 text-green-600" />
-      case 'warning': return <AlertTriangle className="h-4 w-4 text-yellow-600" />
-      case 'error': return <XCircle className="h-4 w-4 text-red-600" />
-      default: return <Info className="h-4 w-4 text-blue-600" />
+      case 'success':
+        return <CheckCircle className="w-5 h-5 text-green-500" />
+      case 'warning':
+        return <AlertTriangle className="w-5 h-5 text-yellow-500" />
+      case 'error':
+        return <XCircle className="w-5 h-5 text-red-500" />
+      default:
+        return <Info className="w-5 h-5 text-blue-500" />
     }
   }
+
+  return (
+    <div className="fixed bottom-4 right-4 max-w-md animate-in slide-in-from-bottom-2 z-50">
+      <div className="bg-background border rounded-lg shadow-lg p-4">
+        <div className="flex gap-3">
+          {getIcon(toastNotification.type)}
+          <div className="flex-1">
+            <p className="font-medium">{toastNotification.title}</p>
+            <p className="text-sm text-muted-foreground mt-1">
+              {toastNotification.message}
+            </p>
+          </div>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-6 w-6"
+            onClick={() => setToastNotification(null)}
+          >
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
+    </div>
+  )
 }
