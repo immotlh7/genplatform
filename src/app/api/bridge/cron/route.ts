@@ -26,21 +26,33 @@ export async function GET() {
 
     // Find next scheduled job
     const nextJob = jobs
-      .filter((j: any) => j.nextRun)
+      .filter((j: any) => j.nextRun && j.enabled)
       .sort((a: any, b: any) => new Date(a.nextRun).getTime() - new Date(b.nextRun).getTime())[0];
 
     return NextResponse.json({
       jobs,
       total,
       enabled,
-      stats: { total, enabled, running, failed },
+      stats: { 
+        total, 
+        enabled, 
+        running, 
+        failed,
+        nextExecution: nextJob?.nextRun || null
+      },
       nextRun: nextJob?.nextRun || null
     });
   } catch (e: any) {
     return NextResponse.json({ 
       error: e.message, 
       jobs: [], 
-      stats: { total: 0, enabled: 0, running: 0, failed: 0 } 
+      stats: { 
+        total: 0, 
+        enabled: 0, 
+        running: 0, 
+        failed: 0,
+        nextExecution: null
+      } 
     }, { status: 500 });
   }
 }

@@ -72,26 +72,18 @@ export default function CronPage() {
   }, [])
 
   useEffect(() => {
-    // Filter jobs based on search and user permissions
+    // Filter jobs based on search - NO USER FILTERING
     const filtered = jobs.filter(job => {
       // Search filter
       const matchesSearch = job.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         job.command.toLowerCase().includes(searchTerm.toLowerCase()) ||
         job.description?.toLowerCase().includes(searchTerm.toLowerCase())
 
-      // Access filter based on user role
-      if (!currentUser) return false
-
-      // VIEWER role: Can only see non-system-critical jobs
-      if (currentUser.role === 'VIEWER' && job.isSystemCritical) {
-        return false
-      }
-
       return matchesSearch
     })
 
     setFilteredJobs(filtered)
-  }, [jobs, searchTerm, currentUser])
+  }, [jobs, searchTerm])
 
   const loadUserAndCronJobs = async () => {
     setLoading(true)
@@ -223,16 +215,12 @@ export default function CronPage() {
 
       setJobs(demoJobs)
       
-      // Calculate filtered stats based on user access
-      const accessibleJobs = user ? demoJobs.filter(job => 
-        !(user.role === 'VIEWER' && job.isSystemCritical)
-      ) : demoJobs
-
+      // Calculate stats from ALL jobs (no filtering)
       setStats({
-        total: accessibleJobs.length,
-        enabled: accessibleJobs.filter(job => job.enabled).length,
-        running: accessibleJobs.filter(job => job.status === 'running').length,
-        failed: accessibleJobs.filter(job => job.status === 'failed').length,
+        total: demoJobs.length,
+        enabled: demoJobs.filter(job => job.enabled).length,
+        running: demoJobs.filter(job => job.status === 'running').length,
+        failed: demoJobs.filter(job => job.status === 'failed').length,
         nextExecution: new Date(Date.now() + 2 * 60 * 1000).toISOString()
       })
     } finally {
@@ -390,14 +378,33 @@ export default function CronPage() {
     
     const [min, hour, day, month, weekday] = parts
     
+    // Common patterns
     if (min === '*/5' && hour === '*' && day === '*' && month === '*' && weekday === '*') {
       return 'Every 5 minutes'
+    } else if (min === '*/15' && hour === '*' && day === '*' && month === '*' && weekday === '*') {
+      return 'Every 15 minutes'
+    } else if (min === '*/30' && hour === '*' && day === '*' && month === '*' && weekday === '*') {
+      return 'Every 30 minutes'
+    } else if (min === '0' && hour === '*' && day === '*' && month === '*' && weekday === '*') {
+      return 'Every hour'
+    } else if (min === '0' && hour === '*/2' && day === '*' && month === '*' && weekday === '*') {
+      return 'Every 2 hours'
+    } else if (min === '0' && hour === '*/6' && day === '*' && month === '*' && weekday === '*') {
+      return 'Every 6 hours'
     } else if (min === '0' && hour === '2' && day === '*' && month === '*' && weekday === '*') {
-      return 'Daily at 2 AM'
-    } else if (min === '0' && hour.startsWith('*/')) {
-      return `Every ${hour.slice(2)}h`
+      return 'Daily at 2:00 AM'
+    } else if (min === '0' && hour === '21' && day === '*' && month === '*' && weekday === '*') {
+      return 'Daily at 9:00 PM'
+    } else if (min === '0' && hour === '3' && day === '*' && month === '*' && weekday === '0') {
+      return 'Weekly on Sunday at 3:00 AM'
+    } else if (min === '0' && hour === '1' && day === '*' && month === '*' && weekday === '1') {
+      return 'Weekly on Monday at 1:00 AM'
     } else if (min.startsWith('*/') && hour === '*') {
-      return `Every ${min.slice(2)}m`
+      return `Every ${min.slice(2)} minutes`
+    } else if (min === '0' && hour.startsWith('*/')) {
+      return `Every ${hour.slice(2)} hours`
+    } else if (min !== '*' && hour !== '*' && day === '*' && month === '*' && weekday === '*') {
+      return `Daily at ${hour}:${min.padStart(2, '0')}`
     }
     
     return 'Custom'
@@ -410,22 +417,6 @@ export default function CronPage() {
 
   const isReadOnly = !canUserCreate()
 
-  if (!currentUser) {
-    return (
-      <div className="space-y-6 p-6">
-        <Card className="text-center py-12">
-          <CardContent>
-            <AlertCircle className="h-16 w-16 text-muted-foreground mx-auto mb-4 opacity-50" />
-            <h3 className="text-lg font-semibold mb-2">Authentication Required</h3>
-            <p className="text-muted-foreground mb-6 max-w-md mx-auto">
-              Please log in to access cron job management.
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-    )
-  }
-
   return (
     <div className="space-y-6 p-6">
       {/* Header */}
@@ -433,9 +424,11 @@ export default function CronPage() {
         <div>
           <h1 className="text-3xl font-bold">Cron Jobs</h1>
           <p className="text-muted-foreground">
-            {currentUser.role === 'VIEWER' 
-              ? 'View scheduled tasks and automation (limited access)'
-              : 'Manage scheduled tasks and automation'
+            {!currentUser 
+              ? 'View and manage scheduled tasks'
+              : currentUser.role === 'VIEWER' 
+                ? 'View scheduled tasks and automation (limited access)'
+                : 'Manage scheduled tasks and automation'
             }
           </p>
         </div>
@@ -462,7 +455,7 @@ export default function CronPage() {
       </div>
 
       {/* Access level indicator */}
-      {currentUser.role !== 'OWNER' && (
+      {currentUser && currentUser.role !== 'OWNER' && (
         <div className={`border rounded-lg p-4 ${
           currentUser.role === 'VIEWER' 
             ? 'bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800'
@@ -502,9 +495,7 @@ export default function CronPage() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              {currentUser.role === 'VIEWER' ? 'Visible Jobs' : 'Total Jobs'}
-            </CardTitle>
+            <CardTitle className="text-sm font-medium">Total Jobs</CardTitle>
             <Settings className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -589,7 +580,6 @@ export default function CronPage() {
               <h3 className="text-lg font-medium mb-2">No cron jobs found</h3>
               <p className="text-muted-foreground mb-4">
                 {searchTerm ? 'No jobs match your search criteria' : 
-                 currentUser.role === 'VIEWER' ? 'No jobs are visible to your role' :
                  'Get started by creating your first scheduled job'}
               </p>
               {canUserCreate() && (
