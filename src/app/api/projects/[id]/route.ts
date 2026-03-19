@@ -83,13 +83,18 @@ function getProjects(): Project[] {
 // GET /api/projects/[id] - Get single project
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
+    // In Next.js 15+, params might be a promise
+    const params = await context.params
+    console.log('GET project with params:', params)
+    
     const projects = getProjects()
     const project = projects.find(p => p.id === params.id)
 
     if (!project) {
+      console.log('Project not found:', params.id, 'Available:', projects.map(p => p.id))
       return NextResponse.json(
         { error: 'Project not found' },
         { status: 404 }
@@ -110,9 +115,10 @@ export async function GET(
 // PUT /api/projects/[id] - Update project
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
+    const params = await context.params
     const projects = getProjects()
     const projectIndex = projects.findIndex(p => p.id === params.id)
 
@@ -204,9 +210,10 @@ export async function PUT(
 // DELETE /api/projects/[id] - Archive project
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
+    const params = await context.params
     const projects = getProjects()
     const projectIndex = projects.findIndex(p => p.id === params.id)
 
