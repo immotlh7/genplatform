@@ -1,5 +1,8 @@
 'use client'
 
+import dynamic from 'next/dynamic'
+const TasksPage = dynamic(() => import('@/app/dashboard/tasks/page'), { ssr: false })
+
 import { useEffect, useState, useRef } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'

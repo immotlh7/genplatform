@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Textarea } from '@/components/ui/textarea'
+import { Label } from '@/components/ui/label'
 import { 
   Search, 
   Plus, 
@@ -23,7 +24,8 @@ import {
   Pause,
   RotateCcw,
   Ban,
-  Calendar
+  Calendar,
+  Loader2
 } from 'lucide-react'
 
 interface Task {
@@ -40,6 +42,7 @@ interface Task {
   startedAt?: string
   completedAt?: string
   blockedReason?: string
+  projectId?: string
 }
 
 interface Role {
@@ -65,191 +68,6 @@ const roles: Role[] = [
   { id: 'improvement', name: 'Self-Improvement', icon: '📈' }
 ]
 
-const initialTasks: Task[] = [
-  // Done tasks
-  {
-    id: '1',
-    number: 'T-01',
-    name: 'Set up project repository',
-    description: 'Initialize Git repository, set up branch protection rules, and create initial README',
-    status: 'done',
-    assignedRole: roles[1],
-    estimatedTime: 2,
-    actualTime: 1.5,
-    sprint: 'Sprint 1',
-    priority: 'high',
-    completedAt: '2024-03-15T10:00:00Z'
-  },
-  {
-    id: '2',
-    number: 'T-02',
-    name: 'Design system architecture',
-    description: 'Create high-level system design and component architecture diagrams',
-    status: 'done',
-    assignedRole: roles[5],
-    estimatedTime: 8,
-    actualTime: 10,
-    sprint: 'Sprint 1',
-    priority: 'high',
-    completedAt: '2024-03-16T15:30:00Z'
-  },
-  {
-    id: '3',
-    number: 'T-03',
-    name: 'Implement authentication system',
-    description: 'Set up JWT-based authentication with refresh tokens and secure session management',
-    status: 'done',
-    assignedRole: roles[1],
-    estimatedTime: 16,
-    actualTime: 14,
-    sprint: 'Sprint 1',
-    priority: 'high',
-    completedAt: '2024-03-18T18:00:00Z'
-  },
-  
-  // In Progress tasks
-  {
-    id: '4',
-    number: 'T-04',
-    name: 'Create dashboard layout',
-    description: 'Implement responsive dashboard layout with sidebar navigation and header',
-    status: 'in_progress',
-    assignedRole: roles[0],
-    estimatedTime: 12,
-    sprint: 'Sprint 2',
-    priority: 'medium',
-    startedAt: '2024-03-19T09:00:00Z'
-  },
-  {
-    id: '5',
-    number: 'T-05',
-    name: 'API rate limiting',
-    description: 'Implement rate limiting for all API endpoints to prevent abuse',
-    status: 'in_progress',
-    assignedRole: roles[2],
-    estimatedTime: 6,
-    sprint: 'Sprint 2',
-    priority: 'high',
-    startedAt: '2024-03-19T08:00:00Z'
-  },
-  
-  // Review tasks
-  {
-    id: '6',
-    number: 'T-06',
-    name: 'User profile management',
-    description: 'Create user profile pages with edit functionality and avatar upload',
-    status: 'review',
-    assignedRole: roles[0],
-    estimatedTime: 8,
-    sprint: 'Sprint 2',
-    priority: 'medium'
-  },
-  {
-    id: '7',
-    number: 'T-07',
-    name: 'Database optimization',
-    description: 'Optimize database queries and add proper indexing for performance',
-    status: 'review',
-    assignedRole: roles[1],
-    estimatedTime: 10,
-    sprint: 'Sprint 2',
-    priority: 'medium'
-  },
-  
-  // Planned tasks
-  {
-    id: '8',
-    number: 'T-08',
-    name: 'Real-time notifications',
-    description: 'Implement WebSocket-based real-time notifications system',
-    status: 'planned',
-    assignedRole: roles[1],
-    estimatedTime: 20,
-    sprint: 'Sprint 3',
-    priority: 'medium'
-  },
-  {
-    id: '9',
-    number: 'T-09',
-    name: 'Security audit',
-    description: 'Perform comprehensive security audit of the application',
-    status: 'planned',
-    assignedRole: roles[2],
-    estimatedTime: 16,
-    sprint: 'Sprint 3',
-    priority: 'high'
-  },
-  {
-    id: '10',
-    number: 'T-10',
-    name: 'Automated testing setup',
-    description: 'Set up Jest, React Testing Library, and E2E tests with Playwright',
-    status: 'planned',
-    assignedRole: roles[3],
-    estimatedTime: 24,
-    sprint: 'Sprint 3',
-    priority: 'high'
-  },
-  
-  // Backlog tasks
-  {
-    id: '11',
-    number: 'T-11',
-    name: 'Performance monitoring',
-    description: 'Integrate APM tools and set up performance monitoring dashboards',
-    status: 'backlog',
-    assignedRole: roles[6],
-    estimatedTime: 12,
-    sprint: 'Sprint 4',
-    priority: 'low'
-  },
-  {
-    id: '12',
-    number: 'T-12',
-    name: 'Multi-language support',
-    description: 'Implement i18n with support for Arabic, English, and French',
-    status: 'backlog',
-    assignedRole: roles[0],
-    estimatedTime: 30,
-    sprint: 'Sprint 4',
-    priority: 'medium'
-  },
-  {
-    id: '13',
-    number: 'T-13',
-    name: 'Data export functionality',
-    description: 'Allow users to export their data in CSV, JSON, and PDF formats',
-    status: 'backlog',
-    assignedRole: roles[1],
-    estimatedTime: 15,
-    sprint: 'Sprint 4',
-    priority: 'low'
-  },
-  {
-    id: '14',
-    number: 'T-14',
-    name: 'AI integration research',
-    description: 'Research and prototype AI/ML features for intelligent task suggestions',
-    status: 'backlog',
-    assignedRole: roles[4],
-    estimatedTime: 40,
-    sprint: 'Sprint 5',
-    priority: 'medium'
-  },
-  {
-    id: '15',
-    number: 'T-15',
-    name: 'Mobile app planning',
-    description: 'Create technical specification for React Native mobile app',
-    status: 'backlog',
-    assignedRole: roles[5],
-    estimatedTime: 20,
-    sprint: 'Sprint 5',
-    priority: 'low'
-  }
-]
-
 const columnOrder = ['backlog', 'planned', 'in_progress', 'review', 'done']
 
 const columnConfig = {
@@ -267,14 +85,55 @@ function getElapsedTime(startedAt: string): string {
   return `${hours}h`
 }
 
-export default function TasksPage() {
-  const [tasks, setTasks] = useState<Task[]>(initialTasks)
+interface TasksPageProps {
+  projectId?: string
+  embedded?: boolean
+}
+
+export default function TasksPage({ projectId, embedded = false }: TasksPageProps) {
+  const [tasks, setTasks] = useState<Task[]>([])
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [roleFilter, setRoleFilter] = useState<string>('all')
   const [sprintFilter, setSprintFilter] = useState<string>('all')
   const [viewMode, setViewMode] = useState<'board' | 'list'>('board')
   const [selectedTask, setSelectedTask] = useState<Task | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [isNewTaskModalOpen, setIsNewTaskModalOpen] = useState(false)
+  const [newTask, setNewTask] = useState({
+    name: '',
+    description: '',
+    assignedRoleId: 'frontend',
+    estimatedTime: 8,
+    sprint: 'Backlog',
+    priority: 'medium' as 'low' | 'medium' | 'high'
+  })
+  
+  // Load tasks from API
+  useEffect(() => {
+    fetchTasks()
+  }, [projectId])
+  
+  const fetchTasks = async () => {
+    try {
+      setLoading(true)
+      const url = projectId 
+        ? `/api/tasks?projectId=${projectId}`
+        : '/api/tasks'
+      
+      const response = await fetch(url)
+      const data = await response.json()
+      
+      if (response.ok) {
+        setTasks(data.tasks || [])
+      }
+    } catch (error) {
+      console.error('Error fetching tasks:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
   
   // Group tasks by status
   const columns: Record<string, Column> = {}
@@ -299,94 +158,148 @@ export default function TasksPage() {
   // Calculate progress
   const doneTasks = tasks.filter(task => task.status === 'done').length
   const totalTasks = tasks.length
-  const progress = Math.round((doneTasks / totalTasks) * 100)
+  const progress = totalTasks > 0 ? Math.round((doneTasks / totalTasks) * 100) : 0
   
   // Get unique sprints
   const sprints = [...new Set(tasks.map(task => task.sprint))]
   
-  const handleDragEnd = (result: DropResult) => {
+  const handleDragEnd = async (result: DropResult) => {
     if (!result.destination) return
     
     const sourceStatus = result.source.droppableId
     const destStatus = result.destination.droppableId
+    const taskId = result.draggableId
     
     if (sourceStatus === destStatus) {
-      // Reorder within same column
-      const column = columns[sourceStatus]
-      const reorderedTasks = Array.from(column.tasks)
-      const [movedTask] = reorderedTasks.splice(result.source.index, 1)
-      reorderedTasks.splice(result.destination.index, 0, movedTask)
+      // Just reorder within same column (local only)
+      return
+    }
+    
+    // Update task status via API
+    try {
+      setSaving(true)
+      const response = await fetch(`/api/tasks/${taskId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: destStatus })
+      })
       
-      // Update all tasks
-      setTasks(prevTasks => {
-        const otherTasks = prevTasks.filter(task => task.status !== sourceStatus)
-        return [...otherTasks, ...reorderedTasks]
-      })
-    } else {
-      // Move to different column
-      setTasks(prevTasks => {
-        return prevTasks.map(task => {
-          if (task.id === result.draggableId) {
-            const updatedTask = { ...task, status: destStatus as Task['status'] }
-            
-            // Update timestamps based on status change
-            if (destStatus === 'in_progress' && !task.startedAt) {
-              updatedTask.startedAt = new Date().toISOString()
-            } else if (destStatus === 'done') {
-              updatedTask.completedAt = new Date().toISOString()
-              if (updatedTask.startedAt) {
-                const hours = Math.floor((new Date().getTime() - new Date(updatedTask.startedAt).getTime()) / (1000 * 60 * 60))
-                updatedTask.actualTime = hours || 1
-              }
-            }
-            
-            return updatedTask
-          }
-          return task
-        })
-      })
+      if (response.ok) {
+        const { task: updatedTask } = await response.json()
+        setTasks(prevTasks => prevTasks.map(t => 
+          t.id === taskId ? updatedTask : t
+        ))
+      }
+    } catch (error) {
+      console.error('Error updating task:', error)
+      // Revert on error
+      fetchTasks()
+    } finally {
+      setSaving(false)
     }
   }
   
-  const moveTaskToNext = (task: Task) => {
+  const moveTaskToNext = async (task: Task) => {
     const currentIndex = columnOrder.indexOf(task.status)
     if (currentIndex < columnOrder.length - 1) {
       const nextStatus = columnOrder[currentIndex + 1] as Task['status']
-      handleDragEnd({
-        draggableId: task.id,
-        source: { droppableId: task.status, index: 0 },
-        destination: { droppableId: nextStatus, index: 0 },
-        type: 'DEFAULT'
-      } as DropResult)
+      
+      try {
+        setSaving(true)
+        const response = await fetch(`/api/tasks/${task.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status: nextStatus })
+        })
+        
+        if (response.ok) {
+          const { task: updatedTask } = await response.json()
+          setTasks(prevTasks => prevTasks.map(t => 
+            t.id === task.id ? updatedTask : t
+          ))
+        }
+      } catch (error) {
+        console.error('Error moving task:', error)
+      } finally {
+        setSaving(false)
+      }
     }
   }
   
-  const updateTaskStatus = (task: Task, newStatus: 'start' | 'complete' | 'return' | 'block') => {
-    setTasks(prevTasks => {
-      return prevTasks.map(t => {
-        if (t.id === task.id) {
-          switch (newStatus) {
-            case 'start':
-              return { ...t, status: 'in_progress', startedAt: new Date().toISOString() }
-            case 'complete':
-              return { 
-                ...t, 
-                status: 'done', 
-                completedAt: new Date().toISOString(),
-                actualTime: t.startedAt ? Math.floor((new Date().getTime() - new Date(t.startedAt).getTime()) / (1000 * 60 * 60)) || 1 : t.estimatedTime
-              }
-            case 'return':
-              return { ...t, status: 'backlog', startedAt: undefined, completedAt: undefined, actualTime: undefined }
-            case 'block':
-              return { ...t, blockedReason: 'Blocked - awaiting dependencies' }
-            default:
-              return t
-          }
-        }
-        return t
+  const updateTaskStatus = async (task: Task, action: 'start' | 'complete' | 'return' | 'block') => {
+    let updates: any = {}
+    
+    switch (action) {
+      case 'start':
+        updates.status = 'in_progress'
+        break
+      case 'complete':
+        updates.status = 'done'
+        break
+      case 'return':
+        updates.status = 'backlog'
+        break
+      case 'block':
+        updates.blockedReason = 'Blocked - awaiting dependencies'
+        break
+    }
+    
+    try {
+      setSaving(true)
+      const response = await fetch(`/api/tasks/${task.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updates)
       })
-    })
-    setIsModalOpen(false)
+      
+      if (response.ok) {
+        const { task: updatedTask } = await response.json()
+        setTasks(prevTasks => prevTasks.map(t => 
+          t.id === task.id ? updatedTask : t
+        ))
+      }
+    } catch (error) {
+      console.error('Error updating task:', error)
+    } finally {
+      setSaving(false)
+      setIsModalOpen(false)
+    }
+  }
+  
+  const createNewTask = async () => {
+    try {
+      setSaving(true)
+      const response = await fetch('/api/tasks', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...newTask,
+          projectId: projectId
+        })
+      })
+      
+      if (response.ok) {
+        const { task } = await response.json()
+        setTasks(prevTasks => [...prevTasks, task])
+        setIsNewTaskModalOpen(false)
+        setNewTask({
+          name: '',
+          description: '',
+          assignedRoleId: 'frontend',
+          estimatedTime: 8,
+          sprint: 'Backlog',
+          priority: 'medium'
+        })
+      } else {
+        const error = await response.json()
+        alert(error.error || 'Failed to create task')
+      }
+    } catch (error) {
+      console.error('Error creating task:', error)
+      alert('Failed to create task')
+    } finally {
+      setSaving(false)
+    }
   }
   
   const TaskCard = ({ task, isDragging }: { task: Task; isDragging: boolean }) => (
@@ -443,7 +356,7 @@ export default function TasksPage() {
           variant="ghost" 
           className="mt-2 w-full text-xs"
           onClick={(e) => { e.stopPropagation(); moveTaskToNext(task) }}
-          disabled={task.status === 'done'}
+          disabled={task.status === 'done' || saving}
         >
           <ArrowRight className="w-3 h-3 mr-1" />
           Move
@@ -452,33 +365,45 @@ export default function TasksPage() {
     </Card>
   )
   
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <Loader2 className="w-8 h-8 animate-spin" />
+      </div>
+    )
+  }
+  
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">Tasks</h1>
-          <p className="text-muted-foreground">Manage your project tasks</p>
-        </div>
-        <Button className="gap-2">
-          <Plus className="w-4 h-4" />
-          New Task
-        </Button>
-      </div>
-      
-      {/* Progress Bar */}
-      <div className="space-y-2">
-        <div className="flex items-center justify-between text-sm">
-          <span>{doneTasks} of {totalTasks} tasks done</span>
-          <span>{progress}%</span>
-        </div>
-        <div className="w-full bg-gray-200 rounded-full h-2">
-          <div 
-            className="bg-green-500 h-2 rounded-full transition-all"
-            style={{ width: `${progress}%` }}
-          />
-        </div>
-      </div>
+    <div className={embedded ? '' : 'space-y-6'}>
+      {/* Header - only show if not embedded */}
+      {!embedded && (
+        <>
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold">Tasks</h1>
+              <p className="text-muted-foreground">Manage your project tasks</p>
+            </div>
+            <Button className="gap-2" onClick={() => setIsNewTaskModalOpen(true)}>
+              <Plus className="w-4 h-4" />
+              New Task
+            </Button>
+          </div>
+          
+          {/* Progress Bar */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between text-sm">
+              <span>{doneTasks} of {totalTasks} tasks done</span>
+              <span>{progress}%</span>
+            </div>
+            <div className="w-full bg-gray-200 rounded-full h-2">
+              <div 
+                className="bg-green-500 h-2 rounded-full transition-all"
+                style={{ width: `${progress}%` }}
+              />
+            </div>
+          </div>
+        </>
+      )}
       
       {/* Filters and View Toggle */}
       <div className="flex items-center gap-4">
@@ -749,25 +674,25 @@ export default function TasksPage() {
             <DialogFooter>
               <div className="flex gap-2">
                 {selectedTask.status !== 'done' && selectedTask.status !== 'in_progress' && (
-                  <Button onClick={() => updateTaskStatus(selectedTask, 'start')} className="gap-2">
+                  <Button onClick={() => updateTaskStatus(selectedTask, 'start')} className="gap-2" disabled={saving}>
                     <Play className="w-4 h-4" />
                     Start
                   </Button>
                 )}
                 {selectedTask.status === 'in_progress' && (
-                  <Button onClick={() => updateTaskStatus(selectedTask, 'complete')} className="gap-2">
+                  <Button onClick={() => updateTaskStatus(selectedTask, 'complete')} className="gap-2" disabled={saving}>
                     <CheckCircle className="w-4 h-4" />
                     Complete
                   </Button>
                 )}
                 {selectedTask.status !== 'backlog' && (
-                  <Button variant="outline" onClick={() => updateTaskStatus(selectedTask, 'return')} className="gap-2">
+                  <Button variant="outline" onClick={() => updateTaskStatus(selectedTask, 'return')} className="gap-2" disabled={saving}>
                     <RotateCcw className="w-4 h-4" />
                     Return to Backlog
                   </Button>
                 )}
                 {selectedTask.status !== 'done' && !selectedTask.blockedReason && (
-                  <Button variant="outline" onClick={() => updateTaskStatus(selectedTask, 'block')} className="gap-2">
+                  <Button variant="outline" onClick={() => updateTaskStatus(selectedTask, 'block')} className="gap-2" disabled={saving}>
                     <Ban className="w-4 h-4" />
                     Block
                   </Button>
@@ -776,6 +701,112 @@ export default function TasksPage() {
             </DialogFooter>
           </DialogContent>
         )}
+      </Dialog>
+      
+      {/* New Task Modal */}
+      <Dialog open={isNewTaskModalOpen} onOpenChange={setIsNewTaskModalOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Create New Task</DialogTitle>
+            <DialogDescription>
+              Add a new task to your project backlog
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 my-4">
+            <div className="space-y-2">
+              <Label htmlFor="task-name">Task Name</Label>
+              <Input
+                id="task-name"
+                placeholder="Enter task name"
+                value={newTask.name}
+                onChange={(e) => setNewTask({ ...newTask, name: e.target.value })}
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="task-description">Description</Label>
+              <Textarea
+                id="task-description"
+                placeholder="Enter task description"
+                value={newTask.description}
+                onChange={(e) => setNewTask({ ...newTask, description: e.target.value })}
+                rows={3}
+              />
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="assigned-role">Assigned Role</Label>
+                <Select value={newTask.assignedRoleId} onValueChange={(value) => setNewTask({ ...newTask, assignedRoleId: value })}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {roles.map(role => (
+                      <SelectItem key={role.id} value={role.id}>
+                        {role.icon} {role.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="estimated-time">Estimated Time (hours)</Label>
+                <Input
+                  id="estimated-time"
+                  type="number"
+                  min="1"
+                  value={newTask.estimatedTime}
+                  onChange={(e) => setNewTask({ ...newTask, estimatedTime: parseInt(e.target.value) || 1 })}
+                />
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="sprint">Sprint</Label>
+                <Input
+                  id="sprint"
+                  placeholder="e.g., Sprint 1"
+                  value={newTask.sprint}
+                  onChange={(e) => setNewTask({ ...newTask, sprint: e.target.value })}
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="priority">Priority</Label>
+                <Select value={newTask.priority} onValueChange={(value: any) => setNewTask({ ...newTask, priority: value })}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="low">Low</SelectItem>
+                    <SelectItem value="medium">Medium</SelectItem>
+                    <SelectItem value="high">High</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsNewTaskModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={createNewTask} disabled={!newTask.name.trim() || saving}>
+              {saving ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Creating...
+                </>
+              ) : (
+                'Create Task'
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
       </Dialog>
     </div>
   )
