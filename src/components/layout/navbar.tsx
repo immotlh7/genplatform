@@ -1,282 +1,301 @@
-"use client"
+'use client'
 
-import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Badge } from '@/components/ui/badge'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { NotificationBell } from '@/components/notifications/notification-system'
-import { ProjectSwitcher } from '@/components/layout/project-switcher'
+import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 import { 
-  Search, 
+  Menu, 
+  Bell, 
   Settings, 
-  User, 
-  LogOut,
-  Menu,
+  LogOut, 
+  User,
+  ChevronDown,
+  Activity,
   X
 } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { cn } from '@/lib/utils'
+import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { getCurrentUserClient } from '@/lib/access-control'
-import type { User as UserType } from '@/lib/access-control'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
+import { Badge } from '@/components/ui/badge'
+import { ProjectSwitcher } from './ProjectSwitcher'
+import type { UserRole, AuthUser } from '@/types/auth'
 
-export function Navbar() {
-  const router = useRouter()
-  const [searchQuery, setSearchQuery] = useState('')
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
-  const [currentUser, setCurrentUser] = useState<UserType | null>(null)
-
-  // For now, hardcode user data
-  // TODO: Replace with actual auth when fully working
-  const hardcodedUser = {
-    name: "Med",
-    role: "OWNER" as const,
-    email: "med@genplatform.ai"
-  }
+export default function Navbar() {
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const [user, setUser] = useState<AuthUser | null>(null)
+  const pathname = usePathname()
 
   useEffect(() => {
-    // TODO: Replace with actual user fetch when auth is working
-    // getCurrentUserClient().then(setCurrentUser).catch(console.error)
-  }, [])
-
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault()
-    if (searchQuery.trim()) {
-      console.log('Searching for:', searchQuery)
-      // Implement global search functionality
-    }
-  }
-
-  const handleLogout = () => {
-    // Clear auth tokens and redirect to login
-    localStorage.removeItem('genplatform-auth-token')
-    
-    // Clear Supabase auth
-    if (typeof window !== 'undefined' && window.localStorage) {
-      // Clear all Supabase-related localStorage items
-      Object.keys(window.localStorage).forEach(key => {
-        if (key.includes('supabase')) {
-          window.localStorage.removeItem(key)
+    // Fetch user data from Bridge API
+    const fetchUser = async () => {
+      try {
+        const response = await fetch('/api/bridge/auth/user')
+        if (response.ok) {
+          const data = await response.json()
+          setUser(data.user)
         }
-      })
-    }
-
-    // Clear session cookie
-    document.cookie = 'sb-auth-token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;'
-    
-    // Redirect to login
-    router.push('/login')
-  }
-
-  const getRoleBadge = (role: string) => {
-    const roleConfig = {
-      OWNER: {
-        bgColor: 'bg-amber-500/20',
-        textColor: 'text-amber-500',
-        borderColor: 'border-amber-500/30'
-      },
-      ADMIN: {
-        bgColor: 'bg-blue-500/20',
-        textColor: 'text-blue-500',
-        borderColor: 'border-blue-500/30'
-      },
-      MANAGER: {
-        bgColor: 'bg-green-500/20',
-        textColor: 'text-green-500',
-        borderColor: 'border-green-500/30'
-      },
-      VIEWER: {
-        bgColor: 'bg-zinc-500/20',
-        textColor: 'text-zinc-400',
-        borderColor: 'border-zinc-500/30'
+      } catch (error) {
+        console.error('Failed to fetch user data:', error)
       }
     }
 
-    const config = roleConfig[role as keyof typeof roleConfig] || roleConfig.VIEWER
-    
+    fetchUser()
+  }, [])
+
+  const getRoleBadge = (role: UserRole) => {
+    const roleStyles = {
+      OWNER: { label: 'Owner', className: 'bg-purple-600 text-white' },
+      ADMIN: { label: 'Admin', className: 'bg-blue-600 text-white' },
+      MEMBER: { label: 'Member', className: 'bg-gray-600 text-white' },
+      VIEWER: { label: 'Viewer', className: 'bg-gray-500 text-white' }
+    }
+
+    const style = roleStyles[role]
     return (
-      <Badge 
-        variant="outline" 
-        className={`${config.bgColor} ${config.textColor} border ${config.borderColor} text-xs px-2 py-0.5 uppercase font-medium`}
-      >
-        {role}
+      <Badge className={cn('text-xs', style.className)} variant="secondary">
+        {style.label}
       </Badge>
     )
   }
 
+  const isActive = (path: string) => {
+    if (path === '/') {
+      return pathname === path
+    }
+    return pathname.startsWith(path)
+  }
+
+  const navItems = [
+    { href: '/dashboard', label: 'Dashboard' },
+    { href: '/projects', label: 'Projects' },
+    { href: '/automations', label: 'Automations' },
+    { href: '/reports', label: 'Reports' },
+  ]
+
+  // Default values if user not loaded
+  const displayUser = user || {
+    id: '1',
+    email: 'user@example.com',
+    name: 'User',
+    role: 'MEMBER' as UserRole,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  }
+
   return (
-    <nav className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="flex h-16 items-center justify-between px-4">
-        {/* Mobile menu button */}
-        <Button
-          variant="ghost"
-          className="lg:hidden"
-          size="sm"
-          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-        >
-          {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-        </Button>
+    <nav className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <div className="container mx-auto px-4">
+        <div className="flex h-16 items-center justify-between">
+          {/* Logo and Project Switcher */}
+          <div className="flex items-center gap-6">
+            <Link 
+              href="/" 
+              className="flex items-center gap-2 text-lg font-semibold hover:text-primary transition-colors"
+            >
+              <Activity className="h-6 w-6" />
+              <span className="hidden sm:inline">GenPlatform</span>
+            </Link>
 
-        {/* Project Switcher - positioned on left side */}
-        <div className="hidden lg:block">
-          <ProjectSwitcher />
-        </div>
-
-        {/* Search */}
-        <div className="flex-1 max-w-md mx-4">
-          <form onSubmit={handleSearch} className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search skills, memory, cron jobs..."
-              className="pl-10"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-          </form>
-        </div>
-
-        {/* Right side actions */}
-        <div className="flex items-center space-x-2">
-          {/* System Status Indicator */}
-          <div className="hidden sm:flex items-center space-x-2">
-            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-            <span className="text-sm text-muted-foreground">System Healthy</span>
+            {/* Project Switcher (desktop only) */}
+            <div className="hidden lg:block">
+              <ProjectSwitcher />
+            </div>
           </div>
 
-          {/* Notifications */}
-          <NotificationBell />
+          {/* Desktop Navigation */}
+          <div className="hidden md:flex items-center gap-1">
+            {navItems.map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={cn(
+                  'px-4 py-2 text-sm font-medium rounded-md transition-all',
+                  'hover:bg-accent hover:text-accent-foreground',
+                  isActive(item.href) 
+                    ? 'bg-accent text-accent-foreground' 
+                    : 'text-muted-foreground'
+                )}
+              >
+                {item.label}
+              </Link>
+            ))}
+          </div>
 
-          {/* Settings */}
-          <Button variant="ghost" size="sm" onClick={() => router.push('/settings')}>
-            <Settings className="h-4 w-4" />
-          </Button>
+          {/* Right side actions */}
+          <div className="flex items-center gap-2">
+            {/* Notifications */}
+            <Button variant="ghost" size="icon" className="relative">
+              <Bell className="h-5 w-5" />
+              <span className="absolute -top-1 -right-1 h-3 w-3 bg-red-500 rounded-full" />
+            </Button>
 
-          {/* User menu with avatar and role badge */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="relative h-9 flex items-center space-x-2 px-2">
-                <Avatar className="h-8 w-8">
-                  <AvatarImage src="" alt={hardcodedUser.name} />
-                  <AvatarFallback className="bg-zinc-700 text-white text-sm font-medium">
-                    {hardcodedUser.name.charAt(0).toUpperCase()}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="flex items-center space-x-2 max-lg:hidden">
-                  <span className="text-sm font-medium">{hardcodedUser.name}</span>
-                  {getRoleBadge(hardcodedUser.role)}
-                </div>
+            {/* Settings */}
+            <Link href="/dashboard/settings">
+              <Button variant="ghost" size="icon">
+                <Settings className="h-5 w-5" />
               </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-56" align="end">
-              <DropdownMenuLabel className="font-normal">
-                <div className="flex flex-col space-y-2">
-                  <p className="text-sm font-medium leading-none">{hardcodedUser.name}</p>
-                  <p className="text-xs leading-none text-muted-foreground">
-                    {hardcodedUser.email}
-                  </p>
-                  <div className="pt-1">
-                    {getRoleBadge(hardcodedUser.role)}
+            </Link>
+
+            {/* User Menu - Desktop */}
+            <div className="hidden md:block">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="gap-2">
+                    <Avatar className="h-8 w-8">
+                      <AvatarImage src="" alt={displayUser.name} />
+                      <AvatarFallback>
+                        {displayUser.name.charAt(0).toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-medium">{displayUser.name}</span>
+                      {getRoleBadge(displayUser.role)}
+                    </div>
+                    <ChevronDown className="h-4 w-4 ml-1" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <div className="p-2">
+                    <p className="text-sm font-medium leading-none">{displayUser.name}</p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {displayUser.email}
+                    </p>
+                    <div className="mt-2">
+                      {getRoleBadge(displayUser.role)}
+                    </div>
                   </div>
-                </div>
-              </DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => router.push('/settings')} className="cursor-pointer">
-                <span className="mr-2">👤</span>
-                <span>Profile</span>
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => router.push('/settings')} className="cursor-pointer">
-                <span className="mr-2">⚙️</span>
-                <span>Settings</span>
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-red-600 focus:text-red-600">
-                <span className="mr-2">🚪</span>
-                <span>Logout</span>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem asChild>
+                    <Link href="/profile" className="cursor-pointer">
+                      <User className="mr-2 h-4 w-4" />
+                      Profile
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href="/dashboard/settings" className="cursor-pointer">
+                      <Settings className="mr-2 h-4 w-4" />
+                      Settings
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem className="text-red-600 cursor-pointer">
+                    <LogOut className="mr-2 h-4 w-4" />
+                    Sign out
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+
+            {/* Mobile menu button */}
+            <Button
+              variant="ghost"
+              size="icon"
+              className="md:hidden"
+              onClick={() => setIsMobileMenuOpen(true)}
+            >
+              <Menu className="h-5 w-5" />
+            </Button>
+          </div>
         </div>
       </div>
 
-      {/* Mobile menu overlay */}
-      {mobileMenuOpen && (
-        <div className="lg:hidden">
-          <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50">
-            <div className="fixed inset-y-0 left-0 w-full max-w-xs bg-background border-r p-6">
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-lg font-semibold">GenPlatform.ai</h2>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  <X className="h-5 w-5" />
-                </Button>
-              </div>
+      {/* Mobile Navigation */}
+      <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
+        <SheetContent side="right" className="w-[300px] sm:w-[400px]">
+          <SheetHeader>
+            <SheetTitle className="flex items-center justify-between">
+              <span>Menu</span>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                <X className="h-5 w-5" />
+              </Button>
+            </SheetTitle>
+          </SheetHeader>
 
-              {/* Mobile Project Switcher */}
-              <div className="mb-6 pb-6 border-b">
-                <label className="text-sm font-medium mb-2 block">Current Project</label>
-                <ProjectSwitcher className="w-full" />
-              </div>
-              
-              {/* Mobile user info */}
-              <div className="mb-6 pb-6 border-b">
-                <div className="flex items-center space-x-3">
-                  <Avatar className="h-12 w-12">
-                    <AvatarImage src="" alt={hardcodedUser.name} />
-                    <AvatarFallback className="bg-zinc-700 text-white text-lg font-medium">
-                      {hardcodedUser.name.charAt(0).toUpperCase()}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <p className="font-medium">{hardcodedUser.name}</p>
-                    <div className="mt-1">
-                      {getRoleBadge(hardcodedUser.role)}
-                    </div>
-                  </div>
+          <div className="mt-6 space-y-4">
+            {/* User info */}
+            <div className="flex items-center gap-3 p-4 bg-accent rounded-lg">
+              <Avatar className="h-12 w-12">
+                <AvatarImage src="" alt={displayUser.name} />
+                <AvatarFallback>
+                  {displayUser.name.charAt(0).toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex-1">
+                <p className="font-medium">{displayUser.name}</p>
+                <p className="text-xs text-muted-foreground">{displayUser.email}</p>
+                <div className="mt-1">
+                  {getRoleBadge(displayUser.role)}
                 </div>
               </div>
-              
-              {/* Mobile navigation */}
-              <div className="space-y-4">
-                <Button variant="ghost" className="w-full justify-start" onClick={() => { setMobileMenuOpen(false); router.push('/dashboard'); }}>
-                  Dashboard
-                </Button>
-                <Button variant="ghost" className="w-full justify-start" onClick={() => { setMobileMenuOpen(false); router.push('/dashboard/skills'); }}>
-                  Skills
-                </Button>
-                <Button variant="ghost" className="w-full justify-start" onClick={() => { setMobileMenuOpen(false); router.push('/dashboard/memory'); }}>
-                  Memory
-                </Button>
-                <Button variant="ghost" className="w-full justify-start" onClick={() => { setMobileMenuOpen(false); router.push('/dashboard/cron'); }}>
-                  Cron Jobs
-                </Button>
-                <DropdownMenuSeparator />
-                <Button variant="ghost" className="w-full justify-start" onClick={() => { setMobileMenuOpen(false); router.push('/settings'); }}>
-                  <span className="mr-2">👤</span>
-                  Profile
-                </Button>
-                <Button variant="ghost" className="w-full justify-start" onClick={() => { setMobileMenuOpen(false); router.push('/settings'); }}>
-                  <span className="mr-2">⚙️</span>
-                  Settings
-                </Button>
-                <Button variant="ghost" className="w-full justify-start text-red-600" onClick={handleLogout}>
-                  <span className="mr-2">🚪</span>
-                  Logout
-                </Button>
-              </div>
+            </div>
+
+            {/* Project Switcher (mobile) */}
+            <div className="px-2">
+              <ProjectSwitcher />
+            </div>
+
+            <div className="border-t pt-4">
+              {navItems.map((item) => (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={cn(
+                    'flex items-center px-4 py-3 text-sm font-medium rounded-md transition-all',
+                    'hover:bg-accent hover:text-accent-foreground',
+                    isActive(item.href) 
+                      ? 'bg-accent text-accent-foreground' 
+                      : 'text-muted-foreground'
+                  )}
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  {item.label}
+                </Link>
+              ))}
+            </div>
+
+            <div className="border-t pt-4 space-y-2">
+              <Link
+                href="/profile"
+                className="flex items-center px-4 py-3 text-sm font-medium rounded-md hover:bg-accent transition-all"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                <User className="mr-3 h-4 w-4" />
+                Profile
+              </Link>
+              <Link
+                href="/dashboard/settings"
+                className="flex items-center px-4 py-3 text-sm font-medium rounded-md hover:bg-accent transition-all"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                <Settings className="mr-3 h-4 w-4" />
+                Settings
+              </Link>
+              <button
+                className="flex items-center w-full px-4 py-3 text-sm font-medium text-red-600 rounded-md hover:bg-red-50 dark:hover:bg-red-950 transition-all"
+                onClick={() => {
+                  setIsMobileMenuOpen(false)
+                  // Handle sign out
+                }}
+              >
+                <LogOut className="mr-3 h-4 w-4" />
+                Sign out
+              </button>
             </div>
           </div>
-        </div>
-      )}
+        </SheetContent>
+      </Sheet>
     </nav>
   )
 }

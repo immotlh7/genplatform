@@ -4,13 +4,13 @@ import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { 
-  ChartBarIcon, 
-  ClockIcon, 
-  ExclamationTriangleIcon,
-  CpuChipIcon,
-  ArrowTrendingUpIcon,
-  CheckCircleIcon
-} from '@heroicons/react/24/outline';
+  BarChart3, 
+  Clock, 
+  AlertTriangle,
+  Cpu,
+  TrendingUp,
+  CheckCircle2
+} from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell } from 'recharts';
 
 interface WorkflowMetrics {
@@ -191,7 +191,7 @@ export default function WorkflowAnalyticsPage() {
               <p className="text-sm font-medium text-gray-600">Total Runs</p>
               <p className="text-2xl font-bold">{selectedData.totalRuns?.toLocaleString() || 0}</p>
             </div>
-            <ChartBarIcon className="h-8 w-8 text-blue-600" />
+            <BarChart3 className="h-8 w-8 text-blue-600" />
           </div>
         </Card>
 
@@ -201,7 +201,7 @@ export default function WorkflowAnalyticsPage() {
               <p className="text-sm font-medium text-gray-600">Success Rate</p>
               <p className="text-2xl font-bold">{selectedData.successRate?.toFixed(1) || 0}%</p>
             </div>
-            <CheckCircleIcon className="h-8 w-8 text-green-600" />
+            <CheckCircle2 className="h-8 w-8 text-green-600" />
           </div>
         </Card>
 
@@ -211,7 +211,7 @@ export default function WorkflowAnalyticsPage() {
               <p className="text-sm font-medium text-gray-600">Avg Execution Time</p>
               <p className="text-2xl font-bold">{selectedData.avgExecutionTime?.toFixed(0) || 0}s</p>
             </div>
-            <ClockIcon className="h-8 w-8 text-orange-600" />
+            <Clock className="h-8 w-8 text-orange-600" />
           </div>
         </Card>
 
@@ -221,7 +221,7 @@ export default function WorkflowAnalyticsPage() {
               <p className="text-sm font-medium text-gray-600">Active Workflows</p>
               <p className="text-2xl font-bold">{workflows.length}</p>
             </div>
-            <CpuChipIcon className="h-8 w-8 text-purple-600" />
+            <Cpu className="h-8 w-8 text-purple-600" />
           </div>
         </Card>
       </div>

@@ -4,16 +4,16 @@ import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { 
-  LightBulbIcon,
-  ExclamationTriangleIcon,
+  Lightbulb,
+  AlertTriangle,
   ClockIcon,
   CpuChipIcon,
   CurrencyDollarIcon,
   SparklesIcon,
-  CheckCircleIcon,
+  CheckCircle2,
   XMarkIcon,
   ChevronRightIcon
-} from '@heroicons/react/24/outline';
+} from 'lucide-react';
 import { WorkflowPerformanceStats } from '@/lib/workflow-metrics';
 
 interface OptimizationSuggestion {
@@ -259,9 +259,9 @@ export default function OptimizationSuggestions({
     switch (type) {
       case 'performance': return <ClockIcon className="h-5 w-5" />;
       case 'cost': return <CurrencyDollarIcon className="h-5 w-5" />;
-      case 'reliability': return <ExclamationTriangleIcon className="h-5 w-5" />;
+      case 'reliability': return <AlertTriangle className="h-5 w-5" />;
       case 'efficiency': return <CpuChipIcon className="h-5 w-5" />;
-      default: return <LightBulbIcon className="h-5 w-5" />;
+      default: return <Lightbulb className="h-5 w-5" />;
     }
   };
 
@@ -347,7 +347,7 @@ export default function OptimizationSuggestions({
 
       {filteredSuggestions.length === 0 && (
         <Card className="p-8 text-center">
-          <CheckCircleIcon className="h-16 w-16 text-green-500 mx-auto mb-4" />
+          <CheckCircle2 className="h-16 w-16 text-green-500 mx-auto mb-4" />
           <h3 className="text-xl font-semibold text-gray-900 mb-2">All Optimized!</h3>
           <p className="text-gray-600">No optimization suggestions available. Your workflow is performing efficiently.</p>
         </Card>

@@ -117,7 +117,7 @@ function generateDemoAlerts(): SystemAlert[] {
   return demoAlerts
 }
 
-// GET /api/openclaw/system/alerts
+// GET /api/bridge/system/alerts
 export async function GET(request: NextRequest) {
   try {
     const url = new URL(request.url)
@@ -170,7 +170,7 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// POST /api/openclaw/system/alerts
+// POST /api/bridge/system/alerts
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
@@ -216,7 +216,7 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// PUT /api/openclaw/system/alerts/thresholds
+// PUT /api/bridge/system/alerts/thresholds
 export async function PUT(request: NextRequest) {
   try {
     const url = new URL(request.url)
@@ -271,7 +271,7 @@ export async function PUT(request: NextRequest) {
   }
 }
 
-// DELETE /api/openclaw/system/alerts/:id
+// DELETE /api/bridge/system/alerts/:id
 export async function DELETE(request: NextRequest) {
   try {
     const url = new URL(request.url)
