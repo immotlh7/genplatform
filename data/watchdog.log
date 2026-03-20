@@ -16,3 +16,24 @@
 [2026-03-20T13:55:01.520Z] ✅ pm2 online
 [2026-03-20T13:55:01.531Z] 📊 Queue: 20/255 done, 31 approved, 0 executing
 [2026-03-20T13:55:01.538Z] Done. Issues: 0, Fixes: 0
+[2026-03-20T14:05:01.552Z] --- Watchdog run ---
+[2026-03-20T14:05:01.585Z] ✅ Site up
+[2026-03-20T14:05:01.820Z] ✅ pm2 online
+[2026-03-20T14:05:01.829Z] 📊 Queue: 22/255 done, 31 approved, 0 executing
+[2026-03-20T14:05:01.829Z] ⚠️ Pipeline stalled — finding next message...
+[2026-03-20T14:05:01.837Z] → Found: task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md Msg 13 (needsRewrite: false)
+[2026-03-20T14:05:16.850Z] ❌ Execute failed: {}
+[2026-03-20T14:05:16.931Z] Done. Issues: 1, Fixes: 0
+[2026-03-20T14:10:02.086Z] --- Watchdog run ---
+[2026-03-20T14:10:02.122Z] ✅ Site up
+[2026-03-20T14:10:02.363Z] ✅ pm2 online
+[2026-03-20T14:10:02.386Z] 📊 Queue: 22/255 done, 39 approved, 0 executing
+[2026-03-20T14:10:02.400Z] Done. Issues: 0, Fixes: 0
+[2026-03-20T14:15:01.183Z] --- Watchdog run ---
+[2026-03-20T14:15:01.220Z] ✅ Site up
+[2026-03-20T14:15:01.424Z] ✅ pm2 online
+[2026-03-20T14:15:01.429Z] 📊 Queue: 22/255 done, 45 approved, 0 executing
+[2026-03-20T14:15:01.430Z] ⚠️ Pipeline stalled — finding next message...
+[2026-03-20T14:15:01.433Z] → Found: task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md Msg 13 (needsRewrite: false)
+[2026-03-20T14:15:01.447Z] ❌ Execute failed: {"error":"Execution locked","lockedBy":"task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg13-task4",
+[2026-03-20T14:15:01.519Z] Done. Issues: 1, Fixes: 0

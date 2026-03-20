@@ -4,7 +4,7 @@
   "uploadedAt": "2026-03-20T08:45:10.369Z",
   "totalMessages": 33,
   "totalTasks": 68,
-  "totalMicroTasks": 20,
+  "totalMicroTasks": 34,
   "messages": [
     {
       "messageNumber": 1,
@@ -32,10 +32,38 @@
           "rewritten": true,
           "microTasks": [
             {
-              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg3-task1-micro1",
-              "filePath": "src/app/dashboard/page.tsx",
-              "change": "Analyze and implement the requested feature",
-              "description": "Implement the following task with precision: Open src/components/notifications/notification-system.tsx (or wherever the Gateway Offline banner is). Find where it checks gateway status. It currently checks incorrectly. Fix the logic:. First identify the correct file and component, then make the necessary changes following the project's coding standards.",
+              "id": "task_1774003310394_PRIORITY-2-CHAT-AND-FEATURES.md-msg3-task1-micro1",
+              "filePath": "src/components/notifications/notification-system.tsx",
+              "change": "Add try-catch wrapper around gateway status fetch",
+              "description": "Locate the useEffect hook or function that checks gateway status. Find the current fetch call or status check logic. Replace the existing broken condition with a proper async function called checkGatewayStatus(). Inside this function, use try-catch to wrap the fetch('/api/bridge/status') call. Parse the JSON response and store it in a variable called statusData. This is the foundation for proper gateway detection.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774003310394_PRIORITY-2-CHAT-AND-FEATURES.md-msg3-task1-micro2",
+              "filePath": "src/components/notifications/notification-system.tsx",
+              "change": "Fix gateway online detection with dual-format check",
+              "description": "Inside the checkGatewayStatus function, after parsing statusData, implement the correct online detection logic. Create a boolean variable isGatewayOnline that checks: (statusData.gateway?.status === 'running') OR (statusData.services?.some(s => s.name === 'gateway' && s.status === 'running')). This handles both possible API response formats. If isGatewayOnline is true, set the gatewayOffline state to false and DO NOT add any gateway warning notification.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774003310394_PRIORITY-2-CHAT-AND-FEATURES.md-msg3-task1-micro3",
+              "filePath": "src/components/notifications/notification-system.tsx",
+              "change": "Handle API unreachable with 'Connecting...' state and retries",
+              "description": "In the catch block of checkGatewayStatus, handle the case where the Bridge API itself is unreachable. Instead of immediately showing 'Gateway Offline', set a new state variable connectionStatus to 'connecting'. Add a state: const [connectionStatus, setConnectionStatus] = useState<'connected'|'connecting'|'offline'>('connecting'). In the catch block call setConnectionStatus('connecting') and schedule a retry with setTimeout(checkGatewayStatus, 5000). Only after 3 failed retries should you set connectionStatus to 'offline'.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774003310394_PRIORITY-2-CHAT-AND-FEATURES.md-msg3-task1-micro4",
+              "filePath": "src/components/notifications/notification-system.tsx",
+              "change": "Implement retry counter logic for connection failures",
+              "description": "Add a retry counter state: const [retryCount, setRetryCount] = useState(0). In the catch block, increment retryCount. If retryCount >= 3, then set connectionStatus to 'offline' and add the gateway offline notification. If retryCount < 3, keep connectionStatus as 'connecting' and schedule retry. In the success path of the try block, reset retryCount to 0 and set connectionStatus to 'connected'.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774003310394_PRIORITY-2-CHAT-AND-FEATURES.md-msg3-task1-micro5",
+              "filePath": "src/components/notifications/notification-system.tsx",
+              "change": "Render different banners based on connectionStatus state",
+              "description": "Update the JSX render section to conditionally show different messages based on connectionStatus state. If connectionStatus === 'connecting', show a subtle blue banner with text 'Connecting to Gateway...' and a spinning loader icon. If connectionStatus === 'offline', show the red warning banner 'Gateway Offline'. If connectionStatus === 'connected', show nothing (no banner). This replaces any hardcoded offline banner that was showing incorrectly.",
               "status": "pending"
             }
           ]
@@ -49,10 +77,31 @@
           "rewritten": true,
           "microTasks": [
             {
-              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg3-task2-micro1",
-              "filePath": "src/app/dashboard/page.tsx",
-              "change": "Analyze and implement the requested feature",
-              "description": "Implement the following task with precision: The notification \"CPU usage has been above 85%\" is fake/hardcoded. Remove it. Only show REAL notifications:. First identify the correct file and component, then make the necessary changes following the project's coding standards.",
+              "id": "task_1774003310394_PRIORITY-2-CHAT-AND-FEATURES.md-msg3-task2-micro1",
+              "filePath": "src/components/notifications/notification-system.tsx",
+              "change": "Remove hardcoded CPU usage notification from initial state",
+              "description": "Search for any hardcoded notification array or initial state that contains the text 'CPU usage' or '85%'. This might be in a useState initial value like useState([{type: 'warning', message: 'CPU usage has been above 85%'...}]) or in a const MOCK_NOTIFICATIONS array. Delete this entire hardcoded entry. The initial notifications state should be an empty array: useState<Notification[]>([]).",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774003310394_PRIORITY-2-CHAT-AND-FEATURES.md-msg3-task2-micro2",
+              "filePath": "src/components/notifications/notification-system.tsx",
+              "change": "Add real CPU metrics check that only alerts when cpu > 85",
+              "description": "Create a new async function called checkRealMetrics() that fetches from '/api/bridge/metrics'. Parse the response JSON. Check if response.cpu exists and is a number greater than 85. Only if cpu > 85, create a real notification object: {id: 'cpu-alert-' + Date.now(), type: 'warning', message: `CPU usage is at ${response.cpu}%`, timestamp: new Date(), read: false}. Add this to notifications state using setNotifications(prev => [...prev.filter(n => !n.id.startsWith('cpu-alert')), newNotification]).",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774003310394_PRIORITY-2-CHAT-AND-FEATURES.md-msg3-task2-micro3",
+              "filePath": "src/components/notifications/notification-system.tsx",
+              "change": "Add metrics checking to useEffect with 30-second interval",
+              "description": "In the useEffect hook that runs on component mount, call checkRealMetrics() alongside checkGatewayStatus(). Also set up an interval: const metricsInterval = setInterval(checkRealMetrics, 30000) to check metrics every 30 seconds. Add this interval to the cleanup return function: return () => { clearInterval(metricsInterval); clearInterval(statusInterval); }. This ensures real-time CPU monitoring without fake data.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774003310394_PRIORITY-2-CHAT-AND-FEATURES.md-msg3-task2-micro4",
+              "filePath": "src/components/notifications/notification-system.tsx",
+              "change": "Audit and remove all mock/fake notification sources",
+              "description": "Remove any other fake/mock notifications in the file. Search for strings like 'demo', 'test', 'mock', 'sample', 'example' in notification messages. Delete any useEffect or function that adds notifications without fetching from a real API endpoint. The only sources of notifications should be: /api/bridge/status (gateway), /api/bridge/metrics (CPU), and /api/deployments or /api/builds (build/deploy status).",
               "status": "pending"
             }
           ]
@@ -66,10 +115,31 @@
           "rewritten": true,
           "microTasks": [
             {
-              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg3-task3-micro1",
-              "filePath": "src/app/dashboard/page.tsx",
-              "change": "Analyze and implement the requested feature",
-              "description": "Implement the following task with precision: The notification bell in the top bar shows a red badge with count. Make sure the count matches REAL unread notifications only. If no real alerts, badge should be hidden.. First identify the correct file and component, then make the necessary changes following the project's coding standards.",
+              "id": "task_1774003310394_PRIORITY-2-CHAT-AND-FEATURES.md-msg3-task3-micro1",
+              "filePath": "src/components/notifications/notification-system.tsx",
+              "change": "Fix unread count to use dynamic filter on real notifications",
+              "description": "Find the unread count calculation. It should be: const unreadCount = notifications.filter(n => !n.read).length. Make sure this filters the actual notifications state array that only contains real notifications (gateway status, real CPU alerts, real build status). Do NOT use any hardcoded number. If there's a line like const unreadCount = 3 or badge={3}, replace it with the dynamic filter calculation.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774003310394_PRIORITY-2-CHAT-AND-FEATURES.md-msg3-task3-micro2",
+              "filePath": "src/components/notifications/notification-system.tsx",
+              "change": "Conditionally render badge only when unreadCount > 0",
+              "description": "Find the Badge component or red dot indicator in the JSX. It likely wraps the Bell icon. Add a conditional render: only show the badge when unreadCount > 0. The code should be: {unreadCount > 0 && <Badge className='absolute -top-1 -right-1 h-5 w-5 rounded-full bg-red-500 text-white text-xs flex items-center justify-center'>{unreadCount}</Badge>}. If unreadCount is 0, the badge element should not render at all (not just be hidden).",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774003310394_PRIORITY-2-CHAT-AND-FEATURES.md-msg3-task3-micro3",
+              "filePath": "src/components/notifications/notification-system.tsx",
+              "change": "Add markAsRead and markAllAsRead functions",
+              "description": "Add a markAsRead function that updates a notification's read status: const markAsRead = (notificationId: string) => { setNotifications(prev => prev.map(n => n.id === notificationId ? {...n, read: true} : n)); }. Also add markAllAsRead: const markAllAsRead = () => { setNotifications(prev => prev.map(n => ({...n, read: true}))); }. Wire markAllAsRead to a 'Mark all read' button in the dropdown if it exists.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774003310394_PRIORITY-2-CHAT-AND-FEATURES.md-msg3-task3-micro4",
+              "filePath": "src/components/notifications/notification-system.tsx",
+              "change": "Render notification list from state only, show empty message if none",
+              "description": "Ensure the notification dropdown list only displays notifications from the state array. Map through notifications: {notifications.map(notification => (<NotificationItem key={notification.id} notification={notification} onRead={() => markAsRead(notification.id)} />))}. If notifications.length === 0, show a message: <p className='text-sm text-gray-500 p-4'>No notifications</p>. Remove any hardcoded list items.",
               "status": "pending"
             }
           ]
@@ -83,10 +153,38 @@
           "rewritten": true,
           "microTasks": [
             {
-              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg3-task4-micro1",
-              "filePath": "src/app/dashboard/page.tsx",
-              "change": "Analyze and implement the requested feature",
-              "description": "Implement the following task with precision: Also check if there is a NotificationBell.tsx component that duplicates this logic. If yes, consolidate into one system.. First identify the correct file and component, then make the necessary changes following the project's coding standards.",
+              "id": "task_1774003310394_PRIORITY-2-CHAT-AND-FEATURES.md-msg3-task4-micro1",
+              "filePath": "src/components/notifications/NotificationBell.tsx",
+              "change": "Identify if NotificationBell.tsx exists and has duplicate logic",
+              "description": "Check if this file exists. If it does, examine its contents. It likely has duplicate logic for showing notification count and dropdown. If the file exists and has its own state management for notifications, this creates a conflict with notification-system.tsx. The goal is to have ONE source of truth for notifications. If this file exists, we need to either delete it or convert it to a simple wrapper that uses the main notification system.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774003310394_PRIORITY-2-CHAT-AND-FEATURES.md-msg3-task4-micro2",
+              "filePath": "src/components/notifications/NotificationBell.tsx",
+              "change": "Convert NotificationBell to presentational component with props",
+              "description": "If NotificationBell.tsx exists with duplicate logic, refactor it to be a presentational component only. Remove any useState for notifications, remove any useEffect that fetches status/metrics. Instead, accept props: interface NotificationBellProps { notifications: Notification[]; unreadCount: number; onMarkRead: (id: string) => void; onMarkAllRead: () => void; }. The component should only render UI, not manage state.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774003310394_PRIORITY-2-CHAT-AND-FEATURES.md-msg3-task4-micro3",
+              "filePath": "src/components/notifications/notification-system.tsx",
+              "change": "Integrate NotificationBell as child component with props",
+              "description": "If NotificationBell.tsx was converted to presentational, import it into notification-system.tsx and render it with the required props: <NotificationBell notifications={notifications} unreadCount={unreadCount} onMarkRead={markAsRead} onMarkAllRead={markAllAsRead} />. If NotificationBell.tsx doesn't exist or was deleted, keep the bell icon rendering directly in notification-system.tsx as is.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774003310394_PRIORITY-2-CHAT-AND-FEATURES.md-msg3-task4-micro4",
+              "filePath": "src/components/layout/navbar.tsx",
+              "change": "Ensure navbar uses single notification component import",
+              "description": "Check if navbar.tsx imports NotificationBell separately or has its own notification logic. If it imports both NotificationBell and notification-system separately, remove the NotificationBell import. The navbar should only import and use one notification component: NotificationSystem. Find the JSX where notifications are rendered and ensure only <NotificationSystem /> is used, not both components side by side.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774003310394_PRIORITY-2-CHAT-AND-FEATURES.md-msg3-task4-micro5",
+              "filePath": "src/contexts/NotificationContext.tsx",
+              "change": "Create NotificationContext for centralized state management",
+              "description": "Consider creating a NotificationContext if multiple components need notification data. Create the file with: const NotificationContext = createContext<NotificationContextType | null>(null). Export a NotificationProvider that wraps children and manages all notification state (notifications array, checkGatewayStatus, checkRealMetrics, markAsRead). Export a useNotifications hook that returns the context. This centralizes all notification logic and prevents duplicate fetching.",
               "status": "pending"
             }
           ]

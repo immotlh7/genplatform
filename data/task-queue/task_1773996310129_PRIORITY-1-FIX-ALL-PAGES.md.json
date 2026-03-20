@@ -4,7 +4,7 @@
   "uploadedAt": "2026-03-20T08:45:10.369Z",
   "totalMessages": 33,
   "totalTasks": 68,
-  "totalMicroTasks": 152,
+  "totalMicroTasks": 229,
   "messages": [
     {
       "messageNumber": 1,
@@ -471,7 +471,7 @@
           "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg9-task3",
           "taskNumber": 3,
           "originalDescription": "Remove the \"Terminal\" and \"Services\" tabs if they don't have real content. Keep only \"Quick Actions\" tab.",
-          "status": "approved",
+          "status": "done",
           "approved": true,
           "rewritten": true,
           "microTasks": [
@@ -482,7 +482,13 @@
               "description": "Implement the following task with precision: Remove the \"Terminal\" and \"Services\" tabs if they don't have real content. Keep only \"Quick Actions\" tab.. First identify the correct file and component, then make the necessary changes following the project's coding standards.",
               "status": "pending"
             }
-          ]
+          ],
+          "startedAt": "2026-03-20T13:57:09.846Z",
+          "completedAt": "2026-03-20T13:58:53.142Z",
+          "executionResult": {
+            "success": true,
+            "result": "Build ✅ | Applied changes + deployed. Finding command center page...\n./src/components/layout/sidebar.tsx\n./src/app/dashboard/command-cente"
+          }
         }
       ]
     },
@@ -604,7 +610,7 @@
           "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg13-task1",
           "taskNumber": 1,
           "originalDescription": "Settings page — make Save Changes work:",
-          "status": "approved",
+          "status": "failed",
           "approved": true,
           "rewritten": true,
           "microTasks": [
@@ -671,13 +677,19 @@
               "description": "Find the Save Changes button in the Profile section. Add onClick={handleSaveSettings} to trigger the save function. Add disabled={isSaving || isLoading} to prevent double-clicks. Change the button text to show loading state: {isSaving ? 'Saving...' : 'Save Changes'}. If using a Button component from shadcn/ui, you can also add loading={isSaving} prop if supported.",
               "status": "pending"
             }
-          ]
+          ],
+          "startedAt": "2026-03-20T14:00:08.976Z",
+          "completedAt": "2026-03-20T14:01:22.612Z",
+          "executionResult": {
+            "success": false,
+            "result": "No bash script found in response"
+          }
         },
         {
           "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg13-task2",
           "taskNumber": 2,
           "originalDescription": "Password change:",
-          "status": "approved",
+          "status": "failed",
           "approved": true,
           "rewritten": true,
           "microTasks": [
@@ -737,13 +749,19 @@
               "description": "Find the CSRF skip list or public paths array. Add '/api/auth/change-password' to the list of paths that skip CSRF validation. This might be adding to an array like csrfSkipPaths.push('/api/auth/change-password') or adding a condition: || path === '/api/auth/change-password'. Ensure POST requests to this endpoint work properly.",
               "status": "pending"
             }
-          ]
+          ],
+          "startedAt": "2026-03-20T14:01:29.086Z",
+          "completedAt": "2026-03-20T14:02:43.054Z",
+          "executionResult": {
+            "success": false,
+            "result": "Build failed — changes reverted. Error: Command failed: npm run build 2>&1\n"
+          }
         },
         {
           "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg13-task3",
           "taskNumber": 3,
           "originalDescription": "Sign Out — fix completely:",
-          "status": "approved",
+          "status": "failed",
           "approved": true,
           "rewritten": true,
           "microTasks": [
@@ -803,7 +821,13 @@
               "description": "Add a Sign Out section at the bottom of the settings page if not already present. Create a Card or section with heading 'Sign Out'. Add descriptive text like 'Sign out of your account on this device'. Add a Button with variant='destructive' (or className for red styling), onClick={signOut}, text 'Sign Out'. This provides a clear sign out option in settings.",
               "status": "pending"
             }
-          ]
+          ],
+          "startedAt": "2026-03-20T14:02:51.163Z",
+          "completedAt": "2026-03-20T14:04:18.502Z",
+          "executionResult": {
+            "success": false,
+            "result": "Build failed — changes reverted. Error: Command failed: npm run build 2>&1\n"
+          }
         },
         {
           "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg13-task4",
@@ -1774,46 +1798,205 @@
           "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg25-task1",
           "taskNumber": 1,
           "originalDescription": "Verify the page loads at /automations. Currently it shows 404 sometimes. Check the route:",
-          "status": "pending",
-          "approved": false,
-          "rewritten": false,
-          "microTasks": []
+          "status": "approved",
+          "approved": true,
+          "rewritten": true,
+          "microTasks": [
+            {
+              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg25-task1-micro1",
+              "filePath": "src/app/automations/page.tsx",
+              "change": "Create or verify automations page exists at correct route",
+              "description": "First, check if this file exists. If it does NOT exist, create it. The file should export a default async function AutomationsPage() that returns a basic div with className='p-6' containing an h1 with text 'Automations' and className='text-2xl font-bold'. Add 'use client' directive at the top since we'll need client-side interactivity later. Import React at the top. This establishes the base route at /automations.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg25-task1-micro2",
+              "filePath": "src/app/(dashboard)/automations/page.tsx",
+              "change": "Remove duplicate route if exists to fix 404 errors",
+              "description": "Check if this file exists in the dashboard route group. If it DOES exist and src/app/automations/page.tsx also exists, DELETE this file to avoid route conflicts. If only this file exists and the dashboard layout is the intended parent, keep it but verify the layout.tsx in (dashboard) folder properly wraps the page. The sidebar links to /automations which should resolve to whichever page exists. Having both causes Next.js routing conflicts resulting in intermittent 404s.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg25-task1-micro3",
+              "filePath": "src/components/sidebar.tsx",
+              "change": "Verify sidebar link points to /automations (read only)",
+              "description": "READ ONLY - Do not modify this file per design protection rules. However, verify the automations link exists and points to href='/automations'. Document what you find - the link should be in the navigation items array, likely with an icon like Zap or Workflow from lucide-react. This is just to confirm the sidebar routing matches our page location.",
+              "status": "pending"
+            }
+          ]
         },
         {
           "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg25-task2",
           "taskNumber": 2,
           "originalDescription": "Stats cards:",
-          "status": "pending",
-          "approved": false,
-          "rewritten": false,
-          "microTasks": []
+          "status": "approved",
+          "approved": true,
+          "rewritten": true,
+          "microTasks": [
+            {
+              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg25-task2-micro1",
+              "filePath": "src/app/api/workflows/route.ts",
+              "change": "Create GET /api/workflows endpoint returning workflow data with stats",
+              "description": "Create or update the GET handler in this API route. Import NextResponse from 'next/server'. The handler should return a JSON response with a 'workflows' array containing workflow objects. Each workflow object needs: id (string), name (string), description (string), type (string: 'automation'|'pipeline'|'review'), status (string: 'active'|'inactive'|'failed'|'completed'), lastRun (ISO date string or null), createdAt (ISO date string), totalRuns (number), successfulRuns (number). For now return mock data with 5 workflows: 3 active, 1 failed, 1 completed. Return { workflows: [...], total: 5, active: 3, failed: 1, successRate: 80 }.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg25-task2-micro2",
+              "filePath": "src/app/automations/page.tsx",
+              "change": "Add state variables for workflow statistics",
+              "description": "Add state management for stats. At the top after 'use client', import useState and useEffect from 'react'. Create interface WorkflowStats { total: number; active: number; failed: number; successRate: number; }. Inside the component, add: const [stats, setStats] = useState<WorkflowStats>({ total: 0, active: 0, failed: 0, successRate: 0 }); const [loading, setLoading] = useState(true);",
+              "status": "pending"
+            },
+            {
+              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg25-task2-micro3",
+              "filePath": "src/app/automations/page.tsx",
+              "change": "Add useEffect to fetch workflow statistics on mount",
+              "description": "Add useEffect to fetch stats from API. Inside the component, after the state declarations, add: useEffect(() => { async function fetchStats() { try { const res = await fetch('/api/workflows'); const data = await res.json(); setStats({ total: data.total, active: data.active, failed: data.failed, successRate: data.successRate }); } catch (error) { console.error('Failed to fetch workflow stats:', error); } finally { setLoading(false); } } fetchStats(); }, []);",
+              "status": "pending"
+            },
+            {
+              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg25-task2-micro4",
+              "filePath": "src/app/automations/page.tsx",
+              "change": "Import UI components and icons for stats cards",
+              "description": "Import Card components and icons. Add these imports: import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'; import { Activity, CheckCircle, XCircle, Workflow } from 'lucide-react'. If Card component doesn't exist, use a div with className='bg-white dark:bg-gray-800 rounded-lg border p-4 shadow-sm' as fallback.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg25-task2-micro5",
+              "filePath": "src/app/automations/page.tsx",
+              "change": "Render 4 stats cards with dynamic values from API",
+              "description": "Create the StatsGrid component inside the page. After the h1 heading, add a div with className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8'. Inside, render 4 cards: Card 1 - icon: Workflow, title: 'Total Workflows', value: loading ? '...' : stats.total, color: 'text-blue-500'. Card 2 - icon: Activity, title: 'Active Workflows', value: loading ? '...' : stats.active, color: 'text-green-500'. Card 3 - icon: CheckCircle, title: 'Success Rate', value: loading ? '...' : `${stats.successRate}%`, color: 'text-emerald-500'. Card 4 - icon: XCircle, title: 'Failed Workflows', value: loading ? '...' : stats.failed, color: 'text-red-500'. Each card should have the icon in the header with the color class, and the value displayed large with className='text-3xl font-bold'.",
+              "status": "pending"
+            }
+          ]
         },
         {
           "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg25-task3",
           "taskNumber": 3,
           "originalDescription": "Workflow list. Show 3 demo workflows that make sense:",
-          "status": "pending",
-          "approved": false,
-          "rewritten": false,
-          "microTasks": []
+          "status": "approved",
+          "approved": true,
+          "rewritten": true,
+          "microTasks": [
+            {
+              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg25-task3-micro1",
+              "filePath": "src/app/api/workflows/route.ts",
+              "change": "Add 3 specific demo workflows to API response",
+              "description": "Update the mock workflows array in the GET handler to include these 3 specific demo workflows: 1) { id: 'wf-1', name: 'Idea to MVP', description: 'Takes an idea, analyzes feasibility, creates development tasks, and assigns them to appropriate agents for execution', type: 'automation', status: 'active', lastRun: new Date(Date.now() - 3600000).toISOString(), totalRuns: 24, successfulRuns: 22 }. 2) { id: 'wf-2', name: 'Bug Fix Pipeline', description: 'Automatically detects bugs from error logs, creates fix tasks, assigns to dev agents, and initiates code review', type: 'pipeline', status: 'active', lastRun: new Date(Date.now() - 7200000).toISOString(), totalRuns: 156, successfulRuns: 149 }. 3) { id: 'wf-3', name: 'Code Review', description: 'Triggers when code is pushed, performs automated review, checks for issues, and reports findings with suggestions', type: 'review', status: 'active', lastRun: new Date(Date.now() - 1800000).toISOString(), totalRuns: 89, successfulRuns: 87 }.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg25-task3-micro2",
+              "filePath": "src/app/automations/page.tsx",
+              "change": "Add Workflow interface and state array",
+              "description": "Add interface and state for workflows. Add this interface after WorkflowStats: interface Workflow { id: string; name: string; description: string; type: 'automation' | 'pipeline' | 'review'; status: 'active' | 'inactive' | 'failed' | 'completed'; lastRun: string | null; totalRuns: number; successfulRuns: number; }. Add state: const [workflows, setWorkflows] = useState<Workflow[]>([]);. Update the fetchStats function to also setWorkflows(data.workflows);",
+              "status": "pending"
+            },
+            {
+              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg25-task3-micro3",
+              "filePath": "src/app/automations/page.tsx",
+              "change": "Import Button, Badge, icons, and date formatting",
+              "description": "Import additional components needed for workflow list: import { Button } from '@/components/ui/button'; import { Badge } from '@/components/ui/badge'; import { Play, Edit, Trash2, Clock } from 'lucide-react';. Also import formatDistanceToNow from 'date-fns' for displaying relative time: import { formatDistanceToNow } from 'date-fns';. If date-fns is not installed, use a simple function: const timeAgo = (date: string) => { const diff = Date.now() - new Date(date).getTime(); const mins = Math.floor(diff/60000); if (mins < 60) return `${mins}m ago`; const hrs = Math.floor(mins/60); return `${hrs}h ago`; };",
+              "status": "pending"
+            },
+            {
+              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg25-task3-micro4",
+              "filePath": "src/app/automations/page.tsx",
+              "change": "Render workflow list with cards showing all workflow details",
+              "description": "Create the WorkflowList section after the stats grid. Add a div with className='space-y-4'. Add a header div with className='flex items-center justify-between mb-4' containing h2 'Workflows' with className='text-xl font-semibold' and the action buttons (we'll add New Workflow button here in Task 4). Then map over workflows: workflows.map((workflow) => ( <Card key={workflow.id} className='hover:shadow-md transition-shadow'> with CardHeader containing flex row with workflow.name as CardTitle, and Badge showing workflow.type with variant based on type (automation=blue, pipeline=purple, review=orange), CardContent with workflow.description in text-sm text-gray-600, and a footer div with flex justify-between: left side shows Clock icon + lastRun time formatted with timeAgo/formatDistanceToNow, right side has 3 Buttons: Run (Play icon, variant='outline', size='sm'), Edit (Edit icon), Delete (Trash2 icon, variant='destructive').",
+              "status": "pending"
+            },
+            {
+              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg25-task3-micro5",
+              "filePath": "src/app/automations/page.tsx",
+              "change": "Add click handlers for Run, Edit, Delete workflow buttons",
+              "description": "Add action handlers for the workflow buttons. Create these functions inside the component: const handleRunWorkflow = async (id: string) => { console.log('Running workflow:', id); /* TODO: POST /api/workflows/[id]/run */ }; const handleEditWorkflow = (id: string) => { console.log('Editing workflow:', id); /* TODO: Open edit modal */ }; const handleDeleteWorkflow = async (id: string) => { if (!confirm('Are you sure you want to delete this workflow?')) return; setWorkflows(prev => prev.filter(w => w.id !== id)); /* TODO: DELETE /api/workflows/[id] */ }; Wire these handlers to the respective buttons using onClick={() => handleX(workflow.id)}.",
+              "status": "pending"
+            }
+          ]
         },
         {
           "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg25-task4",
           "taskNumber": 4,
           "originalDescription": "\"New Workflow\" button:",
-          "status": "pending",
-          "approved": false,
-          "rewritten": false,
-          "microTasks": []
+          "status": "approved",
+          "approved": true,
+          "rewritten": true,
+          "microTasks": [
+            {
+              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg25-task4-micro1",
+              "filePath": "src/app/automations/page.tsx",
+              "change": "Add state for new workflow modal and form data",
+              "description": "Add modal state management. Add these state variables: const [showNewWorkflowModal, setShowNewWorkflowModal] = useState(false); const [newWorkflow, setNewWorkflow] = useState({ name: '', description: '', trigger: 'manual' as 'manual' | 'scheduled' | 'on_push', steps: '' }); const [isSubmitting, setIsSubmitting] = useState(false);",
+              "status": "pending"
+            },
+            {
+              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg25-task4-micro2",
+              "filePath": "src/app/automations/page.tsx",
+              "change": "Import modal and form components",
+              "description": "Import Dialog/Modal components. Add: import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'; import { Input } from '@/components/ui/input'; import { Label } from '@/components/ui/label'; import { Textarea } from '@/components/ui/textarea'; import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';. If these shadcn components don't exist, we'll create a simple modal using div with fixed inset-0 backdrop.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg25-task4-micro3",
+              "filePath": "src/app/automations/page.tsx",
+              "change": "Add New Workflow button that opens modal",
+              "description": "Add the New Workflow button in the header section (the flex row with h2 'Workflows'). Add: <div className='flex gap-2'><Button onClick={() => setShowNewWorkflowModal(true)} className='bg-blue-600 hover:bg-blue-700'><Plus className='w-4 h-4 mr-2' />New Workflow</Button></div>. Also add Plus to the lucide-react imports.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg25-task4-micro4",
+              "filePath": "src/app/automations/page.tsx",
+              "change": "Add modal with form fields for name, description, trigger, steps",
+              "description": "Create the modal JSX. After the main content div, add the Dialog component: <Dialog open={showNewWorkflowModal} onOpenChange={setShowNewWorkflowModal}><DialogContent className='sm:max-w-[500px]'><DialogHeader><DialogTitle>Create New Workflow</DialogTitle></DialogHeader><div className='space-y-4 py-4'><div className='space-y-2'><Label htmlFor='name'>Name</Label><Input id='name' value={newWorkflow.name} onChange={(e) => setNewWorkflow(prev => ({...prev, name: e.target.value}))} placeholder='My Workflow' /></div><div className='space-y-2'><Label htmlFor='description'>Description</Label><Textarea id='description' value={newWorkflow.description} onChange={(e) => setNewWorkflow(prev => ({...prev, description: e.target.value}))} placeholder='What does this workflow do?' /></div><div className='space-y-2'><Label>Trigger</Label><Select value={newWorkflow.trigger} onValueChange={(v) => setNewWorkflow(prev => ({...prev, trigger: v as any}))}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value='manual'>Manual</SelectItem><SelectItem value='scheduled'>Scheduled</SelectItem><SelectItem value='on_push'>On Push</SelectItem></SelectContent></Select></div><div className='space-y-2'><Label htmlFor='steps'>Steps (one per line)</Label><Textarea id='steps' value={newWorkflow.steps} onChange={(e) => setNewWorkflow(prev => ({...prev, steps: e.target.value}))} placeholder='Step 1: Analyze input&#10;Step 2: Process data&#10;Step 3: Generate output' rows={4} /></div></div><DialogFooter><Button variant='outline' onClick={() => setShowNewWorkflowModal(false)}>Cancel</Button><Button onClick={handleCreateWorkflow} disabled={isSubmitting}>{isSubmitting ? 'Creating...' : 'Create Workflow'}</Button></DialogFooter></DialogContent></Dialog>",
+              "status": "pending"
+            },
+            {
+              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg25-task4-micro5",
+              "filePath": "src/app/automations/page.tsx",
+              "change": "Add handleCreateWorkflow function with API call and toast notifications",
+              "description": "Create the handleCreateWorkflow function. Add this function inside the component: const handleCreateWorkflow = async () => { if (!newWorkflow.name.trim()) { toast.error('Please enter a workflow name'); return; } setIsSubmitting(true); try { const res = await fetch('/api/workflows', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: newWorkflow.name, description: newWorkflow.description, trigger: newWorkflow.trigger, steps: newWorkflow.steps.split('\\n').filter(s => s.trim()) }) }); if (!res.ok) throw new Error('Failed to create workflow'); const data = await res.json(); setWorkflows(prev => [...prev, data.workflow]); setShowNewWorkflowModal(false); setNewWorkflow({ name: '', description: '', trigger: 'manual', steps: '' }); toast.success('Workflow created successfully!'); } catch (error) { toast.error('Failed to create workflow'); console.error(error); } finally { setIsSubmitting(false); } };. Also import toast from sonner or react-hot-toast: import { toast } from 'sonner';",
+              "status": "pending"
+            },
+            {
+              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg25-task4-micro6",
+              "filePath": "src/app/api/workflows/route.ts",
+              "change": "Add POST handler to /api/workflows for creating new workflows",
+              "description": "Add POST handler to create new workflows. Export async function POST(request: Request) { try { const body = await request.json(); const { name, description, trigger, steps } = body; if (!name) { return NextResponse.json({ error: 'Name is required' }, { status: 400 }); } const newWorkflow = { id: `wf-${Date.now()}`, name, description: description || '', type: 'automation' as const, status: 'active' as const, trigger: trigger || 'manual', steps: steps || [], lastRun: null, createdAt: new Date().toISOString(), totalRuns: 0, successfulRuns: 0 }; // In production, save to database here return NextResponse.json({ workflow: newWorkflow, message: 'Workflow created successfully' }, { status: 201 }); } catch (error) { return NextResponse.json({ error: 'Failed to create workflow' }, { status: 500 }); } }",
+              "status": "pending"
+            }
+          ]
         },
         {
           "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg25-task5",
           "taskNumber": 5,
           "originalDescription": "\"Browse Marketplace\" button → show message: \"Marketplace coming soon. Currently 3 built-in workflows available.\"",
-          "status": "pending",
-          "approved": false,
-          "rewritten": false,
-          "microTasks": []
+          "status": "approved",
+          "approved": true,
+          "rewritten": true,
+          "microTasks": [
+            {
+              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg25-task5-micro1",
+              "filePath": "src/app/automations/page.tsx",
+              "change": "Add Browse Marketplace button with Store icon",
+              "description": "Add the Browse Marketplace button next to the New Workflow button. In the header div with the buttons, update to: <div className='flex gap-2'><Button variant='outline' onClick={handleBrowseMarketplace}><Store className='w-4 h-4 mr-2' />Browse Marketplace</Button><Button onClick={() => setShowNewWorkflowModal(true)} className='bg-blue-600 hover:bg-blue-700'><Plus className='w-4 h-4 mr-2' />New Workflow</Button></div>. Add Store to lucide-react imports.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg25-task5-micro2",
+              "filePath": "src/app/automations/page.tsx",
+              "change": "Add handler showing marketplace coming soon toast message",
+              "description": "Create the handleBrowseMarketplace function. Add this function inside the component: const handleBrowseMarketplace = () => { toast.info('Marketplace coming soon. Currently 3 built-in workflows available.', { duration: 4000, description: 'Explore our pre-built workflows: Idea to MVP, Bug Fix Pipeline, and Code Review.' }); };. This uses sonner toast with info variant. If using react-hot-toast instead, use: toast('Marketplace coming soon.\\nCurrently 3 built-in workflows available.', { icon: '🏪', duration: 4000 });",
+              "status": "pending"
+            },
+            {
+              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg25-task5-micro3",
+              "filePath": "src/app/automations/page.tsx",
+              "change": "Ensure Toaster component is rendered for toast notifications",
+              "description": "Ensure toast provider is available. Check if the root layout has a Toaster component. If not, add at the end of the AutomationsPage component return, just before the closing fragment or div: <Toaster position='top-right' richColors />. Import it: import { Toaster } from 'sonner'; or import { Toaster } from 'react-hot-toast'; depending on which library is installed in the project. Check package.json to confirm which toast library is available.",
+              "status": "pending"
+            }
+          ]
         }
       ]
     },
@@ -1832,37 +2015,69 @@
           "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg27-task1",
           "taskNumber": 1,
           "originalDescription": "Project cards look good. Improve:",
-          "status": "pending",
-          "approved": false,
-          "rewritten": false,
-          "microTasks": []
+          "status": "approved",
+          "approved": true,
+          "rewritten": true,
+          "microTasks": [
+            {
+              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg27-task1-micro1",
+              "filePath": "src/app/dashboard/page.tsx",
+              "change": "Analyze and implement the requested feature",
+              "description": "Implement the following task with precision: Project cards look good. Improve:. First identify the correct file and component, then make the necessary changes following the project's coding standards.",
+              "status": "pending"
+            }
+          ]
         },
         {
           "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg27-task2",
           "taskNumber": 2,
           "originalDescription": "\"New Project\" button must work:",
-          "status": "pending",
-          "approved": false,
-          "rewritten": false,
-          "microTasks": []
+          "status": "approved",
+          "approved": true,
+          "rewritten": true,
+          "microTasks": [
+            {
+              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg27-task2-micro1",
+              "filePath": "src/app/dashboard/page.tsx",
+              "change": "Analyze and implement the requested feature",
+              "description": "Implement the following task with precision: \"New Project\" button must work:. First identify the correct file and component, then make the necessary changes following the project's coding standards.",
+              "status": "pending"
+            }
+          ]
         },
         {
           "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg27-task3",
           "taskNumber": 3,
           "originalDescription": "Click on project card → navigate to /projects/[id]:",
-          "status": "pending",
-          "approved": false,
-          "rewritten": false,
-          "microTasks": []
+          "status": "approved",
+          "approved": true,
+          "rewritten": true,
+          "microTasks": [
+            {
+              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg27-task3-micro1",
+              "filePath": "src/app/dashboard/page.tsx",
+              "change": "Analyze and implement the requested feature",
+              "description": "Implement the following task with precision: Click on project card → navigate to /projects/[id]:. First identify the correct file and component, then make the necessary changes following the project's coding standards.",
+              "status": "pending"
+            }
+          ]
         },
         {
           "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg27-task4",
           "taskNumber": 4,
           "originalDescription": "For GenPlatform.ai project: previewUrl should be \"https://app.gen3.ai\". When you click Preview tab, it should show the live site in an iframe with device toggles (Desktop/Tablet/Mobile).",
-          "status": "pending",
-          "approved": false,
-          "rewritten": false,
-          "microTasks": []
+          "status": "approved",
+          "approved": true,
+          "rewritten": true,
+          "microTasks": [
+            {
+              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg27-task4-micro1",
+              "filePath": "src/app/dashboard/page.tsx",
+              "change": "Analyze and implement the requested feature",
+              "description": "Implement the following task with precision: For GenPlatform.ai project: previewUrl should be \"https://app.gen3.ai\". When you click Preview tab, it should show the live site in an iframe with device toggles (Desktop/Tablet/Mobile).. First identify the correct file and component, then make the necessary changes following the project's coding standards.",
+              "status": "pending"
+            }
+          ]
         }
       ]
     },
@@ -1881,37 +2096,223 @@
           "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg29-task1",
           "taskNumber": 1,
           "originalDescription": "The Users page should show the team. Currently shows Med (OWNER). Make it look professional:",
-          "status": "pending",
-          "approved": false,
-          "rewritten": false,
-          "microTasks": []
+          "status": "approved",
+          "approved": true,
+          "rewritten": true,
+          "microTasks": [
+            {
+              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg29-task1-micro1",
+              "filePath": "src/app/dashboard/users/page.tsx",
+              "change": "Add TeamMember TypeScript interface",
+              "description": "At the top of the UsersPage component, define a TypeScript interface called TeamMember with properties: id (string), name (string), email (string), role (string union of 'OWNER' | 'ADMIN' | 'MANAGER' | 'VIEWER'), status ('active' | 'inactive'), lastActive (string), avatarInitial (string). This interface will type all team member objects throughout the component.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg29-task1-micro2",
+              "filePath": "src/app/dashboard/users/page.tsx",
+              "change": "Add teamMembers state with Med as initial member",
+              "description": "Create a useState hook called teamMembers with initial value containing one object: { id: '1', name: 'Med', email: 'owner@genplatform.ai', role: 'OWNER', status: 'active', lastActive: 'Just now', avatarInitial: 'M' }. Type this state as TeamMember[]. This will be the source of truth for displaying team members on the page.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg29-task1-micro3",
+              "filePath": "src/app/dashboard/users/page.tsx",
+              "change": "Create MemberCard component structure",
+              "description": "Create a new component called MemberCard that accepts a member prop of type TeamMember. The card should use the Card component from shadcn/ui with className 'p-6 hover:shadow-lg transition-shadow'. Inside, create a flex container with items-center and gap-4. First child is the avatar circle, second child is a div containing name (font-semibold text-lg), email (text-sm text-muted-foreground), and a flex row with role badge and status indicator.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg29-task1-micro4",
+              "filePath": "src/app/dashboard/users/page.tsx",
+              "change": "Add avatar placeholder with gradient background and initial",
+              "description": "Inside the MemberCard component, create the avatar placeholder as a div with className 'w-14 h-14 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold text-xl'. Inside this div, render {member.avatarInitial}. This creates a professional circular avatar with the member's initial letter centered.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg29-task1-micro5",
+              "filePath": "src/app/dashboard/users/page.tsx",
+              "change": "Add green status dot with Active/Inactive text",
+              "description": "Add the status indicator inside MemberCard: create a flex row with items-center and gap-2. Add a span with className conditionally set: if member.status === 'active' use 'w-2 h-2 rounded-full bg-green-500 animate-pulse', otherwise use 'w-2 h-2 rounded-full bg-gray-400'. Next to the dot, add a span with text 'Active' or 'Inactive' based on status, with className 'text-sm text-muted-foreground'.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg29-task1-micro6",
+              "filePath": "src/app/dashboard/users/page.tsx",
+              "change": "Add page header with title and member count",
+              "description": "In the main return statement of UsersPage, replace any existing content with a container div. Add a header section with flex justify-between items-center mb-8. Left side shows h1 'Team Members' with className 'text-2xl font-bold', and a p tag below showing '{teamMembers.length} member(s)' with className 'text-muted-foreground'. Right side will hold the Invite Member button (to be added in Task 2).",
+              "status": "pending"
+            },
+            {
+              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg29-task1-micro7",
+              "filePath": "src/app/dashboard/users/page.tsx",
+              "change": "Add responsive grid layout for member cards",
+              "description": "Below the header, create a grid container with className 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'. Inside, map over teamMembers array and render <MemberCard key={member.id} member={member} /> for each. This creates a responsive card grid that shows 1 column on mobile, 2 on tablet, and 3 on desktop.",
+              "status": "pending"
+            }
+          ]
         },
         {
           "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg29-task2",
           "taskNumber": 2,
           "originalDescription": "\"Invite Member\" button → show modal:",
-          "status": "pending",
-          "approved": false,
-          "rewritten": false,
-          "microTasks": []
+          "status": "approved",
+          "approved": true,
+          "rewritten": true,
+          "microTasks": [
+            {
+              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg29-task2-micro1",
+              "filePath": "src/app/dashboard/users/page.tsx",
+              "change": "Add modal state and form state hooks",
+              "description": "Add useState hooks for the invite modal: const [isInviteModalOpen, setIsInviteModalOpen] = useState(false). Also add form state: const [inviteForm, setInviteForm] = useState({ email: '', displayName: '', role: 'VIEWER' as const }). Import useState from react, and import Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter from '@/components/ui/dialog'.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg29-task2-micro2",
+              "filePath": "src/app/dashboard/users/page.tsx",
+              "change": "Add styled Invite Member button to header",
+              "description": "In the header section (right side), add a Button component with onClick={() => setIsInviteModalOpen(true)}. The button should have className 'bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700'. Inside the button, add a UserPlus icon from lucide-react with className 'w-4 h-4 mr-2', followed by text 'Invite Member'.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg29-task2-micro3",
+              "filePath": "src/app/dashboard/users/page.tsx",
+              "change": "Create invite modal dialog structure",
+              "description": "Add the Dialog component after the grid. Set open={isInviteModalOpen} and onOpenChange={setIsInviteModalOpen}. Inside DialogContent with className 'sm:max-w-md', add DialogHeader with DialogTitle 'Invite Team Member'. Below header, create a form with className 'space-y-4 py-4' containing three form groups for email, display name, and role selection.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg29-task2-micro4",
+              "filePath": "src/app/dashboard/users/page.tsx",
+              "change": "Add email input field to invite form",
+              "description": "Inside the form, create the email field: a div with className 'space-y-2'. Add a Label htmlFor='email' with text 'Email Address'. Add an Input component with id='email', type='email', placeholder='colleague@company.com', value={inviteForm.email}, onChange={(e) => setInviteForm(prev => ({...prev, email: e.target.value}))}. Import Input from '@/components/ui/input' and Label from '@/components/ui/label'.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg29-task2-micro5",
+              "filePath": "src/app/dashboard/users/page.tsx",
+              "change": "Add display name input field to invite form",
+              "description": "Add the display name field: another div with className 'space-y-2'. Add Label htmlFor='displayName' with text 'Display Name'. Add Input with id='displayName', placeholder='John Doe', value={inviteForm.displayName}, onChange={(e) => setInviteForm(prev => ({...prev, displayName: e.target.value}))}. This field allows customizing how the invited member's name appears.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg29-task2-micro6",
+              "filePath": "src/app/dashboard/users/page.tsx",
+              "change": "Add role dropdown selector with three options",
+              "description": "Add the role selector: a div with className 'space-y-2'. Add Label with text 'Role'. Use a Select component from shadcn/ui with value={inviteForm.role} and onValueChange={(value) => setInviteForm(prev => ({...prev, role: value}))}. SelectTrigger should have className 'w-full'. SelectContent contains SelectItem components for 'VIEWER' (label: 'Viewer - Can view projects'), 'MANAGER' (label: 'Manager - Can edit projects'), 'ADMIN' (label: 'Admin - Full access').",
+              "status": "pending"
+            },
+            {
+              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg29-task2-micro7",
+              "filePath": "src/app/dashboard/users/page.tsx",
+              "change": "Add informational note about email invitations",
+              "description": "Below the form fields, add a note paragraph with className 'text-sm text-muted-foreground flex items-center gap-2'. Add a Mail icon from lucide-react with className 'w-4 h-4'. Add text: 'Members will receive an email invitation to join your team.' This informs users about the invitation process.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg29-task2-micro8",
+              "filePath": "src/app/dashboard/users/page.tsx",
+              "change": "Add form submission handler with toast notification",
+              "description": "Create a handleInviteSubmit function: const handleInviteSubmit = () => { if (!inviteForm.email) { toast.error('Please enter an email address'); return; } toast.success(`Invitation sent to ${inviteForm.email}`); setInviteForm({ email: '', displayName: '', role: 'VIEWER' }); setIsInviteModalOpen(false); }. Import toast from 'sonner' or your toast library. Add DialogFooter with Cancel button (variant='outline', onClick to close modal) and Send Invitation button (onClick={handleInviteSubmit}).",
+              "status": "pending"
+            }
+          ]
         },
         {
           "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg29-task3",
           "taskNumber": 3,
           "originalDescription": "Role badges should be styled:",
-          "status": "pending",
-          "approved": false,
-          "rewritten": false,
-          "microTasks": []
+          "status": "approved",
+          "approved": true,
+          "rewritten": true,
+          "microTasks": [
+            {
+              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg29-task3-micro1",
+              "filePath": "src/app/dashboard/users/page.tsx",
+              "change": "Create getRoleBadgeStyles function for OWNER and ADMIN",
+              "description": "Create a helper function called getRoleBadgeStyles that takes a role parameter of type TeamMember['role'] and returns an object with className string. Use a switch statement: case 'OWNER' returns 'bg-gradient-to-r from-red-500 to-orange-500 text-white border-0 shadow-lg shadow-red-500/25'; case 'ADMIN' returns 'bg-gradient-to-r from-purple-500 to-pink-500 text-white border-0 shadow-lg shadow-purple-500/25'.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg29-task3-micro2",
+              "filePath": "src/app/dashboard/users/page.tsx",
+              "change": "Add MANAGER and VIEWER styles to getRoleBadgeStyles",
+              "description": "Continue the getRoleBadgeStyles switch statement: case 'MANAGER' returns 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white border-0 shadow-lg shadow-blue-500/25'; case 'VIEWER' returns 'bg-gray-100 text-gray-700 border border-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700'; default returns the VIEWER style. This provides distinct visual hierarchy for each role level.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg29-task3-micro3",
+              "filePath": "src/app/dashboard/users/page.tsx",
+              "change": "Create RoleBadge component using Badge and styles",
+              "description": "Create a RoleBadge component that accepts role as prop of type TeamMember['role']. Import Badge from '@/components/ui/badge'. Return <Badge className={`${getRoleBadgeStyles(role)} px-3 py-1 text-xs font-semibold uppercase tracking-wide`}>{role === 'OWNER' && '👑 '}{role}</Badge>. The crown emoji adds visual distinction for the owner role.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg29-task3-micro4",
+              "filePath": "src/app/dashboard/users/page.tsx",
+              "change": "Use RoleBadge component in MemberCard display",
+              "description": "In the MemberCard component, locate where the role is displayed (in the flex row with status). Replace any plain text role display with <RoleBadge role={member.role} />. Position it before the status indicator with a small gap. The badge should appear prominently next to the member's name or below the email address depending on your layout preference.",
+              "status": "pending"
+            }
+          ]
         },
         {
           "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg29-task4",
           "taskNumber": 4,
           "originalDescription": "Table view (if exists) should show: Avatar, Name, Email, Role, Status, Last Active, Actions (Edit/Remove)",
-          "status": "pending",
-          "approved": false,
-          "rewritten": false,
-          "microTasks": []
+          "status": "approved",
+          "approved": true,
+          "rewritten": true,
+          "microTasks": [
+            {
+              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg29-task4-micro1",
+              "filePath": "src/app/dashboard/users/page.tsx",
+              "change": "Add view mode toggle between grid and table",
+              "description": "Add a view toggle state: const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid'). In the header section, after the title area and before the Invite button, add a div with className 'flex items-center gap-2 border rounded-lg p-1'. Inside, add two buttons: one with LayoutGrid icon for grid view, one with List icon for table view. Each button should have onClick to set the viewMode and conditional styling based on active state.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg29-task4-micro2",
+              "filePath": "src/app/dashboard/users/page.tsx",
+              "change": "Create table structure with header columns",
+              "description": "Import Table, TableBody, TableCell, TableHead, TableHeader, TableRow from '@/components/ui/table'. Below the view toggle conditional, when viewMode === 'table', render a Card component containing the Table. TableHeader should have TableRow with TableHead cells for: '' (avatar column, w-12), 'Name', 'Email', 'Role', 'Status', 'Last Active', 'Actions' (text-right).",
+              "status": "pending"
+            },
+            {
+              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg29-task4-micro3",
+              "filePath": "src/app/dashboard/users/page.tsx",
+              "change": "Add table rows with avatar, name, email, and role badge",
+              "description": "In the TableBody, map over teamMembers to create TableRow for each. First TableCell contains the avatar circle (same style as MemberCard but smaller: w-10 h-10). Second TableCell shows member.name with className 'font-medium'. Third TableCell shows member.email with className 'text-muted-foreground'. Fourth TableCell renders <RoleBadge role={member.role} />.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg29-task4-micro4",
+              "filePath": "src/app/dashboard/users/page.tsx",
+              "change": "Add status and last active columns to table",
+              "description": "Continue the TableRow cells: Fifth TableCell contains a flex row with the status dot (same conditional styling as MemberCard but inline) and status text. Sixth TableCell shows member.lastActive with className 'text-muted-foreground text-sm'. These cells provide quick visibility into member activity status.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg29-task4-micro5",
+              "filePath": "src/app/dashboard/users/page.tsx",
+              "change": "Add actions dropdown with Edit and Remove options",
+              "description": "For the seventh TableCell (Actions), set className 'text-right'. Create a DropdownMenu from shadcn/ui. DropdownMenuTrigger wraps a Button with variant='ghost' and size='icon', containing MoreHorizontal icon. DropdownMenuContent with align='end' contains: DropdownMenuItem with Pencil icon and 'Edit Member' text, DropdownMenuSeparator, DropdownMenuItem with Trash2 icon, 'Remove Member' text, and className 'text-red-600'. Disable Remove for OWNER role.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg29-task4-micro6",
+              "filePath": "src/app/dashboard/users/page.tsx",
+              "change": "Add conditional rendering for grid vs table view",
+              "description": "Wrap the main content area (grid or table) in a conditional render: {viewMode === 'grid' ? (<div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>..map MemberCards..</div>) : (<Card className='overflow-hidden'><Table>..table content..</Table></Card>)}. This allows seamless switching between the two view modes while preserving all functionality.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg29-task4-micro7",
+              "filePath": "src/app/dashboard/users/page.tsx",
+              "change": "Add placeholder handlers for edit and remove actions",
+              "description": "Create placeholder handler functions: const handleEditMember = (member: TeamMember) => { toast.info(`Edit functionality for ${member.name} coming soon`); }; const handleRemoveMember = (member: TeamMember) => { if (member.role === 'OWNER') { toast.error('Cannot remove the owner'); return; } toast.info(`Remove functionality for ${member.name} coming soon`); }. Wire these to the respective DropdownMenuItem onClick handlers.",
+              "status": "pending"
+            }
+          ]
         }
       ]
     },
@@ -1930,28 +2331,122 @@
           "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg31-task1",
           "taskNumber": 1,
           "originalDescription": "Help & Support page (/help or wherever it is):",
-          "status": "pending",
-          "approved": false,
-          "rewritten": false,
-          "microTasks": []
+          "status": "approved",
+          "approved": true,
+          "rewritten": true,
+          "microTasks": [
+            {
+              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg31-task1-micro1",
+              "filePath": "src/app/dashboard/help/page.tsx",
+              "change": "Create base HelpPage component with imports and layout structure",
+              "description": "Create a new Help & Support page component. Start with 'use client' directive. Import React, useState from 'react', Card/CardHeader/CardTitle/CardContent from '@/components/ui/card', Button from '@/components/ui/button', and Lucide icons (HelpCircle, Book, MessageCircle, ChevronDown, ChevronUp, ExternalLink, CheckCircle). Define the main export default function HelpPage() that returns a container div with className='p-6 space-y-6'. Add an h1 with 'Help & Support' title and a subtitle paragraph explaining this is the help center.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg31-task1-micro2",
+              "filePath": "src/app/dashboard/help/page.tsx",
+              "change": "Add Getting Started section with 4 numbered steps",
+              "description": "Inside HelpPage component, add a 'Getting Started' section. Create a Card component with CardHeader containing CardTitle 'Getting Started' with a Book icon. In CardContent, create a div with className='grid gap-4'. Add 4 step items, each as a div with flex layout containing: a numbered circle (1-4) with bg-primary text-white rounded-full w-8 h-8 flex items-center justify-center, and text content. Steps are: '1. Login - Sign in to your account', '2. Dashboard - Explore your personalized dashboard', '3. Create Project - Click New Project to start', '4. Start Building - Use AI tools to build your application'.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg31-task1-micro3",
+              "filePath": "src/app/dashboard/help/page.tsx",
+              "change": "Add FAQ section with 5 expandable question-answer pairs",
+              "description": "Add FAQ section with expandable answers. Create a useState hook: const [expandedFaq, setExpandedFaq] = useState<number | null>(null). Define an array of 5 FAQ objects with question and answer properties: 1) 'What is GenPlatform?' - 'GenPlatform is an AI-powered development platform...', 2) 'How do I create a new project?' - 'Navigate to Dashboard and click New Project...', 3) 'What AI models are available?' - 'We support Claude, GPT-4, and other models...', 4) 'How is my data secured?' - 'All data is encrypted and stored securely...', 5) 'How do I contact support?' - 'You can reach us via Telegram...'. Map over this array to render Cards with onClick toggling expandedFaq state, showing ChevronDown/ChevronUp icons.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg31-task1-micro4",
+              "filePath": "src/app/dashboard/help/page.tsx",
+              "change": "Add Documentation section with external link button",
+              "description": "Add Documentation section. Create a Card with CardHeader containing CardTitle 'Documentation' with Book icon. In CardContent, add a paragraph explaining 'Access our comprehensive documentation for detailed guides and API references.' Add a Button with variant='outline' that includes an ExternalLink icon and text 'View Documentation'. The button should have an onClick that opens 'https://docs.gen3.ai' in a new tab using window.open(). Add a note below: 'Documentation covers tutorials, API reference, and best practices.'",
+              "status": "pending"
+            },
+            {
+              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg31-task1-micro5",
+              "filePath": "src/app/dashboard/help/page.tsx",
+              "change": "Add Contact section with Telegram link",
+              "description": "Add Contact section at the bottom. Create a Card with CardHeader containing CardTitle 'Contact Support' with MessageCircle icon. In CardContent, add a paragraph: 'Need help? Contact the platform owner directly for assistance with any issues or questions.' Add a Button with className='mt-4' that includes a MessageCircle icon and text 'Contact via Telegram'. The onClick should open 'https://t.me/platform_owner' in a new tab. Below the button, add a small text note: 'Response time: Usually within 24 hours' with text-muted-foreground styling.",
+              "status": "pending"
+            }
+          ]
         },
         {
           "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg31-task2",
           "taskNumber": 2,
           "originalDescription": "Security page (/dashboard/security):",
-          "status": "pending",
-          "approved": false,
-          "rewritten": false,
-          "microTasks": []
+          "status": "approved",
+          "approved": true,
+          "rewritten": true,
+          "microTasks": [
+            {
+              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg31-task2-micro1",
+              "filePath": "src/app/dashboard/security/page.tsx",
+              "change": "Create base SecurityPage component with state variables",
+              "description": "Create a new Security page component. Start with 'use client' directive. Import React, useState, useEffect from 'react', Card/CardHeader/CardTitle/CardContent from '@/components/ui/card', Button from '@/components/ui/button', Badge from '@/components/ui/badge', and Lucide icons (Shield, ShieldCheck, Lock, Key, AlertTriangle, RefreshCw, CheckCircle, Clock). Define state variables: const [isScanning, setIsScanning] = useState(false); const [lastScan, setLastScan] = useState<string | null>(null); const [scanResults, setScanResults] = useState<any>(null). Export default function SecurityPage().",
+              "status": "pending"
+            },
+            {
+              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg31-task2-micro2",
+              "filePath": "src/app/dashboard/security/page.tsx",
+              "change": "Add security status overview grid with 4 metric cards",
+              "description": "Create the security status overview grid. Inside the return statement, add a container div with className='p-6 space-y-6'. Add h1 'Security Center' with Shield icon. Create a div with className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4'. Add 4 status Cards: 1) 'Last Security Scan' showing lastScan || 'Never' with Clock icon, 2) 'Vulnerabilities Found' showing '0' with green CheckCircle icon and Badge variant='success', 3) 'SSL Certificate' showing 'Valid' with green ShieldCheck icon and note '(Auto-managed by Caddy)', 4) 'Authentication' showing 'Enabled' with Lock icon and green Badge.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg31-task2-micro3",
+              "filePath": "src/app/dashboard/security/page.tsx",
+              "change": "Add detailed security features list with status badges",
+              "description": "Add detailed security features section. Below the grid, create a Card with CardTitle 'Security Features'. In CardContent, create a div with className='space-y-4'. Add 4 feature items, each as a div with flex justify-between items-center: 1) 'CSRF Protection' with Badge showing 'Active', 2) 'API Rate Limiting' with Badge showing 'Enabled', 3) 'Input Sanitization' with Badge showing 'Active', 4) 'Session Security' with Badge showing 'Secure'. Each item should have a ShieldCheck icon and description text explaining the feature's purpose.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg31-task2-micro4",
+              "filePath": "src/app/dashboard/security/page.tsx",
+              "change": "Add handleSecurityScan function and scan button",
+              "description": "Implement the security scan function. Create an async function handleSecurityScan() that: 1) Sets setIsScanning(true), 2) Makes a POST request to '/api/bridge/security-scan' with headers {'Content-Type': 'application/json'}, 3) Awaits the response and parses JSON, 4) Sets setScanResults(data), 5) Sets setLastScan(new Date().toLocaleString()), 6) In finally block sets setIsScanning(false). Wrap in try-catch and show toast.error on failure. Add a Button below the features section with onClick={handleSecurityScan} disabled={isScanning}, showing RefreshCw icon (with animate-spin when isScanning) and text 'Run Security Scan'.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg31-task2-micro5",
+              "filePath": "src/app/dashboard/security/page.tsx",
+              "change": "Add conditional scan results display section",
+              "description": "Add scan results display section. After the scan button, conditionally render a Card when scanResults is not null. The Card should have CardTitle 'Scan Results' with CheckCircle icon. In CardContent, display: 1) A success message if no vulnerabilities: 'No security issues detected', 2) A timestamp showing when the scan was completed, 3) A list of items checked (CSRF, XSS, SQL Injection, Authentication, SSL), each with a green checkmark. If scanResults contains any issues, display them in a list with AlertTriangle icons and amber/red styling based on severity.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg31-task2-micro6",
+              "filePath": "src/app/api/bridge/security-scan/route.ts",
+              "change": "Create /api/bridge/security-scan POST endpoint",
+              "description": "Create the security scan API endpoint. Import NextResponse from 'next/server'. Export an async function POST() that simulates a security scan. Create a scanResults object with: timestamp: new Date().toISOString(), status: 'complete', checksPerformed: ['CSRF Protection', 'XSS Prevention', 'SQL Injection', 'Authentication', 'SSL Certificate', 'Rate Limiting'], vulnerabilitiesFound: 0, recommendations: ['Continue monitoring for new vulnerabilities', 'Keep dependencies updated']. Add a 2-second delay with await new Promise(r => setTimeout(r, 2000)) to simulate scanning. Return NextResponse.json(scanResults).",
+              "status": "pending"
+            }
+          ]
         },
         {
           "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg31-task3",
           "taskNumber": 3,
           "originalDescription": "Make sure both pages are in the sidebar under ADMINISTRATION section with correct links.",
-          "status": "pending",
-          "approved": false,
-          "rewritten": false,
-          "microTasks": []
+          "status": "approved",
+          "approved": true,
+          "rewritten": true,
+          "microTasks": [
+            {
+              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg31-task3-micro1",
+              "filePath": "src/config/navigation.ts",
+              "change": "Add Help and Security links to ADMINISTRATION navigation section",
+              "description": "Open the navigation configuration file. Find the ADMINISTRATION section in the navigation items array (look for a section with title 'ADMINISTRATION' or similar grouping). Add two new navigation items to this section: 1) { title: 'Help & Support', href: '/dashboard/help', icon: 'HelpCircle' }, 2) { title: 'Security', href: '/dashboard/security', icon: 'Shield' }. Ensure these items are placed logically within the ADMINISTRATION group, after any existing items like Settings. If the ADMINISTRATION section doesn't exist, create it with these items.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg31-task3-micro2",
+              "filePath": "src/config/navigation.ts",
+              "change": "Verify icon imports and navigation item structure",
+              "description": "Verify the icon imports are available for the new navigation items. At the top of the file, ensure HelpCircle and Shield are imported from 'lucide-react' or that the icon mapping includes these icons. If using a string-based icon system, verify these icon names ('HelpCircle', 'Shield') are valid and will render correctly. Check that the navigation item structure matches existing items (title, href, icon properties). Test that both '/dashboard/help' and '/dashboard/security' paths are correctly formatted with leading slashes.",
+              "status": "pending"
+            }
+          ]
         }
       ]
     },
@@ -1970,28 +2465,115 @@
           "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg33-task1",
           "taskNumber": 1,
           "originalDescription": "Open src/components/layout/sidebar.tsx. Find the navigation items arrays. Add these MISSING links in the correct sections:",
-          "status": "pending",
-          "approved": false,
-          "rewritten": false,
-          "microTasks": []
+          "status": "approved",
+          "approved": true,
+          "rewritten": true,
+          "microTasks": [
+            {
+              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg33-task1-micro1",
+              "filePath": "src/components/layout/sidebar.tsx",
+              "change": "Add Dashboard, Command Center (with New badge), and Chat links to OVERVIEW section",
+              "description": "Find the navigation items array (likely named 'navItems', 'menuItems', 'navigationItems' or similar). Locate the OVERVIEW section object in this array. Check if it contains items for Dashboard (/dashboard), Command Center (/dashboard/command-center), and Chat (/dashboard/chat). For any missing items, add them as objects with properties: { name: 'Item Name', href: '/path', icon: IconComponent }. For Command Center specifically, add a 'badge' property with value 'New'. Import any missing icon components from lucide-react at the top of the file (use LayoutDashboard for Dashboard, Command for Command Center, MessageSquare for Chat).",
+              "status": "pending"
+            },
+            {
+              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg33-task1-micro2",
+              "filePath": "src/components/layout/sidebar.tsx",
+              "change": "Add Skills, Memory, Cron Jobs, Projects, Tasks, Ideas, Automations, Agents to CORE FEATURES",
+              "description": "In the same navigation items array, locate the CORE FEATURES section. Verify and add these items if missing: Skills (/dashboard/skills with Sparkles icon), Memory (/dashboard/memory with Brain icon), Cron Jobs (/dashboard/cron with Clock icon), Projects (/projects with FolderKanban icon), Tasks (/dashboard/tasks with CheckSquare icon - this is NEW), Ideas (/ideas with Lightbulb icon - this is NEW), Automations (/automations with Workflow icon), Agents (/agents with Bot icon - this is NEW). Each item should follow the existing object structure with name, href, and icon properties. Import all missing icons from lucide-react.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg33-task1-micro3",
+              "filePath": "src/components/layout/sidebar.tsx",
+              "change": "Add System Monitor, Analytics, Reports to MONITORING section",
+              "description": "In the navigation items array, find or create the MONITORING section. Add these items if they don't exist: System Monitor with href '/dashboard/monitoring' and Activity icon, Analytics with href '/dashboard/analytics' and BarChart3 icon, Reports with href '/dashboard/reports' and FileText icon. Ensure each item object matches the existing structure pattern used in other sections. Import Activity, BarChart3, and FileText from lucide-react if not already imported.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg33-task1-micro4",
+              "filePath": "src/components/layout/sidebar.tsx",
+              "change": "Add Settings, Users, Security, Help & Support to ADMINISTRATION section",
+              "description": "In the navigation items array, find or create the ADMINISTRATION section. Add these items if missing: Settings with href '/dashboard/settings' and Settings icon, Users with href '/dashboard/users' and Users icon, Security with href '/dashboard/security' and Shield icon, Help & Support with href '/help' and HelpCircle icon. Follow the existing item object structure. Import Settings, Users, Shield, and HelpCircle icons from lucide-react. Ensure this section appears last in the navigation array.",
+              "status": "pending"
+            }
+          ]
         },
         {
           "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg33-task2",
           "taskNumber": 2,
           "originalDescription": "Verify EVERY link works by checking that each page file exists:",
-          "status": "pending",
-          "approved": false,
-          "rewritten": false,
-          "microTasks": []
+          "status": "approved",
+          "approved": true,
+          "rewritten": true,
+          "microTasks": [
+            {
+              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg33-task2-micro1",
+              "filePath": "src/app/dashboard/tasks/page.tsx",
+              "change": "Create placeholder page for /dashboard/tasks route if missing",
+              "description": "Check if this file exists. If it does NOT exist, create a new file at src/app/dashboard/tasks/page.tsx. The file should export a default React component named TasksPage that returns a simple placeholder with: a div container with className 'p-6', an h1 with text 'Tasks' and className 'text-2xl font-bold mb-4', and a p tag with text 'Task management coming soon.' Add 'use client' directive at top if using any client-side features, or keep as server component if static.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg33-task2-micro2",
+              "filePath": "src/app/ideas/page.tsx",
+              "change": "Create placeholder page for /ideas route if missing",
+              "description": "Check if this file exists at src/app/ideas/page.tsx OR at src/app/(dashboard)/ideas/page.tsx. If neither exists, create src/app/ideas/page.tsx with a default export IdeasPage component. The component should return a div with className 'p-6' containing an h1 'Ideas' with className 'text-2xl font-bold mb-4', and a paragraph 'Capture and organize your ideas here.' Include proper TypeScript typing with React.FC or function component syntax.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg33-task2-micro3",
+              "filePath": "src/app/agents/page.tsx",
+              "change": "Create placeholder page for /agents route if missing",
+              "description": "Check if this file exists at src/app/agents/page.tsx OR at src/app/(dashboard)/agents/page.tsx. If neither exists, create src/app/agents/page.tsx with a default export AgentsPage component. The component should return a div with className 'p-6' containing an h1 'Agents' with className 'text-2xl font-bold mb-4', and a paragraph 'AI Agents management interface.' Ensure the file follows the same pattern as other page files in the project.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg33-task2-micro4",
+              "filePath": "src/app/help/page.tsx",
+              "change": "Create placeholder page for /help route if missing",
+              "description": "Check if this file exists at src/app/help/page.tsx. If it does NOT exist, create the file with a default export HelpPage component. The component should return a div with className 'p-6' containing an h1 'Help & Support' with className 'text-2xl font-bold mb-4', a paragraph with 'Need assistance? Contact us at support@gen3.ai', and optionally a link to documentation. Follow existing page component patterns in the project.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg33-task2-micro5",
+              "filePath": "src/app/automations/page.tsx",
+              "change": "Create placeholder page for /automations route if missing",
+              "description": "Check if this file exists at src/app/automations/page.tsx. If it does NOT exist, create the file with a default export AutomationsPage component. Return a div with className 'p-6' containing an h1 'Automations' with className 'text-2xl font-bold mb-4', and a paragraph 'Manage your automated workflows here.' Ensure proper Next.js 16 page structure with appropriate exports.",
+              "status": "pending"
+            }
+          ]
         },
         {
           "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg33-task3",
           "taskNumber": 3,
           "originalDescription": "Make sure sidebar highlights the current active page correctly.",
-          "status": "pending",
-          "approved": false,
-          "rewritten": false,
-          "microTasks": []
+          "status": "approved",
+          "approved": true,
+          "rewritten": true,
+          "microTasks": [
+            {
+              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg33-task3-micro1",
+              "filePath": "src/components/layout/sidebar.tsx",
+              "change": "Import and initialize usePathname hook for active route detection",
+              "description": "At the top of the component, import usePathname from 'next/navigation' if not already imported: import { usePathname } from 'next/navigation'. Inside the component function, call const pathname = usePathname() to get the current route. If the component is not already a client component, add 'use client' directive at the very top of the file since usePathname requires client-side rendering.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg33-task3-micro2",
+              "filePath": "src/components/layout/sidebar.tsx",
+              "change": "Add isActive comparison logic and conditional styling to nav links",
+              "description": "Find where navigation items are rendered (likely a map function over the nav items array). For each navigation link, add an 'isActive' check by comparing the item's href with pathname. Use this logic: const isActive = pathname === item.href || pathname.startsWith(item.href + '/'). Apply conditional className to the link element: className={`existing-classes ${isActive ? 'bg-primary/10 text-primary font-medium' : 'text-muted-foreground hover:text-foreground'}`}. Preserve all existing classes while adding the active state styling.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg33-task3-micro3",
+              "filePath": "src/components/layout/sidebar.tsx",
+              "change": "Implement exact matching for parent routes and add visual active indicator",
+              "description": "For navigation items that have nested routes (like /dashboard which is a prefix for /dashboard/skills, /dashboard/memory, etc.), implement exact matching for parent routes. Modify the isActive logic to: const isActive = item.href === '/dashboard' ? pathname === '/dashboard' : (pathname === item.href || pathname.startsWith(item.href + '/')). This ensures /dashboard only highlights when exactly on /dashboard, not on child routes. Apply an active indicator icon or left border: {isActive && <div className='absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-primary rounded-r' />}",
+              "status": "pending"
+            }
+          ]
         }
       ]
     }

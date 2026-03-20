@@ -1,260 +1,180 @@
-"use client"
+"use client";
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Separator } from '@/components/ui/separator'
-import { authHelpers, supabaseHelpers } from '@/lib/supabase'
-import { Mail, Lock, Crown, AlertCircle } from 'lucide-react'
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useToast } from "@/hooks/use-toast";
+import { Eye, EyeOff, Loader2, Sparkles } from "lucide-react";
 
 export default function LoginPage() {
-  const [ownerPassword, setOwnerPassword] = useState('')
-  const [teamEmail, setTeamEmail] = useState('')
-  const [teamPassword, setTeamPassword] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [teamLoading, setTeamLoading] = useState(false)
-  const [error, setError] = useState('')
-  const [teamError, setTeamError] = useState('')
-  const [showTeamLogin, setShowTeamLogin] = useState(false)
-  const router = useRouter()
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+  const router = useRouter();
+  const { toast } = useToast();
 
-  const handleOwnerLogin = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setLoading(true)
-    setError('')
-
-    try {
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ password: ownerPassword })
-      })
-
-      const data = await response.json()
-
-      if (data.success) {
-        // Cookie is set by the server, redirect to dashboard
-        router.push('/dashboard')
-      } else {
-        setError(data.message || 'Authentication failed')
-      }
-    } catch (err) {
-      setError('Network error occurred')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const handleTeamLogin = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setTeamLoading(true)
-    setTeamError('')
-
-    try {
-      const { user, session, error } = await authHelpers.signIn(teamEmail, teamPassword)
-
-      if (error) {
-        setTeamError(error.message)
-        return
-      }
-
-      if (user && session) {
-        // Verify user is in team_members table and active
-        const teamMember = await supabaseHelpers.getTeamMemberByEmail(teamEmail)
-
-        if (!teamMember) {
-          setTeamError('You are not authorized to access this platform')
-          await authHelpers.signOut()
-          return
-        }
-
-        if (teamMember.status !== 'active') {
-          let statusMessage = 'Your account is not active'
-          if (teamMember.status === 'invited') {
-            statusMessage = 'Please check your email and complete the signup process'
-          } else if (teamMember.status === 'disabled') {
-            statusMessage = 'Your account has been disabled. Contact the platform owner.'
+  // Check if user is already authenticated and redirect to dashboard
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const response = await fetch("/api/auth/check", {
+          method: "GET",
+          credentials: "include",
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          if (data.authenticated) {
+            router.push("/dashboard");
+            return;
           }
-          setTeamError(statusMessage)
-          await authHelpers.signOut()
-          return
         }
-
-        // Success - redirect to dashboard
-        router.push('/dashboard')
+      } catch (error) {
+        // Not authenticated, stay on login page
+        console.log("Not authenticated");
+      } finally {
+        setIsCheckingAuth(false);
       }
-    } catch (err) {
-      setTeamError('Network error occurred')
-    } finally {
-      setTeamLoading(false)
-    }
-  }
+    };
 
-  const handleForgotPassword = async () => {
-    if (!teamEmail) {
-      setTeamError('Please enter your email address first')
-      return
-    }
+    checkAuth();
+  }, [router]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
 
     try {
-      const { error } = await authHelpers.resetPassword(teamEmail)
-      if (error) {
-        setTeamError(error.message)
+      const response = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email, password }),
+        credentials: "include",
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        toast({
+          title: "Welcome back!",
+          description: "Successfully signed in.",
+        });
+        router.push("/dashboard");
       } else {
-        setTeamError('')
-        alert('Password reset email sent! Check your inbox.')
+        toast({
+          title: "Error",
+          description: data.error || "Invalid credentials",
+          variant: "destructive",
+        });
       }
-    } catch (err) {
-      setTeamError('Failed to send reset email')
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Something went wrong. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
     }
+  };
+
+  // Show loading state while checking authentication
+  if (isCheckingAuth) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <CardTitle className="text-2xl">GenPlatform.ai</CardTitle>
-          <CardDescription>Mission Control Dashboard</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          {/* Owner Login - Primary */}
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 p-4">
+      <Card className="w-full max-w-md shadow-xl border-0 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm">
+        <CardHeader className="space-y-4 text-center pb-2">
+          <div className="mx-auto w-16 h-16 bg-gradient-to-br from-primary to-primary/60 rounded-2xl flex items-center justify-center shadow-lg">
+            <Sparkles className="h-8 w-8 text-white" />
+          </div>
           <div>
-            <div className="flex items-center space-x-2 mb-4">
-              <Crown className="h-5 w-5 text-yellow-600" />
-              <h3 className="font-semibold text-lg">Platform Owner</h3>
+            <CardTitle className="text-2xl font-bold">Welcome to GenPlatform</CardTitle>
+            <CardDescription className="text-base mt-2">
+              Sign in to access your AI-powered dashboard
+            </CardDescription>
+          </div>
+        </CardHeader>
+        <CardContent className="pt-4">
+          <form onSubmit={handleSubmit} className="space-y-5">
+            <div className="space-y-2">
+              <Label htmlFor="email" className="text-sm font-medium">
+                Email Address
+              </Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="admin@gen3.ai"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                disabled={isLoading}
+                className="h-11"
+              />
             </div>
-            <form onSubmit={handleOwnerLogin} className="space-y-4">
-              <div>
+            <div className="space-y-2">
+              <Label htmlFor="password" className="text-sm font-medium">
+                Password
+              </Label>
+              <div className="relative">
                 <Input
-                  type="password"
-                  placeholder="Owner password"
-                  value={ownerPassword}
-                  onChange={(e) => setOwnerPassword(e.target.value)}
-                  disabled={loading}
-                  autoFocus
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  placeholder="Enter your password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  disabled={isLoading}
+                  className="h-11 pr-10"
                 />
-              </div>
-              {error && (
-                <div className="flex items-center space-x-2 text-sm text-red-600 dark:text-red-400">
-                  <AlertCircle className="h-4 w-4" />
-                  <span>{error}</span>
-                </div>
-              )}
-              <Button 
-                type="submit" 
-                className="w-full" 
-                disabled={loading || !ownerPassword}
-              >
-                {loading ? 'Signing in...' : 'Sign In as Owner'}
-              </Button>
-            </form>
-          </div>
-
-          {/* Divider */}
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-              <Separator />
-            </div>
-            <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-background px-2 text-muted-foreground">or</span>
-            </div>
-          </div>
-
-          {/* Team Member Login Toggle */}
-          {!showTeamLogin ? (
-            <Button 
-              type="button"
-              variant="outline"
-              className="w-full flex items-center space-x-2"
-              onClick={() => setShowTeamLogin(true)}
-            >
-              <Mail className="h-4 w-4" />
-              <span>Team Member? Sign in with email</span>
-            </Button>
-          ) : (
-            <div>
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center space-x-2">
-                  <Mail className="h-5 w-5 text-blue-600" />
-                  <h3 className="font-semibold text-lg">Team Member</h3>
-                </div>
-                <Button 
+                <button
                   type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => {
-                    setShowTeamLogin(false)
-                    setTeamEmail('')
-                    setTeamPassword('')
-                    setTeamError('')
-                  }}
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
                 >
-                  Cancel
-                </Button>
-              </div>
-              <form onSubmit={handleTeamLogin} className="space-y-4">
-                <div>
-                  <Input
-                    type="email"
-                    placeholder="Email address"
-                    value={teamEmail}
-                    onChange={(e) => setTeamEmail(e.target.value)}
-                    disabled={teamLoading}
-                    autoComplete="email"
-                  />
-                </div>
-                <div>
-                  <Input
-                    type="password"
-                    placeholder="Password"
-                    value={teamPassword}
-                    onChange={(e) => setTeamPassword(e.target.value)}
-                    disabled={teamLoading}
-                    autoComplete="current-password"
-                  />
-                </div>
-                {teamError && (
-                  <div className="flex items-center space-x-2 text-sm text-red-600 dark:text-red-400">
-                    <AlertCircle className="h-4 w-4" />
-                    <span>{teamError}</span>
-                  </div>
-                )}
-                
-                <div className="flex space-x-2">
-                  <Button 
-                    type="submit" 
-                    variant="outline"
-                    className="flex-1" 
-                    disabled={teamLoading || !teamEmail || !teamPassword}
-                  >
-                    {teamLoading ? 'Signing in...' : 'Sign In'}
-                  </Button>
-                </div>
-
-                <div className="text-center">
-                  <button
-                    type="button"
-                    onClick={handleForgotPassword}
-                    disabled={teamLoading}
-                    className="text-xs text-muted-foreground hover:text-foreground underline"
-                  >
-                    Forgot your password?
-                  </button>
-                </div>
-              </form>
-
-              {/* Help Text */}
-              <div className="mt-4 p-3 bg-muted/30 rounded-lg">
-                <p className="text-xs text-muted-foreground text-center">
-                  Don't have an account? Contact the platform owner to get invited as a team member.
-                </p>
+                  {showPassword ? (
+                    <EyeOff className="h-5 w-5" />
+                  ) : (
+                    <Eye className="h-5 w-5" />
+                  )}
+                </button>
               </div>
             </div>
-          )}
+            <Button
+              type="submit"
+              className="w-full h-11 text-base font-medium"
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Signing in...
+                </>
+              ) : (
+                "Sign In"
+              )}
+            </Button>
+          </form>
+          <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
+            <p className="text-center text-sm text-muted-foreground">
+              Demo credentials: <span className="font-mono text-xs bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">admin@gen3.ai</span>
+            </p>
+          </div>
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }

@@ -4,7 +4,7 @@
   "uploadedAt": "2026-03-20T08:45:10.369Z",
   "totalMessages": 33,
   "totalTasks": 68,
-  "totalMicroTasks": 152,
+  "totalMicroTasks": 20,
   "messages": [
     {
       "messageNumber": 1,
@@ -27,173 +27,70 @@
           "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg3-task1",
           "taskNumber": 1,
           "originalDescription": "Open src/components/notifications/notification-system.tsx (or wherever the Gateway Offline banner is). Find where it checks gateway status. It currently checks incorrectly. Fix the logic:",
-          "status": "done",
+          "status": "executing",
           "approved": true,
           "rewritten": true,
           "microTasks": [
             {
               "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg3-task1-micro1",
-              "filePath": "src/components/notifications/notification-system.tsx",
-              "change": "Add try-catch wrapper and fix gateway status check logic",
-              "description": "Locate the function or useEffect hook that fetches gateway status (likely named checkGatewayStatus, fetchGatewayStatus, or similar). Find the fetch call to /api/bridge/status. Wrap the entire fetch operation in a try-catch block. Inside the try block, parse the JSON response and check if response.gateway?.status === 'running' OR if response.services?.some(s => s.name === 'gateway' && s.status === 'running'). Store this boolean in a variable called isGatewayOnline. Only set the gateway offline warning state to true when isGatewayOnline is false.",
-              "status": "pending"
-            },
-            {
-              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg3-task1-micro2",
-              "filePath": "src/components/notifications/notification-system.tsx",
-              "change": "Show 'Connecting...' instead of 'Gateway Offline' when API unreachable",
-              "description": "In the catch block of the gateway status check function, instead of showing 'Gateway Offline' error, set a different state like setConnectionStatus('connecting') or setGatewayStatus('connecting'). This handles the case when the Bridge API itself is unreachable. Create a new state variable if needed: const [connectionStatus, setConnectionStatus] = useState<'connected' | 'connecting' | 'offline'>('connecting'). In the catch block, call setConnectionStatus('connecting') and do NOT add a gateway offline notification.",
-              "status": "pending"
-            },
-            {
-              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg3-task1-micro3",
-              "filePath": "src/components/notifications/notification-system.tsx",
-              "change": "Update banner render conditions to show correct status",
-              "description": "Find the JSX that renders the 'Gateway Offline' banner or notification. This is likely a conditional render like {showGatewayWarning && <Alert>Gateway Offline</Alert>}. Modify the condition to check: {connectionStatus === 'offline' && !isGatewayOnline && <Alert variant='destructive'>Gateway Offline</Alert>}. Add another conditional for connecting state: {connectionStatus === 'connecting' && <Alert variant='warning'>Connecting to Gateway...</Alert>}. Ensure the warning only appears when we've confirmed the gateway is actually offline, not just on initial load.",
-              "status": "pending"
-            },
-            {
-              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg3-task1-micro4",
-              "filePath": "src/components/notifications/notification-system.tsx",
-              "change": "Add 30-second polling interval for gateway status",
-              "description": "Add a polling interval to periodically check gateway status every 30 seconds. In the useEffect hook, add: const interval = setInterval(checkGatewayStatus, 30000). Return a cleanup function: return () => clearInterval(interval). This ensures the gateway status stays current. Also call checkGatewayStatus() immediately on mount. Make sure to clear any existing gateway offline notifications when the gateway comes back online by filtering the notifications array.",
+              "filePath": "src/app/dashboard/page.tsx",
+              "change": "Analyze and implement the requested feature",
+              "description": "Implement the following task with precision: Open src/components/notifications/notification-system.tsx (or wherever the Gateway Offline banner is). Find where it checks gateway status. It currently checks incorrectly. Fix the logic:. First identify the correct file and component, then make the necessary changes following the project's coding standards.",
               "status": "pending"
             }
           ],
-          "startedAt": "2026-03-20T13:42:49.603Z",
-          "skippedReason": "Duplicate task",
-          "completedAt": "2026-03-20T13:44:32.806Z",
-          "executionResult": {
-            "success": true,
-            "result": "Build ✅ | Applied changes + deployed. === Finding notification-related files ===\nsrc/components/chat/MobileChatLayout.tsx\nsrc/components/c"
-          }
+          "startedAt": "2026-03-20T14:15:07.529Z"
         },
         {
           "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg3-task2",
           "taskNumber": 2,
           "originalDescription": "The notification \"CPU usage has been above 85%\" is fake/hardcoded. Remove it. Only show REAL notifications:",
-          "status": "done",
+          "status": "approved",
           "approved": true,
           "rewritten": true,
           "microTasks": [
             {
               "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg3-task2-micro1",
-              "filePath": "src/components/notifications/notification-system.tsx",
-              "change": "Remove all hardcoded/fake CPU notification entries",
-              "description": "Search for any hardcoded notification objects or arrays containing text like 'CPU usage has been above 85%' or similar fake alerts. Look for initialNotifications, defaultNotifications, mockNotifications, or DEMO_NOTIFICATIONS arrays. Delete any objects that contain fake/demo data such as: { id: 'x', message: 'CPU usage has been above 85%', type: 'warning' }. If there's an entire mock array, replace it with an empty array: const initialNotifications: Notification[] = [].",
-              "status": "pending"
-            },
-            {
-              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg3-task2-micro2",
-              "filePath": "src/components/notifications/notification-system.tsx",
-              "change": "Add real CPU metrics fetch that only alerts when cpu > 85",
-              "description": "Create a new async function called checkCpuMetrics that fetches real CPU data: async function checkCpuMetrics() { try { const res = await fetch('/api/bridge/metrics'); const data = await res.json(); if (data.cpu > 85) { addNotification({ id: `cpu-${Date.now()}`, type: 'warning', message: `CPU usage is at ${data.cpu}%`, timestamp: new Date() }); } } catch (err) { console.warn('Failed to fetch CPU metrics'); } }. Call this function in useEffect alongside the gateway status check.",
-              "status": "pending"
-            },
-            {
-              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg3-task2-micro3",
-              "filePath": "src/components/notifications/notification-system.tsx",
-              "change": "Remove any automatic fake notification generation on mount",
-              "description": "Find any useEffect or initialization code that adds notifications on component mount. Remove any lines like: setNotifications([...demoNotifications]) or addNotification({ message: 'CPU usage...' }). Ensure the notifications state starts empty and only gets populated by real data from API calls. Check for setTimeout or setInterval calls that add fake notifications and remove them entirely.",
-              "status": "pending"
-            },
-            {
-              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg3-task2-micro4",
-              "filePath": "src/components/notifications/notification-system.tsx",
-              "change": "Add notification type system for tracking real alerts",
-              "description": "Add proper notification types for real alerts only. Update or create a NotificationType union: type NotificationType = 'gateway-status' | 'cpu-alert' | 'build-status' | 'deploy-status'. When adding notifications, always include a 'source' field to track where the notification came from. This helps distinguish real notifications from any that might slip through: interface Notification { id: string; type: NotificationType; message: string; timestamp: Date; source: 'system' | 'api'; read: boolean; }.",
+              "filePath": "src/app/dashboard/page.tsx",
+              "change": "Analyze and implement the requested feature",
+              "description": "Implement the following task with precision: The notification \"CPU usage has been above 85%\" is fake/hardcoded. Remove it. Only show REAL notifications:. First identify the correct file and component, then make the necessary changes following the project's coding standards.",
               "status": "pending"
             }
-          ],
-          "startedAt": "2026-03-20T13:46:01.156Z",
-          "skippedReason": "Duplicate task",
-          "completedAt": "2026-03-20T13:47:44.116Z",
-          "executionResult": {
-            "success": true,
-            "result": "Build ✅ | Applied changes + deployed. === Examining notification system ===\n\"use client\"\n\nimport { useState, useEffect, useCallback } from"
-          }
+          ]
         },
         {
           "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg3-task3",
           "taskNumber": 3,
           "originalDescription": "The notification bell in the top bar shows a red badge with count. Make sure the count matches REAL unread notifications only. If no real alerts, badge should be hidden.",
-          "status": "done",
+          "status": "approved",
           "approved": true,
           "rewritten": true,
           "microTasks": [
             {
               "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg3-task3-micro1",
-              "filePath": "src/components/notifications/notification-system.tsx",
-              "change": "Calculate badge count from real unread notifications only",
-              "description": "Find the notification bell icon component (likely an icon wrapped in a button). Locate where the badge count is calculated - it might be notifications.length or a hardcoded number. Replace with: const unreadCount = notifications.filter(n => !n.read && n.source === 'api').length. This ensures only real, unread notifications from API sources are counted. Store this in a useMemo for performance: const unreadCount = useMemo(() => notifications.filter(n => !n.read).length, [notifications]).",
-              "status": "pending"
-            },
-            {
-              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg3-task3-micro2",
-              "filePath": "src/components/notifications/notification-system.tsx",
-              "change": "Hide badge completely when unreadCount is 0",
-              "description": "Update the badge rendering to conditionally hide when count is zero. Find the badge JSX like <Badge>{count}</Badge> or <span className='badge'>{count}</span>. Wrap it in a conditional: {unreadCount > 0 && <span className='absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center'>{unreadCount}</span>}. This ensures the badge completely disappears when there are no unread notifications, rather than showing '0'.",
-              "status": "pending"
-            },
-            {
-              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg3-task3-micro3",
-              "filePath": "src/components/notifications/notification-system.tsx",
-              "change": "Add markAsRead and markAllAsRead functions",
-              "description": "Add a markAsRead function that updates notification state when user views them: const markAsRead = (notificationId: string) => { setNotifications(prev => prev.map(n => n.id === notificationId ? { ...n, read: true } : n)); }. Also add markAllAsRead: const markAllAsRead = () => { setNotifications(prev => prev.map(n => ({ ...n, read: true }))); }. Wire markAllAsRead to the dropdown open event so viewing notifications marks them read.",
+              "filePath": "src/app/dashboard/page.tsx",
+              "change": "Analyze and implement the requested feature",
+              "description": "Implement the following task with precision: The notification bell in the top bar shows a red badge with count. Make sure the count matches REAL unread notifications only. If no real alerts, badge should be hidden.. First identify the correct file and component, then make the necessary changes following the project's coding standards.",
               "status": "pending"
             }
-          ],
-          "startedAt": "2026-03-20T13:48:56.834Z",
-          "skippedReason": "Duplicate task",
-          "completedAt": "2026-03-20T13:49:55.271Z",
-          "executionResult": {
-            "success": true,
-            "result": "Build ✅ | Applied changes + deployed. === Examining notification system ===\n\"use client\"\n\nimport { useState, useEffect, useCallback } from"
-          }
+          ]
         },
         {
           "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg3-task4",
           "taskNumber": 4,
           "originalDescription": "Also check if there is a NotificationBell.tsx component that duplicates this logic. If yes, consolidate into one system.",
-          "status": "done",
+          "status": "approved",
           "approved": true,
           "rewritten": true,
           "microTasks": [
             {
               "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg3-task4-micro1",
-              "filePath": "src/components/notifications/NotificationBell.tsx",
-              "change": "Remove duplicate state and fetch logic from NotificationBell",
-              "description": "If this file exists, examine its contents. If it contains duplicate notification fetching logic (its own useEffect calling /api/bridge/status or managing its own notifications state), this needs to be removed. Delete all internal state management: remove useState for notifications, remove useEffect hooks that fetch data. The component should become a pure UI component that receives props from notification-system.tsx instead of managing its own data.",
-              "status": "pending"
-            },
-            {
-              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg3-task4-micro2",
-              "filePath": "src/components/notifications/NotificationBell.tsx",
-              "change": "Convert to controlled component accepting props",
-              "description": "Convert NotificationBell to accept props from the parent notification system. Update the component signature to: interface NotificationBellProps { notifications: Notification[]; unreadCount: number; onMarkAsRead: (id: string) => void; onMarkAllAsRead: () => void; }. Export the component as: export function NotificationBell({ notifications, unreadCount, onMarkAsRead, onMarkAllAsRead }: NotificationBellProps). Remove any internal notification logic and use only the passed props.",
-              "status": "pending"
-            },
-            {
-              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg3-task4-micro3",
-              "filePath": "src/components/notifications/notification-system.tsx",
-              "change": "Import and use NotificationBell as child component",
-              "description": "If NotificationBell.tsx exists and was converted, import and use it in notification-system.tsx. Add: import { NotificationBell } from './NotificationBell'. Replace any inline bell icon rendering with: <NotificationBell notifications={notifications} unreadCount={unreadCount} onMarkAsRead={markAsRead} onMarkAllAsRead={markAllAsRead} />. This centralizes all notification logic in notification-system.tsx while NotificationBell handles only the UI rendering.",
-              "status": "pending"
-            },
-            {
-              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg3-task4-micro4",
-              "filePath": "src/components/navbar.tsx",
-              "change": "Update navbar to use consolidated notification system",
-              "description": "Check if navbar.tsx imports NotificationBell directly and manages its own notification state. If it does, update it to import from notification-system instead. Replace any direct NotificationBell usage with the NotificationSystem component which wraps everything. The navbar should render: <NotificationSystem /> which internally handles NotificationBell. Do NOT modify navbar styling or layout, only update the notification component import path if needed.",
+              "filePath": "src/app/dashboard/page.tsx",
+              "change": "Analyze and implement the requested feature",
+              "description": "Implement the following task with precision: Also check if there is a NotificationBell.tsx component that duplicates this logic. If yes, consolidate into one system.. First identify the correct file and component, then make the necessary changes following the project's coding standards.",
               "status": "pending"
             }
-          ],
-          "startedAt": "2026-03-20T13:50:04.058Z",
-          "completedAt": "2026-03-20T13:51:34.156Z",
-          "executionResult": {
-            "success": true,
-            "result": "Build ✅ | Applied changes + deployed. === Checking for NotificationBell.tsx ===\n./src/components/layout/NotificationBell.tsx\n\n=== Checking"
-          }
+          ]
         }
       ]
     },
@@ -212,109 +109,103 @@
           "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg5-task1",
           "taskNumber": 1,
           "originalDescription": "Live Task Monitor widget at the top. Currently shows \"Sprint 0D\" and old data. Fix:",
-          "status": "done",
+          "status": "approved",
           "approved": true,
           "rewritten": true,
           "microTasks": [
             {
-              "id": "msg5-task1-micro1",
+              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg5-task1-micro1",
               "filePath": "src/app/dashboard/page.tsx",
-              "change": "Fix Live Task Monitor widget at the top. Currently sho",
-              "description": "Implement: Live Task Monitor widget at the top. Currently shows \"Sprint 0D\" and old data. Fix:",
+              "change": "Analyze and implement the requested feature",
+              "description": "Implement the following task with precision: Live Task Monitor widget at the top. Currently shows \"Sprint 0D\" and old data. Fix:. First identify the correct file and component, then make the necessary changes following the project's coding standards.",
               "status": "pending"
             }
-          ],
-          "completedAt": "2026-03-20T12:49:40.538Z"
+          ]
         },
         {
           "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg5-task2",
           "taskNumber": 2,
           "originalDescription": "Stat Cards row (All Projects, Tasks, Team, Automations, Reports, Security). Fix each:",
-          "status": "done",
+          "status": "approved",
           "approved": true,
           "rewritten": true,
           "microTasks": [
             {
-              "id": "msg5-task2-micro1",
+              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg5-task2-micro1",
               "filePath": "src/app/dashboard/page.tsx",
-              "change": "Fix Stat Cards row (All Projects, Tasks, Team, Automat",
-              "description": "Implement: Stat Cards row (All Projects, Tasks, Team, Automations, Reports, Security). Fix each:",
+              "change": "Analyze and implement the requested feature",
+              "description": "Implement the following task with precision: Stat Cards row (All Projects, Tasks, Team, Automations, Reports, Security). Fix each:. First identify the correct file and component, then make the necessary changes following the project's coding standards.",
               "status": "pending"
             }
-          ],
-          "completedAt": "2026-03-20T12:49:40.538Z"
+          ]
         },
         {
           "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg5-task3",
           "taskNumber": 3,
           "originalDescription": "System Performance section at bottom. Must show REAL data:",
-          "status": "done",
+          "status": "approved",
           "approved": true,
           "rewritten": true,
           "microTasks": [
             {
-              "id": "msg5-task3-micro1",
+              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg5-task3-micro1",
               "filePath": "src/app/dashboard/page.tsx",
-              "change": "Fix System Performance section at bottom. Must show RE",
-              "description": "Implement: System Performance section at bottom. Must show REAL data:",
+              "change": "Analyze and implement the requested feature",
+              "description": "Implement the following task with precision: System Performance section at bottom. Must show REAL data:. First identify the correct file and component, then make the necessary changes following the project's coding standards.",
               "status": "pending"
             }
-          ],
-          "completedAt": "2026-03-20T12:49:40.538Z"
+          ]
         },
         {
           "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg5-task4",
           "taskNumber": 4,
           "originalDescription": "Quick Actions section. Make ALL buttons work:",
-          "status": "done",
+          "status": "approved",
           "approved": true,
           "rewritten": true,
           "microTasks": [
             {
-              "id": "msg5-task4-micro1",
+              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg5-task4-micro1",
               "filePath": "src/app/dashboard/page.tsx",
-              "change": "Fix Quick Actions section. Make ALL buttons work:",
-              "description": "Implement: Quick Actions section. Make ALL buttons work:",
+              "change": "Analyze and implement the requested feature",
+              "description": "Implement the following task with precision: Quick Actions section. Make ALL buttons work:. First identify the correct file and component, then make the necessary changes following the project's coding standards.",
               "status": "pending"
             }
-          ],
-          "completedAt": "2026-03-20T12:49:40.538Z"
+          ]
         },
         {
           "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg5-task5",
           "taskNumber": 5,
           "originalDescription": "Activity Stream. Show real recent events:",
-          "status": "done",
+          "status": "approved",
           "approved": true,
           "rewritten": true,
           "microTasks": [
             {
-              "id": "msg5-task5-micro1",
+              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg5-task5-micro1",
               "filePath": "src/app/dashboard/page.tsx",
-              "change": "Fix Activity Stream. Show real recent events:",
-              "description": "Implement: Activity Stream. Show real recent events:",
+              "change": "Analyze and implement the requested feature",
+              "description": "Implement the following task with precision: Activity Stream. Show real recent events:. First identify the correct file and component, then make the necessary changes following the project's coding standards.",
               "status": "pending"
             }
-          ],
-          "completedAt": "2026-03-20T12:49:40.538Z"
+          ]
         },
         {
           "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg5-task6",
           "taskNumber": 6,
           "originalDescription": "Workflows section. Either show real workflows from /api/workflows or hide the section if empty. \"No workflows running\" is fine but \"Start Workflow\" button should navigate to /automations.",
-          "status": "done",
+          "status": "approved",
           "approved": true,
           "rewritten": true,
           "microTasks": [
             {
-              "id": "msg5-task6-micro1",
-              "filePath": "src/app/dashboard/page.tsx",
-              "change": "Fix Workflows section. Either show real workflows from",
-              "description": "Implement: Workflows section. Either show real workflows from /api/workflows or hide the section if empty. \"No workflows running\" is fine but \"Start Workflow\" button should navigate to /automations.",
+              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg5-task6-micro1",
+              "filePath": "src/app/api/workflows/route.ts",
+              "change": "Create or update the API route",
+              "description": "In src/app/api/workflows/route.ts, implement the requested API functionality: Workflows section. Either show real workflows from /api/workflows or hide the section if empty. \"No workflows running\" is fine but \"Start Workflow\" button should navigate to /automations.. Use Next.js 13+ app router conventions with proper request/response handling.",
               "status": "pending"
             }
-          ],
-          "completedAt": "2026-03-20T12:49:40.538Z"
+          ]
         }
       ]
     },
@@ -333,8 +224,8 @@
           "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg7-task1",
           "taskNumber": 1,
           "originalDescription": "The user avatar area shows \"U User Member\". Fix:",
-          "status": "done",
-          "approved": true,
+          "status": "review",
+          "approved": false,
           "rewritten": true,
           "microTasks": [
             {
@@ -344,15 +235,14 @@
               "description": "Implement the following task with precision: The user avatar area shows \"U User Member\". Fix:. First identify the correct file and component, then make the necessary changes following the project's coding standards.",
               "status": "pending"
             }
-          ],
-          "completedAt": "2026-03-20T12:49:40.538Z"
+          ]
         },
         {
           "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg7-task2",
           "taskNumber": 2,
           "originalDescription": "Sign Out button must work:",
-          "status": "done",
-          "approved": true,
+          "status": "review",
+          "approved": false,
           "rewritten": true,
           "microTasks": [
             {
@@ -362,15 +252,14 @@
               "description": "Implement the following task with precision: Sign Out button must work:. First identify the correct file and component, then make the necessary changes following the project's coding standards.",
               "status": "pending"
             }
-          ],
-          "completedAt": "2026-03-20T12:49:40.538Z"
+          ]
         },
         {
           "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg7-task3",
           "taskNumber": 3,
           "originalDescription": "The \"Select Project\" dropdown in the top bar. Make it functional:",
-          "status": "done",
-          "approved": true,
+          "status": "review",
+          "approved": false,
           "rewritten": true,
           "microTasks": [
             {
@@ -380,15 +269,14 @@
               "description": "Implement the following task with precision: The \"Select Project\" dropdown in the top bar. Make it functional:. First identify the correct file and component, then make the necessary changes following the project's coding standards.",
               "status": "pending"
             }
-          ],
-          "completedAt": "2026-03-20T12:49:40.538Z"
+          ]
         },
         {
           "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg7-task4",
           "taskNumber": 4,
           "originalDescription": "Navigation links (Dashboard, Projects, Automations, Reports) — verify all navigate correctly:",
-          "status": "done",
-          "approved": true,
+          "status": "review",
+          "approved": false,
           "rewritten": true,
           "microTasks": [
             {
@@ -405,8 +293,7 @@
               "description": "Make the specific change requested in the original task. This involves modifying the identified component to Navigation links (Dashboard, Projects, Automations, Reports) — verify all navigate correctly:. Ensure proper TypeScript types and React best practices are followed.",
               "status": "pending"
             }
-          ],
-          "completedAt": "2026-03-20T12:49:40.538Z"
+          ]
         }
       ]
     },
@@ -425,65 +312,28 @@
           "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg9-task1",
           "taskNumber": 1,
           "originalDescription": "Status cards at top. Fix each:",
-          "status": "done",
-          "approved": true,
-          "rewritten": true,
-          "microTasks": [
-            {
-              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg9-task1-micro1",
-              "filePath": "src/app/dashboard/page.tsx",
-              "change": "Analyze and implement the requested feature",
-              "description": "Implement the following task with precision: Status cards at top. Fix each:. First identify the correct file and component, then make the necessary changes following the project's coding standards.",
-              "status": "pending"
-            }
-          ],
-          "startedAt": "2026-03-20T13:51:36.500Z",
-          "completedAt": "2026-03-20T13:53:13.730Z",
-          "executionResult": {
-            "success": true,
-            "result": "Build ✅ | Applied changes + deployed. === Examining Command Center page ===\n\"use client\"\n\nimport { useState, useEffect } from 'react'\nimpo"
-          }
+          "status": "pending",
+          "approved": false,
+          "rewritten": false,
+          "microTasks": []
         },
         {
           "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg9-task2",
           "taskNumber": 2,
           "originalDescription": "Quick Actions — make ALL buttons execute real commands:",
-          "status": "done",
-          "approved": true,
-          "rewritten": true,
-          "microTasks": [
-            {
-              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg9-task2-micro1",
-              "filePath": "src/app/dashboard/page.tsx",
-              "change": "Analyze and implement the requested feature",
-              "description": "Implement the following task with precision: Quick Actions — make ALL buttons execute real commands:. First identify the correct file and component, then make the necessary changes following the project's coding standards.",
-              "status": "pending"
-            }
-          ],
-          "startedAt": "2026-03-20T13:54:33.914Z",
-          "completedAt": "2026-03-20T13:56:08.206Z",
-          "executionResult": {
-            "success": true,
-            "result": "Build ✅ | Applied changes + deployed. === Checking Command Center page ===\nsrc/components/ui/command.tsx\nsrc/lib/commander-client.ts\n\"use "
-          }
+          "status": "pending",
+          "approved": false,
+          "rewritten": false,
+          "microTasks": []
         },
         {
           "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg9-task3",
           "taskNumber": 3,
           "originalDescription": "Remove the \"Terminal\" and \"Services\" tabs if they don't have real content. Keep only \"Quick Actions\" tab.",
-          "status": "executing",
-          "approved": true,
-          "rewritten": true,
-          "microTasks": [
-            {
-              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg9-task3-micro1",
-              "filePath": "src/app/dashboard/page.tsx",
-              "change": "Analyze and implement the requested feature",
-              "description": "Implement the following task with precision: Remove the \"Terminal\" and \"Services\" tabs if they don't have real content. Keep only \"Quick Actions\" tab.. First identify the correct file and component, then make the necessary changes following the project's coding standards.",
-              "status": "pending"
-            }
-          ],
-          "startedAt": "2026-03-20T13:57:09.846Z"
+          "status": "pending",
+          "approved": false,
+          "rewritten": false,
+          "microTasks": []
         }
       ]
     },
@@ -502,8 +352,8 @@
           "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg11-task1",
           "taskNumber": 1,
           "originalDescription": "The page should load the file tree from Bridge API. On mount:",
-          "status": "done",
-          "approved": true,
+          "status": "review",
+          "approved": false,
           "rewritten": true,
           "microTasks": [
             {
@@ -513,15 +363,14 @@
               "description": "In src/app/api/endpoint/route.ts, implement the requested API functionality: The page should load the file tree from Bridge API. On mount:. Use Next.js 13+ app router conventions with proper request/response handling.",
               "status": "pending"
             }
-          ],
-          "completedAt": "2026-03-20T12:49:40.538Z"
+          ]
         },
         {
           "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg11-task2",
           "taskNumber": 2,
           "originalDescription": "When clicking a file in the tree:",
-          "status": "done",
-          "approved": true,
+          "status": "review",
+          "approved": false,
           "rewritten": true,
           "microTasks": [
             {
@@ -531,15 +380,14 @@
               "description": "Implement the following task with precision: When clicking a file in the tree:. First identify the correct file and component, then make the necessary changes following the project's coding standards.",
               "status": "pending"
             }
-          ],
-          "completedAt": "2026-03-20T12:49:40.538Z"
+          ]
         },
         {
           "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg11-task3",
           "taskNumber": 3,
           "originalDescription": "Add EDIT functionality:",
-          "status": "done",
-          "approved": true,
+          "status": "review",
+          "approved": false,
           "rewritten": true,
           "microTasks": [
             {
@@ -549,15 +397,14 @@
               "description": "Implement the following task with precision: Add EDIT functionality:. First identify the correct file and component, then make the necessary changes following the project's coding standards.",
               "status": "pending"
             }
-          ],
-          "completedAt": "2026-03-20T12:49:40.538Z"
+          ]
         },
         {
           "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg11-task4",
           "taskNumber": 4,
           "originalDescription": "Add NEW FILE button in the header:",
-          "status": "done",
-          "approved": true,
+          "status": "review",
+          "approved": false,
           "rewritten": true,
           "microTasks": [
             {
@@ -567,15 +414,14 @@
               "description": "Implement the following task with precision: Add NEW FILE button in the header:. First identify the correct file and component, then make the necessary changes following the project's coding standards.",
               "status": "pending"
             }
-          ],
-          "completedAt": "2026-03-20T12:49:40.538Z"
+          ]
         },
         {
           "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg11-task5",
           "taskNumber": 5,
           "originalDescription": "Stats cards at top should show:",
-          "status": "done",
-          "approved": true,
+          "status": "review",
+          "approved": false,
           "rewritten": true,
           "microTasks": [
             {
@@ -585,8 +431,7 @@
               "description": "Implement the following task with precision: Stats cards at top should show:. First identify the correct file and component, then make the necessary changes following the project's coding standards.",
               "status": "pending"
             }
-          ],
-          "completedAt": "2026-03-20T12:49:40.538Z"
+          ]
         }
       ]
     },
@@ -605,310 +450,46 @@
           "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg13-task1",
           "taskNumber": 1,
           "originalDescription": "Settings page — make Save Changes work:",
-          "status": "approved",
-          "approved": true,
-          "rewritten": true,
-          "microTasks": [
-            {
-              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg13-task1-micro1",
-              "filePath": "src/app/api/settings/route.ts",
-              "change": "Create settings API route file with directory helper",
-              "description": "Create a new API route file for settings. Import fs from 'fs/promises', path from 'path', and NextResponse from 'next/server'. Define const SETTINGS_FILE = '/root/genplatform/data/settings.json'. Create an async function ensureDataDir() that checks if /root/genplatform/data directory exists using fs.access(), and if not, creates it with fs.mkdir(path, {recursive: true}). This function should be called before any read/write operations to ensure the data directory exists.",
-              "status": "pending"
-            },
-            {
-              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg13-task1-micro2",
-              "filePath": "src/app/api/settings/route.ts",
-              "change": "Add GET handler to read settings from JSON file",
-              "description": "In the same file, export an async function GET(request: Request). Inside, call await ensureDataDir(). Then try to read the settings file with fs.readFile(SETTINGS_FILE, 'utf-8'). Parse the JSON and return NextResponse.json(settings). In the catch block, if the file doesn't exist (error.code === 'ENOENT'), return a default settings object: {fullName: '', timezone: 'UTC', dailyReports: true, systemAlerts: true}. For other errors, return NextResponse.json({error: 'Failed to read settings'}, {status: 500}).",
-              "status": "pending"
-            },
-            {
-              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg13-task1-micro3",
-              "filePath": "src/app/api/settings/route.ts",
-              "change": "Add PUT handler to write settings to JSON file",
-              "description": "In the same file, export an async function PUT(request: Request). Call await ensureDataDir(). Parse the request body with const body = await request.json(). Extract fullName, timezone, dailyReports, systemAlerts from body. Create a settings object with these values. Write to file using fs.writeFile(SETTINGS_FILE, JSON.stringify(settings, null, 2)). Return NextResponse.json({success: true, settings}). Wrap in try-catch, return status 500 on error with message 'Failed to save settings'.",
-              "status": "pending"
-            },
-            {
-              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg13-task1-micro4",
-              "filePath": "src/middleware.ts",
-              "change": "Add /api/settings to CSRF skip list in middleware",
-              "description": "Find the array or condition that lists paths to skip CSRF validation. This might be named csrfSkipPaths, publicPaths, or similar. Add '/api/settings' to this list. If the middleware uses a conditional check like path.startsWith(), add an OR condition: || path === '/api/settings' || path.startsWith('/api/settings'). This ensures both GET and PUT requests to /api/settings work without CSRF token requirements.",
-              "status": "pending"
-            },
-            {
-              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg13-task1-micro5",
-              "filePath": "src/app/dashboard/settings/page.tsx",
-              "change": "Add state variables for settings form",
-              "description": "At the top of the SettingsPage component, add state for form fields: const [fullName, setFullName] = useState(''); const [timezone, setTimezone] = useState('UTC'); const [isLoading, setIsLoading] = useState(true); const [isSaving, setIsSaving] = useState(false). Import useState and useEffect from 'react'. Also import toast from your toast library (likely 'sonner' or 'react-hot-toast'). These states will track the form values and loading states.",
-              "status": "pending"
-            },
-            {
-              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg13-task1-micro6",
-              "filePath": "src/app/dashboard/settings/page.tsx",
-              "change": "Add useEffect to load settings on page mount",
-              "description": "Add a useEffect hook that runs on component mount to fetch current settings. Inside useEffect, create an async function loadSettings(). Call const res = await fetch('/api/settings'). If res.ok, parse const data = await res.json(), then setFullName(data.fullName || ''), setTimezone(data.timezone || 'UTC'). Always call setIsLoading(false) in a finally block. Call loadSettings() immediately inside useEffect. Use empty dependency array [].",
-              "status": "pending"
-            },
-            {
-              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg13-task1-micro7",
-              "filePath": "src/app/dashboard/settings/page.tsx",
-              "change": "Add handleSaveSettings function for form submission",
-              "description": "Create a handleSaveSettings async function. Set setIsSaving(true). Make a fetch call: const res = await fetch('/api/settings', {method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({fullName, timezone})}). If res.ok, call toast.success('Settings saved successfully'). If not ok, call toast.error('Failed to save settings'). In finally block, setIsSaving(false). This function will be called when the Save Changes button is clicked.",
-              "status": "pending"
-            },
-            {
-              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg13-task1-micro8",
-              "filePath": "src/app/dashboard/settings/page.tsx",
-              "change": "Wire up Full Name and Timezone inputs to state",
-              "description": "Find the input field for Full Name in the JSX (likely an <Input> component). Add value={fullName} and onChange={(e) => setFullName(e.target.value)} props to make it controlled. Find the Timezone selector (likely a <Select> component). Add value={timezone} and onValueChange={setTimezone} or onChange handler depending on component type. This connects the form fields to state.",
-              "status": "pending"
-            },
-            {
-              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg13-task1-micro9",
-              "filePath": "src/app/dashboard/settings/page.tsx",
-              "change": "Connect Save Changes button to handleSaveSettings",
-              "description": "Find the Save Changes button in the Profile section. Add onClick={handleSaveSettings} to trigger the save function. Add disabled={isSaving || isLoading} to prevent double-clicks. Change the button text to show loading state: {isSaving ? 'Saving...' : 'Save Changes'}. If using a Button component from shadcn/ui, you can also add loading={isSaving} prop if supported.",
-              "status": "pending"
-            }
-          ]
+          "status": "pending",
+          "approved": false,
+          "rewritten": false,
+          "microTasks": []
         },
         {
           "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg13-task2",
           "taskNumber": 2,
           "originalDescription": "Password change:",
-          "status": "approved",
-          "approved": true,
-          "rewritten": true,
-          "microTasks": [
-            {
-              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg13-task2-micro1",
-              "filePath": "src/app/dashboard/settings/page.tsx",
-              "change": "Add state for password change form",
-              "description": "Add new state variables for password change functionality: const [newPassword, setNewPassword] = useState(''); const [confirmPassword, setConfirmPassword] = useState(''); const [isChangingPassword, setIsChangingPassword] = useState(false); const [passwordError, setPasswordError] = useState('');. These will track the password form fields and submission state.",
-              "status": "pending"
-            },
-            {
-              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg13-task2-micro2",
-              "filePath": "src/app/dashboard/settings/page.tsx",
-              "change": "Add handleChangePassword function with validation",
-              "description": "Create an async function handleChangePassword(). First validate: if (newPassword !== confirmPassword) { setPasswordError('Passwords do not match'); toast.error('Passwords do not match'); return; }. If (newPassword.length < 8) { setPasswordError('Password must be at least 8 characters'); toast.error('Password must be at least 8 characters'); return; }. Clear error: setPasswordError(''). Set setIsChangingPassword(true).",
-              "status": "pending"
-            },
-            {
-              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg13-task2-micro3",
-              "filePath": "src/app/dashboard/settings/page.tsx",
-              "change": "Complete handleChangePassword with API call",
-              "description": "Continue handleChangePassword function: make fetch call const res = await fetch('/api/auth/change-password', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({newPassword})}). If res.ok, call toast.success('Password changed successfully'), then setNewPassword(''), setConfirmPassword('') to clear fields. If not ok, parse const data = await res.json() and toast.error(data.error || 'Failed to change password'). In finally block, setIsChangingPassword(false).",
-              "status": "pending"
-            },
-            {
-              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg13-task2-micro4",
-              "filePath": "src/app/dashboard/settings/page.tsx",
-              "change": "Add Change Password section UI",
-              "description": "In the JSX, after the Profile section (after its closing Card or div), add a new section for Change Password. Use the same Card/styling pattern as other sections. Add a heading 'Change Password'. Add two Input fields: one with type='password' placeholder='New Password' value={newPassword} onChange={(e) => setNewPassword(e.target.value)}, and another with type='password' placeholder='Confirm Password' value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)}. Display passwordError in red text if it exists.",
-              "status": "pending"
-            },
-            {
-              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg13-task2-micro5",
-              "filePath": "src/app/dashboard/settings/page.tsx",
-              "change": "Add Change Password button",
-              "description": "In the Change Password section, add a Button component with onClick={handleChangePassword} disabled={isChangingPassword || !newPassword || !confirmPassword}. Button text: {isChangingPassword ? 'Changing...' : 'Change Password'}. Style the button consistently with other buttons on the page. Add some spacing (className with gap or space-y) between the input fields and button.",
-              "status": "pending"
-            },
-            {
-              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg13-task2-micro6",
-              "filePath": "src/app/api/auth/change-password/route.ts",
-              "change": "Create change-password API route with validation",
-              "description": "Create a new API route file. Import NextResponse from 'next/server'. Export an async function POST(request: Request). Parse body with const {newPassword} = await request.json(). Validate: if (!newPassword || newPassword.length < 8) return NextResponse.json({error: 'Password must be at least 8 characters'}, {status: 400}).",
-              "status": "pending"
-            },
-            {
-              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg13-task2-micro7",
-              "filePath": "src/app/api/auth/change-password/route.ts",
-              "change": "Implement password storage in change-password route",
-              "description": "Continue the POST function: For now, store the password in a simple way. You can either: 1) Import and update a password variable from a config file, or 2) Write to /root/genplatform/data/auth.json with the new password hash. If using bcrypt: import bcrypt, const hashedPassword = await bcrypt.hash(newPassword, 10), then save. For simplicity without bcrypt, just save the plain password to the JSON file (noting this is for development only). Return NextResponse.json({success: true, message: 'Password changed successfully'}).",
-              "status": "pending"
-            },
-            {
-              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg13-task2-micro8",
-              "filePath": "src/middleware.ts",
-              "change": "Add change-password route to CSRF skip list",
-              "description": "Find the CSRF skip list or public paths array. Add '/api/auth/change-password' to the list of paths that skip CSRF validation. This might be adding to an array like csrfSkipPaths.push('/api/auth/change-password') or adding a condition: || path === '/api/auth/change-password'. Ensure POST requests to this endpoint work properly.",
-              "status": "pending"
-            }
-          ]
+          "status": "pending",
+          "approved": false,
+          "rewritten": false,
+          "microTasks": []
         },
         {
           "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg13-task3",
           "taskNumber": 3,
           "originalDescription": "Sign Out — fix completely:",
-          "status": "approved",
-          "approved": true,
-          "rewritten": true,
-          "microTasks": [
-            {
-              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg13-task3-micro1",
-              "filePath": "src/app/api/auth/logout/route.ts",
-              "change": "Create logout API route that clears auth cookie",
-              "description": "Create a new API route file for logout. Import NextResponse from 'next/server'. Export an async function POST(request: Request). Create a response: const response = NextResponse.json({success: true, message: 'Logged out successfully'}). Add cookie clearing header: response.cookies.set('auth-token', '', {path: '/', httpOnly: true, maxAge: 0, expires: new Date(0)}). Also try response.cookies.delete('auth-token'). Return response.",
-              "status": "pending"
-            },
-            {
-              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg13-task3-micro2",
-              "filePath": "src/middleware.ts",
-              "change": "Add logout route to CSRF skip list",
-              "description": "Add '/api/auth/logout' to the CSRF skip list so POST requests work without CSRF token. Find where other /api/auth paths are exempted and add this one. The logout endpoint must be accessible to clear the session cookie properly.",
-              "status": "pending"
-            },
-            {
-              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg13-task3-micro3",
-              "filePath": "src/middleware.ts",
-              "change": "Add auth-token check for dashboard routes in middleware",
-              "description": "Find or create the authentication check logic. Look for where the middleware checks for the auth-token cookie. Add logic: for any path starting with '/dashboard', check if request.cookies.get('auth-token') exists and has a value. If not, return NextResponse.redirect(new URL('/login', request.url)). Make sure this check happens AFTER the public paths check (so /login itself is not protected).",
-              "status": "pending"
-            },
-            {
-              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg13-task3-micro4",
-              "filePath": "src/middleware.ts",
-              "change": "Configure public paths that don't require authentication",
-              "description": "Ensure /login, /api/auth/login, /api/auth/logout, and other auth-related paths are in the public paths list that doesn't require authentication. Add a publicPaths array if not exists: const publicPaths = ['/login', '/api/auth/login', '/api/auth/logout', '/_next', '/favicon.ico']. Check if (publicPaths.some(p => path.startsWith(p))) return NextResponse.next() before the auth check.",
-              "status": "pending"
-            },
-            {
-              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg13-task3-micro5",
-              "filePath": "src/components/navbar.tsx",
-              "change": "Skip - protected file",
-              "description": "SKIP THIS FILE - Design protection rule applies. Instead, create a utility function in a new file.",
-              "status": "pending"
-            },
-            {
-              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg13-task3-micro6",
-              "filePath": "src/lib/auth-actions.ts",
-              "change": "Create signOut utility function",
-              "description": "Create a new file for authentication actions. Export an async function signOut(): Promise<void>. Inside, call await fetch('/api/auth/logout', {method: 'POST'}). Then use window.location.href = '/login' to redirect (not router.push, to ensure full page reload clears any client state). This function can be imported wherever sign out functionality is needed.",
-              "status": "pending"
-            },
-            {
-              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg13-task3-micro7",
-              "filePath": "src/app/dashboard/settings/page.tsx",
-              "change": "Connect settings page Sign Out button to signOut function",
-              "description": "Import the signOut function: import {signOut} from '@/lib/auth-actions'. Find the Sign Out button in the settings page (or add one if not present). Add onClick={signOut} to the button. If there's an existing sign out handler, replace its implementation to use this signOut function instead. Ensure the button is styled as a destructive/danger button (red color or variant='destructive').",
-              "status": "pending"
-            },
-            {
-              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg13-task3-micro8",
-              "filePath": "src/app/dashboard/settings/page.tsx",
-              "change": "Add Sign Out section UI to settings page",
-              "description": "Add a Sign Out section at the bottom of the settings page if not already present. Create a Card or section with heading 'Sign Out'. Add descriptive text like 'Sign out of your account on this device'. Add a Button with variant='destructive' (or className for red styling), onClick={signOut}, text 'Sign Out'. This provides a clear sign out option in settings.",
-              "status": "pending"
-            }
-          ]
+          "status": "pending",
+          "approved": false,
+          "rewritten": false,
+          "microTasks": []
         },
         {
           "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg13-task4",
           "taskNumber": 4,
           "originalDescription": "Login page security:",
-          "status": "approved",
-          "approved": true,
-          "rewritten": true,
-          "microTasks": [
-            {
-              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg13-task4-micro1",
-              "filePath": "src/app/login/page.tsx",
-              "change": "Ensure login page doesn't include sidebar wrapper",
-              "description": "Check if the login page component is wrapped in any layout that includes the sidebar. If it imports or uses DashboardLayout, remove that wrapper. The login page should export a clean component without dashboard shell. Look at the top-level return statement - it should NOT include Sidebar, DashboardShell, or similar components. The page should just return the login form UI.",
-              "status": "pending"
-            },
-            {
-              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg13-task4-micro2",
-              "filePath": "src/app/login/layout.tsx",
-              "change": "Create or fix login-specific layout without sidebar",
-              "description": "Check if this file exists. If it does and it includes sidebar components, either delete the file entirely (so it uses root layout) or modify it to only include minimal elements like: export default function LoginLayout({children}: {children: React.ReactNode}) { return <div className='min-h-screen flex items-center justify-center bg-background'>{children}</div>; }. This ensures login has its own clean layout.",
-              "status": "pending"
-            },
-            {
-              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg13-task4-micro3",
-              "filePath": "src/app/login/page.tsx",
-              "change": "Add redirect for already-authenticated users",
-              "description": "Add a useEffect hook to check if user is already logged in. Import useEffect and useRouter. Inside useEffect: check if document.cookie.includes('auth-token') or make a fetch to /api/auth/check. If authenticated, call router.push('/dashboard') to redirect away from login. This prevents logged-in users from seeing the login page. Use dependency array [].",
-              "status": "pending"
-            },
-            {
-              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg13-task4-micro4",
-              "filePath": "src/app/login/page.tsx",
-              "change": "Style login page as standalone centered form",
-              "description": "Ensure the login page has proper standalone styling. The main container should have classes like: className='min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900' or similar. The form should be centered on screen. Add padding and max-width to the form container: className='w-full max-w-md p-8 space-y-6 bg-white dark:bg-gray-800 rounded-lg shadow-lg'.",
-              "status": "pending"
-            },
-            {
-              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg13-task4-micro5",
-              "filePath": "src/middleware.ts",
-              "change": "Add middleware redirect from login for authenticated users",
-              "description": "Add logic to redirect authenticated users away from /login. After getting the auth-token cookie, if the path is '/login' AND the auth-token exists and is valid, return NextResponse.redirect(new URL('/dashboard', request.url)). This server-side redirect is faster than client-side and prevents flash of login page for authenticated users.",
-              "status": "pending"
-            }
-          ]
+          "status": "pending",
+          "approved": false,
+          "rewritten": false,
+          "microTasks": []
         },
         {
           "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg13-task5",
           "taskNumber": 5,
           "originalDescription": "Notifications settings (Daily Reports toggle, System Alerts toggle):",
-          "status": "approved",
-          "approved": true,
-          "rewritten": true,
-          "microTasks": [
-            {
-              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg13-task5-micro1",
-              "filePath": "src/app/dashboard/settings/page.tsx",
-              "change": "Add state for notification toggle settings",
-              "description": "Add state for notification settings: const [dailyReports, setDailyReports] = useState(true); const [systemAlerts, setSystemAlerts] = useState(true);. These booleans will track the toggle states. Initialize them to true as sensible defaults for new users who want to receive notifications.",
-              "status": "pending"
-            },
-            {
-              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg13-task5-micro2",
-              "filePath": "src/app/dashboard/settings/page.tsx",
-              "change": "Load notification settings from API in useEffect",
-              "description": "Update the loadSettings useEffect to also load notification preferences. After parsing the API response, add: setDailyReports(data.dailyReports !== false); setSystemAlerts(data.systemAlerts !== false);. Using !== false ensures that undefined values default to true, while explicit false values turn off the notifications.",
-              "status": "pending"
-            },
-            {
-              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg13-task5-micro3",
-              "filePath": "src/app/dashboard/settings/page.tsx",
-              "change": "Include notification settings in save payload",
-              "description": "Update the handleSaveSettings function to include notification settings in the save payload. Change the body to: JSON.stringify({fullName, timezone, dailyReports, systemAlerts}). This ensures all settings are saved together when the user clicks Save Changes. The API route already handles these fields.",
-              "status": "pending"
-            },
-            {
-              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg13-task5-micro4",
-              "filePath": "src/app/dashboard/settings/page.tsx",
-              "change": "Add Notifications section UI structure",
-              "description": "Find or create a Notifications section in the settings page JSX. If using a Card component, create one with title 'Notifications'. Inside, add two rows for the toggles. Each row should have a label, description text, and a Switch/Toggle component. For Daily Reports: label='Daily Reports', description='Receive daily summary of platform activity'.",
-              "status": "pending"
-            },
-            {
-              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg13-task5-micro5",
-              "filePath": "src/app/dashboard/settings/page.tsx",
-              "change": "Add Daily Reports toggle switch",
-              "description": "Import Switch component from your UI library: import {Switch} from '@/components/ui/switch' (or similar path). For the Daily Reports toggle, add: <Switch checked={dailyReports} onCheckedChange={setDailyReports} />. The Switch should be positioned on the right side of its row using flex justify-between or similar layout.",
-              "status": "pending"
-            },
-            {
-              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg13-task5-micro6",
-              "filePath": "src/app/dashboard/settings/page.tsx",
-              "change": "Add System Alerts toggle switch",
-              "description": "Add the System Alerts toggle in the same Notifications section. Create another row with label='System Alerts', description='Get notified about system updates and important events'. Add: <Switch checked={systemAlerts} onCheckedChange={setSystemAlerts} />. Ensure consistent styling with the Daily Reports toggle row.",
-              "status": "pending"
-            },
-            {
-              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg13-task5-micro7",
-              "filePath": "src/app/api/settings/route.ts",
-              "change": "Ensure API saves notification boolean settings",
-              "description": "Verify the PUT handler properly saves dailyReports and systemAlerts. In the settings object before writing, ensure it includes: const settings = {fullName, timezone, dailyReports: Boolean(dailyReports), systemAlerts: Boolean(systemAlerts)}. Using Boolean() ensures the values are properly typed as booleans in the JSON file, not strings or undefined.",
-              "status": "pending"
-            }
-          ]
+          "status": "pending",
+          "approved": false,
+          "rewritten": false,
+          "microTasks": []
         }
       ]
     },
@@ -927,212 +508,46 @@
           "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg15-task1",
           "taskNumber": 1,
           "originalDescription": "Skills are loading (27-35 skills from Bridge API). Good. But improve the cards:",
-          "status": "approved",
-          "approved": true,
-          "rewritten": true,
-          "microTasks": [
-            {
-              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg15-task1-micro1",
-              "filePath": "src/app/dashboard/skills/page.tsx",
-              "change": "Add department mapping constant and helper function",
-              "description": "At the top of the file after imports, create a new constant object called SKILL_DEPARTMENT_MAP that maps skill names to their departments. Define it as: const SKILL_DEPARTMENT_MAP: Record<string, { name: string; icon: string }> = { 'developer': { name: 'Frontend/Backend Dev', icon: '💻' }, 'senior-dev': { name: 'Frontend/Backend Dev', icon: '💻' }, 'coding-agent': { name: 'Frontend/Backend Dev', icon: '💻' }, 'deep-research-pro': { name: 'Research', icon: '🔬' }, 'exa-search': { name: 'Research', icon: '🔬' }, 'tavily-search': { name: 'Research', icon: '🔬' }, 'security-scanner': { name: 'Security', icon: '🛡️' }, 'security-audit-toolkit': { name: 'Security', icon: '🛡️' }, 'critical-code-reviewer': { name: 'QA', icon: '🔍' }, 'auto-continue': { name: 'Planning', icon: '📋' }, 'task-planner': { name: 'Planning', icon: '📋' }, 'self-improving-agent': { name: 'Self-Improvement', icon: '📈' } }. Also create a helper function getDepartment(skillName: string) that returns the matching department or a default { name: 'General', icon: '⚡' } if not found.",
-              "status": "pending"
-            },
-            {
-              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg15-task1-micro2",
-              "filePath": "src/app/dashboard/skills/page.tsx",
-              "change": "Update skill card to show name, status badge, category badge, truncated description, and department badge",
-              "description": "Find the skill card rendering section where skills are mapped. For each skill card, update the Card component to include: 1) The skill name as the card title using <CardTitle>{skill.name}</CardTitle>, 2) An active status badge using <Badge variant='success' className='ml-2'>Active</Badge> next to the title, 3) A category badge showing skill.category using <Badge variant='outline'>{skill.category}</Badge>, 4) The description truncated to 100 characters using {skill.description?.substring(0, 100)}{skill.description?.length > 100 ? '...' : ''}, 5) The department badge using the getDepartment helper: const dept = getDepartment(skill.name); then render <Badge className='mt-2'>{dept.icon} {dept.name}</Badge>. Ensure all these elements are properly spaced within CardHeader and CardContent components.",
-              "status": "pending"
-            },
-            {
-              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg15-task1-micro3",
-              "filePath": "src/app/dashboard/skills/page.tsx",
-              "change": "Add hover effects and proper styling to skill card badges",
-              "description": "Enhance the visual styling of the skill cards. Add a hover effect to each Card by adding className='hover:shadow-lg transition-shadow cursor-pointer'. For the status badge, use className='bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' to make it clearly visible as an active indicator. For the category badge, use a subtle outline style. For the department badge at the bottom of the card, use className='bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300' to differentiate it from other badges. Add proper spacing using flex and gap utilities: wrap badges in <div className='flex flex-wrap gap-2 mt-2'>.",
-              "status": "pending"
-            }
-          ]
+          "status": "pending",
+          "approved": false,
+          "rewritten": false,
+          "microTasks": []
         },
         {
           "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg15-task2",
           "taskNumber": 2,
           "originalDescription": "Click a skill card → open a detail modal:",
-          "status": "approved",
-          "approved": true,
-          "rewritten": true,
-          "microTasks": [
-            {
-              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg15-task2-micro1",
-              "filePath": "src/app/dashboard/skills/page.tsx",
-              "change": "Add state variables for modal control and skill details",
-              "description": "Add new state variables for the modal functionality at the top of the SkillsPage component function. Add: const [selectedSkill, setSelectedSkill] = useState<any>(null); const [isModalOpen, setIsModalOpen] = useState(false); const [skillDetails, setSkillDetails] = useState<any>(null); const [loadingDetails, setLoadingDetails] = useState(false);. These will track which skill is selected, whether the modal is open, the fetched skill details, and the loading state for the detail fetch.",
-              "status": "pending"
-            },
-            {
-              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg15-task2-micro2",
-              "filePath": "src/app/dashboard/skills/page.tsx",
-              "change": "Create handleSkillClick function to fetch and display skill details",
-              "description": "Create an async function called handleSkillClick that takes a skill object as parameter. Inside the function: 1) Set setSelectedSkill(skill) to store the clicked skill, 2) Set setIsModalOpen(true) to open the modal, 3) Set setLoadingDetails(true) to show loading state, 4) Make a fetch call: const res = await fetch(`/api/bridge/skills?name=${encodeURIComponent(skill.name)}`), 5) Parse response: const data = await res.json(), 6) Set setSkillDetails(data), 7) Set setLoadingDetails(false) in finally block. Wrap the fetch in try-catch and show toast.error('Failed to load skill details') on error.",
-              "status": "pending"
-            },
-            {
-              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg15-task2-micro3",
-              "filePath": "src/app/dashboard/skills/page.tsx",
-              "change": "Add onClick handler to skill cards",
-              "description": "Update each skill Card component to be clickable. Add onClick={() => handleSkillClick(skill)} to the Card component. This will trigger the modal opening and detail fetching when any skill card is clicked. Ensure the cursor-pointer class is already on the Card from the previous styling update.",
-              "status": "pending"
-            },
-            {
-              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg15-task2-micro4",
-              "filePath": "src/app/dashboard/skills/page.tsx",
-              "change": "Import Dialog and ScrollArea components",
-              "description": "Import the Dialog components at the top of the file: import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';. Also import ScrollArea if not already imported: import { ScrollArea } from '@/components/ui/scroll-area';. These components will be used to build the skill detail modal.",
-              "status": "pending"
-            },
-            {
-              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg15-task2-micro5",
-              "filePath": "src/app/dashboard/skills/page.tsx",
-              "change": "Add skill detail modal with full information display",
-              "description": "At the bottom of the return statement, before the closing fragment or div, add the skill detail modal JSX. Create: <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}><DialogContent className='max-w-2xl max-h-[80vh]'><DialogHeader><DialogTitle className='text-xl'>{selectedSkill?.name}</DialogTitle><DialogDescription>Skill Details</DialogDescription></DialogHeader>{loadingDetails ? (<div className='flex justify-center py-8'><Loader2 className='h-8 w-8 animate-spin' /></div>) : (<div className='space-y-4'><div className='grid grid-cols-2 gap-4'><div><span className='font-semibold'>Category:</span> {skillDetails?.category || selectedSkill?.category}</div><div><span className='font-semibold'>Version:</span> {skillDetails?.version || '1.0'}</div><div><span className='font-semibold'>Department:</span> {getDepartment(selectedSkill?.name).icon} {getDepartment(selectedSkill?.name).name}</div><div><span className='font-semibold'>Last Used:</span> {skillDetails?.lastUsed || 'Never'}</div></div><div><span className='font-semibold'>Description:</span><p className='mt-1 text-muted-foreground'>{skillDetails?.description || selectedSkill?.description}</p></div>{skillDetails?.skillMd && (<div><span className='font-semibold'>SKILL.md Documentation:</span><ScrollArea className='h-48 mt-2 border rounded-md p-4'><pre className='text-sm whitespace-pre-wrap'>{skillDetails.skillMd}</pre></ScrollArea></div>)}</div>)}</DialogContent></Dialog>",
-              "status": "pending"
-            },
-            {
-              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg15-task2-micro6",
-              "filePath": "src/app/api/bridge/skills/route.ts",
-              "change": "Add single skill fetch by name to API route",
-              "description": "Update the GET handler to support fetching a single skill by name. At the beginning of the GET function, check for a name query parameter: const { searchParams } = new URL(request.url); const skillName = searchParams.get('name');. If skillName is provided, filter the skills array to find the matching skill: const skill = skills.find(s => s.name === skillName);. If found, return NextResponse.json({ ...skill, version: skill.version || '1.0', lastUsed: skill.lastUsed || null, skillMd: skill.skillMd || null });. If not found, return NextResponse.json({ error: 'Skill not found' }, { status: 404 });. If no name parameter, return all skills as before.",
-              "status": "pending"
-            }
-          ]
+          "status": "pending",
+          "approved": false,
+          "rewritten": false,
+          "microTasks": []
         },
         {
           "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg15-task3",
           "taskNumber": 3,
           "originalDescription": "\"Add Skill\" button in header should show a message: \"Skills are managed through OpenClaw. Use the Command Center to update skills.\" with a link to /dashboard/command-center.",
-          "status": "approved",
-          "approved": true,
-          "rewritten": true,
-          "microTasks": [
-            {
-              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg15-task3-micro1",
-              "filePath": "src/app/dashboard/skills/page.tsx",
-              "change": "Add state for add skill info modal",
-              "description": "Add a new state variable for controlling the add skill info modal: const [showAddSkillInfo, setShowAddSkillInfo] = useState(false);. This will control the visibility of the informational dialog that appears when users click the Add Skill button.",
-              "status": "pending"
-            },
-            {
-              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg15-task3-micro2",
-              "filePath": "src/app/dashboard/skills/page.tsx",
-              "change": "Update Add Skill button to open info modal",
-              "description": "Find the 'Add Skill' button in the header section of the page. It might be a Button component with text like 'Add Skill' or 'New Skill'. Update its onClick handler to: onClick={() => setShowAddSkillInfo(true)} instead of any existing navigation or action. Keep the button styling the same with the Plus icon if it has one.",
-              "status": "pending"
-            },
-            {
-              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg15-task3-micro3",
-              "filePath": "src/app/dashboard/skills/page.tsx",
-              "change": "Import Link component",
-              "description": "Import Link from next/link at the top of the file if not already imported: import Link from 'next/link';. This will be used to create the link to the Command Center in the info dialog.",
-              "status": "pending"
-            },
-            {
-              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg15-task3-micro4",
-              "filePath": "src/app/dashboard/skills/page.tsx",
-              "change": "Add informational dialog for Add Skill button",
-              "description": "Add a new Dialog component for the Add Skill information message. Place it near the other Dialog (skill details modal). Create: <Dialog open={showAddSkillInfo} onOpenChange={setShowAddSkillInfo}><DialogContent className='max-w-md'><DialogHeader><DialogTitle>Skills Management</DialogTitle></DialogHeader><div className='space-y-4'><p className='text-muted-foreground'>Skills are managed through OpenClaw. Use the Command Center to update skills.</p><div className='flex justify-end gap-2'><Button variant='outline' onClick={() => setShowAddSkillInfo(false)}>Close</Button><Link href='/dashboard/command-center'><Button>Go to Command Center</Button></Link></div></div></DialogContent></Dialog>. This provides users with the information about where skills are managed and a direct link to access it.",
-              "status": "pending"
-            }
-          ]
+          "status": "pending",
+          "approved": false,
+          "rewritten": false,
+          "microTasks": []
         },
         {
           "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg15-task4",
           "taskNumber": 4,
           "originalDescription": "Category filter should work with real data:",
-          "status": "approved",
-          "approved": true,
-          "rewritten": true,
-          "microTasks": [
-            {
-              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg15-task4-micro1",
-              "filePath": "src/app/dashboard/skills/page.tsx",
-              "change": "Add category to skill mapping constant",
-              "description": "Create a constant object CATEGORY_SKILL_MAPPING at the top of the file that maps filter categories to skill names. Define it as: const CATEGORY_SKILL_MAPPING: Record<string, string[]> = { 'development': ['developer', 'senior-dev', 'coding-agent', 'critical-code-reviewer'], 'research': ['deep-research-pro', 'exa-search', 'tavily-search', 'research'], 'security': ['security-scanner', 'security-audit-toolkit', 'security'], 'productivity': ['auto-continue', 'task-planner', 'self-improving-agent'] };. This mapping will be used to filter skills based on selected category.",
-              "status": "pending"
-            },
-            {
-              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg15-task4-micro2",
-              "filePath": "src/app/dashboard/skills/page.tsx",
-              "change": "Add active filter state",
-              "description": "Add a state variable for the active filter if not already present: const [activeFilter, setActiveFilter] = useState<string>('all');. This will track which category filter is currently selected by the user.",
-              "status": "pending"
-            },
-            {
-              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg15-task4-micro3",
-              "filePath": "src/app/dashboard/skills/page.tsx",
-              "change": "Create filterSkills helper function",
-              "description": "Create a helper function called filterSkills that takes the skills array and returns filtered results based on activeFilter. Implement as: const filterSkills = (skills: any[]) => { if (activeFilter === 'all') return skills; const categorySkills = CATEGORY_SKILL_MAPPING[activeFilter] || []; return skills.filter(skill => { const skillNameLower = skill.name.toLowerCase(); const skillCategoryLower = (skill.category || '').toLowerCase(); return categorySkills.some(cs => skillNameLower.includes(cs) || skillCategoryLower.includes(cs)); }); };. This function checks both skill name and category for matches.",
-              "status": "pending"
-            },
-            {
-              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg15-task4-micro4",
-              "filePath": "src/app/dashboard/skills/page.tsx",
-              "change": "Wire up filter buttons with click handlers and active states",
-              "description": "Find the category filter buttons section (likely a row of buttons or tabs showing 'All', 'Development', 'Research', etc.). Update each filter button to: 1) Add onClick={() => setActiveFilter('development')} (or 'research', 'security', 'productivity', 'all' respectively), 2) Add conditional styling to show active state: className={`${activeFilter === 'development' ? 'bg-primary text-primary-foreground' : 'bg-secondary'}`}. Ensure all five filter options are present: All, Development, Research, Security, Productivity.",
-              "status": "pending"
-            },
-            {
-              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg15-task4-micro5",
-              "filePath": "src/app/dashboard/skills/page.tsx",
-              "change": "Apply filter function to skills grid rendering",
-              "description": "Update the skills grid rendering to use the filtered skills. Find where skills are mapped to cards and wrap it with the filter function. Change from: {skills.map((skill) => ...)} to: {filterSkills(skills).map((skill) => ...)}. This ensures only skills matching the active filter are displayed in the grid.",
-              "status": "pending"
-            },
-            {
-              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg15-task4-micro6",
-              "filePath": "src/app/dashboard/skills/page.tsx",
-              "change": "Optimize filtering with useMemo",
-              "description": "Add a useMemo hook to optimize the filtered skills computation. Import useMemo if not already imported. Create: const filteredSkills = useMemo(() => filterSkills(skills), [skills, activeFilter]);. Then update the grid to use filteredSkills.map() instead of filterSkills(skills).map(). This prevents recalculating the filter on every render unless skills or activeFilter changes.",
-              "status": "pending"
-            }
-          ]
+          "status": "pending",
+          "approved": false,
+          "rewritten": false,
+          "microTasks": []
         },
         {
           "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg15-task5",
           "taskNumber": 5,
           "originalDescription": "Stats cards at top:",
-          "status": "approved",
-          "approved": true,
-          "rewritten": true,
-          "microTasks": [
-            {
-              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg15-task5-micro1",
-              "filePath": "src/app/dashboard/skills/page.tsx",
-              "change": "Create skillStats useMemo for category counts",
-              "description": "Create a useMemo hook to calculate all stat counts from the skills array. Add: const skillStats = useMemo(() => { const total = skills.length; const development = skills.filter(s => CATEGORY_SKILL_MAPPING['development'].some(cs => s.name.toLowerCase().includes(cs) || (s.category || '').toLowerCase().includes(cs))).length; const research = skills.filter(s => CATEGORY_SKILL_MAPPING['research'].some(cs => s.name.toLowerCase().includes(cs) || (s.category || '').toLowerCase().includes(cs))).length; const security = skills.filter(s => CATEGORY_SKILL_MAPPING['security'].some(cs => s.name.toLowerCase().includes(cs) || (s.category || '').toLowerCase().includes(cs))).length; const productivity = skills.filter(s => CATEGORY_SKILL_MAPPING['productivity'].some(cs => s.name.toLowerCase().includes(cs) || (s.category || '').toLowerCase().includes(cs))).length; return { total, development, research, security, productivity }; }, [skills]);. This calculates counts for each category dynamically.",
-              "status": "pending"
-            },
-            {
-              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg15-task5-micro2",
-              "filePath": "src/app/dashboard/skills/page.tsx",
-              "change": "Update stats cards with dynamic counts from skillStats",
-              "description": "Find the stats cards section at the top of the page (likely a grid of Card components showing statistics). Update each stats card to use the dynamic skillStats values. The Total Skills card should show: value={skillStats.total}. The Development card should show: value={skillStats.development}. The Research card should show: value={skillStats.research}. The Security card should show: value={skillStats.security}. The Productivity card should show: value={skillStats.productivity}. If the cards don't exist, create them in a grid: <div className='grid grid-cols-2 md:grid-cols-5 gap-4 mb-6'>.",
-              "status": "pending"
-            },
-            {
-              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg15-task5-micro3",
-              "filePath": "src/app/dashboard/skills/page.tsx",
-              "change": "Add icons and color coding to stats cards",
-              "description": "Enhance the stats cards with appropriate icons and colors for each category. For Total Skills use a Layers or Grid icon with neutral styling. For Development use Code icon with blue styling: className='text-blue-500'. For Research use Search or Microscope icon with purple styling: className='text-purple-500'. For Security use Shield icon with red styling: className='text-red-500'. For Productivity use Zap or Clock icon with green styling: className='text-green-500'. Import the necessary icons from lucide-react: import { Code, Search, Shield, Zap, Layers } from 'lucide-react';",
-              "status": "pending"
-            },
-            {
-              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg15-task5-micro4",
-              "filePath": "src/app/dashboard/skills/page.tsx",
-              "change": "Make stats cards clickable to filter skills",
-              "description": "Make stats cards clickable to filter by that category. Add onClick handlers to each stats card: onClick={() => setActiveFilter('development')} for the Development card, onClick={() => setActiveFilter('research')} for Research, onClick={() => setActiveFilter('security')} for Security, onClick={() => setActiveFilter('productivity')} for Productivity, and onClick={() => setActiveFilter('all')} for Total Skills. Add cursor-pointer and hover:bg-accent classes to each Card for visual feedback. This creates an intuitive way to filter skills by clicking the stat categories.",
-              "status": "pending"
-            }
-          ]
+          "status": "pending",
+          "approved": false,
+          "rewritten": false,
+          "microTasks": []
         }
       ]
     },
@@ -1151,69 +566,37 @@
           "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg17-task1",
           "taskNumber": 1,
           "originalDescription": "Stats cards fix:",
-          "status": "review",
+          "status": "pending",
           "approved": false,
-          "rewritten": true,
-          "microTasks": [
-            {
-              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg17-task1-micro1",
-              "filePath": "src/app/dashboard/page.tsx",
-              "change": "Analyze and implement the requested feature",
-              "description": "Implement the following task with precision: Stats cards fix:. First identify the correct file and component, then make the necessary changes following the project's coding standards.",
-              "status": "pending"
-            }
-          ]
+          "rewritten": false,
+          "microTasks": []
         },
         {
           "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg17-task2",
           "taskNumber": 2,
           "originalDescription": "Job list is working. Improve each job card:",
-          "status": "review",
+          "status": "pending",
           "approved": false,
-          "rewritten": true,
-          "microTasks": [
-            {
-              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg17-task2-micro1",
-              "filePath": "src/app/dashboard/page.tsx",
-              "change": "Analyze and implement the requested feature",
-              "description": "Implement the following task with precision: Job list is working. Improve each job card:. First identify the correct file and component, then make the necessary changes following the project's coding standards.",
-              "status": "pending"
-            }
-          ]
+          "rewritten": false,
+          "microTasks": []
         },
         {
           "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg17-task3",
           "taskNumber": 3,
           "originalDescription": "\"New Job\" button — make it smart:",
-          "status": "review",
+          "status": "pending",
           "approved": false,
-          "rewritten": true,
-          "microTasks": [
-            {
-              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg17-task3-micro1",
-              "filePath": "src/app/dashboard/page.tsx",
-              "change": "Analyze and implement the requested feature",
-              "description": "Implement the following task with precision: \"New Job\" button — make it smart:. First identify the correct file and component, then make the necessary changes following the project's coding standards.",
-              "status": "pending"
-            }
-          ]
+          "rewritten": false,
+          "microTasks": []
         },
         {
           "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg17-task4",
           "taskNumber": 4,
           "originalDescription": "Each job should show the cron expression in human readable form:",
-          "status": "review",
+          "status": "pending",
           "approved": false,
-          "rewritten": true,
-          "microTasks": [
-            {
-              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg17-task4-micro1",
-              "filePath": "src/app/dashboard/page.tsx",
-              "change": "Analyze and implement the requested feature",
-              "description": "Implement the following task with precision: Each job should show the cron expression in human readable form:. First identify the correct file and component, then make the necessary changes following the project's coding standards.",
-              "status": "pending"
-            }
-          ]
+          "rewritten": false,
+          "microTasks": []
         }
       ]
     },
@@ -1232,275 +615,46 @@
           "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg19-task1",
           "taskNumber": 1,
           "originalDescription": "System Health bar at top:",
-          "status": "approved",
-          "approved": true,
-          "rewritten": true,
-          "microTasks": [
-            {
-              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg19-task1-micro1",
-              "filePath": "src/app/dashboard/monitoring/page.tsx",
-              "change": "Add healthStatus state variable",
-              "description": "At the top of the MonitoringPage component, add a new state variable for system health status: const [healthStatus, setHealthStatus] = useState<{services: {running: number, total: number}, resources: 'Healthy' | 'Warning' | 'Critical', network: 'Connected'}>({services: {running: 0, total: 0}, resources: 'Healthy', network: 'Connected'}). This state will hold the aggregated health data for the top status bar display.",
-              "status": "pending"
-            },
-            {
-              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg19-task1-micro2",
-              "filePath": "src/app/dashboard/monitoring/page.tsx",
-              "change": "Add fetchHealthStatus function for services count",
-              "description": "Create a new async function called fetchHealthStatus that fetches from '/api/bridge/status' and counts services. Inside: const statusRes = await fetch('/api/bridge/status'); const statusData = await statusRes.json(); const services = statusData.services || []; const running = services.filter((s: any) => s.status === 'running').length; const total = services.length; Update healthStatus state with setHealthStatus(prev => ({...prev, services: {running, total}})).",
-              "status": "pending"
-            },
-            {
-              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg19-task1-micro3",
-              "filePath": "src/app/dashboard/monitoring/page.tsx",
-              "change": "Add resource health calculation to fetchHealthStatus",
-              "description": "Extend the fetchHealthStatus function to also fetch metrics and determine resource health. Add: const metricsRes = await fetch('/api/bridge/metrics'); const metricsData = await metricsRes.json(); const cpu = metricsData.cpu?.percent || 0; const ram = metricsData.memory?.percent || 0; const disk = metricsData.disk?.percent || 0; let resourceStatus: 'Healthy' | 'Warning' | 'Critical' = 'Healthy'; if (cpu >= 80 || ram >= 80 || disk >= 90) resourceStatus = 'Warning'; if (cpu >= 95 || ram >= 95 || disk >= 98) resourceStatus = 'Critical'; setHealthStatus(prev => ({...prev, resources: resourceStatus})).",
-              "status": "pending"
-            },
-            {
-              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg19-task1-micro4",
-              "filePath": "src/app/dashboard/monitoring/page.tsx",
-              "change": "Call fetchHealthStatus on mount and during polling",
-              "description": "In the useEffect hook that runs on component mount, call fetchHealthStatus() to load initial health data. If there's an existing useEffect for data fetching, add fetchHealthStatus() call inside it. If no such useEffect exists, create one: useEffect(() => { fetchHealthStatus(); }, []). Also call fetchHealthStatus in the refresh/polling logic if auto-refresh is enabled.",
-              "status": "pending"
-            },
-            {
-              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg19-task1-micro5",
-              "filePath": "src/app/dashboard/monitoring/page.tsx",
-              "change": "Update System Health bar JSX with dynamic healthStatus values",
-              "description": "Find the System Health bar section at the top of the page JSX (likely a div with Cards or status indicators). Replace hardcoded values with dynamic data: For Services card, change the value/display to show `${healthStatus.services.running}/${healthStatus.services.total} Running`. For Resources card, show healthStatus.resources with appropriate color (green for Healthy, amber for Warning, red for Critical). For Network card, always show 'Connected' with a green indicator since the page loaded successfully.",
-              "status": "pending"
-            },
-            {
-              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg19-task1-micro6",
-              "filePath": "src/app/dashboard/monitoring/page.tsx",
-              "change": "Add color-coded badges/indicators to health status items",
-              "description": "Add visual indicators to the health bar: For Services, add a Badge or colored dot that is green if running === total, amber if running > 0 but less than total, red if running === 0. For Resources, use Badge with variant='success' for Healthy, variant='warning' for Warning, variant='destructive' for Critical. For Network, always show a green dot with 'Connected' text.",
-              "status": "pending"
-            }
-          ]
+          "status": "pending",
+          "approved": false,
+          "rewritten": false,
+          "microTasks": []
         },
         {
           "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg19-task2",
           "taskNumber": 2,
           "originalDescription": "Resources tab — show ALL real metrics from /api/bridge/metrics:",
-          "status": "approved",
-          "approved": true,
-          "rewritten": true,
-          "microTasks": [
-            {
-              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg19-task2-micro1",
-              "filePath": "src/app/dashboard/monitoring/page.tsx",
-              "change": "Add comprehensive metrics state variable",
-              "description": "Add a comprehensive metrics state variable at the top of the component: const [metrics, setMetrics] = useState<{cpu: {percent: number}, memory: {used: number, total: number, percent: number}, disk: {used: number, total: number, percent: number}, swap?: {used: number, total: number}, loadAvg?: number[], uptime?: number}>({cpu: {percent: 0}, memory: {used: 0, total: 0, percent: 0}, disk: {used: 0, total: 0, percent: 0}}). This will store all resource metrics from the API.",
-              "status": "pending"
-            },
-            {
-              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg19-task2-micro2",
-              "filePath": "src/app/dashboard/monitoring/page.tsx",
-              "change": "Create/update fetchMetrics function with full data mapping",
-              "description": "Create or update a fetchMetrics async function: const fetchMetrics = async () => { try { const res = await fetch('/api/bridge/metrics'); const data = await res.json(); setMetrics({ cpu: {percent: data.cpu?.percent || 0}, memory: {used: data.memory?.used || 0, total: data.memory?.total || 0, percent: data.memory?.percent || 0}, disk: {used: data.disk?.used || 0, total: data.disk?.total || 0, percent: data.disk?.percent || 0}, swap: data.swap, loadAvg: data.loadAvg || data.load_average, uptime: data.uptime }); } catch (e) { console.error('Failed to fetch metrics', e); } };",
-              "status": "pending"
-            },
-            {
-              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg19-task2-micro3",
-              "filePath": "src/app/dashboard/monitoring/page.tsx",
-              "change": "Update CPU Usage display with real metrics and progress bar",
-              "description": "In the Resources tab content section (inside TabsContent value='resources' or similar), find the CPU Usage display. Replace any hardcoded percentage with metrics.cpu.percent. Add a Progress component: <Progress value={metrics.cpu.percent} className={metrics.cpu.percent > 80 ? 'bg-red-500' : 'bg-green-500'} />. Show the percentage as text: <span className='text-2xl font-bold'>{metrics.cpu.percent.toFixed(1)}%</span>.",
-              "status": "pending"
-            },
-            {
-              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg19-task2-micro4",
-              "filePath": "src/app/dashboard/monitoring/page.tsx",
-              "change": "Update Memory Usage with used/total GB and percentage bar",
-              "description": "In the Resources tab, find or create the Memory Usage section. Create a helper function to format bytes: const formatBytes = (bytes: number) => (bytes / 1024 / 1024 / 1024).toFixed(2) + ' GB'. Display: <Progress value={metrics.memory.percent} />. Show text: {formatBytes(metrics.memory.used)} / {formatBytes(metrics.memory.total)} ({metrics.memory.percent.toFixed(1)}%). Use red color if percent > 80.",
-              "status": "pending"
-            },
-            {
-              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg19-task2-micro5",
-              "filePath": "src/app/dashboard/monitoring/page.tsx",
-              "change": "Update Disk Usage with used/total GB and percentage bar",
-              "description": "In the Resources tab, find or create the Disk Usage section. Using the same formatBytes helper, display: <Progress value={metrics.disk.percent} className={metrics.disk.percent > 90 ? 'bg-red-500' : ''} />. Show text: {formatBytes(metrics.disk.used)} / {formatBytes(metrics.disk.total)} ({metrics.disk.percent.toFixed(1)}%). Add warning styling when disk usage exceeds 90%.",
-              "status": "pending"
-            },
-            {
-              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg19-task2-micro6",
-              "filePath": "src/app/dashboard/monitoring/page.tsx",
-              "change": "Add conditional Swap usage display",
-              "description": "Add a Swap section in the Resources tab, conditionally rendered: {metrics.swap && (<div className='space-y-2'><h4>Swap Usage</h4><Progress value={(metrics.swap.used / metrics.swap.total) * 100} /><span>{formatBytes(metrics.swap.used)} / {formatBytes(metrics.swap.total)}</span></div>)}. This only shows if swap data is available from the API response.",
-              "status": "pending"
-            },
-            {
-              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg19-task2-micro7",
-              "filePath": "src/app/dashboard/monitoring/page.tsx",
-              "change": "Add Load Average display with 1min, 5min, 15min values",
-              "description": "Add a Load Average section in the Resources tab, conditionally rendered: {metrics.loadAvg && metrics.loadAvg.length >= 3 && (<div><h4>Load Average</h4><div className='flex gap-4'><span>1min: {metrics.loadAvg[0].toFixed(2)}</span><span>5min: {metrics.loadAvg[1].toFixed(2)}</span><span>15min: {metrics.loadAvg[2].toFixed(2)}</span></div></div>)}. Display all three load average values in a row.",
-              "status": "pending"
-            },
-            {
-              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg19-task2-micro8",
-              "filePath": "src/app/dashboard/monitoring/page.tsx",
-              "change": "Add Uptime display with formatted days/hours/minutes",
-              "description": "Add an Uptime section in the Resources tab. Create a formatUptime helper: const formatUptime = (seconds: number) => { const days = Math.floor(seconds / 86400); const hours = Math.floor((seconds % 86400) / 3600); const mins = Math.floor((seconds % 3600) / 60); return `${days}d ${hours}h ${mins}m`; }. Display: {metrics.uptime !== undefined && (<div><h4>System Uptime</h4><span className='text-xl'>{formatUptime(metrics.uptime)}</span></div>)}.",
-              "status": "pending"
-            }
-          ]
+          "status": "pending",
+          "approved": false,
+          "rewritten": false,
+          "microTasks": []
         },
         {
           "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg19-task3",
           "taskNumber": 3,
           "originalDescription": "Services tab — show real services:",
-          "status": "approved",
-          "approved": true,
-          "rewritten": true,
-          "microTasks": [
-            {
-              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg19-task3-micro1",
-              "filePath": "src/app/dashboard/monitoring/page.tsx",
-              "change": "Add services state array",
-              "description": "Add a services state variable: const [services, setServices] = useState<Array<{name: string, status: 'running' | 'stopped' | string, uptime?: string | number, port?: number | string}>>([]);. This will hold the array of services returned from the bridge status API endpoint.",
-              "status": "pending"
-            },
-            {
-              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg19-task3-micro2",
-              "filePath": "src/app/dashboard/monitoring/page.tsx",
-              "change": "Create fetchServices function",
-              "description": "Create a fetchServices async function: const fetchServices = async () => { try { const res = await fetch('/api/bridge/status'); const data = await res.json(); const serviceList = data.services || []; setServices(serviceList); } catch (e) { console.error('Failed to fetch services', e); setServices([]); } };. Call this function in useEffect on mount and during auto-refresh polling.",
-              "status": "pending"
-            },
-            {
-              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg19-task3-micro3",
-              "filePath": "src/app/dashboard/monitoring/page.tsx",
-              "change": "Render dynamic services list with status indicators",
-              "description": "In the Services tab content (TabsContent value='services'), replace any mock/static service list with a dynamic map over the services state: {services.map((service, index) => (<Card key={index} className='p-4'><div className='flex items-center justify-between'><div className='flex items-center gap-3'><div className={`w-3 h-3 rounded-full ${service.status === 'running' ? 'bg-green-500' : 'bg-red-500'}`} /><span className='font-medium'>{service.name}</span></div><Badge variant={service.status === 'running' ? 'success' : 'destructive'}>{service.status}</Badge></div></Card>))}",
-              "status": "pending"
-            },
-            {
-              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg19-task3-micro4",
-              "filePath": "src/app/dashboard/monitoring/page.tsx",
-              "change": "Add uptime and port display to each service card",
-              "description": "Enhance each service Card to show uptime and port information. Inside the Card, add: <div className='mt-2 text-sm text-muted-foreground'>{service.port && <span>Port: {service.port}</span>}{service.uptime && <span className='ml-4'>Uptime: {typeof service.uptime === 'number' ? formatUptime(service.uptime) : service.uptime}</span>}</div>. This displays the port number and formatted uptime for each service.",
-              "status": "pending"
-            },
-            {
-              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg19-task3-micro5",
-              "filePath": "src/app/dashboard/monitoring/page.tsx",
-              "change": "Add empty state and loading state for services",
-              "description": "Add an empty state for when no services are returned: {services.length === 0 && (<div className='text-center py-8 text-muted-foreground'><p>No services found. The Bridge API may be unavailable.</p></div>)}. Also add a loading state: const [servicesLoading, setServicesLoading] = useState(true); Set to false after fetchServices completes. Show a Spinner or 'Loading services...' while servicesLoading is true.",
-              "status": "pending"
-            },
-            {
-              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg19-task3-micro6",
-              "filePath": "src/app/dashboard/monitoring/page.tsx",
-              "change": "Add service name mapping for friendly display names",
-              "description": "Ensure the expected services are displayed prominently. If the API returns generic names, create a mapping: const serviceDisplayNames: Record<string, string> = {'openclaw-gateway': 'OpenClaw Gateway', 'bridge-api': 'Bridge API', 'genplatform-app': 'Next.js (genplatform-app)'}. When rendering, use: {serviceDisplayNames[service.name] || service.name}. This ensures friendly names are shown.",
-              "status": "pending"
-            }
-          ]
+          "status": "pending",
+          "approved": false,
+          "rewritten": false,
+          "microTasks": []
         },
         {
           "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg19-task4",
           "taskNumber": 4,
           "originalDescription": "Logs tab — show real parsed logs:",
-          "status": "approved",
-          "approved": true,
-          "rewritten": true,
-          "microTasks": [
-            {
-              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg19-task4-micro1",
-              "filePath": "src/app/dashboard/monitoring/page.tsx",
-              "change": "Add logs state and logsContainerRef for auto-scroll",
-              "description": "Add a logs state variable: const [logs, setLogs] = useState<Array<{timestamp?: string, level: 'info' | 'warn' | 'error' | string, message: string, raw?: string}>>([]);. Also add a ref for auto-scroll: const logsContainerRef = useRef<HTMLDivElement>(null);. Import useRef from React if not already imported.",
-              "status": "pending"
-            },
-            {
-              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg19-task4-micro2",
-              "filePath": "src/app/dashboard/monitoring/page.tsx",
-              "change": "Create fetchLogs function with parsing logic",
-              "description": "Create a fetchLogs async function: const fetchLogs = async () => { try { const res = await fetch('/api/bridge/logs'); const data = await res.json(); const lines = data.lines || data.logs || []; const parsedLogs = lines.map((line: any) => { if (typeof line === 'string') { const level = line.toLowerCase().includes('error') ? 'error' : line.toLowerCase().includes('warn') ? 'warn' : 'info'; return {message: line, level, raw: line}; } return line; }); setLogs(parsedLogs); } catch (e) { console.error('Failed to fetch logs', e); } };",
-              "status": "pending"
-            },
-            {
-              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg19-task4-micro3",
-              "filePath": "src/app/dashboard/monitoring/page.tsx",
-              "change": "Add useEffect for auto-scroll on logs update",
-              "description": "Add auto-scroll effect: useEffect(() => { if (logsContainerRef.current) { logsContainerRef.current.scrollTop = logsContainerRef.current.scrollHeight; } }, [logs]);. This scrolls to the bottom of the logs container whenever new logs are loaded, ensuring the most recent entries are visible.",
-              "status": "pending"
-            },
-            {
-              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg19-task4-micro4",
-              "filePath": "src/app/dashboard/monitoring/page.tsx",
-              "change": "Create color-coded logs display with scrollable container",
-              "description": "In the Logs tab content (TabsContent value='logs'), create the logs display container: <div ref={logsContainerRef} className='h-96 overflow-y-auto bg-black/90 rounded-lg p-4 font-mono text-sm'>{logs.map((log, i) => (<div key={i} className={`py-1 ${log.level === 'error' ? 'text-red-400' : log.level === 'warn' ? 'text-amber-400' : 'text-gray-300'}`}>{log.timestamp && <span className='text-gray-500 mr-2'>[{log.timestamp}]</span>}<span className='uppercase mr-2'>[{log.level}]</span><span>{log.message}</span></div>))}</div>",
-              "status": "pending"
-            },
-            {
-              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg19-task4-micro5",
-              "filePath": "src/app/dashboard/monitoring/page.tsx",
-              "change": "Add Refresh button above logs display",
-              "description": "Add a Refresh button for logs at the top of the Logs tab content: <div className='flex justify-between items-center mb-4'><h3 className='text-lg font-medium'>System Logs</h3><Button variant='outline' size='sm' onClick={() => fetchLogs()}><RefreshCw className='w-4 h-4 mr-2' />Refresh</Button></div>. Import RefreshCw from lucide-react and Button from components/ui/button.",
-              "status": "pending"
-            },
-            {
-              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg19-task4-micro6",
-              "filePath": "src/app/dashboard/monitoring/page.tsx",
-              "change": "Add loading and empty states for logs display",
-              "description": "Add loading and empty states for logs: const [logsLoading, setLogsLoading] = useState(false);. In fetchLogs, set setLogsLoading(true) at start and setLogsLoading(false) in finally block. In the logs container, show: {logsLoading && <div className='text-center py-4'>Loading logs...</div>} and {!logsLoading && logs.length === 0 && <div className='text-center py-4 text-gray-500'>No logs available</div>}.",
-              "status": "pending"
-            }
-          ]
+          "status": "pending",
+          "approved": false,
+          "rewritten": false,
+          "microTasks": []
         },
         {
           "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg19-task5",
           "taskNumber": 5,
           "originalDescription": "Auto-refresh toggle (already exists at top right). Make sure it works:",
-          "status": "approved",
-          "approved": true,
-          "rewritten": true,
-          "microTasks": [
-            {
-              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg19-task5-micro1",
-              "filePath": "src/app/dashboard/monitoring/page.tsx",
-              "change": "Ensure auto-refresh state and intervalRef exist",
-              "description": "Verify auto-refresh state variables exist at the top of the component. If not, add: const [autoRefresh, setAutoRefresh] = useState(false); const [refreshInterval, setRefreshInterval] = useState(5000);. Also add a ref to store the interval ID: const intervalRef = useRef<NodeJS.Timeout | null>(null);. Import useRef if not already imported.",
-              "status": "pending"
-            },
-            {
-              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg19-task5-micro2",
-              "filePath": "src/app/dashboard/monitoring/page.tsx",
-              "change": "Create refreshAllData function combining all fetches",
-              "description": "Create a refreshAllData function that calls all fetch functions: const refreshAllData = async () => { await Promise.all([fetchMetrics(), fetchServices(), fetchLogs(), fetchHealthStatus()]); };. This consolidates all data fetching into one function for the polling mechanism to use.",
-              "status": "pending"
-            },
-            {
-              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg19-task5-micro3",
-              "filePath": "src/app/dashboard/monitoring/page.tsx",
-              "change": "Add useEffect for polling with proper cleanup",
-              "description": "Add a useEffect to handle the polling logic: useEffect(() => { if (autoRefresh) { intervalRef.current = setInterval(() => { refreshAllData(); }, refreshInterval); } else { if (intervalRef.current) { clearInterval(intervalRef.current); intervalRef.current = null; } } return () => { if (intervalRef.current) { clearInterval(intervalRef.current); } }; }, [autoRefresh, refreshInterval]);. This starts/stops polling based on autoRefresh state and respects the selected interval.",
-              "status": "pending"
-            },
-            {
-              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg19-task5-micro4",
-              "filePath": "src/app/dashboard/monitoring/page.tsx",
-              "change": "Connect Switch component to autoRefresh state",
-              "description": "Find the auto-refresh toggle in the page header/top right area. Ensure it's a Switch component connected to state: <Switch checked={autoRefresh} onCheckedChange={setAutoRefresh} />. Add a label: <Label htmlFor='auto-refresh'>Auto-refresh</Label>. The switch should toggle the autoRefresh state which triggers the polling useEffect.",
-              "status": "pending"
-            },
-            {
-              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg19-task5-micro5",
-              "filePath": "src/app/dashboard/monitoring/page.tsx",
-              "change": "Create/connect interval selector dropdown",
-              "description": "Find or create the interval selector dropdown near the auto-refresh toggle. Implement as: <Select value={refreshInterval.toString()} onValueChange={(v) => setRefreshInterval(parseInt(v))}><SelectTrigger className='w-24'><SelectValue /></SelectTrigger><SelectContent><SelectItem value='5000'>5s</SelectItem><SelectItem value='10000'>10s</SelectItem><SelectItem value='30000'>30s</SelectItem><SelectItem value='60000'>1m</SelectItem></SelectContent></Select>. Import Select components from @/components/ui/select.",
-              "status": "pending"
-            },
-            {
-              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg19-task5-micro6",
-              "filePath": "src/app/dashboard/monitoring/page.tsx",
-              "change": "Add visual indicator for active auto-refresh",
-              "description": "Add visual feedback when auto-refresh is active. Near the toggle, add: {autoRefresh && <span className='text-xs text-green-500 flex items-center gap-1'><span className='w-2 h-2 bg-green-500 rounded-full animate-pulse' />Refreshing every {refreshInterval / 1000}s</span>}. This shows users that automatic polling is active and at what interval.",
-              "status": "pending"
-            }
-          ]
+          "status": "pending",
+          "approved": false,
+          "rewritten": false,
+          "microTasks": []
         }
       ]
     },
@@ -1519,195 +673,37 @@
           "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg21-task1",
           "taskNumber": 1,
           "originalDescription": "Stats cards at top:",
-          "status": "approved",
-          "approved": true,
-          "rewritten": true,
-          "microTasks": [
-            {
-              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg21-task1-micro1",
-              "filePath": "src/app/dashboard/analytics/page.tsx",
-              "change": "Add state variables for sessions and memory stats",
-              "description": "At the top of the AnalyticsPage component, add state variables for real data: const [sessionCount, setSessionCount] = useState<number>(0); const [memoryStats, setMemoryStats] = useState<{totalFiles: number}>({totalFiles: 0}); const [isLoading, setIsLoading] = useState(true); These will hold the fetched data from our APIs and track loading state.",
-              "status": "pending"
-            },
-            {
-              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg21-task1-micro2",
-              "filePath": "src/app/dashboard/analytics/page.tsx",
-              "change": "Add useEffect to fetch session count from /api/bridge/sessions",
-              "description": "Add a useEffect hook that fetches real session count: useEffect(() => { async function fetchStats() { setIsLoading(true); try { const sessionsRes = await fetch('/api/bridge/sessions'); const sessionsData = await sessionsRes.json(); setSessionCount(sessionsData.sessions?.length || 0); } catch (e) { console.error('Failed to fetch sessions:', e); setSessionCount(0); } finally { setIsLoading(false); } } fetchStats(); }, []); This fetches from the bridge API on component mount.",
-              "status": "pending"
-            },
-            {
-              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg21-task1-micro3",
-              "filePath": "src/app/dashboard/analytics/page.tsx",
-              "change": "Add fetch for memory stats in the useEffect",
-              "description": "Inside the same useEffect fetchStats function, add memory stats fetch after sessions: const memoryRes = await fetch('/api/bridge/memory'); const memoryData = await memoryRes.json(); setMemoryStats({ totalFiles: memoryData.stats?.totalFiles || memoryData.files?.length || 0 }); This gets the total file count from the memory API for the Memory Operations card.",
-              "status": "pending"
-            },
-            {
-              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg21-task1-micro4",
-              "filePath": "src/app/dashboard/analytics/page.tsx",
-              "change": "Update Total Sessions card to show real fetched count",
-              "description": "Find the stats cards section (likely a grid of Card components). Replace the Total Sessions card value with: value={isLoading ? '...' : sessionCount.toString()}. The card should show the real session count from the API. Add a subtitle or description prop showing 'Active sessions' to clarify what this number represents.",
-              "status": "pending"
-            },
-            {
-              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg21-task1-micro5",
-              "filePath": "src/app/dashboard/analytics/page.tsx",
-              "change": "Update Skill Executions card to show 0 with tracking note",
-              "description": "Find the Skill Executions card in the stats grid. Set value='0' and add a description or subtitle that says 'Tracking starts now'. Since we have no historical execution data, this honestly shows zero with context. Do not generate fake numbers. The card should be transparent that tracking is beginning.",
-              "status": "pending"
-            },
-            {
-              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg21-task1-micro6",
-              "filePath": "src/app/dashboard/analytics/page.tsx",
-              "change": "Update Response Time card to show ~2.5s average",
-              "description": "Find the Response Time card in the stats grid. Set value='~2.5s' as a static meaningful average for AI response time. Add description='Avg AI response' to explain what this metric represents. This is a reasonable estimate rather than a fake random decimal number.",
-              "status": "pending"
-            },
-            {
-              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg21-task1-micro7",
-              "filePath": "src/app/dashboard/analytics/page.tsx",
-              "change": "Update Memory Operations card to show real file count",
-              "description": "Find the Memory Operations card in the stats grid. Replace its value with: value={isLoading ? '...' : memoryStats.totalFiles.toString()}. Add description='Total files stored' to clarify this shows the count of files in the memory system fetched from the API.",
-              "status": "pending"
-            }
-          ]
+          "status": "pending",
+          "approved": false,
+          "rewritten": false,
+          "microTasks": []
         },
         {
           "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg21-task2",
           "taskNumber": 2,
           "originalDescription": "Usage Trends chart area. Since we don't have historical data yet:",
-          "status": "approved",
-          "approved": true,
-          "rewritten": true,
-          "microTasks": [
-            {
-              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg21-task2-micro1",
-              "filePath": "src/app/dashboard/analytics/page.tsx",
-              "change": "Remove fake usage trends chart component",
-              "description": "Find the Usage Trends chart section (likely contains a LineChart, AreaChart, or similar recharts component). Comment out or remove the entire chart component that displays fake trend data. We will replace it with an honest placeholder message since we have no historical data yet.",
-              "status": "pending"
-            },
-            {
-              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg21-task2-micro2",
-              "filePath": "src/app/dashboard/analytics/page.tsx",
-              "change": "Add placeholder message for trends chart area",
-              "description": "In place of the removed chart, add a styled placeholder div: <div className='flex flex-col items-center justify-center py-16 text-center bg-muted/30 rounded-lg border border-dashed'><span className='text-4xl mb-4'>📊</span><h3 className='text-lg font-medium mb-2'>Collecting data</h3><p className='text-muted-foreground'>Charts will appear after 24h of monitoring</p></div>. This provides a clean, honest message about data collection.",
-              "status": "pending"
-            },
-            {
-              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg21-task2-micro3",
-              "filePath": "src/app/dashboard/analytics/page.tsx",
-              "change": "Add info explanation about real-time data collection",
-              "description": "Below the placeholder message text, add an info tooltip or small text explanation: <div className='flex items-center gap-2 mt-4 text-sm text-muted-foreground'><InfoIcon className='h-4 w-4' /><span>Analytics data is collected in real-time. Check back tomorrow for trends.</span></div>. Import InfoIcon from lucide-react if not already imported. This explains why charts are not yet visible.",
-              "status": "pending"
-            }
-          ]
+          "status": "pending",
+          "approved": false,
+          "rewritten": false,
+          "microTasks": []
         },
         {
           "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg21-task3",
           "taskNumber": 3,
           "originalDescription": "Tabs (Overview, Skills, Memory, Performance):",
-          "status": "approved",
-          "approved": true,
-          "rewritten": true,
-          "microTasks": [
-            {
-              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg21-task3-micro1",
-              "filePath": "src/app/dashboard/analytics/page.tsx",
-              "change": "Add state and fetch for skills by category",
-              "description": "Add state for skills data: const [skillsByCategory, setSkillsByCategory] = useState<{name: string, count: number}[]>([]); In the useEffect, add: const skillsRes = await fetch('/api/bridge/skills'); const skillsData = await skillsRes.json(); const categories = skillsData.skills?.reduce((acc, skill) => { acc[skill.category] = (acc[skill.category] || 0) + 1; return acc; }, {}); setSkillsByCategory(Object.entries(categories).map(([name, count]) => ({name, count: count as number})));",
-              "status": "pending"
-            },
-            {
-              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg21-task3-micro2",
-              "filePath": "src/app/dashboard/analytics/page.tsx",
-              "change": "Add real BarChart for skills by category in Skills tab",
-              "description": "In the Skills tab content, replace any fake chart with a real BarChart from recharts: <BarChart width={500} height={300} data={skillsByCategory}><XAxis dataKey='name' /><YAxis /><Bar dataKey='count' fill='#8884d8' /></BarChart>. Import BarChart, XAxis, YAxis, Bar from recharts. This shows actual skill counts per category (Development, Research, Security, Productivity).",
-              "status": "pending"
-            },
-            {
-              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg21-task3-micro3",
-              "filePath": "src/app/dashboard/analytics/page.tsx",
-              "change": "Add state and processing for files by folder",
-              "description": "Add state for memory files by folder: const [filesByFolder, setFilesByFolder] = useState<{name: string, count: number}[]>([]); In useEffect after memory fetch, add: const folders = memoryData.files?.reduce((acc, file) => { const folder = file.path?.split('/')[0] || 'root'; acc[folder] = (acc[folder] || 0) + 1; return acc; }, {}); setFilesByFolder(Object.entries(folders || {}).map(([name, count]) => ({name, count: count as number})));",
-              "status": "pending"
-            },
-            {
-              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg21-task3-micro4",
-              "filePath": "src/app/dashboard/analytics/page.tsx",
-              "change": "Add real BarChart for files by folder in Memory tab",
-              "description": "In the Memory tab content, add a BarChart showing files by folder: <BarChart width={500} height={300} data={filesByFolder}><XAxis dataKey='name' /><YAxis /><Bar dataKey='count' fill='#82ca9d' /></BarChart>. If filesByFolder is empty, show a message 'No memory files yet'. This displays real distribution of files across folders.",
-              "status": "pending"
-            },
-            {
-              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg21-task3-micro5",
-              "filePath": "src/app/dashboard/analytics/page.tsx",
-              "change": "Add state and fetch for performance metrics",
-              "description": "Add state for performance metrics: const [metrics, setMetrics] = useState<{cpu: number, ram: number, disk: number}>({cpu: 0, ram: 0, disk: 0}); In useEffect add: const metricsRes = await fetch('/api/bridge/metrics'); const metricsData = await metricsRes.json(); setMetrics({ cpu: metricsData.cpu?.usage || 0, ram: metricsData.memory?.usedPercent || 0, disk: metricsData.disk?.usedPercent || 0 });",
-              "status": "pending"
-            },
-            {
-              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg21-task3-micro6",
-              "filePath": "src/app/dashboard/analytics/page.tsx",
-              "change": "Add real Progress bars for CPU, RAM, Disk in Performance tab",
-              "description": "In the Performance tab, replace fake charts with three Progress components or gauge-style displays: <div className='space-y-6'><div><label>CPU Usage</label><Progress value={metrics.cpu} className='h-4' /><span>{metrics.cpu.toFixed(1)}%</span></div><div><label>RAM Usage</label><Progress value={metrics.ram} className='h-4' /><span>{metrics.ram.toFixed(1)}%</span></div><div><label>Disk Usage</label><Progress value={metrics.disk} className='h-4' /><span>{metrics.disk.toFixed(1)}%</span></div></div>. Import Progress from @/components/ui/progress.",
-              "status": "pending"
-            },
-            {
-              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg21-task3-micro7",
-              "filePath": "src/app/dashboard/analytics/page.tsx",
-              "change": "Verify Overview tab structure with stats and placeholder",
-              "description": "Ensure the Overview tab contains the stats cards (from Task 1) and the trends placeholder message (from Task 2). The Overview should be the default selected tab. Verify TabsContent value='overview' wraps the stats grid and the 'Collecting data' placeholder. No fake charts should appear in Overview.",
-              "status": "pending"
-            }
-          ]
+          "status": "pending",
+          "approved": false,
+          "rewritten": false,
+          "microTasks": []
         },
         {
           "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg21-task4",
           "taskNumber": 4,
           "originalDescription": "Remove ALL fake numbers. If real data is 0, show 0. Never show random generated numbers like \"1.42843582752945\".",
-          "status": "approved",
-          "approved": true,
-          "rewritten": true,
-          "microTasks": [
-            {
-              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg21-task4-micro1",
-              "filePath": "src/app/dashboard/analytics/page.tsx",
-              "change": "Remove all Math.random() calls generating fake numbers",
-              "description": "Search the entire file for any Math.random() calls and remove them completely. These generate fake numbers like '1.42843582752945'. Replace any such values with either fetched real data from state variables or static 0. Check all value props, chart data arrays, and any calculations that might use random.",
-              "status": "pending"
-            },
-            {
-              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg21-task4-micro2",
-              "filePath": "src/app/dashboard/analytics/page.tsx",
-              "change": "Remove hardcoded fake chart data arrays",
-              "description": "Search for any hardcoded arrays with fake data like: const data = [{name: 'Jan', value: 400}, {name: 'Feb', value: 300}...]. Remove these fake datasets. Replace with either real fetched data from state (skillsByCategory, filesByFolder, metrics) or empty arrays with placeholder messages when no data exists.",
-              "status": "pending"
-            },
-            {
-              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg21-task4-micro3",
-              "filePath": "src/app/dashboard/analytics/page.tsx",
-              "change": "Clean up number formatting, remove random decimals",
-              "description": "Search for any .toFixed() calls on random numbers or any number formatting that produces long decimals. Either remove these entirely, replace with real data, or if showing a static estimate (like Response Time), use a clean format like '~2.5s' not '2.4827364827364'. All displayed numbers should be meaningful integers or simple decimals.",
-              "status": "pending"
-            },
-            {
-              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg21-task4-micro4",
-              "filePath": "src/app/dashboard/analytics/page.tsx",
-              "change": "Add empty state handling showing 0 or 'No data' messages",
-              "description": "Add conditional rendering for all charts and stats: if data is empty or zero, show an honest message like 'No data yet' or '0' rather than generating fake placeholder numbers. For example: {skillsByCategory.length > 0 ? <BarChart ... /> : <p className='text-muted-foreground text-center py-8'>No skill data available</p>}. Apply this pattern to all data displays.",
-              "status": "pending"
-            },
-            {
-              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg21-task4-micro5",
-              "filePath": "src/app/dashboard/analytics/page.tsx",
-              "change": "Final audit ensuring no fake numbers remain",
-              "description": "Final review: scan all Card components, all chart components, all number displays. Verify every single number shown is either: 1) fetched from a real API (sessions, memory, skills, metrics), 2) explicitly 0 with explanation, or 3) a clearly marked estimate like '~2.5s'. No generated random numbers should remain anywhere in the component.",
-              "status": "pending"
-            }
-          ]
+          "status": "pending",
+          "approved": false,
+          "rewritten": false,
+          "microTasks": []
         }
       ]
     },
