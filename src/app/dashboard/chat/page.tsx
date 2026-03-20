@@ -158,12 +158,13 @@ export default function ChatPage() {
 
       if (user) {
         const permissions = getUserPermissionSummary(user)
+        const isOwner = user.role === 'OWNER'
         setUserPermissions({
-          canRead: permissions.isManager || permissions.isAdmin, // Chat read requires MANAGER+
-          canWrite: permissions.isManager || permissions.isAdmin, // Chat write requires MANAGER+
-          canModerate: permissions.isAdmin, // Chat moderation requires ADMIN+
-          canUseCommander: permissions.isManager || permissions.isAdmin, // Commander requires MANAGER+
-          canCreateIdeas: true // All users can create ideas
+          canRead: true, // All authenticated users can read chat
+          canWrite: true, // All authenticated users can send messages
+          canModerate: isOwner || permissions.isAdmin,
+          canUseCommander: isOwner || permissions.isManager || permissions.isAdmin,
+          canCreateIdeas: true
         })
         
         // Show welcome notification for new users

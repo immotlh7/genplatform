@@ -1,49 +1,63 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-// Paths that don't require authentication
-const publicPaths = ["/login", "/api/auth/login", "/api/auth/logout", "/api/auth/check"];
-
-// Paths that should skip CSRF verification
-const csrfSkipPaths = [
+// Only these paths are public (no auth needed)
+const publicPaths = [
+  "/login",
   "/api/auth/login",
-  "/api/auth/logout", 
+  "/api/auth/logout",
   "/api/auth/check",
   "/api/auth/change-password",
+];
+
+// API routes that skip auth check
+const publicApiPaths = [
+  "/api/auth/",
+  "/api/webhook/",
   "/api/settings",
-  "/api/health"
+  "/api/health",
+  "/api/csrf-token",
 ];
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  
-  // Get auth token from cookies
+
+  // Allow static files and images
+  if (
+    pathname.startsWith("/_next/") ||
+    pathname.startsWith("/favicon") ||
+    pathname.match(/\.(svg|png|jpg|jpeg|gif|webp|ico)$/)
+  ) {
+    return NextResponse.next();
+  }
+
   const authToken = request.cookies.get("auth-token");
   const isAuthenticated = !!authToken?.value;
 
-  // If user is authenticated and trying to access login page, redirect to dashboard
-  if (pathname === "/login" && isAuthenticated) {
-    return NextResponse.redirect(new URL("/dashboard", request.url));
-  }
-
-  // If user is not authenticated and trying to access protected routes
-  if (!isAuthenticated && pathname.startsWith("/dashboard")) {
-    return NextResponse.redirect(new URL("/login", request.url));
-  }
-
-  // If user is not authenticated and trying to access root, redirect to login
-  if (!isAuthenticated && pathname === "/") {
-    return NextResponse.redirect(new URL("/login", request.url));
-  }
-
-  // If user is authenticated and at root, redirect to dashboard
-  if (isAuthenticated && pathname === "/") {
-    return NextResponse.redirect(new URL("/dashboard", request.url));
-  }
-
-  // Allow public paths and API routes
-  if (publicPaths.some(path => pathname === path || pathname.startsWith(path))) {
+  // Allow public API paths
+  if (publicApiPaths.some(p => pathname.startsWith(p))) {
     return NextResponse.next();
+  }
+
+  // Allow public pages
+  if (publicPaths.includes(pathname)) {
+    // If already authenticated, redirect away from login
+    if (pathname === "/login" && isAuthenticated) {
+      return NextResponse.redirect(new URL("/dashboard", request.url));
+    }
+    return NextResponse.next();
+  }
+
+  // All other routes require auth
+  if (!isAuthenticated) {
+    // Save the original URL to redirect back after login
+    const loginUrl = new URL("/login", request.url);
+    return NextResponse.redirect(loginUrl);
+  }
+
+  // Authenticated - allow through
+  if (pathname === "/") {
+    return NextResponse.redirect(new URL("/dashboard", request.url));
   }
 
   return NextResponse.next();
@@ -51,13 +65,6 @@ export function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    /*
-     * Match all request paths except for the ones starting with:
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     * - public files
-     */
     "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 };
