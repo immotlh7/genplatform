@@ -26,7 +26,8 @@ import {
   Shield,
   Users,
   TrendingUp,
-  Bot
+  Bot,
+  Wrench
 } from 'lucide-react'
 
 interface AutomationStatus {
@@ -34,9 +35,15 @@ interface AutomationStatus {
   waiting_approval: number
 }
 
+interface SelfDevStatus {
+  executing: boolean
+  progress: number
+}
+
 export function Sidebar() {
   const pathname = usePathname()
   const [automationStatus, setAutomationStatus] = useState<AutomationStatus>({ running_workflows: 0, waiting_approval: 0 })
+  const [selfDevStatus, setSelfDevStatus] = useState<SelfDevStatus>({ executing: false, progress: 0 })
 
   // Fetch automation status for badge
   useEffect(() => {
@@ -59,6 +66,28 @@ export function Sidebar() {
     
     // Refresh every 30 seconds
     const interval = setInterval(fetchAutomationStatus, 30000)
+    return () => clearInterval(interval)
+  }, [])
+
+  // Fetch self-dev status
+  useEffect(() => {
+    const fetchSelfDevStatus = async () => {
+      try {
+        const response = await fetch('/api/self-dev/status')
+        if (response.ok) {
+          const data = await response.json()
+          setSelfDevStatus({
+            executing: data.status === 'executing' || data.status === 'building',
+            progress: data.overallProgress?.percentage || 0
+          })
+        }
+      } catch (error) {
+        // Self-dev API might not exist yet
+      }
+    }
+    
+    fetchSelfDevStatus()
+    const interval = setInterval(fetchSelfDevStatus, 3000)
     return () => clearInterval(interval)
   }, [])
 
@@ -133,6 +162,13 @@ export function Sidebar() {
         { name: 'Settings', href: '/dashboard/settings', icon: Settings },
         { name: 'Users', href: '/dashboard/users', icon: Users },
         { name: 'Security', href: '/dashboard/security', icon: Shield },
+        { 
+          name: 'Self-Dev', 
+          href: '/dashboard/self-dev', 
+          icon: Wrench,
+          badge: selfDevStatus.executing ? `${selfDevStatus.progress}%` : null,
+          badgeVariant: selfDevStatus.executing ? 'default' as any : 'outline' as any
+        },
       ]
     }
   ]

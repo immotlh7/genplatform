@@ -1,9 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Anthropic from '@anthropic-ai/sdk';
+import fs from 'fs/promises';
+import path from 'path';
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY || '',
 });
+
+const TASK_QUEUE_DIR = '/root/genplatform/data/task-queue';
 
 const ORCHESTRATOR_PROMPT = `You are the Orchestrator Agent for GenPlatform.ai. You receive development task files and decompose them into ultra-precise micro-tasks.
 
@@ -101,7 +105,30 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to parse analysis result' }, { status: 500 });
     }
     
-    // Store the analysis result
+    // Create task queue directory if it doesn't exist
+    await fs.mkdir(TASK_QUEUE_DIR, { recursive: true });
+    
+    // Prepare task queue data
+    const taskQueue = {
+      fileId,
+      fileName: fileId.replace(/^task_\d+_/, ''),
+      totalMessages: analysisResult.totalMessages,
+      totalMicroTasks: analysisResult.totalMicroTasks,
+      messages: analysisResult.messages.map((msg: any) => ({
+        ...msg,
+        microTasks: msg.microTasks.map((task: any) => ({
+          ...task,
+          status: 'pending' // Initialize all tasks as pending
+        }))
+      })),
+      analyzedAt: new Date().toISOString()
+    };
+    
+    // Save to queue file
+    const queuePath = path.join(TASK_QUEUE_DIR, `${fileId}.json`);
+    await fs.writeFile(queuePath, JSON.stringify(taskQueue, null, 2));
+    
+    // Return analysis data
     const analysisData = {
       fileId,
       analysis: analysisResult,
@@ -109,8 +136,6 @@ export async function POST(request: NextRequest) {
       status: 'analyzed'
     };
     
-    // In production, you'd store this in a database
-    // For now, we'll return it directly
     return NextResponse.json(analysisData);
     
   } catch (error) {
