@@ -464,3 +464,21 @@
 [2026-03-20T20:15:06.025Z] 🔍 No active task — finding next...
 [2026-03-20T20:15:06.026Z] → Next: task_1773996310129_PRIORITY-1-FIX-ALL-PA Msg 15
 [2026-03-20T20:15:06.107Z] Done. Issues: 2, Fixes: 0
+[2026-03-20T20:16:01.350Z] --- Watchdog run ---
+[2026-03-20T20:16:01.440Z] ✅ Site up
+[2026-03-20T20:16:01.619Z] ✅ pm2 online
+[2026-03-20T20:16:01.626Z] 📊 Queue: 255/255 done, 0 approved, 0 executing
+[2026-03-20T20:16:01.627Z] ✅ System idle - no work pending
+[2026-03-20T20:16:01.633Z] Done. Issues: 0, Fixes: 0
+[2026-03-20T20:17:01.506Z] --- Watchdog run ---
+[2026-03-20T20:17:01.540Z] ✅ Site up
+[2026-03-20T20:17:01.747Z] ✅ pm2 online
+[2026-03-20T20:17:01.753Z] 📊 Queue: 255/255 done, 0 approved, 0 executing
+[2026-03-20T20:17:01.754Z] ✅ System idle - no work pending
+[2026-03-20T20:17:01.759Z] Done. Issues: 0, Fixes: 0
+[2026-03-20T20:18:01.589Z] --- Watchdog run ---
+[2026-03-20T20:18:01.612Z] ✅ Site up
+[2026-03-20T20:18:01.794Z] ✅ pm2 online
+[2026-03-20T20:18:01.800Z] 📊 Queue: 255/255 done, 0 approved, 0 executing
+[2026-03-20T20:18:01.800Z] ✅ System idle - no work pending
+[2026-03-20T20:18:01.804Z] Done. Issues: 0, Fixes: 0

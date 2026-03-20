@@ -44,8 +44,16 @@ export async function GET() {
     let executingTaskDetail = null;
 
     try {
-      const queueData = await fs.readFile('/root/genplatform/data/task-queue/task-queue.json', 'utf-8');
-      const queue = JSON.parse(queueData);
+      const QUEUE_DIR = '/root/genplatform/data/task-queue';
+      const queueFiles = (await fs.readdir(QUEUE_DIR)).filter((f: string) => f.endsWith('.json') && !f.endsWith('.json.json') && f !== 'task-queue.json');
+      const allMessages: any[] = [];
+      for (const qf of queueFiles) {
+        try {
+          const q = JSON.parse(await fs.readFile(`${QUEUE_DIR}/${qf}`, 'utf-8'));
+          allMessages.push(...(q.messages || []));
+        } catch {}
+      }
+      const queue = { messages: allMessages };
 
       queue.messages?.forEach((msg: any) => {
         msg.tasks?.forEach((task: any) => {
