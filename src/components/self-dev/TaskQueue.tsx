@@ -191,6 +191,8 @@ export function TaskQueue() {
   };
 
   const getMessageStatus = (message: Message): string => {
+    if (!message.tasks || message.tasks.length === 0) return 'pending';
+    
     const hasRewritten = message.tasks.some(t => t.rewritten);
     const allRewritten = message.tasks.every(t => t.rewritten);
     const hasApproved = message.tasks.some(t => t.approved);
@@ -228,15 +230,15 @@ export function TaskQueue() {
     <div className="space-y-3">
       {queues.map(queue => {
         const isExpanded = expandedFiles.has(queue.fileId);
-        const approvedCount = queue.messages.filter(m => 
-          m.tasks.every(t => t.approved)
-        ).length;
-        const executingCount = queue.messages.filter(m => 
-          m.tasks.some(t => t.status === 'executing')
-        ).length;
-        const doneCount = queue.messages.filter(m => 
-          m.tasks.every(t => t.status === 'done')
-        ).length;
+        const approvedCount = queue.messages ? queue.messages.filter(m => 
+          m.tasks && m.tasks.length > 0 && m.tasks.every(t => t.approved)
+        ).length : 0;
+        const executingCount = queue.messages ? queue.messages.filter(m => 
+          m.tasks && m.tasks.some(t => t.status === 'executing')
+        ).length : 0;
+        const doneCount = queue.messages ? queue.messages.filter(m => 
+          m.tasks && m.tasks.length > 0 && m.tasks.every(t => t.status === 'done')
+        ).length : 0;
 
         return (
           <div key={queue.fileId} className="bg-gray-700/50 rounded-lg border border-gray-600 overflow-hidden">
@@ -277,7 +279,7 @@ export function TaskQueue() {
             </div>
 
             {/* Messages List */}
-            {isExpanded && (
+            {isExpanded && queue.messages && queue.messages.length > 0 && (
               <div className="border-t border-gray-600/50">
                 {queue.messages.map((message, msgIndex) => {
                   const messageId = `${queue.fileId}-${message.messageNumber}`;
@@ -313,10 +315,10 @@ export function TaskQueue() {
                           {/* Action Buttons */}
                           <div className="flex items-center gap-2 flex-shrink-0">
                             <Badge variant="secondary" className="text-xs">
-                              {message.tasks.length} {message.tasks.length === 1 ? 'task' : 'tasks'}
+                              {message.tasks ? message.tasks.length : 0} {message.tasks && message.tasks.length === 1 ? 'task' : 'tasks'}
                             </Badge>
                             
-                            {messageStatus === 'pending' && (
+                            {messageStatus === 'pending' && message.tasks && message.tasks.length > 0 && (
                               <Button
                                 size="sm"
                                 variant="outline"
@@ -365,7 +367,7 @@ export function TaskQueue() {
                         </div>
 
                         {/* Tasks Preview (when expanded) */}
-                        {isMessageExpanded && message.tasks.length > 0 && (
+                        {isMessageExpanded && message.tasks && message.tasks.length > 0 && (
                           <div className="mt-3 space-y-2">
                             {message.tasks.map(task => (
                               <div 
@@ -402,7 +404,7 @@ export function TaskQueue() {
                 })}
                 
                 {/* Bulk Actions */}
-                {queue.messages.some(m => getMessageStatus(m) === 'review') && (
+                {queue.messages && queue.messages.some(m => getMessageStatus(m) === 'review') && (
                   <div className="p-3 bg-gray-900/30 border-t border-gray-600/50">
                     <Button
                       variant="default"
