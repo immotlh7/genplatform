@@ -4,7 +4,7 @@
   "uploadedAt": "2026-03-20T08:45:10.369Z",
   "totalMessages": 33,
   "totalTasks": 68,
-  "totalMicroTasks": 124,
+  "totalMicroTasks": 144,
   "messages": [
     {
       "messageNumber": 1,
@@ -1414,37 +1414,181 @@
           "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg21-task1",
           "taskNumber": 1,
           "originalDescription": "Stats cards at top:",
-          "status": "pending",
-          "approved": false,
-          "rewritten": false,
-          "microTasks": []
+          "status": "approved",
+          "approved": true,
+          "rewritten": true,
+          "microTasks": [
+            {
+              "id": "task_1774003310394_PRIORITY-2-CHAT-AND-FEATURES.md-msg21-task1-micro1",
+              "filePath": "src/app/dashboard/analytics/page.tsx",
+              "change": "Add useState and fetch for real sessions count",
+              "description": "At the top of the AnalyticsPage component, add a new useState hook for sessions count: const [sessionsCount, setSessionsCount] = useState<number>(0). Then in useEffect, add a fetch call: const sessionsRes = await fetch('/api/bridge/sessions'); const sessionsData = await sessionsRes.json(); setSessionsCount(sessionsData.sessions?.length || 0). This replaces any hardcoded or random session numbers with real data from the API.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774003310394_PRIORITY-2-CHAT-AND-FEATURES.md-msg21-task1-micro2",
+              "filePath": "src/app/dashboard/analytics/page.tsx",
+              "change": "Update Total Sessions card to use sessionsCount state",
+              "description": "Find the stats card or Card component that displays 'Total Sessions' (likely in a grid of stat cards near the top). Replace any hardcoded value or Math.random() generated number with the sessionsCount state variable. The card should render value={sessionsCount} and show the actual count (probably 2-3 based on real data).",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774003310394_PRIORITY-2-CHAT-AND-FEATURES.md-msg21-task1-micro3",
+              "filePath": "src/app/dashboard/analytics/page.tsx",
+              "change": "Set Skill Executions to 0 with tracking notice",
+              "description": "Find the stats card for 'Skill Executions'. Since we don't have historical execution tracking, set this to show value={0} with a subtitle or description text that says 'Tracking starts now'. Add a small text element below the number: <span className='text-xs text-muted-foreground'>Tracking starts now</span>. This honestly shows we have no historical data.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774003310394_PRIORITY-2-CHAT-AND-FEATURES.md-msg21-task1-micro4",
+              "filePath": "src/app/dashboard/analytics/page.tsx",
+              "change": "Set Response Time to static ~2.5s",
+              "description": "Find the stats card for 'Response Time' or 'Avg Response'. Remove any random number generation like Math.random() or fake calculations. Hardcode this to show value='~2.5s' as a string since this is the average AI response time. The card should display this static meaningful value instead of generated nonsense numbers.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774003310394_PRIORITY-2-CHAT-AND-FEATURES.md-msg21-task1-micro5",
+              "filePath": "src/app/dashboard/analytics/page.tsx",
+              "change": "Add fetch for memory stats and display totalFiles",
+              "description": "Add another useState for memory stats: const [memoryStats, setMemoryStats] = useState<{totalFiles: number}>({totalFiles: 0}). In the useEffect, add: const memRes = await fetch('/api/bridge/memory'); const memData = await memRes.json(); setMemoryStats({totalFiles: memData.stats?.totalFiles || 0}). Then find the 'Memory Operations' card and set its value to memoryStats.totalFiles.",
+              "status": "pending"
+            }
+          ]
         },
         {
           "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg21-task2",
           "taskNumber": 2,
           "originalDescription": "Usage Trends chart area. Since we don't have historical data yet:",
-          "status": "pending",
-          "approved": false,
-          "rewritten": false,
-          "microTasks": []
+          "status": "approved",
+          "approved": true,
+          "rewritten": true,
+          "microTasks": [
+            {
+              "id": "task_1774003310394_PRIORITY-2-CHAT-AND-FEATURES.md-msg21-task2-micro1",
+              "filePath": "src/app/dashboard/analytics/page.tsx",
+              "change": "Remove fake trends chart, add placeholder container",
+              "description": "Find the Usage Trends chart section (likely using recharts LineChart or AreaChart component). Comment out or remove the entire chart component that shows fake trend data. Replace it with a div container: <div className='flex flex-col items-center justify-center h-64 bg-muted/30 rounded-lg border border-dashed'>. This creates a placeholder area where the chart was.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774003310394_PRIORITY-2-CHAT-AND-FEATURES.md-msg21-task2-micro2",
+              "filePath": "src/app/dashboard/analytics/page.tsx",
+              "change": "Add collecting data message to trends placeholder",
+              "description": "Inside the new placeholder div, add the main message: <p className='text-lg font-medium text-center'>📊 Collecting data — Charts will appear after 24h of monitoring</p>. This clearly communicates to users that the system is gathering data and charts aren't fake-generated.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774003310394_PRIORITY-2-CHAT-AND-FEATURES.md-msg21-task2-micro3",
+              "filePath": "src/app/dashboard/analytics/page.tsx",
+              "change": "Add info icon with explanation text",
+              "description": "Below the main message in the placeholder div, add an info section: <div className='flex items-center gap-2 mt-4 text-sm text-muted-foreground'><InfoIcon className='h-4 w-4' /><span>Analytics data is collected in real-time. Check back tomorrow for trends.</span></div>. Import InfoIcon from lucide-react at the top of the file if not already imported.",
+              "status": "pending"
+            }
+          ]
         },
         {
           "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg21-task3",
           "taskNumber": 3,
           "originalDescription": "Tabs (Overview, Skills, Memory, Performance):",
-          "status": "pending",
-          "approved": false,
-          "rewritten": false,
-          "microTasks": []
+          "status": "approved",
+          "approved": true,
+          "rewritten": true,
+          "microTasks": [
+            {
+              "id": "task_1774003310394_PRIORITY-2-CHAT-AND-FEATURES.md-msg21-task3-micro1",
+              "filePath": "src/app/dashboard/analytics/page.tsx",
+              "change": "Organize Overview tab with stats and trends placeholder",
+              "description": "In the Overview tab content (likely inside a TabsContent with value='overview'), ensure it contains the stats cards grid from Task 1 and the trends placeholder message from Task 2. Structure it as: <TabsContent value='overview'><div className='grid gap-4 md:grid-cols-4'>{/* stats cards */}</div><div className='mt-6'>{/* trends placeholder */}</div></TabsContent>.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774003310394_PRIORITY-2-CHAT-AND-FEATURES.md-msg21-task3-micro2",
+              "filePath": "src/app/dashboard/analytics/page.tsx",
+              "change": "Add skills fetch and group by category",
+              "description": "Add useState for skills data: const [skillsByCategory, setSkillsByCategory] = useState<{name: string, count: number}[]>([]). In useEffect, fetch skills: const skillsRes = await fetch('/api/bridge/skills'); const skillsData = await skillsRes.json(); Then group by category using reduce: const grouped = skillsData.skills?.reduce((acc, skill) => { acc[skill.category] = (acc[skill.category] || 0) + 1; return acc; }, {}); Convert to array: setSkillsByCategory(Object.entries(grouped).map(([name, count]) => ({name, count}))).",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774003310394_PRIORITY-2-CHAT-AND-FEATURES.md-msg21-task3-micro3",
+              "filePath": "src/app/dashboard/analytics/page.tsx",
+              "change": "Add BarChart for skills by category",
+              "description": "In the Skills tab content (TabsContent value='skills'), add a recharts BarChart: <BarChart width={500} height={300} data={skillsByCategory}><XAxis dataKey='name' /><YAxis /><Bar dataKey='count' fill='#8884d8' /></BarChart>. Import BarChart, XAxis, YAxis, Bar from recharts. This shows real skill counts by category (Development: 4, Research: 3, etc.).",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774003310394_PRIORITY-2-CHAT-AND-FEATURES.md-msg21-task3-micro4",
+              "filePath": "src/app/dashboard/analytics/page.tsx",
+              "change": "Add memory files grouping by folder",
+              "description": "Add useState for memory files by folder: const [filesByFolder, setFilesByFolder] = useState<{name: string, count: number}[]>([]). In useEffect after fetching memory data, group files: const folderCounts = memData.files?.reduce((acc, file) => { const folder = file.path?.split('/')[0] || 'root'; acc[folder] = (acc[folder] || 0) + 1; return acc; }, {}); setFilesByFolder(Object.entries(folderCounts).map(([name, count]) => ({name, count: count as number}))).",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774003310394_PRIORITY-2-CHAT-AND-FEATURES.md-msg21-task3-micro5",
+              "filePath": "src/app/dashboard/analytics/page.tsx",
+              "change": "Add BarChart for memory files by folder",
+              "description": "In the Memory tab content (TabsContent value='memory'), add a BarChart showing files by folder: <BarChart width={500} height={300} data={filesByFolder}><XAxis dataKey='name' /><YAxis /><Bar dataKey='count' fill='#82ca9d' /></BarChart>. This visualizes actual memory file distribution across folders from the API data.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774003310394_PRIORITY-2-CHAT-AND-FEATURES.md-msg21-task3-micro6",
+              "filePath": "src/app/dashboard/analytics/page.tsx",
+              "change": "Add fetch for system metrics",
+              "description": "Add useState for metrics: const [metrics, setMetrics] = useState<{cpu: number, ram: number, disk: number}>({cpu: 0, ram: 0, disk: 0}). In useEffect, fetch: const metricsRes = await fetch('/api/bridge/metrics'); const metricsData = await metricsRes.json(); setMetrics({cpu: metricsData.cpu || 0, ram: metricsData.memory?.usedPercent || 0, disk: metricsData.disk?.usedPercent || 0}).",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774003310394_PRIORITY-2-CHAT-AND-FEATURES.md-msg21-task3-micro7",
+              "filePath": "src/app/dashboard/analytics/page.tsx",
+              "change": "Add Progress bars for CPU, RAM, Disk metrics",
+              "description": "In the Performance tab content (TabsContent value='performance'), add three Progress components or gauge-style displays: <div className='space-y-6'><div><label>CPU Usage</label><Progress value={metrics.cpu} className='h-4' /><span>{metrics.cpu.toFixed(1)}%</span></div><div><label>RAM Usage</label><Progress value={metrics.ram} className='h-4' /><span>{metrics.ram.toFixed(1)}%</span></div><div><label>Disk Usage</label><Progress value={metrics.disk} className='h-4' /><span>{metrics.disk.toFixed(1)}%</span></div></div>. Import Progress from @/components/ui/progress.",
+              "status": "pending"
+            }
+          ]
         },
         {
           "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg21-task4",
           "taskNumber": 4,
           "originalDescription": "Remove ALL fake numbers. If real data is 0, show 0. Never show random generated numbers like \"1.42843582752945\".",
-          "status": "pending",
-          "approved": false,
-          "rewritten": false,
-          "microTasks": []
+          "status": "approved",
+          "approved": true,
+          "rewritten": true,
+          "microTasks": [
+            {
+              "id": "task_1774003310394_PRIORITY-2-CHAT-AND-FEATURES.md-msg21-task4-micro1",
+              "filePath": "src/app/dashboard/analytics/page.tsx",
+              "change": "Remove all Math.random() calls",
+              "description": "Search the entire file for any Math.random() calls. Remove ALL instances. These are generating fake numbers like '1.42843582752945'. Replace each Math.random() usage with either a state variable connected to real API data, or the literal number 0 if no real data exists. Check inside any data arrays, chart data, or card values.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774003310394_PRIORITY-2-CHAT-AND-FEATURES.md-msg21-task4-micro2",
+              "filePath": "src/app/dashboard/analytics/page.tsx",
+              "change": "Remove hardcoded fake chart data arrays",
+              "description": "Search for any hardcoded fake data arrays like: const data = [{name: 'Jan', value: 400}, {name: 'Feb', value: 300}...]. Remove these fake datasets entirely. Either replace with real API data from state, or remove the chart that uses them and show the placeholder message instead.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774003310394_PRIORITY-2-CHAT-AND-FEATURES.md-msg21-task4-micro3",
+              "filePath": "src/app/dashboard/analytics/page.tsx",
+              "change": "Clean up number formatting, remove random decimals",
+              "description": "Search for any toFixed() calls on random numbers or any number formatting that produces long decimal strings. Ensure all displayed numbers are either integers (for counts) or have at most 1 decimal place using .toFixed(1) only on real percentage values. Numbers like '1.42843582752945' indicate Math.random() output that must be removed.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774003310394_PRIORITY-2-CHAT-AND-FEATURES.md-msg21-task4-micro4",
+              "filePath": "src/app/dashboard/analytics/page.tsx",
+              "change": "Add null safety with fallbacks to 0",
+              "description": "Add null/undefined checks for all API data. Wrap each state setter with fallbacks: setSessionsCount(data?.sessions?.length ?? 0), setMemoryStats({totalFiles: data?.stats?.totalFiles ?? 0}). This ensures if API returns empty/null, we show 0 not undefined or NaN. Check every place where API response data is used.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774003310394_PRIORITY-2-CHAT-AND-FEATURES.md-msg21-task4-micro5",
+              "filePath": "src/app/dashboard/analytics/page.tsx",
+              "change": "Ensure all stat cards show real data or 0",
+              "description": "Review all Card components displaying stats. Each value prop must reference a state variable from real API data or be explicitly 0. Add loading states if needed: {isLoading ? <Skeleton className='h-8 w-16' /> : value}. Import Skeleton from @/components/ui/skeleton. This prevents showing fake data during loading.",
+              "status": "pending"
+            }
+          ]
         }
       ]
     },
