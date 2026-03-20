@@ -15,7 +15,7 @@ async function appendLog(entry: string) {
   await fs.appendFile(EXECUTION_LOG_FILE, logEntry).catch(() => {});
 }
 
-// Get next pending task from queue
+// Get next pending micro-task from approved tasks
 async function getNextPendingTask() {
   await fs.mkdir(TASK_QUEUE_DIR, { recursive: true });
   const files = await fs.readdir(TASK_QUEUE_DIR).catch(() => []);
@@ -26,41 +26,60 @@ async function getNextPendingTask() {
     const queuePath = path.join(TASK_QUEUE_DIR, file);
     const queue = JSON.parse(await fs.readFile(queuePath, 'utf-8'));
     
+    let totalMicroTasks = 0;
     let batchPosition = 0;
     let tasksInCurrentBatch = 0;
+    let microTaskIndex = 0;
     
+    // Count total micro-tasks
     for (const message of queue.messages) {
-      for (let i = 0; i < message.microTasks.length; i++) {
-        const task = message.microTasks[i];
-        
-        // Track batch position (every 5 tasks)
-        if (i % 5 === 0) {
-          batchPosition = 1;
-          tasksInCurrentBatch = Math.min(5, message.microTasks.length - i);
-        } else {
-          batchPosition++;
+      for (const task of message.tasks) {
+        if (task.approved && task.microTasks) {
+          totalMicroTasks += task.microTasks.length;
         }
+      }
+    }
+    
+    // Find next pending micro-task from approved tasks
+    for (const message of queue.messages) {
+      for (const task of message.tasks) {
+        if (!task.approved || !task.microTasks) continue;
         
-        if (task.status === 'pending') {
-          // Found next task - update it to executing
-          task.status = 'executing';
-          await fs.writeFile(queuePath, JSON.stringify(queue, null, 2));
+        for (let i = 0; i < task.microTasks.length; i++) {
+          const microTask = task.microTasks[i];
+          microTaskIndex++;
           
-          return {
-            fileId: queue.fileId,
-            fileName: queue.fileName,
-            totalMessages: queue.totalMessages,
-            totalMicroTasks: queue.totalMicroTasks,
-            messageNumber: message.messageNumber,
-            messageSummary: message.summary,
-            commitMessage: message.commitMessage,
-            task,
-            taskIndex: i,
-            totalTasksInMessage: message.microTasks.length,
-            batchPosition,
-            tasksInBatch: tasksInCurrentBatch,
-            queuePath
-          };
+          // Track batch position (every 5 tasks)
+          if ((microTaskIndex - 1) % 5 === 0) {
+            batchPosition = 1;
+            tasksInCurrentBatch = Math.min(5, totalMicroTasks - (microTaskIndex - 1));
+          } else {
+            batchPosition++;
+          }
+          
+          if (microTask.status === 'pending') {
+            // Found next task - update it to executing
+            microTask.status = 'executing';
+            await fs.writeFile(queuePath, JSON.stringify(queue, null, 2));
+            
+            return {
+              fileId: queue.fileId,
+              fileName: queue.fileName,
+              totalMessages: queue.totalMessages,
+              totalMicroTasks,
+              messageNumber: message.messageNumber,
+              messageSummary: message.summary,
+              commitMessage: message.summary, // Use message summary as commit message
+              microTask,
+              microTaskIndex,
+              parentTaskId: task.taskId,
+              batchPosition,
+              tasksInBatch: tasksInCurrentBatch,
+              queuePath,
+              isLastInMessage: i === task.microTasks.length - 1 && 
+                              !message.tasks.slice(message.tasks.indexOf(task) + 1).some(t => t.approved && t.microTasks?.length)
+            };
+          }
         }
       }
     }
@@ -69,27 +88,29 @@ async function getNextPendingTask() {
   return null;
 }
 
-// Format task for Developer
+// Format micro-task for Developer
 function formatTaskForDeveloper(data: any): string {
   const { 
-    task, 
-    taskIndex, 
-    totalMicroTasks, 
-    messageNumber, 
+    microTask,
+    microTaskIndex,
+    totalMicroTasks,
+    messageNumber,
     totalMessages,
     batchPosition,
     tasksInBatch,
     messageSummary,
-    commitMessage
+    commitMessage,
+    isLastInMessage
   } = data;
   
   const isLastInBatch = batchPosition === tasksInBatch;
-  const isLastInMessage = taskIndex === data.totalTasksInMessage - 1;
   
-  let command = `[SELF-DEV] Task ${executionState.tasksProcessed + 1}/${totalMicroTasks} for Message ${messageNumber}/${totalMessages}\n\n`;
+  let command = `[SELF-DEV] Micro-task ${microTaskIndex}/${totalMicroTasks} for Message ${messageNumber}/${totalMessages}\n\n`;
   command += `PROTECTED: Never modify self-dev/**, sidebar.tsx, navbar.tsx, layout.tsx, globals.css\n\n`;
-  command += `Edit file: ${task.filePath}\n`;
-  command += `Change: ${task.specificChanges || task.description}\n\n`;
+  command += `File: ${microTask.filePath}\n`;
+  command += `Location: ${microTask.location}\n`;
+  command += `Change: ${microTask.change}\n`;
+  command += `Expected Result: ${microTask.expectedResult}\n\n`;
   command += `After edit: verify the file has no syntax errors.\n`;
   
   if (isLastInBatch) {
@@ -97,7 +118,7 @@ function formatTaskForDeveloper(data: any): string {
   }
   
   if (isLastInMessage) {
-    command += `\nAlso run: cd /root/genplatform && git add -A && git commit -m "${commitMessage || messageSummary}" && git push\n`;
+    command += `\nAlso run: cd /root/genplatform && git add -A && git commit -m "${commitMessage}" && git push\n`;
   }
   
   command += `\nReport: ✅ Done or ❌ Failed — {reason}`;
@@ -158,7 +179,7 @@ export async function POST(request: NextRequest) {
     const nextTask = await getNextPendingTask();
     
     if (!nextTask) {
-      await appendLog('✅ All tasks completed!');
+      await appendLog('✅ All approved tasks completed!');
       executionState.status = 'idle';
       executionState.currentTask = null;
       executionState.currentFile = null;
@@ -178,7 +199,7 @@ export async function POST(request: NextRequest) {
     };
     executionState.currentTask = {
       number: executionState.tasksProcessed + 1,
-      description: nextTask.task.description,
+      description: `${nextTask.microTask.filePath}: ${nextTask.microTask.change}`,
       status: 'executing'
     };
     executionState.currentBatch = {
@@ -209,11 +230,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to send task' }, { status: 500 });
     }
     
-    await appendLog(`📤 Sent task ${nextTask.task.taskId}: ${nextTask.task.description}`);
+    await appendLog(`📤 Sent micro-task: ${nextTask.microTask.filePath} - ${nextTask.microTask.change}`);
     executionState.contextTokens += taskMessage.length / 4; // Rough token estimate
     
     return NextResponse.json({
-      taskId: nextTask.task.taskId,
+      taskId: nextTask.microTask.id,
       taskNumber: executionState.tasksProcessed + 1,
       totalTasks: nextTask.totalMicroTasks,
       status: 'sent'

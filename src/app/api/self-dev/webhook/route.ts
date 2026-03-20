@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import fs from 'fs/promises';
 import path from 'path';
 import { executionState } from '../status/route';
-import { resolvePendingAnalysis } from '../analyze/route';
 
 const TASK_QUEUE_DIR = '/root/genplatform/data/task-queue';
 const EXECUTION_LOG_FILE = '/root/genplatform/data/self-dev-execution.log';
@@ -14,8 +13,8 @@ async function appendLog(entry: string) {
   await fs.appendFile(EXECUTION_LOG_FILE, logEntry).catch(() => {});
 }
 
-// Helper to get next task
-async function getNextTask(): Promise<any | null> {
+// Helper to get current executing task
+async function getCurrentExecutingTask(): Promise<any | null> {
   const files = await fs.readdir(TASK_QUEUE_DIR).catch(() => []);
   
   for (const file of files.sort()) {
@@ -24,19 +23,20 @@ async function getNextTask(): Promise<any | null> {
     const queuePath = path.join(TASK_QUEUE_DIR, file);
     const queue = JSON.parse(await fs.readFile(queuePath, 'utf-8'));
     
-    // Find next pending task
+    // Find executing micro-task
     for (const message of queue.messages) {
-      for (const task of message.microTasks) {
-        if (task.status === 'pending') {
-          return {
-            fileId: queue.fileId,
-            fileName: queue.fileName,
-            messageNumber: message.messageNumber,
-            messageSummary: message.summary,
-            task,
-            queue,
-            queuePath
-          };
+      for (const task of message.tasks) {
+        if (!task.microTasks) continue;
+        
+        for (const microTask of task.microTasks) {
+          if (microTask.status === 'executing') {
+            return {
+              fileId: queue.fileId,
+              microTask,
+              queue,
+              queuePath
+            };
+          }
         }
       }
     }
@@ -88,25 +88,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ ok: true });
     }
     
-    // Check if this is an orchestrator response
-    if (text.includes('[ORCHESTRATOR]') || text.includes('totalMessages') || text.includes('microTasks')) {
-      await appendLog('🧠 Received Orchestrator analysis response');
+    // Check if this is an orchestrator rewrite response
+    if (text.includes('[ORCHESTRATOR]') || text.includes('[Task')) {
+      await appendLog('🧠 Received Orchestrator rewrite response');
       
-      // Extract the file ID from pending analysis
-      const pendingFiles = await fs.readdir(TASK_QUEUE_DIR).catch(() => []);
-      const latestFileId = pendingFiles
-        .filter(f => f.endsWith('.json'))
-        .sort()
-        .pop()
-        ?.replace('.json', '');
-      
-      if (latestFileId) {
-        // Try to resolve pending analysis
-        const resolved = resolvePendingAnalysis(latestFileId, text);
-        if (resolved) {
-          await appendLog('✅ Orchestrator analysis complete');
-        }
-      }
+      // TODO: Parse rewritten tasks and update queue
+      // For now, just log it
+      await appendLog('📝 Rewrite response received (manual update needed)');
       
       return NextResponse.json({ ok: true });
     }
@@ -119,64 +107,59 @@ export async function POST(request: NextRequest) {
       // Task completed successfully
       await appendLog('✅ Task completed successfully');
       
-      if (executionState.currentTask) {
-        // Update task status in queue
-        const currentData = await getNextTask();
-        if (currentData && currentData.task.taskId === executionState.currentTask.description) {
-          currentData.task.status = 'done';
-          await fs.writeFile(currentData.queuePath, JSON.stringify(currentData.queue, null, 2));
-          
-          executionState.tasksProcessed++;
-          executionState.contextTokens += 700; // Approximate response size
-          
-          // Reset retry count for this task
-          executionState.retryCount.delete(currentData.task.taskId);
-          
-          // Trigger next task
-          await triggerNextTask();
-        }
+      const currentData = await getCurrentExecutingTask();
+      if (currentData) {
+        currentData.microTask.status = 'done';
+        await fs.writeFile(currentData.queuePath, JSON.stringify(currentData.queue, null, 2));
+        
+        executionState.tasksProcessed++;
+        executionState.contextTokens += 700; // Approximate response size
+        
+        // Reset retry count for this task
+        executionState.retryCount.delete(currentData.microTask.id);
+        
+        // Trigger next task
+        await triggerNextTask();
       }
       
     } else if (text.includes('❌ Failed') || text.includes('❌ Error')) {
       // Task failed
       await appendLog('❌ Task failed');
       
-      if (executionState.currentTask) {
-        const currentData = await getNextTask();
-        if (currentData) {
-          const taskId = currentData.task.taskId;
-          const retries = executionState.retryCount.get(taskId) || 0;
+      const currentData = await getCurrentExecutingTask();
+      if (currentData) {
+        const taskId = currentData.microTask.id;
+        const retries = executionState.retryCount.get(taskId) || 0;
+        
+        if (retries < 3) {
+          // Retry the task
+          executionState.retryCount.set(taskId, retries + 1);
+          await appendLog(`🔄 Retrying task (attempt ${retries + 2}/3)`);
           
-          if (retries < 3) {
-            // Retry the task
-            executionState.retryCount.set(taskId, retries + 1);
-            await appendLog(`🔄 Retrying task (attempt ${retries + 2}/3)`);
+          // Re-send the same task with retry message
+          setTimeout(async () => {
+            const response = await fetch('http://localhost:3000/api/self-dev/execute', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                task: currentData.microTask,
+                projectContext: `Retry ${retries + 2}/3 - Previous attempt failed. Please try again.`
+              })
+            });
             
-            // Re-send the same task with retry message
-            setTimeout(async () => {
-              const response = await fetch('http://localhost:3000/api/self-dev/execute', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  task: currentData.task,
-                  projectContext: `Retry ${retries + 2}/3 - Previous attempt failed. Please try again.`
-                })
-              });
-              
-              if (response.ok) {
-                await appendLog(`📤 Resent task for retry`);
-              }
-            }, 5000);
-            
-          } else {
-            // Max retries reached, skip task
-            currentData.task.status = 'skipped';
-            await fs.writeFile(currentData.queuePath, JSON.stringify(currentData.queue, null, 2));
-            await appendLog('⏭️ Max retries reached, task skipped');
-            
-            // Move to next task
-            await triggerNextTask();
-          }
+            if (response.ok) {
+              await appendLog(`📤 Resent task for retry`);
+            }
+          }, 5000);
+          
+        } else {
+          // Max retries reached, skip task
+          currentData.microTask.status = 'skipped';
+          await fs.writeFile(currentData.queuePath, JSON.stringify(currentData.queue, null, 2));
+          await appendLog('⏭️ Max retries reached, task skipped');
+          
+          // Move to next task
+          await triggerNextTask();
         }
       }
       

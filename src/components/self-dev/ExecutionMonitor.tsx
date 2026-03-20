@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { Hammer, Send, FileText, Settings, CheckCircle, XCircle, RefreshCw, Package, Brain, Clock, AlertCircle, Upload } from 'lucide-react';
+import { Hammer, Send, FileText, Settings, CheckCircle, XCircle, RefreshCw, Package, Brain, Clock, AlertCircle, Upload, CheckSquare } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
@@ -34,6 +34,7 @@ interface ExecutionMonitorProps {
 export function ExecutionMonitor({ onRefresh }: ExecutionMonitorProps) {
   const [status, setStatus] = useState<ExecutionStatus | null>(null);
   const [autoscroll, setAutoscroll] = useState(true);
+  const [queues, setQueues] = useState<any[]>([]);
   const scrollRef = useRef<HTMLDivElement>(null);
   const logEndRef = useRef<HTMLDivElement>(null);
 
@@ -55,6 +56,15 @@ export function ExecutionMonitor({ onRefresh }: ExecutionMonitorProps) {
       if (response.ok) {
         const data = await response.json();
         setStatus(data);
+        
+        // Also load queue data to check for review mode
+        if (data.overallProgress.filesTotal > 0) {
+          const queueResponse = await fetch('/api/self-dev/queues').catch(() => null);
+          if (queueResponse && queueResponse.ok) {
+            const queuesData = await queueResponse.json();
+            setQueues(queuesData);
+          }
+        }
       }
     } catch (error) {
       console.error('Failed to load status:', error);
@@ -93,7 +103,16 @@ export function ExecutionMonitor({ onRefresh }: ExecutionMonitorProps) {
     );
   }
 
-  // Idle state
+  // Check if in review mode (has rewritten tasks but not executing)
+  const hasRewrittenTasks = queues.some(q => 
+    q.messages?.some((m: any) => m.tasks?.some((t: any) => t.rewritten))
+  );
+  const hasApprovedTasks = queues.some(q => 
+    q.messages?.some((m: any) => m.tasks?.some((t: any) => t.approved))
+  );
+  const isInReviewMode = hasRewrittenTasks && status.status === 'idle' && !hasApprovedTasks;
+
+  // Idle state (no files)
   if (status.status === 'idle' && status.overallProgress.tasksTotal === 0) {
     return (
       <div className="flex flex-col items-center justify-center h-full text-gray-500 dark:text-gray-400">
@@ -107,6 +126,83 @@ export function ExecutionMonitor({ onRefresh }: ExecutionMonitorProps) {
     );
   }
 
+  // Review mode
+  if (isInReviewMode) {
+    return (
+      <div className="space-y-4 h-full flex flex-col">
+        <Card className="border-2 border-amber-200 dark:border-amber-800">
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <CheckSquare className="h-5 w-5 text-amber-600" />
+                <CardTitle className="text-base">Review Mode</CardTitle>
+              </div>
+              <Badge variant="secondary" className="text-xs">
+                Awaiting Approval
+              </Badge>
+            </div>
+          </CardHeader>
+          <CardContent className="pt-0">
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              The Orchestrator has rewritten tasks as ultra-precise micro-tasks.
+              Review the rewritten tasks in the left panel and approve them to begin execution.
+            </p>
+            <div className="mt-4 space-y-2">
+              <div className="flex items-center gap-2 text-sm">
+                <span className="font-medium">Step 1:</span>
+                <span className="text-green-600">✓ File uploaded and analyzed</span>
+              </div>
+              <div className="flex items-center gap-2 text-sm">
+                <span className="font-medium">Step 2:</span>
+                <span className="text-green-600">✓ Tasks rewritten as micro-tasks</span>
+              </div>
+              <div className="flex items-center gap-2 text-sm">
+                <span className="font-medium">Step 3:</span>
+                <span className="text-amber-600">⚠ Awaiting your approval</span>
+              </div>
+              <div className="flex items-center gap-2 text-sm text-gray-400">
+                <span className="font-medium">Step 4:</span>
+                <span>Execution will begin after approval</span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Instructions */}
+        <Card className="flex-1">
+          <CardHeader>
+            <CardTitle className="text-base">How to Proceed</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div>
+                <h4 className="font-medium text-sm mb-2">Review Micro-Tasks</h4>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  Check the left panel to see how each original task has been broken down into specific file changes.
+                  Each micro-task shows exactly which file to edit and what to change.
+                </p>
+              </div>
+              <div>
+                <h4 className="font-medium text-sm mb-2">Approve or Reject</h4>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  Click "Approve" on individual messages or "Approve All Messages" to accept the rewritten tasks.
+                  You can also reject and request a new rewrite if needed.
+                </p>
+              </div>
+              <div>
+                <h4 className="font-medium text-sm mb-2">Start Execution</h4>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  Once approved, the Start button will activate. Click it to begin sending micro-tasks to the Developer agent.
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Normal execution mode
   return (
     <div className="space-y-4 h-full flex flex-col">
       {/* Current Task Card */}
@@ -169,7 +265,9 @@ export function ExecutionMonitor({ onRefresh }: ExecutionMonitorProps) {
           <ScrollArea className="h-full w-full p-4" ref={scrollRef}>
             <div className="space-y-1.5 font-mono text-xs">
               {status.log.length === 0 ? (
-                <p className="text-gray-400 text-center py-8">No log entries yet</p>
+                <p className="text-gray-400 text-center py-8">
+                  {hasApprovedTasks ? 'Click Start to begin execution' : 'No log entries yet'}
+                </p>
               ) : (
                 status.log.map((entry, index) => {
                   const [timestamp, ...rest] = entry.split(' | ');

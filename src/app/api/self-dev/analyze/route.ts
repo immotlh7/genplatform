@@ -3,80 +3,6 @@ import fs from 'fs/promises';
 import path from 'path';
 
 const TASK_QUEUE_DIR = '/root/genplatform/data/task-queue';
-const TELEGRAM_BOT_TOKEN = '8635233052:AAGsuMzqhTHwQsFg4qGYPfUEyZPiLsAceA4';
-const TELEGRAM_CHAT_ID = '510906393';
-const ANALYSIS_TIMEOUT = 60000; // 60 seconds for analysis
-
-// Store pending analysis in a global map (in production, use Redis or similar)
-declare global {
-  var pendingAnalysis: Map<string, {
-    fileId: string;
-    resolve: (value: any) => void;
-    reject: (reason?: any) => void;
-    timeout?: NodeJS.Timeout;
-  }> | undefined;
-}
-
-if (!global.pendingAnalysis) {
-  global.pendingAnalysis = new Map();
-}
-
-const ORCHESTRATOR_PROMPT = `[ORCHESTRATOR] You are the Orchestrator Agent for GenPlatform.ai. You receive development task files and decompose them into ultra-precise micro-tasks.
-
-Rules:
-1. Read the ENTIRE file content
-2. Identify every message/section (separated by ── lines or # headers)  
-3. For EACH message, break down into micro-tasks. Each micro-task must be:
-   - ONE specific file change (not multiple files)
-   - Include the EXACT file path
-   - Include EXACTLY what to change (function name, line description)
-   - Be completable in under 5 minutes
-   - Be independent (no dependencies on unfinished tasks when possible)
-
-4. Group micro-tasks into batches of 5 (each batch ends with build+test)
-5. Never include PROTECTED files (see list below) in any task
-6. Output as JSON
-
-PROTECTED FILES (NEVER modify):
-- src/app/dashboard/self-dev/**
-- src/app/api/self-dev/**
-- src/components/self-dev/**
-- src/app/layout.tsx
-- src/app/(dashboard)/layout.tsx
-- src/components/layout/navbar.tsx
-- src/app/globals.css
-
-Output format:
-{
-  "totalMessages": 3,
-  "totalMicroTasks": 45,
-  "messages": [
-    {
-      "messageNumber": 1,
-      "summary": "Fix Dashboard CPU display",
-      "microTasks": [
-        {
-          "taskId": "task_1_1",
-          "action": "edit",
-          "filePath": "src/app/dashboard/page.tsx",
-          "description": "In fetchMetrics function, replace Supabase call with fetch('/api/bridge/metrics')",
-          "specificChanges": "Replace supabase.from('system_metrics') with fetch call, return resources.cpu.usage for cpuPercent",
-          "estimatedMinutes": 3
-        }
-      ],
-      "commitMessage": "Fix Dashboard to show real CPU data"
-    }
-  ],
-  "executionPlan": {
-    "batches": [
-      {
-        "batchNumber": 1,
-        "taskIds": ["task_1_1", "task_1_2", "task_1_3", "task_1_4", "task_1_5"],
-        "endsWith": "build_and_test"
-      }
-    ]
-  }
-}`;
 
 export async function POST(request: NextRequest) {
   try {
@@ -86,93 +12,34 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Missing fileId or content' }, { status: 400 });
     }
     
-    // For now, create a mock analysis result since we can't wait for async Telegram response
-    // In production, you'd implement a proper webhook callback system
-    const mockAnalysis = {
-      totalMessages: 1,
-      totalMicroTasks: 3,
-      messages: [
-        {
-          messageNumber: 1,
-          summary: "Sample task analysis",
-          microTasks: [
-            {
-              taskId: "task_1_1",
-              action: "edit",
-              filePath: "src/example.ts",
-              description: "Sample task 1",
-              specificChanges: "Add console.log('Hello')",
-              estimatedMinutes: 2
-            },
-            {
-              taskId: "task_1_2",
-              action: "edit",
-              filePath: "src/example.ts",
-              description: "Sample task 2",
-              specificChanges: "Add export statement",
-              estimatedMinutes: 2
-            },
-            {
-              taskId: "task_1_3",
-              action: "edit",
-              filePath: "src/example.ts",
-              description: "Sample task 3",
-              specificChanges: "Add type definitions",
-              estimatedMinutes: 3
-            }
-          ],
-          commitMessage: "Complete sample tasks"
-        }
-      ],
-      executionPlan: {
-        batches: [
-          {
-            batchNumber: 1,
-            taskIds: ["task_1_1", "task_1_2", "task_1_3"],
-            endsWith: "build_and_test"
-          }
-        ]
-      }
-    };
-    
-    // Send analysis request to OpenClaw via Telegram
-    const analysisPrompt = `${ORCHESTRATOR_PROMPT}\n\nAnalyze this task file and decompose it into micro-tasks:\n\n${content}`;
-    
-    const telegramResponse = await fetch(
-      `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          chat_id: TELEGRAM_CHAT_ID,
-          text: analysisPrompt.substring(0, 4000) // Telegram message limit
-        })
-      }
-    );
-    
-    if (!telegramResponse.ok) {
-      const error = await telegramResponse.text();
-      console.error('Failed to send analysis request:', error);
-      // Continue with mock data for now
-    }
+    // Parse the file content to find all messages and tasks
+    const messages = parseTaskFile(content);
     
     // Create task queue directory if it doesn't exist
     await fs.mkdir(TASK_QUEUE_DIR, { recursive: true });
     
-    // Use mock analysis for immediate response
+    // Create task queue structure
     const taskQueue = {
       fileId,
       fileName: fileId.replace(/^task_\d+_/, ''),
-      totalMessages: mockAnalysis.totalMessages,
-      totalMicroTasks: mockAnalysis.totalMicroTasks,
-      messages: mockAnalysis.messages.map((msg: any) => ({
-        ...msg,
-        microTasks: msg.microTasks.map((task: any) => ({
-          ...task,
-          status: 'pending'
+      totalMessages: messages.length,
+      totalMicroTasks: messages.reduce((sum, msg) => sum + msg.tasks.length, 0),
+      messages: messages.map((msg, idx) => ({
+        messageNumber: idx + 1,
+        summary: msg.title,
+        originalContent: msg.content,
+        tasks: msg.tasks.map((task, taskIdx) => ({
+          taskId: `task_${idx + 1}_${taskIdx + 1}`,
+          taskNumber: taskIdx + 1,
+          originalDescription: task,
+          status: 'pending',
+          approved: false,
+          rewritten: false,
+          microTasks: [] // Will be filled by rewrite step
         }))
       })),
-      analyzedAt: new Date().toISOString()
+      analyzedAt: new Date().toISOString(),
+      status: 'analyzed'
     };
     
     // Save to queue file
@@ -182,10 +49,13 @@ export async function POST(request: NextRequest) {
     // Return analysis data
     return NextResponse.json({
       fileId,
-      analysis: mockAnalysis,
-      analyzedAt: new Date().toISOString(),
-      status: 'analyzed',
-      note: 'Using mock analysis - real analysis sent to OpenClaw'
+      analysis: {
+        totalMessages: taskQueue.totalMessages,
+        totalMicroTasks: taskQueue.totalMicroTasks,
+        messages: taskQueue.messages
+      },
+      analyzedAt: taskQueue.analyzedAt,
+      status: 'analyzed'
     });
     
   } catch (error) {
@@ -194,14 +64,87 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// Helper function for webhook to resolve pending analysis
-export function resolvePendingAnalysis(fileId: string, result: string): boolean {
-  const pending = global.pendingAnalysis?.get(fileId);
-  if (pending) {
-    if (pending.timeout) clearTimeout(pending.timeout);
-    pending.resolve(result);
-    global.pendingAnalysis?.delete(fileId);
-    return true;
+function parseTaskFile(content: string): Array<{title: string, content: string, tasks: string[]}> {
+  const messages = [];
+  
+  // Split by message separator (# ─────)
+  const sections = content.split(/^#{1,2}\s*─+/m).filter(s => s.trim());
+  
+  for (const section of sections) {
+    const lines = section.trim().split('\n');
+    if (lines.length === 0) continue;
+    
+    // First line is usually the title
+    let title = lines[0].trim();
+    if (title.startsWith('#')) {
+      title = title.replace(/^#+\s*/, '');
+    }
+    
+    // Find all tasks in this section
+    const tasks = [];
+    const taskPattern = /^Task\s+\d+:|^-\s+Task\s+\d+:|^\d+\.\s+/gm;
+    
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      if (taskPattern.test(line)) {
+        // Extract the task description
+        let taskDesc = line.replace(/^(Task\s+\d+:|-\s+Task\s+\d+:|\d+\.)\s*/, '').trim();
+        
+        // Check if task continues on next lines
+        let j = i + 1;
+        while (j < lines.length && !taskPattern.test(lines[j]) && lines[j].trim() && !lines[j].startsWith('#')) {
+          taskDesc += ' ' + lines[j].trim();
+          j++;
+        }
+        
+        if (taskDesc) {
+          tasks.push(taskDesc);
+        }
+      }
+    }
+    
+    // If we found tasks, add this message
+    if (tasks.length > 0 || title) {
+      messages.push({
+        title: title || `Message ${messages.length + 1}`,
+        content: section.trim(),
+        tasks: tasks
+      });
+    }
   }
-  return false;
+  
+  // If no messages found with separator, try to parse as a single message
+  if (messages.length === 0) {
+    const tasks = [];
+    const lines = content.split('\n');
+    const taskPattern = /^Task\s+\d+:|^-\s+Task\s+\d+:|^\d+\.\s+/;
+    
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      if (taskPattern.test(line)) {
+        let taskDesc = line.replace(/^(Task\s+\d+:|-\s+Task\s+\d+:|\d+\.)\s*/, '').trim();
+        
+        // Check if task continues on next lines
+        let j = i + 1;
+        while (j < lines.length && !taskPattern.test(lines[j]) && lines[j].trim()) {
+          taskDesc += ' ' + lines[j].trim();
+          j++;
+        }
+        
+        if (taskDesc) {
+          tasks.push(taskDesc);
+        }
+      }
+    }
+    
+    if (tasks.length > 0) {
+      messages.push({
+        title: 'Tasks',
+        content: content,
+        tasks: tasks
+      });
+    }
+  }
+  
+  return messages;
 }

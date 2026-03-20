@@ -41,6 +41,7 @@ export default function SelfDevPage() {
     elapsedTime: 0
   });
   const [error, setError] = useState<string | null>(null);
+  const [hasApprovedTasks, setHasApprovedTasks] = useState(false);
 
   useEffect(() => {
     loadStatus();
@@ -54,6 +55,16 @@ export default function SelfDevPage() {
       if (response.ok) {
         const data = await response.json();
         setStatus(data);
+      }
+      
+      // Check for approved tasks
+      const queuesResponse = await fetch('/api/self-dev/queues');
+      if (queuesResponse.ok) {
+        const queues = await queuesResponse.json();
+        const approved = queues.some((q: any) => 
+          q.messages?.some((m: any) => m.tasks?.some((t: any) => t.approved))
+        );
+        setHasApprovedTasks(approved);
       }
     } catch (error) {
       console.error('Failed to load status:', error);
@@ -150,6 +161,7 @@ export default function SelfDevPage() {
       {/* Control Bar - Always Visible */}
       <ControlBar
         status={status}
+        hasApprovedTasks={hasApprovedTasks}
         onStart={() => handleControl('start')}
         onPause={() => handleControl('pause')}
         onResume={() => handleControl('resume')}

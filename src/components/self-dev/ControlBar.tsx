@@ -1,6 +1,6 @@
 'use client';
 
-import { Play, Pause, SkipForward, RefreshCw, Brain, Clock } from 'lucide-react';
+import { Play, Pause, SkipForward, RefreshCw, Brain, Clock, CheckSquare } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
@@ -22,6 +22,7 @@ interface ControlBarProps {
     currentMessage?: { number: number; title: string };
     currentFile?: { name: string };
   };
+  hasApprovedTasks?: boolean;
   onStart: () => void;
   onPause: () => void;
   onResume: () => void;
@@ -29,7 +30,7 @@ interface ControlBarProps {
   onRetry: () => void;
 }
 
-export function ControlBar({ status, onStart, onPause, onResume, onSkip, onRetry }: ControlBarProps) {
+export function ControlBar({ status, hasApprovedTasks = false, onStart, onPause, onResume, onSkip, onRetry }: ControlBarProps) {
   const formatTime = (seconds: number) => {
     const hours = Math.floor(seconds / 3600);
     const minutes = Math.floor((seconds % 3600) / 60);
@@ -53,6 +54,18 @@ export function ControlBar({ status, onStart, onPause, onResume, onSkip, onRetry
   const isIdle = status.status === 'idle';
   const hasTasks = status.overallProgress.tasksTotal > 0;
 
+  // Determine button state and message
+  let startButtonDisabled = true;
+  let startButtonTooltip = 'Upload a file first';
+  
+  if (hasTasks && !hasApprovedTasks) {
+    startButtonDisabled = true;
+    startButtonTooltip = 'Approve tasks before starting execution';
+  } else if (hasTasks && hasApprovedTasks) {
+    startButtonDisabled = false;
+    startButtonTooltip = 'Start execution';
+  }
+
   return (
     <div className="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 p-4 shadow-lg z-50">
       <div className="max-w-full mx-auto">
@@ -71,6 +84,15 @@ export function ControlBar({ status, onStart, onPause, onResume, onSkip, onRetry
                   <span>Message {status.currentMessage?.number || 0}/{status.overallProgress.messagesTotal}</span>
                   <span>•</span>
                   <span>File {status.overallProgress.filesDone}/{status.overallProgress.filesTotal}</span>
+                  {!hasApprovedTasks && hasTasks && (
+                    <>
+                      <span>•</span>
+                      <span className="text-amber-600 dark:text-amber-400 flex items-center gap-1">
+                        <CheckSquare className="h-3 w-3" />
+                        Approval needed
+                      </span>
+                    </>
+                  )}
                 </div>
               </>
             ) : (
@@ -87,8 +109,8 @@ export function ControlBar({ status, onStart, onPause, onResume, onSkip, onRetry
               <Button 
                 onClick={onStart} 
                 className="gap-2"
-                disabled={!hasTasks}
-                title={!hasTasks ? 'Upload a file first' : 'Start execution'}
+                disabled={startButtonDisabled}
+                title={startButtonTooltip}
               >
                 <Play className="h-4 w-4" />
                 Start
@@ -164,7 +186,10 @@ export function ControlBar({ status, onStart, onPause, onResume, onSkip, onRetry
               }
               className="capitalize"
             >
-              {status.status === 'idle' && !hasTasks ? 'Idle — Upload a file to begin' : status.status}
+              {status.status === 'idle' && !hasTasks ? 'Idle — Upload a file to begin' : 
+               status.status === 'idle' && hasTasks && !hasApprovedTasks ? 'Awaiting approval' :
+               status.status === 'idle' && hasTasks && hasApprovedTasks ? 'Ready to start' :
+               status.status}
             </Badge>
           </div>
         </div>
