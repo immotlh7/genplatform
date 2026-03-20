@@ -209,30 +209,44 @@ export async function executeNext() {
       }
     }
 
-    // Load queue
-    const queue = JSON.parse(await fs.readFile(TASK_QUEUE_FILE, 'utf-8'));
-    
-    // Find next approved task
+    // Load ALL queue files (not just main) to find next approved task
+    const QUEUE_DIR = '/root/genplatform/data/task-queue';
+    const queueFiles = (await fs.readdir(QUEUE_DIR))
+      .filter(f => f.endsWith('.json') && !f.endsWith('.json.json'))
+      .sort();
+
     let foundTask: any = null;
     let foundMessage: any = null;
+    let foundQueueFile: string = TASK_QUEUE_FILE;
+    let foundQueue: any = null;
     let totalTasks = 0;
     let completedTasks = 0;
 
-    for (const message of (queue.messages || [])) {
-      for (const task of (message.tasks || [])) {
-        totalTasks++;
-        if (task.status === 'done') completedTasks++;
-        if (!task.approved) continue;
-        if (task.status === 'executing') {
-          await setLock(task.taskId);
-          return { message: 'Task already executing', taskId: task.taskId };
-        }
-        if (!foundTask && (task.status === 'approved' || task.status === 'pending')) {
-          foundTask = task;
-          foundMessage = message;
+    for (const qFile of queueFiles) {
+      const qPath = path.join(QUEUE_DIR, qFile);
+      let queue: any;
+      try { queue = JSON.parse(await fs.readFile(qPath, 'utf-8')); } catch { continue; }
+
+      for (const message of (queue.messages || [])) {
+        for (const task of (message.tasks || [])) {
+          totalTasks++;
+          if (task.status === 'done') completedTasks++;
+          if (!task.approved) continue;
+          if (task.status === 'executing') {
+            await setLock(task.taskId);
+            return { message: 'Task already executing', taskId: task.taskId };
+          }
+          if (!foundTask && (task.status === 'approved' || task.status === 'pending')) {
+            foundTask = task;
+            foundMessage = message;
+            foundQueueFile = qPath;
+            foundQueue = queue;
+          }
         }
       }
+      if (foundTask) break; // Take from first file that has approved tasks
     }
+    const queue = foundQueue || JSON.parse(await fs.readFile(TASK_QUEUE_FILE, 'utf-8'));
 
     if (!foundTask) {
       await addLog({ timestamp: new Date().toISOString(), type: 'info', message: 'No approved tasks found to execute' });
@@ -245,7 +259,7 @@ export async function executeNext() {
     // Mark as executing
     foundTask.status = 'executing';
     foundTask.startedAt = new Date().toISOString();
-    await fs.writeFile(TASK_QUEUE_FILE, JSON.stringify(queue, null, 2));
+    await fs.writeFile(foundQueueFile || TASK_QUEUE_FILE, JSON.stringify(queue, null, 2));
     
     // Update current task file
     await fs.writeFile(CURRENT_TASK_FILE, JSON.stringify({
@@ -270,7 +284,7 @@ export async function executeNext() {
     foundTask.executionResult = result;
     
     // Sync both files
-    await fs.writeFile(TASK_QUEUE_FILE, JSON.stringify(queue, null, 2));
+    await fs.writeFile(foundQueueFile || TASK_QUEUE_FILE, JSON.stringify(queue, null, 2));
     try {
       const indPath = path.join('/root/genplatform/data/task-queue', foundTask.taskId.split('-msg')[0].replace('task_', 'task_') + '.json');
       await fs.writeFile(indPath.replace(/task_\d+_/, 'task_1773996310129_').replace(/-msg.+$/, '') + '.json', JSON.stringify(queue, null, 2));
@@ -293,11 +307,7 @@ export async function executeNext() {
       : `❌ Task ${foundTask.taskNumber} FAILED\n\n${result.result.substring(0, 200)}`
     );
 
-    // Also sync individual file
-    try {
-      const indFile = '/root/genplatform/data/task-queue/task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md.json';
-      await fs.writeFile(indFile, JSON.stringify(queue, null, 2));
-    } catch {}
+    // Individual file already saved via foundQueueFile
 
     // Auto-execute next if auto-mode on
     try {

@@ -4,7 +4,7 @@
   "uploadedAt": "2026-03-20T13:35:21.881Z",
   "totalMessages": 13,
   "totalTasks": 29,
-  "totalMicroTasks": 0,
+  "totalMicroTasks": 92,
   "messages": [
     {
       "messageNumber": 1,
@@ -27,46 +27,233 @@
           "taskId": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg3-task1",
           "taskNumber": 1,
           "originalDescription": "In the project detail page (/projects/[id]), add a new tab called \"Pipeline\" after the Overview tab.",
-          "status": "pending",
-          "approved": false,
-          "rewritten": false,
-          "microTasks": []
+          "status": "approved",
+          "approved": true,
+          "rewritten": true,
+          "microTasks": [
+            {
+              "id": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg3-task1-micro1",
+              "filePath": "src/app/projects/[id]/page.tsx",
+              "change": "Add Pipeline tab definition to tabs array",
+              "description": "Locate the tabs array or TabsList component in the ProjectDetailPage component. Find where tabs like 'Overview', 'Tasks', 'Settings' are defined. Add a new tab object with id: 'pipeline', label: 'Pipeline', icon: GitBranch (from lucide-react). Position this tab immediately after the 'Overview' tab in the array. The tab should have the same structure as existing tabs with value='pipeline' for the TabsTrigger component.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg3-task1-micro2",
+              "filePath": "src/app/projects/[id]/page.tsx",
+              "change": "Add TabsContent for Pipeline tab with component placeholder",
+              "description": "In the TabsContent section of the component, add a new TabsContent component with value='pipeline'. This should be placed after the Overview TabsContent. Inside this TabsContent, add a placeholder div with className='space-y-6' that will contain the PipelineVisualization component. Import and render <PipelineVisualization projectId={params.id} /> inside this TabsContent. The component will be created in the next tasks.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg3-task1-micro3",
+              "filePath": "src/app/projects/[id]/page.tsx",
+              "change": "Add import for PipelineVisualization component",
+              "description": "At the top of the file, add the import statement: import { PipelineVisualization } from '@/components/projects/pipeline-visualization'. Also ensure GitBranch icon is imported from lucide-react if using it for the tab icon. Add these imports alongside existing imports like Card, Tabs, etc.",
+              "status": "pending"
+            }
+          ]
         },
         {
           "taskId": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg3-task2",
           "taskNumber": 2,
           "originalDescription": "Build an animated pipeline flow using SVG + CSS animations (NOT Three.js for now — keep it simple and reliable):",
-          "status": "pending",
-          "approved": false,
-          "rewritten": false,
-          "microTasks": []
+          "status": "approved",
+          "approved": true,
+          "rewritten": true,
+          "microTasks": [
+            {
+              "id": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg3-task2-micro1",
+              "filePath": "src/components/projects/pipeline-visualization.tsx",
+              "change": "Create pipeline-visualization.tsx with base structure and interfaces",
+              "description": "Create a new file and define the main PipelineVisualization component. Start with 'use client' directive. Import React, useState, useEffect, useRef from react. Import Card, CardContent, CardHeader, CardTitle from @/components/ui/card. Define interface PipelineVisualizationProps { projectId: string }. Define interface PipelineStage { id: string; name: string; icon: string; taskCount: number; status: 'completed' | 'active' | 'pending' }. Export the component with props destructuring.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg3-task2-micro2",
+              "filePath": "src/components/projects/pipeline-visualization.tsx",
+              "change": "Define pipeline stages constant with icons and statuses",
+              "description": "Inside the component, define the PIPELINE_STAGES constant array with 7 stages: { id: 'idea', name: 'Idea', icon: '💡', taskCount: 0, status: 'completed' }, { id: 'analysis', name: 'Analysis', icon: '🔬', taskCount: 0, status: 'completed' }, { id: 'planning', name: 'Task Planning', icon: '📋', taskCount: 0, status: 'active' }, { id: 'development', name: 'Development', icon: '💻', taskCount: 0, status: 'active' }, { id: 'review', name: 'Review', icon: '🔍', taskCount: 0, status: 'pending' }, { id: 'security', name: 'Security', icon: '🛡️', taskCount: 0, status: 'pending' }, { id: 'deploy', name: 'Deploy', icon: '✅', taskCount: 0, status: 'pending' }. Add useState for stages initialized with this array.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg3-task2-micro3",
+              "filePath": "src/components/projects/pipeline-visualization.tsx",
+              "change": "Create SVG container with gradient definition",
+              "description": "Create the SVG pipeline visualization in the return statement. Render a div with className='relative w-full h-48 bg-slate-900/50 rounded-xl overflow-hidden'. Inside, add an SVG element with width='100%' height='100%' viewBox='0 0 1200 200' preserveAspectRatio='xMidYMid meet'. Add a defs section with a linearGradient id='pipelineGradient' going from #3b82f6 to #8b5cf6. This gradient will be used for the connection lines between stages.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg3-task2-micro4",
+              "filePath": "src/components/projects/pipeline-visualization.tsx",
+              "change": "Render SVG connection lines between stages",
+              "description": "Inside the SVG, map over stages to render connection lines. For each stage except the last, draw a line from the current stage box to the next. Use: stages.slice(0, -1).map((stage, index) => <line key={`line-${index}`} x1={100 + index * 160 + 60} y1={100} x2={100 + (index + 1) * 160 - 10} y2={100} stroke='url(#pipelineGradient)' strokeWidth={3} strokeDasharray={stage.status === 'pending' ? '5,5' : 'none'} className='transition-all duration-500' />). This creates connected lines between stage boxes.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg3-task2-micro5",
+              "filePath": "src/components/projects/pipeline-visualization.tsx",
+              "change": "Render stage boxes with icons, names and task counts",
+              "description": "After the lines, map over stages to render stage boxes. For each stage: <g key={stage.id} transform={`translate(${100 + index * 160}, 60)`}><rect width={120} height={80} rx={12} fill={stage.status === 'completed' ? '#22c55e' : stage.status === 'active' ? '#f59e0b' : '#374151'} className={stage.status === 'active' ? 'animate-pulse' : ''} /><text x={60} y={30} textAnchor='middle' fontSize={24}>{stage.icon}</text><text x={60} y={52} textAnchor='middle' fill='white' fontSize={11} fontWeight='bold'>{stage.name}</text><text x={60} y={68} textAnchor='middle' fill='white' fontSize={10} opacity={0.8}>{stage.taskCount} tasks</text></g>",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg3-task2-micro6",
+              "filePath": "src/components/projects/pipeline-visualization.tsx",
+              "change": "Add CSS keyframe animation for flowing dots along pipeline",
+              "description": "Add CSS keyframe animation for flowing dots. Create a style tag or add to the component: const dotAnimation = `@keyframes flowDot { 0% { offset-distance: 0%; opacity: 0; } 10% { opacity: 1; } 90% { opacity: 1; } 100% { offset-distance: 100%; opacity: 0; } }`. In the SVG, add animated circles: {[0,1,2].map(i => <circle key={`dot-${i}`} r={4} fill='#60a5fa' style={{ offsetPath: `path('M 160 100 L 1060 100')`, animation: `flowDot 3s linear ${i * 0.8}s infinite` }} />)}. Include the style in a <style> tag within the component.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg3-task2-micro7",
+              "filePath": "src/components/projects/pipeline-visualization.tsx",
+              "change": "Add useEffect to fetch real pipeline data from API",
+              "description": "Add a useEffect hook to fetch actual stage data from the API. Inside useEffect with [projectId] dependency: const fetchPipelineData = async () => { try { const res = await fetch(`/api/projects/${projectId}/pipeline`); if (res.ok) { const data = await res.json(); setStages(prev => prev.map(stage => ({ ...stage, taskCount: data.stageCounts?.[stage.id] || 0, status: data.stageStatuses?.[stage.id] || stage.status }))); } } catch (error) { console.error('Failed to fetch pipeline data:', error); } }; fetchPipelineData();",
+              "status": "pending"
+            }
+          ]
         },
         {
           "taskId": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg3-task3",
           "taskNumber": 3,
           "originalDescription": "Below the pipeline, show a table of tasks for this project:",
-          "status": "pending",
-          "approved": false,
-          "rewritten": false,
-          "microTasks": []
+          "status": "approved",
+          "approved": true,
+          "rewritten": true,
+          "microTasks": [
+            {
+              "id": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg3-task3-micro1",
+              "filePath": "src/components/projects/pipeline-visualization.tsx",
+              "change": "Add tasks state and fetch tasks data",
+              "description": "Add state for tasks: const [tasks, setTasks] = useState<ProjectTask[]>([]). Define interface ProjectTask { id: string; number: number; name: string; stage: string; assignedAgent: string | null; status: string; createdAt: string; estimatedTime?: string }. In the existing useEffect, extend the fetch to also get tasks: const tasksRes = await fetch(`/api/projects/${projectId}/tasks`); if (tasksRes.ok) { const tasksData = await tasksRes.json(); setTasks(tasksData.tasks || []); }",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg3-task3-micro2",
+              "filePath": "src/components/projects/pipeline-visualization.tsx",
+              "change": "Import Table components, Badge, and useRouter",
+              "description": "Import Table components at the top: import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'. Also import Badge from '@/components/ui/badge and useRouter from next/navigation for row click navigation. Add const router = useRouter() inside the component.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg3-task3-micro3",
+              "filePath": "src/components/projects/pipeline-visualization.tsx",
+              "change": "Add Card with Table structure for tasks",
+              "description": "Below the SVG pipeline div, add a Card component for the tasks table. Structure: <Card className='mt-6'><CardHeader><CardTitle className='text-lg'>Project Tasks</CardTitle></CardHeader><CardContent><Table><TableHeader><TableRow><TableHead className='w-20'>Task #</TableHead><TableHead>Name</TableHead><TableHead>Stage</TableHead><TableHead>Assigned Agent</TableHead><TableHead>Status</TableHead><TableHead className='text-right'>Time</TableHead></TableRow></TableHeader><TableBody>{/* rows here */}</TableBody></Table></CardContent></Card>",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg3-task3-micro4",
+              "filePath": "src/components/projects/pipeline-visualization.tsx",
+              "change": "Render task rows with click navigation to task detail",
+              "description": "Inside TableBody, map over tasks to render rows: {tasks.map(task => (<TableRow key={task.id} className='cursor-pointer hover:bg-slate-800/50 transition-colors' onClick={() => router.push(`/tasks/${task.id}`)}><TableCell className='font-mono text-sm'>#{task.number}</TableCell><TableCell className='font-medium'>{task.name}</TableCell><TableCell><Badge variant='outline' className='text-xs'>{task.stage}</Badge></TableCell><TableCell>{task.assignedAgent || <span className='text-slate-500'>Unassigned</span>}</TableCell><TableCell><Badge variant={task.status === 'completed' ? 'default' : task.status === 'in_progress' ? 'secondary' : 'outline'} className={task.status === 'completed' ? 'bg-green-600' : task.status === 'in_progress' ? 'bg-amber-600' : ''}>{task.status}</Badge></TableCell><TableCell className='text-right text-slate-400'>{task.estimatedTime || '-'}</TableCell></TableRow>))}",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg3-task3-micro5",
+              "filePath": "src/app/api/projects/[id]/tasks/route.ts",
+              "change": "Create API route to fetch project tasks",
+              "description": "Create a new API route file. Add: import { NextRequest, NextResponse } from 'next/server'; import { prisma } from '@/lib/prisma'. Export async function GET(request: NextRequest, { params }: { params: { id: string } }) { try { const tasks = await prisma.task.findMany({ where: { projectId: params.id }, orderBy: { createdAt: 'desc' }, select: { id: true, name: true, status: true, stage: true, createdAt: true, assignedAgentId: true, agent: { select: { name: true } } } }); const formattedTasks = tasks.map((t, i) => ({ id: t.id, number: tasks.length - i, name: t.name, stage: t.stage || 'planning', assignedAgent: t.agent?.name || null, status: t.status, createdAt: t.createdAt.toISOString() })); return NextResponse.json({ tasks: formattedTasks }); } catch (error) { return NextResponse.json({ tasks: [] }, { status: 500 }); } }",
+              "status": "pending"
+            }
+          ]
         },
         {
           "taskId": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg3-task4",
           "taskNumber": 4,
           "originalDescription": "Stats bar above the pipeline:",
-          "status": "pending",
-          "approved": false,
-          "rewritten": false,
-          "microTasks": []
+          "status": "approved",
+          "approved": true,
+          "rewritten": true,
+          "microTasks": [
+            {
+              "id": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg3-task4-micro1",
+              "filePath": "src/components/projects/pipeline-visualization.tsx",
+              "change": "Add stats state with interface definition",
+              "description": "Add state for pipeline stats: const [stats, setStats] = useState({ totalTasks: 0, completed: 0, inProgress: 0, activeAgents: 0, estimatedCompletion: 'Calculating...' }). Define interface PipelineStats { totalTasks: number; completed: number; inProgress: number; activeAgents: number; estimatedCompletion: string }. Update the state type to use this interface.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg3-task4-micro2",
+              "filePath": "src/components/projects/pipeline-visualization.tsx",
+              "change": "Calculate stats from fetched tasks data",
+              "description": "In the useEffect, after fetching tasks, calculate stats: const completed = tasks.filter(t => t.status === 'completed').length; const inProgress = tasks.filter(t => t.status === 'in_progress').length; const uniqueAgents = new Set(tasks.filter(t => t.assignedAgent).map(t => t.assignedAgent)).size; const avgTimePerTask = 2; const remainingTasks = tasks.length - completed; const hoursRemaining = remainingTasks * avgTimePerTask; const estimatedCompletion = hoursRemaining > 0 ? `~${Math.ceil(hoursRemaining)} hours` : 'Complete'; setStats({ totalTasks: tasks.length, completed, inProgress, activeAgents: uniqueAgents, estimatedCompletion });",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg3-task4-micro3",
+              "filePath": "src/components/projects/pipeline-visualization.tsx",
+              "change": "Add stats bar grid layout above pipeline",
+              "description": "At the very top of the return statement, before the SVG pipeline, add a stats bar. Structure: <div className='grid grid-cols-2 md:grid-cols-5 gap-4 mb-6'>{[{ label: 'Total Tasks', value: stats.totalTasks, icon: '📊' }, { label: 'Completed', value: stats.completed, icon: '✅', color: 'text-green-400' }, { label: 'In Progress', value: stats.inProgress, icon: '⚡', color: 'text-amber-400' }, { label: 'Active Agents', value: stats.activeAgents, icon: '🤖', color: 'text-blue-400' }, { label: 'Est. Completion', value: stats.estimatedCompletion, icon: '⏱️', color: 'text-purple-400' }].map(stat => (/* stat card */))}</div>",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg3-task4-micro4",
+              "filePath": "src/components/projects/pipeline-visualization.tsx",
+              "change": "Render individual stat cards with styling",
+              "description": "Complete the stat card mapping: .map(stat => (<div key={stat.label} className='bg-slate-800/50 rounded-lg p-4 border border-slate-700'><div className='flex items-center gap-2 mb-1'><span>{stat.icon}</span><span className='text-xs text-slate-400 uppercase tracking-wide'>{stat.label}</span></div><div className={`text-2xl font-bold ${stat.color || 'text-white'}`}>{stat.value}</div></div>)). This creates visually appealing stat cards with icons, labels, and values with appropriate color coding.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg3-task4-micro5",
+              "filePath": "src/app/api/projects/[id]/pipeline/route.ts",
+              "change": "Create API route for pipeline stage data",
+              "description": "Create a new API route file for pipeline data. Add: import { NextRequest, NextResponse } from 'next/server'; import { prisma } from '@/lib/prisma'. Export async function GET(request: NextRequest, { params }: { params: { id: string } }) { try { const tasks = await prisma.task.findMany({ where: { projectId: params.id }, select: { stage: true, status: true } }); const stageCounts: Record<string, number> = {}; const stageStatuses: Record<string, string> = {}; const stageOrder = ['idea', 'analysis', 'planning', 'development', 'review', 'security', 'deploy']; tasks.forEach(t => { const stage = t.stage || 'planning'; stageCounts[stage] = (stageCounts[stage] || 0) + 1; }); let foundActive = false; stageOrder.forEach(stage => { if (stageCounts[stage] > 0 && !foundActive) { stageStatuses[stage] = 'active'; foundActive = true; } else if (stageCounts[stage] > 0) { stageStatuses[stage] = 'completed'; } else { stageStatuses[stage] = 'pending'; } }); return NextResponse.json({ stageCounts, stageStatuses }); } catch (error) { return NextResponse.json({ stageCounts: {}, stageStatuses: {} }, { status: 500 }); } }",
+              "status": "pending"
+            }
+          ]
         },
         {
           "taskId": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg3-task5",
           "taskNumber": 5,
           "originalDescription": "The pipeline should animate on load — dots appearing at \"Idea\" and flowing through to \"Deploy\". When a task moves stages, a new dot appears. Use requestAnimationFrame for smooth animation.",
-          "status": "pending",
-          "approved": false,
-          "rewritten": false,
-          "microTasks": []
+          "status": "approved",
+          "approved": true,
+          "rewritten": true,
+          "microTasks": [
+            {
+              "id": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg3-task5-micro1",
+              "filePath": "src/components/projects/pipeline-visualization.tsx",
+              "change": "Add refs and state for dot animation tracking",
+              "description": "Add animation state and refs at the top of the component: const svgRef = useRef<SVGSVGElement>(null); const animationRef = useRef<number>(0); const [dots, setDots] = useState<{id: number; x: number; opacity: number; speed: number}[]>([]); const dotIdCounter = useRef(0). These will track animated dots flowing through the pipeline.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg3-task5-micro2",
+              "filePath": "src/components/projects/pipeline-visualization.tsx",
+              "change": "Create requestAnimationFrame animation loop for dots",
+              "description": "Create the animation loop function inside the component: const animateDots = useCallback(() => { setDots(prevDots => { const updated = prevDots.map(dot => ({ ...dot, x: dot.x + dot.speed, opacity: dot.x > 1000 ? Math.max(0, dot.opacity - 0.05) : dot.x < 100 ? Math.min(1, dot.opacity + 0.1) : dot.opacity })).filter(dot => dot.opacity > 0 || dot.x < 1100); return updated; }); animationRef.current = requestAnimationFrame(animateDots); }, []); This smoothly moves dots and fades them at edges.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg3-task5-micro3",
+              "filePath": "src/components/projects/pipeline-visualization.tsx",
+              "change": "Start animation on mount with initial dot spawning",
+              "description": "Add useEffect to start animation on mount and spawn initial dots: useEffect(() => { const spawnDot = () => { setDots(prev => [...prev, { id: dotIdCounter.current++, x: 80, opacity: 0, speed: 1 + Math.random() * 0.5 }]); }; const spawnInterval = setInterval(spawnDot, 2000); spawnDot(); spawnDot(); setTimeout(spawnDot, 500); animationRef.current = requestAnimationFrame(animateDots); return () => { clearInterval(spawnInterval); if (animationRef.current) cancelAnimationFrame(animationRef.current); }; }, [animateDots]);",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg3-task5-micro4",
+              "filePath": "src/components/projects/pipeline-visualization.tsx",
+              "change": "Render animated dots in SVG with glow effect",
+              "description": "In the SVG element, add ref={svgRef} and render the animated dots. After the stage boxes mapping, add: {dots.map(dot => (<circle key={dot.id} cx={dot.x} cy={100} r={5} fill='#60a5fa' opacity={dot.opacity} className='drop-shadow-[0_0_8px_rgba(96,165,250,0.8)]' />))}. The drop-shadow creates a glowing effect on the flowing dots.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg3-task5-micro5",
+              "filePath": "src/components/projects/pipeline-visualization.tsx",
+              "change": "Add function to spawn dots when tasks move between stages",
+              "description": "Add a function to spawn a new dot when a task moves stages. Create: const spawnTaskDot = useCallback((fromStageIndex: number) => { const startX = 100 + fromStageIndex * 160 + 60; setDots(prev => [...prev, { id: dotIdCounter.current++, x: startX, opacity: 1, speed: 2 }]); }, []); Export this function or call it when task data updates. In the useEffect that fetches tasks, add: if (prevTasksRef.current) { /* compare stages and spawn dots for moved tasks */ }. Add const prevTasksRef = useRef<ProjectTask[]>([]) to track previous tasks.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg3-task5-micro6",
+              "filePath": "src/components/projects/pipeline-visualization.tsx",
+              "change": "Add entrance animations for pipeline and stage boxes",
+              "description": "Add entrance animation for the entire pipeline. Wrap the main container in a div with animation: <div className='animate-in fade-in slide-in-from-bottom-4 duration-700'>. Also add staggered animation to stage boxes by modifying the g element: style={{ animation: `fadeIn 0.5s ease-out ${index * 0.1}s both` }}. Add the fadeIn keyframe to the style tag: @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }",
+              "status": "pending"
+            }
+          ]
         }
       ]
     },
@@ -85,46 +272,205 @@
           "taskId": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg5-task1",
           "taskNumber": 1,
           "originalDescription": "Create src/app/api/ideas/[id]/analyze/route.ts — Deep analysis endpoint:",
-          "status": "pending",
-          "approved": false,
-          "rewritten": false,
-          "microTasks": []
+          "status": "approved",
+          "approved": true,
+          "rewritten": true,
+          "microTasks": [
+            {
+              "id": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg5-task1-micro1",
+              "filePath": "src/app/api/ideas/[id]/analyze/route.ts",
+              "change": "Create file with imports, POST handler, and input validation",
+              "description": "Create a new file at this exact path. Start by importing NextRequest and NextResponse from 'next/server'. Define an async POST function that extracts the 'id' parameter from the URL using params.id. Parse the request body using await request.json() to extract ideaId, ideaTitle, and ideaDescription fields. Add input validation to check that all three fields exist and are non-empty strings, returning a 400 error with message 'Missing required fields' if validation fails.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg5-task1-micro2",
+              "filePath": "src/app/api/ideas/[id]/analyze/route.ts",
+              "change": "Build the analysis prompt message with all 10 analysis points",
+              "description": "After validation, construct the Telegram message for OpenClaw. Create a const analysisPrompt that contains the exact template: '🔬 Deep Analysis Request for idea: {title}. Description: {description}. Provide comprehensive analysis: 1. Market size and opportunity 2. Competitor landscape (list top 5) 3. Unique value proposition 4. Technical feasibility (1-10) 5. Estimated development time 6. Recommended tech stack 7. Cost estimate (hosting, APIs, tools) 8. Revenue model suggestions 9. Risk assessment 10. Go/No-Go recommendation with reasoning'. Replace {title} with ideaTitle and {description} with ideaDescription using template literals.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg5-task1-micro3",
+              "filePath": "src/app/api/ideas/[id]/analyze/route.ts",
+              "change": "Send the analysis request to Telegram via bot API",
+              "description": "Implement the Telegram send functionality. Get TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID from process.env. Construct the Telegram API URL as `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`. Use fetch to POST with headers 'Content-Type': 'application/json' and body containing chat_id set to TELEGRAM_CHAT_ID, text set to analysisPrompt, and parse_mode set to 'HTML'. Wrap this in a try-catch block to handle network errors gracefully.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg5-task1-micro4",
+              "filePath": "src/app/api/ideas/[id]/analyze/route.ts",
+              "change": "Handle response and return success/error JSON",
+              "description": "After successfully sending the Telegram message, return a NextResponse.json() with the object {success: true, message: 'Analysis request sent', ideaId: id}. If the Telegram API returns an error (check response.ok), throw an error with the message 'Failed to send to Telegram'. In the catch block, return NextResponse.json with {success: false, error: error.message} and status 500. Export the POST function as a named export.",
+              "status": "pending"
+            }
+          ]
         },
         {
           "taskId": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg5-task2",
           "taskNumber": 2,
           "originalDescription": "In the Ideas Lab page, when clicking \"Research\" on an idea:",
-          "status": "pending",
-          "approved": false,
-          "rewritten": false,
-          "microTasks": []
+          "status": "approved",
+          "approved": true,
+          "rewritten": true,
+          "microTasks": [
+            {
+              "id": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg5-task2-micro1",
+              "filePath": "src/app/ideas/page.tsx",
+              "change": "Add analyzingId state to track which idea is being analyzed",
+              "description": "At the top of the IdeasPage component, add a new state variable using useState to track which idea is currently being analyzed. Add: const [analyzingId, setAnalyzingId] = useState<string | null>(null). This will store the ID of the idea that is currently in the analysis process, allowing us to show the loading state only for that specific idea card while leaving others interactive.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg5-task2-micro2",
+              "filePath": "src/app/ideas/page.tsx",
+              "change": "Create handleAnalyzeIdea function with fetch call",
+              "description": "Create a new async function called handleAnalyzeIdea that takes parameters ideaId: string, ideaTitle: string, and ideaDescription: string. Inside this function, first call setAnalyzingId(ideaId) to set the loading state. Then use a try block to call fetch('/api/ideas/' + ideaId + '/analyze', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ideaId, ideaTitle, ideaDescription }) }). Parse the response with await response.json().",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg5-task2-micro3",
+              "filePath": "src/app/ideas/page.tsx",
+              "change": "Handle success/error responses and update idea status",
+              "description": "Continue the handleAnalyzeIdea function: after getting the response data, check if data.success is true. If successful, use toast.success('Analysis request sent! AI is analyzing your idea...') to notify the user. Then update the local ideas state to change this idea's status to 'research' by calling setIdeas(prev => prev.map(idea => idea.id === ideaId ? {...idea, status: 'research'} : idea)). In the catch block, call toast.error('Failed to start analysis'). In the finally block, call setAnalyzingId(null) to reset the loading state.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg5-task2-micro4",
+              "filePath": "src/app/ideas/page.tsx",
+              "change": "Wire up Research button with loading state and dynamic text",
+              "description": "Find the idea card component or the section where ideas are rendered with action buttons. Locate the 'Research' button (it might be labeled 'Analyze' or similar). Replace its onClick handler with onClick={() => handleAnalyzeIdea(idea.id, idea.title, idea.description)}. Add a disabled prop: disabled={analyzingId === idea.id}. Change the button text conditionally: {analyzingId === idea.id ? 'AI is analyzing your idea... This may take 2-3 minutes' : 'Research'}. Add a Loader2 icon from lucide-react with className='animate-spin mr-2' when analyzingId matches.",
+              "status": "pending"
+            }
+          ]
         },
         {
           "taskId": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg5-task3",
           "taskNumber": 3,
           "originalDescription": "Create src/app/api/ideas/[id]/plan/route.ts — Planning endpoint:",
-          "status": "pending",
-          "approved": false,
-          "rewritten": false,
-          "microTasks": []
+          "status": "approved",
+          "approved": true,
+          "rewritten": true,
+          "microTasks": [
+            {
+              "id": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg5-task3-micro1",
+              "filePath": "src/app/api/ideas/[id]/plan/route.ts",
+              "change": "Create file with POST handler and validation",
+              "description": "Create this new file and import NextRequest and NextResponse from 'next/server'. Define an async POST function that accepts request: NextRequest and a context object with params. Extract the idea ID using params.id or await params then access id. Parse the request body to get ideaTitle and ideaDescription. Validate that both fields exist, returning NextResponse.json({error: 'Missing idea details'}, {status: 400}) if either is missing.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg5-task3-micro2",
+              "filePath": "src/app/api/ideas/[id]/plan/route.ts",
+              "change": "Build the planning prompt with phase breakdown instructions",
+              "description": "Construct the planning prompt message for OpenClaw. Create a const planningPrompt with the exact text: '📋 Create detailed development plan for: {title}. Break down into: Phase 1 (MVP), Phase 2 (Core features), Phase 3 (Advanced). For each phase list specific tasks with: task name, department (Frontend/Backend/Security/QA), estimated hours, dependencies.' Replace {title} with the ideaTitle variable using template literal substitution. Also append the ideaDescription after the main prompt for context.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg5-task3-micro3",
+              "filePath": "src/app/api/ideas/[id]/plan/route.ts",
+              "change": "Send planning request to Telegram and handle response",
+              "description": "Implement Telegram API integration identical to the analyze endpoint. Read TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID from process.env. Make a fetch POST request to 'https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage' with JSON body containing chat_id, text set to planningPrompt, and parse_mode 'HTML'. Check if the response is OK, throw error if not. Return NextResponse.json({success: true, message: 'Planning request sent'}) on success, or {success: false, error: message} with status 500 on failure.",
+              "status": "pending"
+            }
+          ]
         },
         {
           "taskId": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg5-task4",
           "taskNumber": 4,
           "originalDescription": "Create src/app/api/ideas/[id]/execute/route.ts — Execution endpoint:",
-          "status": "pending",
-          "approved": false,
-          "rewritten": false,
-          "microTasks": []
+          "status": "approved",
+          "approved": true,
+          "rewritten": true,
+          "microTasks": [
+            {
+              "id": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg5-task4-micro1",
+              "filePath": "src/app/api/ideas/[id]/execute/route.ts",
+              "change": "Create file with POST handler and validate inputs including tasks array",
+              "description": "Create this new file with imports: NextRequest and NextResponse from 'next/server'. Define an async POST function. Extract the idea ID from params. Parse the request body expecting fields: ideaTitle (string), ideaDescription (string), and tasks (array of task objects with name, department, estimatedHours, dependencies). Validate that ideaTitle exists and tasks is an array with at least one element, returning 400 error if validation fails.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg5-task4-micro2",
+              "filePath": "src/app/api/ideas/[id]/execute/route.ts",
+              "change": "Create new project via internal API call",
+              "description": "Create the project by making an internal API call. Use fetch with the full URL: process.env.NEXT_PUBLIC_APP_URL + '/api/projects' or use a relative URL if running server-side. POST with method 'POST', headers {'Content-Type': 'application/json'}, and body JSON.stringify({name: ideaTitle, description: ideaDescription, status: 'planning', ideaId: id}). Await the response and parse JSON to get the created project data. Extract projectId from the response. If project creation fails, throw an error.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg5-task4-micro3",
+              "filePath": "src/app/api/ideas/[id]/execute/route.ts",
+              "change": "Create multiple tasks from the plan via API calls",
+              "description": "After project creation, iterate through the tasks array to create each task. Use a for...of loop or Promise.all with tasks.map(). For each task object, make a POST request to '/api/tasks' with body: {title: task.name, projectId: projectId, department: task.department, estimatedHours: task.estimatedHours, dependencies: task.dependencies, status: 'pending'}. Count successful task creations in a variable let taskCount = 0, incrementing for each successful response.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg5-task4-micro4",
+              "filePath": "src/app/api/ideas/[id]/execute/route.ts",
+              "change": "Return projectId and taskCount on success, handle errors",
+              "description": "After all tasks are created, return the success response with NextResponse.json({success: true, projectId: projectId, taskCount: taskCount, message: 'Project created with ' + taskCount + ' tasks'}). Wrap the entire project and task creation logic in a try-catch block. In the catch block, log the error with console.error('Execution failed:', error) and return NextResponse.json({success: false, error: 'Failed to execute idea'}, {status: 500}).",
+              "status": "pending"
+            }
+          ]
         },
         {
           "taskId": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg5-task5",
           "taskNumber": 5,
           "originalDescription": "Update Ideas Lab UI to show the full pipeline with visual progress for each idea:",
-          "status": "pending",
-          "approved": false,
-          "rewritten": false,
-          "microTasks": []
+          "status": "approved",
+          "approved": true,
+          "rewritten": true,
+          "microTasks": [
+            {
+              "id": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg5-task5-micro1",
+              "filePath": "src/app/ideas/page.tsx",
+              "change": "Define pipeline stage types and configuration object",
+              "description": "Define a TypeScript type or interface at the top of the file for the pipeline stages. Create: type PipelineStage = 'submitted' | 'analyzing' | 'analysis_complete' | 'planning' | 'plan_ready' | 'in_development'. Then create a const STAGE_CONFIG object that maps each stage to its display properties: {submitted: {label: 'Submitted', color: 'gray', icon: FileText}, analyzing: {label: 'Analyzing', color: 'amber', animated: true}, analysis_complete: {label: 'Analysis Complete', color: 'blue'}, planning: {label: 'Planning', color: 'amber', animated: true}, plan_ready: {label: 'Plan Ready', color: 'purple'}, in_development: {label: 'In Development', color: 'green'}}.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg5-task5-micro2",
+              "filePath": "src/app/ideas/page.tsx",
+              "change": "Create PipelineProgress component with visual stepper",
+              "description": "Create a new component function called PipelineProgress that takes props: {currentStage: PipelineStage, ideaId: string}. This component renders a horizontal stepper/progress bar showing all 6 stages. Use a flex container with justify-between. For each stage, render a circle with the stage number (1-6), colored according to whether it's completed (green), current (stage color from config), or pending (gray). Connect circles with lines that are also colored based on progress. Add stage labels below each circle.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg5-task5-micro3",
+              "filePath": "src/app/ideas/page.tsx",
+              "change": "Create StageActions component with conditional button rendering",
+              "description": "Create a component called StageActions that takes props: {stage: PipelineStage, ideaId: string, onAnalyze: Function, onApproveAnalysis: Function, onRejectAnalysis: Function, onStartDevelopment: Function, projectId?: string}. Use a switch statement on stage to render different buttons: 'submitted' shows Button with onClick={onAnalyze} text 'Analyze'; 'analyzing' shows Loader2 with animate-spin and text 'AI working...'; 'analysis_complete' shows two buttons 'Approve' and 'Reject'; 'planning' shows 'Creating plan...' with spinner; 'plan_ready' shows 'Start Development' button; 'in_development' shows Link to '/projects/' + projectId.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg5-task5-micro4",
+              "filePath": "src/app/ideas/page.tsx",
+              "change": "Integrate PipelineProgress into idea cards",
+              "description": "In the main ideas list rendering section, find where each idea card is rendered. Replace or enhance the card content to include the PipelineProgress component at the top of each card: <PipelineProgress currentStage={idea.status as PipelineStage} ideaId={idea.id} />. Below the progress bar, add a section that shows stage-specific content: for 'analysis_complete' show the analysis summary if available (idea.analysisSummary), for 'plan_ready' show a collapsible task breakdown list. Use Collapsible from shadcn or a simple toggle state.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg5-task5-micro5",
+              "filePath": "src/app/ideas/page.tsx",
+              "change": "Add StageActions to cards with all handler props",
+              "description": "Add the StageActions component to each idea card, positioned below the stage-specific content. Pass all required props: stage={idea.status}, ideaId={idea.id}, onAnalyze={() => handleAnalyzeIdea(idea.id, idea.title, idea.description)}, onApproveAnalysis={() => handleApproveAnalysis(idea.id)}, onRejectAnalysis={() => handleRejectAnalysis(idea.id)}, onStartDevelopment={() => handleStartDevelopment(idea.id)}, projectId={idea.projectId}. Style the actions section with a border-t, pt-4, and mt-4 for visual separation.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg5-task5-micro6",
+              "filePath": "src/app/ideas/page.tsx",
+              "change": "Implement handleApproveAnalysis, handleRejectAnalysis, handleStartDevelopment functions",
+              "description": "Create the missing handler functions: handleApproveAnalysis(ideaId: string) which calls fetch('/api/ideas/' + ideaId + '/plan', {method: 'POST', body: JSON.stringify({ideaTitle: ideas.find(i => i.id === ideaId).title, ideaDescription: ideas.find(i => i.id === ideaId).description})}) and updates the idea status to 'planning'. Create handleRejectAnalysis(ideaId: string) that simply updates the idea status back to 'submitted'. Create handleStartDevelopment(ideaId: string) that calls the execute endpoint and on success updates status to 'in_development' and stores the returned projectId in the idea state.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg5-task5-micro7",
+              "filePath": "src/app/ideas/page.tsx",
+              "change": "Add pulse and glow animations for active processing stages",
+              "description": "Add animation classes for the 'analyzing' and 'planning' stages. When stage is 'analyzing' or 'planning', add a CSS animation to the stage indicator. Use className conditionally: `${STAGE_CONFIG[stage].animated ? 'animate-pulse' : ''}`. For the progress line between stages, if the current stage has animated: true, apply a gradient animation using Tailwind's animate-gradient or a custom CSS animation. Add a subtle glow effect to the current stage circle using shadow-lg and the stage's color.",
+              "status": "pending"
+            }
+          ]
         }
       ]
     },
@@ -143,46 +489,86 @@
           "taskId": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg7-task1",
           "taskNumber": 1,
           "originalDescription": "Install next-intl if not installed: npm install next-intl",
-          "status": "pending",
-          "approved": false,
-          "rewritten": false,
-          "microTasks": []
+          "status": "approved",
+          "approved": true,
+          "rewritten": true,
+          "microTasks": [
+            {
+              "id": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg7-task1-micro1",
+              "filePath": "src/app/dashboard/page.tsx",
+              "change": "Analyze and implement the requested feature",
+              "description": "Implement the following task with precision: Install next-intl if not installed: npm install next-intl. First identify the correct file and component, then make the necessary changes following the project's coding standards.",
+              "status": "pending"
+            }
+          ]
         },
         {
           "taskId": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg7-task2",
           "taskNumber": 2,
           "originalDescription": "Create src/messages/en.json with ALL UI text (at least 150 keys). Cover: navigation names, button labels, page titles, status messages, form labels, error messages, placeholders.",
-          "status": "pending",
-          "approved": false,
-          "rewritten": false,
-          "microTasks": []
+          "status": "approved",
+          "approved": true,
+          "rewritten": true,
+          "microTasks": [
+            {
+              "id": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg7-task2-micro1",
+              "filePath": "src/app/dashboard/page.tsx",
+              "change": "Analyze and implement the requested feature",
+              "description": "Implement the following task with precision: Create src/messages/en.json with ALL UI text (at least 150 keys). Cover: navigation names, button labels, page titles, status messages, form labels, error messages, placeholders.. First identify the correct file and component, then make the necessary changes following the project's coding standards.",
+              "status": "pending"
+            }
+          ]
         },
         {
           "taskId": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg7-task3",
           "taskNumber": 3,
           "originalDescription": "Create src/messages/ar.json with professional Arabic translations. Examples:",
-          "status": "pending",
-          "approved": false,
-          "rewritten": false,
-          "microTasks": []
+          "status": "approved",
+          "approved": true,
+          "rewritten": true,
+          "microTasks": [
+            {
+              "id": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg7-task3-micro1",
+              "filePath": "src/app/dashboard/page.tsx",
+              "change": "Analyze and implement the requested feature",
+              "description": "Implement the following task with precision: Create src/messages/ar.json with professional Arabic translations. Examples:. First identify the correct file and component, then make the necessary changes following the project's coding standards.",
+              "status": "pending"
+            }
+          ]
         },
         {
           "taskId": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg7-task4",
           "taskNumber": 4,
           "originalDescription": "Create src/components/layout/LanguageToggle.tsx:",
-          "status": "pending",
-          "approved": false,
-          "rewritten": false,
-          "microTasks": []
+          "status": "approved",
+          "approved": true,
+          "rewritten": true,
+          "microTasks": [
+            {
+              "id": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg7-task4-micro1",
+              "filePath": "src/app/dashboard/page.tsx",
+              "change": "Analyze and implement the requested feature",
+              "description": "Implement the following task with precision: Create src/components/layout/LanguageToggle.tsx:. First identify the correct file and component, then make the necessary changes following the project's coding standards.",
+              "status": "pending"
+            }
+          ]
         },
         {
           "taskId": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg7-task5",
           "taskNumber": 5,
           "originalDescription": "Add the LanguageToggle to the navbar (next to user avatar). When RTL:",
-          "status": "pending",
-          "approved": false,
-          "rewritten": false,
-          "microTasks": []
+          "status": "approved",
+          "approved": true,
+          "rewritten": true,
+          "microTasks": [
+            {
+              "id": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg7-task5-micro1",
+              "filePath": "src/app/dashboard/page.tsx",
+              "change": "Analyze and implement the requested feature",
+              "description": "Implement the following task with precision: Add the LanguageToggle to the navbar (next to user avatar). When RTL:. First identify the correct file and component, then make the necessary changes following the project's coding standards.",
+              "status": "pending"
+            }
+          ]
         }
       ]
     },
@@ -201,46 +587,198 @@
           "taskId": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg9-task1",
           "taskNumber": 1,
           "originalDescription": "Install zod: npm install zod. Create src/lib/validators.ts:",
-          "status": "pending",
-          "approved": false,
-          "rewritten": false,
-          "microTasks": []
+          "status": "approved",
+          "approved": true,
+          "rewritten": true,
+          "microTasks": [
+            {
+              "id": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg9-task1-micro1",
+              "filePath": "package.json",
+              "change": "Install zod dependency via npm",
+              "description": "Run npm install zod in the project root directory. This will add zod to the dependencies in package.json. Zod is a TypeScript-first schema validation library that will be used for input validation across all API routes. After installation, verify that zod appears in the dependencies section of package.json with a version like ^3.x.x.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg9-task1-micro2",
+              "filePath": "src/lib/validators.ts",
+              "change": "Create loginSchema for password validation",
+              "description": "Create a new file src/lib/validators.ts. At the top, import z from 'zod'. Create and export loginSchema using z.object() with a password field that is z.string().min(1, 'Password is required'). This schema validates that login requests contain a non-empty password string. Export the type LoginInput using z.infer<typeof loginSchema>.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg9-task1-micro3",
+              "filePath": "src/lib/validators.ts",
+              "change": "Create ideaSchema for idea validation",
+              "description": "In src/lib/validators.ts, add and export ideaSchema using z.object() with: title field as z.string().min(3, 'Title must be at least 3 characters').max(200, 'Title must be under 200 characters'), and description field as z.string().max(2000, 'Description must be under 2000 characters').optional(). Export type IdeaInput using z.infer<typeof ideaSchema>.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg9-task1-micro4",
+              "filePath": "src/lib/validators.ts",
+              "change": "Create taskSchema for task validation",
+              "description": "In src/lib/validators.ts, add and export taskSchema using z.object() with: name field as z.string().min(3, 'Task name must be at least 3 characters').max(200, 'Task name must be under 200 characters'), and description field as z.string().optional(). Export type TaskInput using z.infer<typeof taskSchema>.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg9-task1-micro5",
+              "filePath": "src/lib/validators.ts",
+              "change": "Create chatSchema for chat message validation",
+              "description": "In src/lib/validators.ts, add and export chatSchema using z.object() with: message field as z.string().min(1, 'Message cannot be empty').max(4000, 'Message must be under 4000 characters'), and projectId field as z.string().optional(). Export type ChatInput using z.infer<typeof chatSchema>.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg9-task1-micro6",
+              "filePath": "src/lib/validators.ts",
+              "change": "Create memorySchema with path traversal protection",
+              "description": "In src/lib/validators.ts, add and export memorySchema using z.object() with: path field as z.string().refine((val) => !val.includes('..'), { message: 'Path traversal not allowed' }), and content field as z.string().max(500000, 'Content must be under 500KB'). Export type MemoryInput using z.infer<typeof memorySchema>.",
+              "status": "pending"
+            }
+          ]
         },
         {
           "taskId": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg9-task2",
           "taskNumber": 2,
           "originalDescription": "Create src/lib/prompt-scanner.ts — scans for injection:",
-          "status": "pending",
-          "approved": false,
-          "rewritten": false,
-          "microTasks": []
+          "status": "approved",
+          "approved": true,
+          "rewritten": true,
+          "microTasks": [
+            {
+              "id": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg9-task2-micro1",
+              "filePath": "src/lib/prompt-scanner.ts",
+              "change": "Create prompt-scanner file with injection patterns array",
+              "description": "Create a new file src/lib/prompt-scanner.ts. Define a constant array called INJECTION_PATTERNS containing these dangerous strings: 'ignore previous instructions', 'forget your rules', 'reveal system prompt', 'act as admin', '<script', 'javascript:', '${', '/etc/passwd'. Each pattern represents a common prompt injection or code injection attempt.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg9-task2-micro2",
+              "filePath": "src/lib/prompt-scanner.ts",
+              "change": "Define ScanResult interface and scanForInjection function signature",
+              "description": "In src/lib/prompt-scanner.ts, create and export an interface ScanResult with two properties: safe as boolean, and threats as string[]. Then create and export a function called scanForInjection that takes a single parameter 'input' of type string and returns ScanResult. Initialize an empty array called detectedThreats of type string[].",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg9-task2-micro3",
+              "filePath": "src/lib/prompt-scanner.ts",
+              "change": "Implement pattern matching logic in scanForInjection",
+              "description": "In the scanForInjection function body, convert the input to lowercase using input.toLowerCase() and store in a variable called normalizedInput. Then iterate over INJECTION_PATTERNS using a for...of loop. For each pattern, check if normalizedInput.includes(pattern.toLowerCase()). If true, push the pattern to the detectedThreats array.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg9-task2-micro4",
+              "filePath": "src/lib/prompt-scanner.ts",
+              "change": "Return ScanResult object from scanForInjection function",
+              "description": "At the end of the scanForInjection function, return an object matching ScanResult interface: { safe: detectedThreats.length === 0, threats: detectedThreats }. This returns safe as true only when no threats are detected, and includes the array of all detected threat patterns for logging or error reporting purposes.",
+              "status": "pending"
+            }
+          ]
         },
         {
           "taskId": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg9-task3",
           "taskNumber": 3,
           "originalDescription": "Apply validation to API routes:",
-          "status": "pending",
-          "approved": false,
-          "rewritten": false,
-          "microTasks": []
+          "status": "approved",
+          "approved": true,
+          "rewritten": true,
+          "microTasks": [
+            {
+              "id": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg9-task3-micro1",
+              "filePath": "src/app/api/chat/send/route.ts",
+              "change": "Add Zod validation to chat send endpoint",
+              "description": "In src/app/api/chat/send/route.ts, add imports at the top: import { chatSchema } from '@/lib/validators' and import { scanForInjection } from '@/lib/prompt-scanner'. In the POST function handler, after parsing the request body with await request.json(), add validation: const validation = chatSchema.safeParse(body). If !validation.success, return NextResponse.json({ error: 'Validation failed', details: validation.error.flatten() }, { status: 400 }).",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg9-task3-micro2",
+              "filePath": "src/app/api/chat/send/route.ts",
+              "change": "Add prompt injection scanning to chat endpoint",
+              "description": "In src/app/api/chat/send/route.ts POST handler, after the Zod validation passes, add prompt injection scanning: const scanResult = scanForInjection(validation.data.message). If !scanResult.safe, return NextResponse.json({ error: 'Potentially harmful content detected', threats: scanResult.threats }, { status: 400 }). Only proceed with the chat logic if both validations pass.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg9-task3-micro3",
+              "filePath": "src/app/api/ideas/route.ts",
+              "change": "Add Zod validation to ideas POST endpoint",
+              "description": "In src/app/api/ideas/route.ts, add import at the top: import { ideaSchema } from '@/lib/validators'. In the POST function handler, after parsing the request body, add validation: const validation = ideaSchema.safeParse(body). If !validation.success, return NextResponse.json({ error: 'Validation failed', details: validation.error.flatten() }, { status: 400 }). Use validation.data instead of body for the validated fields.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg9-task3-micro4",
+              "filePath": "src/app/api/tasks/route.ts",
+              "change": "Add Zod validation to tasks POST endpoint",
+              "description": "In src/app/api/tasks/route.ts, add import at the top: import { taskSchema } from '@/lib/validators'. In the POST function handler, after parsing the request body, add validation: const validation = taskSchema.safeParse(body). If !validation.success, return NextResponse.json({ error: 'Validation failed', details: validation.error.flatten() }, { status: 400 }). Use validation.data.name and validation.data.description for the validated fields.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg9-task3-micro5",
+              "filePath": "src/app/api/bridge/memory/route.ts",
+              "change": "Add Zod validation with path traversal protection to memory endpoint",
+              "description": "In src/app/api/bridge/memory/route.ts, add import at the top: import { memorySchema } from '@/lib/validators'. In the PUT function handler, after parsing the request body, add validation: const validation = memorySchema.safeParse(body). If !validation.success, return NextResponse.json({ error: 'Validation failed', details: validation.error.flatten() }, { status: 400 }). This validates both path (no .. allowed) and content size.",
+              "status": "pending"
+            }
+          ]
         },
         {
           "taskId": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg9-task4",
           "taskNumber": 4,
           "originalDescription": "Protect sensitive files: chmod 600 ~/.openclaw/openclaw.json",
-          "status": "pending",
-          "approved": false,
-          "rewritten": false,
-          "microTasks": []
+          "status": "approved",
+          "approved": true,
+          "rewritten": true,
+          "microTasks": [
+            {
+              "id": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg9-task4-micro1",
+              "filePath": "~/.openclaw/openclaw.json",
+              "change": "Set restrictive file permissions on openclaw.json",
+              "description": "Execute the shell command: chmod 600 ~/.openclaw/openclaw.json in the terminal. This sets file permissions to read/write for owner only (no group or other access). The 600 permission means: owner can read (4) and write (2), group has no permissions (0), others have no permissions (0). This prevents unauthorized users on the system from reading sensitive configuration or credentials stored in this file.",
+              "status": "pending"
+            }
+          ]
         },
         {
           "taskId": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg9-task5",
           "taskNumber": 5,
           "originalDescription": "Make sure /login page works properly:",
-          "status": "pending",
-          "approved": false,
-          "rewritten": false,
-          "microTasks": []
+          "status": "approved",
+          "approved": true,
+          "rewritten": true,
+          "microTasks": [
+            {
+              "id": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg9-task5-micro1",
+              "filePath": "src/app/api/auth/login/route.ts",
+              "change": "Configure auth-token cookie with HttpOnly and Secure flags",
+              "description": "In src/app/api/auth/login/route.ts, find the location where the auth-token cookie is set. Modify the cookie setting to include secure options: response.cookies.set('auth-token', token, { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'strict', path: '/', maxAge: 60 * 60 * 24 * 7 }). The httpOnly flag prevents JavaScript access, secure ensures HTTPS-only transmission.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg9-task5-micro2",
+              "filePath": "src/app/api/auth/logout/route.ts",
+              "change": "Create logout endpoint that properly clears auth cookie",
+              "description": "In src/app/api/auth/logout/route.ts (create if it doesn't exist), implement a POST handler that clears the auth-token cookie completely: export async function POST() { const response = NextResponse.json({ success: true }); response.cookies.set('auth-token', '', { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'strict', path: '/', maxAge: 0 }); return response; }. Setting maxAge to 0 immediately expires the cookie.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg9-task5-micro3",
+              "filePath": "src/middleware.ts",
+              "change": "Add middleware protection for dashboard routes",
+              "description": "In src/middleware.ts, find or create the middleware function. Add logic to protect /dashboard routes: import { NextResponse } from 'next/server' and type { NextRequest }. In the middleware function, check if request.nextUrl.pathname.startsWith('/dashboard'). If true, get the auth-token using request.cookies.get('auth-token'). If !authToken or !authToken.value, return NextResponse.redirect(new URL('/login', request.url)).",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg9-task5-micro4",
+              "filePath": "src/middleware.ts",
+              "change": "Configure middleware matcher for protected routes",
+              "description": "In src/middleware.ts, export a config object to specify which routes the middleware should run on: export const config = { matcher: ['/dashboard/:path*'] }. This ensures the authentication check only runs on dashboard pages and their sub-routes, not on public pages like /login or static assets.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg9-task5-micro5",
+              "filePath": "src/app/login/page.tsx",
+              "change": "Update logout to call API endpoint for proper cookie clearing",
+              "description": "In src/app/login/page.tsx, find the sign out or logout functionality. Update it to call the logout API endpoint: const handleSignOut = async () => { await fetch('/api/auth/logout', { method: 'POST' }); router.push('/login'); }. If using a logout button elsewhere in the app, ensure it calls this same endpoint to properly clear the HttpOnly cookie server-side.",
+              "status": "pending"
+            }
+          ]
         }
       ]
     },
@@ -259,37 +797,132 @@
           "taskId": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg11-task1",
           "taskNumber": 1,
           "originalDescription": "Create public/manifest.json:",
-          "status": "pending",
-          "approved": false,
-          "rewritten": false,
-          "microTasks": []
+          "status": "approved",
+          "approved": true,
+          "rewritten": true,
+          "microTasks": [
+            {
+              "id": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg11-task1-micro1",
+              "filePath": "public/manifest.json",
+              "change": "Create PWA manifest.json file",
+              "description": "Create a new file public/manifest.json with a complete PWA manifest configuration. The JSON object must include: 'name' set to 'GenPlatform.ai', 'short_name' set to 'GenPlatform', 'description' set to 'AI Mission Control Dashboard', 'start_url' set to '/dashboard', 'display' set to 'standalone', 'background_color' set to '#09090b' (dark zinc background), 'theme_color' set to '#3b82f6' (blue-500). Also add 'icons' array with entries for 192x192 and 512x512 PNG icons pointing to '/icon-192.png' and '/icon-512.png' with type 'image/png' and purpose 'any maskable'.",
+              "status": "pending"
+            }
+          ]
         },
         {
           "taskId": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg11-task2",
           "taskNumber": 2,
           "originalDescription": "Create a favicon. Create public/favicon.svg:",
-          "status": "pending",
-          "approved": false,
-          "rewritten": false,
-          "microTasks": []
+          "status": "approved",
+          "approved": true,
+          "rewritten": true,
+          "microTasks": [
+            {
+              "id": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg11-task2-micro1",
+              "filePath": "public/favicon.svg",
+              "change": "Create SVG favicon with GP letters",
+              "description": "Create a new SVG file at public/favicon.svg. The SVG should have width='32' height='32' viewBox='0 0 32 32' xmlns='http://www.w3.org/2000/svg'. Inside, create a rect element with x='0' y='0' width='32' height='32' rx='6' ry='6' fill='#3b82f6' (blue-500) for the rounded rectangle background. Then add a text element centered at x='16' y='22' with text-anchor='middle' font-family='system-ui, sans-serif' font-size='14' font-weight='bold' fill='white' containing the letters 'GP'. This creates a professional favicon with white GP initials on blue rounded background.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg11-task2-micro2",
+              "filePath": "public/icon-192.png",
+              "change": "Create 192x192 PWA icon",
+              "description": "Create a 192x192 pixel PNG icon for PWA. This should be a larger version of the favicon concept: a blue (#3b82f6) rounded square background with white 'GP' text centered. The rounded corners should have approximately 24px radius. The text 'GP' should be in a bold sans-serif font, sized appropriately (around 80px) to be clearly visible. This icon will be used for PWA installation on mobile devices and appears in app switchers.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg11-task2-micro3",
+              "filePath": "public/icon-512.png",
+              "change": "Create 512x512 PWA icon",
+              "description": "Create a 512x512 pixel PNG icon for PWA splash screens. This should be a high-resolution version of the favicon: blue (#3b82f6) rounded square background (corner radius ~64px) with white 'GP' text centered in bold sans-serif font (around 200px size). This icon is used for PWA splash screens on mobile devices and higher-resolution displays. Ensure the image is crisp and the text is anti-aliased properly.",
+              "status": "pending"
+            }
+          ]
         },
         {
           "taskId": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg11-task3",
           "taskNumber": 3,
           "originalDescription": "Update metadata in layout.tsx (do NOT change the layout structure, ONLY update the metadata object):",
-          "status": "pending",
-          "approved": false,
-          "rewritten": false,
-          "microTasks": []
+          "status": "approved",
+          "approved": true,
+          "rewritten": true,
+          "microTasks": [
+            {
+              "id": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg11-task3-micro1",
+              "filePath": "src/app/layout.tsx",
+              "change": "Update metadata object with title, description, manifest link",
+              "description": "Locate the existing 'export const metadata: Metadata' object at the top of the file (or create it if missing, importing Metadata from 'next'). Update ONLY the metadata object properties: set 'title' to 'GenPlatform.ai — Mission Control', set 'description' to 'AI-powered platform for managing projects, agents, and automation'. Add 'manifest' property set to '/manifest.json'. Add 'icons' object with 'icon' set to '/favicon.svg' and 'apple' set to '/icon-192.png'. Do NOT modify the RootLayout function, do NOT change any JSX structure, do NOT touch the body, html, or any provider components.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg11-task3-micro2",
+              "filePath": "src/app/layout.tsx",
+              "change": "Add Open Graph and Twitter card metadata",
+              "description": "Within the same metadata object in layout.tsx, add Open Graph metadata for social sharing. Add 'openGraph' object with: 'title' set to 'GenPlatform.ai — Mission Control', 'description' set to 'AI-powered platform for managing projects, agents, and automation', 'url' set to 'https://app.gen3.ai', 'siteName' set to 'GenPlatform.ai', 'type' set to 'website'. Also add 'twitter' object with 'card' set to 'summary', 'title' and 'description' matching the openGraph values. Do NOT change any layout structure or JSX.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg11-task3-micro3",
+              "filePath": "src/app/layout.tsx",
+              "change": "Add theme color, viewport, and Apple Web App metadata",
+              "description": "Still within the metadata object only, add additional PWA-related meta properties. Add 'themeColor' set to '#3b82f6' (this sets the browser chrome color on mobile). Add 'viewport' object with 'width' set to 'device-width', 'initialScale' set to 1, 'maximumScale' set to 1. Add 'appleWebApp' object with 'capable' set to true, 'statusBarStyle' set to 'black-translucent', 'title' set to 'GenPlatform'. These enable proper PWA behavior on iOS devices. Do NOT modify any component code or layout structure.",
+              "status": "pending"
+            }
+          ]
         },
         {
           "taskId": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg11-task4",
           "taskNumber": 4,
           "originalDescription": "Add loading skeleton components:",
-          "status": "pending",
-          "approved": false,
-          "rewritten": false,
-          "microTasks": []
+          "status": "approved",
+          "approved": true,
+          "rewritten": true,
+          "microTasks": [
+            {
+              "id": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg11-task4-micro1",
+              "filePath": "src/components/ui/skeleton.tsx",
+              "change": "Create base Skeleton component",
+              "description": "Create or verify the base Skeleton component exists. If creating new, export a function component 'Skeleton' that accepts className prop and spreads additional HTMLAttributes<HTMLDivElement>. The component returns a div with classes 'animate-pulse rounded-md bg-zinc-800' merged with the passed className using cn() utility. Import cn from '@/lib/utils'. This base component will be used by page-skeleton.tsx. Example: export function Skeleton({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) { return <div className={cn('animate-pulse rounded-md bg-zinc-800', className)} {...props} /> }",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg11-task4-micro2",
+              "filePath": "src/components/ui/page-skeleton.tsx",
+              "change": "Create PageSkeleton component with header and stats grid skeletons",
+              "description": "Create a new file src/components/ui/page-skeleton.tsx. Add 'use client' directive at top. Import Skeleton from './skeleton' and Card, CardContent, CardHeader from './card'. Export function PageSkeleton that returns a div with className 'space-y-6'. Inside, create a header skeleton section with a Skeleton className='h-8 w-48' for title and Skeleton className='h-4 w-96' for description. Then create a grid div with className 'grid gap-4 md:grid-cols-2 lg:grid-cols-4' containing 4 Card components, each with CardHeader containing Skeleton h-4 w-24, and CardContent containing Skeleton h-8 w-16.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg11-task4-micro3",
+              "filePath": "src/components/ui/page-skeleton.tsx",
+              "change": "Add content list skeleton to PageSkeleton",
+              "description": "Extend the PageSkeleton component to include additional skeleton sections after the stats grid. Add a larger Card component representing a main content area: Card with className 'col-span-full', CardHeader with Skeleton h-6 w-32 for section title, CardContent with a div containing 5 rows of content skeletons. Each row should be a flex container with gap-4: Skeleton h-4 w-8 (for index/icon), Skeleton h-4 w-48 (for title), Skeleton h-4 w-24 (for status), Skeleton h-4 flex-1 (for description). Add mt-2 between rows.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg11-task4-micro4",
+              "filePath": "src/app/dashboard/loading.tsx",
+              "change": "Create dashboard loading.tsx with PageSkeleton",
+              "description": "Create a new file src/app/dashboard/loading.tsx for Next.js automatic loading state. Import PageSkeleton from '@/components/ui/page-skeleton'. Export default function Loading() that returns the PageSkeleton component wrapped in a div with className 'p-6' to match the dashboard page padding. This file will be automatically used by Next.js when the dashboard page is loading data, providing instant visual feedback to users while server components fetch data.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg11-task4-micro5",
+              "filePath": "src/app/dashboard/skills/loading.tsx",
+              "change": "Create skills page loading.tsx",
+              "description": "Create src/app/dashboard/skills/loading.tsx for the skills page loading state. Import PageSkeleton from '@/components/ui/page-skeleton'. Export default function Loading() returning PageSkeleton wrapped in div with className 'p-6'. This provides loading feedback specifically for the skills page when navigating to it or when it's fetching skill data from the API. The skeleton will show until the page component fully loads.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg11-task4-micro6",
+              "filePath": "src/app/dashboard/memory/loading.tsx",
+              "change": "Create memory page loading.tsx",
+              "description": "Create src/app/dashboard/memory/loading.tsx for the memory page loading state. Import PageSkeleton from '@/components/ui/page-skeleton'. Export default function Loading() returning PageSkeleton wrapped in div with className 'p-6'. This ensures consistent loading experience across all dashboard sub-pages. When users navigate to the memory page, they'll see animated skeleton placeholders instead of a blank screen while data loads.",
+              "status": "pending"
+            }
+          ]
         }
       ]
     },
@@ -308,46 +941,86 @@
           "taskId": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg13-task1",
           "taskNumber": 1,
           "originalDescription": "Test EVERY page. Run this and fix any 500 errors:",
-          "status": "pending",
-          "approved": false,
-          "rewritten": false,
-          "microTasks": []
+          "status": "approved",
+          "approved": true,
+          "rewritten": true,
+          "microTasks": [
+            {
+              "id": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg13-task1-micro1",
+              "filePath": "src/app/dashboard/page.tsx",
+              "change": "Analyze and implement the requested feature",
+              "description": "Implement the following task with precision: Test EVERY page. Run this and fix any 500 errors:. First identify the correct file and component, then make the necessary changes following the project's coding standards.",
+              "status": "pending"
+            }
+          ]
         },
         {
           "taskId": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg13-task2",
           "taskNumber": 2,
           "originalDescription": "Test all API routes:",
-          "status": "pending",
-          "approved": false,
-          "rewritten": false,
-          "microTasks": []
+          "status": "approved",
+          "approved": true,
+          "rewritten": true,
+          "microTasks": [
+            {
+              "id": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg13-task2-micro1",
+              "filePath": "src/app/api/routes/route.ts",
+              "change": "Create or update the API route",
+              "description": "In src/app/api/routes/route.ts, implement the requested API functionality: Test all API routes:. Use Next.js 13+ app router conventions with proper request/response handling.",
+              "status": "pending"
+            }
+          ]
         },
         {
           "taskId": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg13-task3",
           "taskNumber": 3,
           "originalDescription": "PM2 production setup:",
-          "status": "pending",
-          "approved": false,
-          "rewritten": false,
-          "microTasks": []
+          "status": "approved",
+          "approved": true,
+          "rewritten": true,
+          "microTasks": [
+            {
+              "id": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg13-task3-micro1",
+              "filePath": "src/app/dashboard/page.tsx",
+              "change": "Analyze and implement the requested feature",
+              "description": "Implement the following task with precision: PM2 production setup:. First identify the correct file and component, then make the necessary changes following the project's coding standards.",
+              "status": "pending"
+            }
+          ]
         },
         {
           "taskId": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg13-task4",
           "taskNumber": 4,
           "originalDescription": "Create /root/genplatform/README.md with professional documentation:",
-          "status": "pending",
-          "approved": false,
-          "rewritten": false,
-          "microTasks": []
+          "status": "approved",
+          "approved": true,
+          "rewritten": true,
+          "microTasks": [
+            {
+              "id": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg13-task4-micro1",
+              "filePath": "src/app/dashboard/page.tsx",
+              "change": "Analyze and implement the requested feature",
+              "description": "Implement the following task with precision: Create /root/genplatform/README.md with professional documentation:. First identify the correct file and component, then make the necessary changes following the project's coding standards.",
+              "status": "pending"
+            }
+          ]
         },
         {
           "taskId": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg13-task5",
           "taskNumber": 5,
           "originalDescription": "Final git tag:",
-          "status": "pending",
-          "approved": false,
-          "rewritten": false,
-          "microTasks": []
+          "status": "approved",
+          "approved": true,
+          "rewritten": true,
+          "microTasks": [
+            {
+              "id": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg13-task5-micro1",
+              "filePath": "src/app/dashboard/page.tsx",
+              "change": "Analyze and implement the requested feature",
+              "description": "Implement the following task with precision: Final git tag:. First identify the correct file and component, then make the necessary changes following the project's coding standards.",
+              "status": "pending"
+            }
+          ]
         }
       ]
     }

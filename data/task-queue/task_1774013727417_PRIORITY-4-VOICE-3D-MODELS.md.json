@@ -4,7 +4,7 @@
   "uploadedAt": "2026-03-20T13:35:27.558Z",
   "totalMessages": 9,
   "totalTasks": 23,
-  "totalMicroTasks": 0,
+  "totalMicroTasks": 84,
   "messages": [
     {
       "messageNumber": 1,
@@ -27,46 +27,247 @@
           "taskId": "task_1774013727417_PRIORITY-4-VOICE-3D-MODELS.md-msg3-task1",
           "taskNumber": 1,
           "originalDescription": "In the Chat page (src/app/dashboard/chat/page.tsx), add a microphone button next to the Send button in the input area:",
-          "status": "pending",
-          "approved": false,
-          "rewritten": false,
-          "microTasks": []
+          "status": "approved",
+          "approved": true,
+          "rewritten": true,
+          "microTasks": [
+            {
+              "id": "task_1774013727417_PRIORITY-4-VOICE-3D-MODELS.md-msg3-task1-micro1",
+              "filePath": "src/app/dashboard/chat/page.tsx",
+              "change": "Add Mic/MicOff imports and voice recording state variables",
+              "description": "At the top of the file, add new imports for voice recording functionality. Import the Mic and MicOff icons from lucide-react by adding them to the existing lucide-react import statement. Also add useState hooks for: isRecording (boolean, default false), recordingDuration (number, default 0), and mediaRecorder (MediaRecorder | null, default null). Add a useRef for audioChunks as useRef<Blob[]>([]).",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774013727417_PRIORITY-4-VOICE-3D-MODELS.md-msg3-task1-micro2",
+              "filePath": "src/app/dashboard/chat/page.tsx",
+              "change": "Create startRecording function with MediaRecorder setup",
+              "description": "Create a new async function called startRecording inside the ChatPage component. This function should: 1) Request microphone permission using navigator.mediaDevices.getUserMedia({ audio: true }), 2) Create a new MediaRecorder instance from the stream, 3) Set up mediaRecorder.ondataavailable to push event.data to audioChunks.current array, 4) Call mediaRecorder.start(), 5) Set isRecording to true, 6) Reset recordingDuration to 0. Wrap everything in try-catch and show toast.error('Microphone access denied') on error.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774013727417_PRIORITY-4-VOICE-3D-MODELS.md-msg3-task1-micro3",
+              "filePath": "src/app/dashboard/chat/page.tsx",
+              "change": "Create stopRecording function to finalize audio recording",
+              "description": "Create a stopRecording function that: 1) Checks if mediaRecorder exists and isRecording is true, 2) Calls mediaRecorder.stop(), 3) Sets isRecording to false, 4) In mediaRecorder.onstop callback: create a new Blob from audioChunks.current with type 'audio/webm', then call a new function handleVoiceSubmit(audioBlob), finally clear audioChunks.current to empty array. Also stop all tracks on the mediaRecorder.stream to release the microphone.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774013727417_PRIORITY-4-VOICE-3D-MODELS.md-msg3-task1-micro4",
+              "filePath": "src/app/dashboard/chat/page.tsx",
+              "change": "Add useEffect for recording duration timer",
+              "description": "Add a useEffect hook to handle the recording duration timer. When isRecording becomes true, create an interval using setInterval that increments recordingDuration by 1 every 1000ms. Store the interval ID. In the cleanup function, call clearInterval with the stored ID. Add isRecording and recordingDuration as dependencies. This will show elapsed recording time like 0:01, 0:02, etc.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774013727417_PRIORITY-4-VOICE-3D-MODELS.md-msg3-task1-micro5",
+              "filePath": "src/app/dashboard/chat/page.tsx",
+              "change": "Add formatDuration helper function",
+              "description": "Create a helper function formatDuration(seconds: number): string that converts seconds to MM:SS format. Use Math.floor(seconds / 60) for minutes and seconds % 60 for remaining seconds. Pad the seconds with leading zero using .toString().padStart(2, '0'). Return formatted string like '0:05' or '1:30'.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774013727417_PRIORITY-4-VOICE-3D-MODELS.md-msg3-task1-micro6",
+              "filePath": "src/app/dashboard/chat/page.tsx",
+              "change": "Add microphone toggle button to input area",
+              "description": "In the JSX, find the input area where the Send button is located (likely a form or div with flex layout containing the text input and Send button). Add a new Button component immediately before the Send button. This button should: have type='button', variant={isRecording ? 'destructive' : 'outline'}, size='icon', onClick={isRecording ? stopRecording : startRecording}. Inside the button, render {isRecording ? <MicOff className='h-4 w-4' /> : <Mic className='h-4 w-4' />}.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774013727417_PRIORITY-4-VOICE-3D-MODELS.md-msg3-task1-micro7",
+              "filePath": "src/app/dashboard/chat/page.tsx",
+              "change": "Add pulsing animation and duration display during recording",
+              "description": "Add visual feedback for recording state. Wrap the microphone button in a div that conditionally applies animation. When isRecording is true, add className='animate-pulse' to the button wrapper. Also add a small span next to the button that only renders when isRecording is true, showing the formatted duration: {isRecording && <span className='text-sm text-red-500 font-mono ml-2'>{formatDuration(recordingDuration)}</span>}.",
+              "status": "pending"
+            }
+          ]
         },
         {
           "taskId": "task_1774013727417_PRIORITY-4-VOICE-3D-MODELS.md-msg3-task2",
           "taskNumber": 2,
           "originalDescription": "Create src/app/api/chat/transcribe/route.ts:",
-          "status": "pending",
-          "approved": false,
-          "rewritten": false,
-          "microTasks": []
+          "status": "approved",
+          "approved": true,
+          "rewritten": true,
+          "microTasks": [
+            {
+              "id": "task_1774013727417_PRIORITY-4-VOICE-3D-MODELS.md-msg3-task2-micro1",
+              "filePath": "src/app/api/chat/transcribe/route.ts",
+              "change": "Create transcribe route with basic structure",
+              "description": "Create a new file and add the basic imports and POST handler setup. Import NextRequest and NextResponse from 'next/server'. Export an async function POST that takes request: NextRequest as parameter. At the top of the function, get the OPENAI_API_KEY from process.env and store it in a const. Add a boolean const hasApiKey = Boolean(process.env.OPENAI_API_KEY).",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774013727417_PRIORITY-4-VOICE-3D-MODELS.md-msg3-task2-micro2",
+              "filePath": "src/app/api/chat/transcribe/route.ts",
+              "change": "Add FormData parsing and audio file extraction",
+              "description": "Inside the POST function, parse the incoming FormData using const formData = await request.formData(). Extract the audio file using const audioFile = formData.get('audio') as File | null. If audioFile is null or not a File, return NextResponse.json({ error: 'No audio file provided' }, { status: 400 }). Log the file details for debugging: console.log('Received audio:', audioFile.name, audioFile.size, audioFile.type).",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774013727417_PRIORITY-4-VOICE-3D-MODELS.md-msg3-task2-micro3",
+              "filePath": "src/app/api/chat/transcribe/route.ts",
+              "change": "Add OpenAI Whisper API integration",
+              "description": "Add the OpenAI Whisper API call logic. If hasApiKey is true, create a new FormData object called whisperFormData. Append the audio file: whisperFormData.append('file', audioFile, 'audio.webm'). Append the model: whisperFormData.append('model', 'whisper-1'). Make a fetch POST request to 'https://api.openai.com/v1/audio/transcriptions' with headers: { 'Authorization': `Bearer ${process.env.OPENAI_API_KEY}` } and body: whisperFormData.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774013727417_PRIORITY-4-VOICE-3D-MODELS.md-msg3-task2-micro4",
+              "filePath": "src/app/api/chat/transcribe/route.ts",
+              "change": "Handle Whisper response and language detection",
+              "description": "Handle the Whisper API response. After the fetch call, check if response.ok. If not, const error = await response.text() and return NextResponse.json({ error: 'Transcription failed', details: error }, { status: 500 }). If successful, const data = await response.json() and extract the text. Detect language by checking if the text contains Arabic characters using regex /[؀-ۿ]/.test(data.text). Return NextResponse.json({ text: data.text, language: hasArabic ? 'ar' : 'en', isVoice: true }).",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774013727417_PRIORITY-4-VOICE-3D-MODELS.md-msg3-task2-micro5",
+              "filePath": "src/app/api/chat/transcribe/route.ts",
+              "change": "Add fallback response when API key missing",
+              "description": "Add the fallback logic when OPENAI_API_KEY is not available. In the else branch (when !hasApiKey), return NextResponse.json({ text: '[Voice message — transcription not available]', language: 'en', isVoice: true, noTranscription: true }). Also add a console.warn('OPENAI_API_KEY not configured, voice transcription disabled') to help developers debug.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774013727417_PRIORITY-4-VOICE-3D-MODELS.md-msg3-task2-micro6",
+              "filePath": "src/app/api/chat/transcribe/route.ts",
+              "change": "Add comprehensive error handling",
+              "description": "Wrap the entire POST function body in a try-catch block. In the catch block, log the error with console.error('Transcription error:', error). Return NextResponse.json({ error: 'Failed to process voice message', details: error instanceof Error ? error.message : 'Unknown error' }, { status: 500 }). This ensures all errors are properly caught and reported.",
+              "status": "pending"
+            }
+          ]
         },
         {
           "taskId": "task_1774013727417_PRIORITY-4-VOICE-3D-MODELS.md-msg3-task3",
           "taskNumber": 3,
           "originalDescription": "After transcription:",
-          "status": "pending",
-          "approved": false,
-          "rewritten": false,
-          "microTasks": []
+          "status": "approved",
+          "approved": true,
+          "rewritten": true,
+          "microTasks": [
+            {
+              "id": "task_1774013727417_PRIORITY-4-VOICE-3D-MODELS.md-msg3-task3-micro1",
+              "filePath": "src/app/dashboard/chat/page.tsx",
+              "change": "Create handleVoiceSubmit function with API call",
+              "description": "Create the handleVoiceSubmit async function that processes recorded audio. This function takes audioBlob: Blob as parameter. Create a FormData object, append the blob as formData.append('audio', audioBlob, 'recording.webm'). Make a POST fetch to '/api/chat/transcribe' with body: formData. Parse the response as JSON and store in const result.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774013727417_PRIORITY-4-VOICE-3D-MODELS.md-msg3-task3-micro2",
+              "filePath": "src/app/dashboard/chat/page.tsx",
+              "change": "Insert transcribed text and handle Arabic language detection",
+              "description": "After receiving the transcription result in handleVoiceSubmit, update the input state. Find the existing input state (likely called 'input' or 'message') and call its setter with result.text. If result.language === 'ar', check if there's a Commander Mode state (like isCommanderMode) and set it to true. Show a toast notification: toast.success(result.language === 'ar' ? 'تم التعرف على الصوت - وضع القائد مفعّل' : 'Voice transcribed successfully').",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774013727417_PRIORITY-4-VOICE-3D-MODELS.md-msg3-task3-micro3",
+              "filePath": "src/app/dashboard/chat/page.tsx",
+              "change": "Add 2-second auto-send timer after transcription",
+              "description": "Add auto-send functionality with a timer. Add a new state: const [autoSendTimer, setAutoSendTimer] = useState<NodeJS.Timeout | null>(null). In handleVoiceSubmit, after setting the input text, create a timeout: const timer = setTimeout(() => { handleSubmit(); }, 2000). Call setAutoSendTimer(timer). This gives users 2 seconds to edit before auto-sending.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774013727417_PRIORITY-4-VOICE-3D-MODELS.md-msg3-task3-micro4",
+              "filePath": "src/app/dashboard/chat/page.tsx",
+              "change": "Cancel auto-send when user edits input",
+              "description": "Add logic to cancel auto-send when user starts typing. Find the onChange handler for the chat input field. At the beginning of that handler, add: if (autoSendTimer) { clearTimeout(autoSendTimer); setAutoSendTimer(null); }. This cancels the auto-send if the user modifies the transcribed text, allowing them to edit freely.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774013727417_PRIORITY-4-VOICE-3D-MODELS.md-msg3-task3-micro5",
+              "filePath": "src/app/dashboard/chat/page.tsx",
+              "change": "Add visual countdown for auto-send feature",
+              "description": "Add a visual indicator for the auto-send countdown. Create a new state const [autoSendCountdown, setAutoSendCountdown] = useState<number | null>(null). In handleVoiceSubmit, set autoSendCountdown to 2, then create an interval that decrements it every second until 0. In the JSX near the input, render: {autoSendCountdown !== null && <span className='text-xs text-muted-foreground'>Auto-sending in {autoSendCountdown}s... (type to cancel)</span>}.",
+              "status": "pending"
+            }
+          ]
         },
         {
           "taskId": "task_1774013727417_PRIORITY-4-VOICE-3D-MODELS.md-msg3-task4",
           "taskNumber": 4,
           "originalDescription": "Voice message display in chat:",
-          "status": "pending",
-          "approved": false,
-          "rewritten": false,
-          "microTasks": []
+          "status": "approved",
+          "approved": true,
+          "rewritten": true,
+          "microTasks": [
+            {
+              "id": "task_1774013727417_PRIORITY-4-VOICE-3D-MODELS.md-msg3-task4-micro1",
+              "filePath": "src/app/dashboard/chat/page.tsx",
+              "change": "Extend message type with voice message properties",
+              "description": "Update the message type/interface to support voice messages. Find where messages are typed (likely an interface or type like Message or ChatMessage). Add a new optional property: isVoice?: boolean. Also add: originalTranscription?: string to store the raw transcribed text. This allows the UI to identify and render voice messages differently.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774013727417_PRIORITY-4-VOICE-3D-MODELS.md-msg3-task4-micro2",
+              "filePath": "src/app/dashboard/chat/page.tsx",
+              "change": "Import audio waveform icon for voice messages",
+              "description": "Import the AudioWaveform icon from lucide-react (or use Volume2 if AudioWaveform is not available). Add it to the existing lucide-react imports at the top of the file. This icon will be used to visually indicate voice messages in the chat.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774013727417_PRIORITY-4-VOICE-3D-MODELS.md-msg3-task4-micro3",
+              "filePath": "src/app/dashboard/chat/page.tsx",
+              "change": "Add voice message indicator with waveform and badge",
+              "description": "Find the message rendering section where chat messages are mapped and displayed (likely a .map() over messages array). For each message, add a conditional check: if (message.isVoice). When true, render a special wrapper div before the message content with className='flex items-center gap-2 mb-1'. Inside this div, add the AudioWaveform icon with className='h-4 w-4 text-primary' and a span with className='text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full' containing '🎤 Voice'.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774013727417_PRIORITY-4-VOICE-3D-MODELS.md-msg3-task4-micro4",
+              "filePath": "src/app/dashboard/chat/page.tsx",
+              "change": "Add special styling for voice message bubbles",
+              "description": "Enhance the voice message bubble styling. For messages where isVoice is true, add additional CSS classes to the message container: 'border-l-2 border-primary/50 pl-2'. This creates a subtle visual distinction for voice messages. The existing message content (the transcribed text) should render normally below the voice indicator.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774013727417_PRIORITY-4-VOICE-3D-MODELS.md-msg3-task4-micro5",
+              "filePath": "src/app/dashboard/chat/page.tsx",
+              "change": "Include voice metadata when sending transcribed messages",
+              "description": "Update the handleSubmit function (or equivalent send message function) to include voice message metadata. When sending a message that came from voice input, check if there's a flag indicating it was a voice message. Add isVoice: true to the message object being sent to the API or added to the messages state. Reset any voice-related flags after sending.",
+              "status": "pending"
+            }
+          ]
         },
         {
           "taskId": "task_1774013727417_PRIORITY-4-VOICE-3D-MODELS.md-msg3-task5",
           "taskNumber": 5,
           "originalDescription": "Add environment variable for OpenAI key:",
-          "status": "pending",
-          "approved": false,
-          "rewritten": false,
-          "microTasks": []
+          "status": "approved",
+          "approved": true,
+          "rewritten": true,
+          "microTasks": [
+            {
+              "id": "task_1774013727417_PRIORITY-4-VOICE-3D-MODELS.md-msg3-task5-micro1",
+              "filePath": ".env.local",
+              "change": "Add OPENAI_API_KEY to environment variables",
+              "description": "Open or create the .env.local file in the project root (/root/genplatform/.env.local). Add a new line for the OpenAI API key: OPENAI_API_KEY=your_openai_api_key_here. Add a comment above it: # OpenAI API Key for Whisper voice transcription. If the file already has other variables, add this at the end with a blank line separator for clarity.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774013727417_PRIORITY-4-VOICE-3D-MODELS.md-msg3-task5-micro2",
+              "filePath": "src/app/api/chat/transcribe/route.ts",
+              "change": "Add explicit API key check with logging",
+              "description": "At the beginning of the POST function, add an explicit check for the API key with helpful logging. Add: const apiKey = process.env.OPENAI_API_KEY; if (!apiKey) { console.warn('[Transcribe API] OPENAI_API_KEY not found in environment variables'); }. This helps developers quickly identify configuration issues when checking server logs.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774013727417_PRIORITY-4-VOICE-3D-MODELS.md-msg3-task5-micro3",
+              "filePath": "src/app/dashboard/chat/page.tsx",
+              "change": "Add state to track voice transcription availability",
+              "description": "Add a state to track API key availability: const [hasVoiceSupport, setHasVoiceSupport] = useState<boolean | null>(null). Create a useEffect that runs on mount to check voice support by making a GET request to a new endpoint or by attempting a transcription test. Set hasVoiceSupport based on the response.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774013727417_PRIORITY-4-VOICE-3D-MODELS.md-msg3-task5-micro4",
+              "filePath": "src/app/dashboard/chat/page.tsx",
+              "change": "Add warning banner when API key is missing",
+              "description": "Add a warning banner when voice transcription is not configured. In the JSX, above the chat input area, add: {hasVoiceSupport === false && (<div className='bg-yellow-500/10 border border-yellow-500/20 rounded-lg p-3 mb-4 text-sm text-yellow-600 dark:text-yellow-400'><span className='font-medium'>Voice transcription requires OpenAI API key.</span> Add OPENAI_API_KEY to your environment variables to enable voice input.</div>)}.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774013727417_PRIORITY-4-VOICE-3D-MODELS.md-msg3-task5-micro5",
+              "filePath": "src/app/api/chat/voice-status/route.ts",
+              "change": "Create voice status check endpoint",
+              "description": "Create a new API route to check voice transcription availability. Export a GET function that returns NextResponse.json({ available: Boolean(process.env.OPENAI_API_KEY), message: process.env.OPENAI_API_KEY ? 'Voice transcription is enabled' : 'OPENAI_API_KEY not configured' }). This endpoint allows the frontend to check configuration status without exposing the actual key.",
+              "status": "pending"
+            }
+          ]
         }
       ]
     },
@@ -85,55 +286,110 @@
           "taskId": "task_1774013727417_PRIORITY-4-VOICE-3D-MODELS.md-msg5-task1",
           "taskNumber": 1,
           "originalDescription": "Create src/components/project/PipelineVisualization.tsx — a large interactive component:",
-          "status": "pending",
-          "approved": false,
-          "rewritten": false,
-          "microTasks": []
+          "status": "approved",
+          "approved": true,
+          "rewritten": true,
+          "microTasks": [
+            {
+              "id": "task_1774013727417_PRIORITY-4-VOICE-3D-MODELS.md-msg5-task1-micro1",
+              "filePath": "src/app/dashboard/page.tsx",
+              "change": "Analyze and implement the requested feature",
+              "description": "Implement the following task with precision: Create src/components/project/PipelineVisualization.tsx — a large interactive component:. First identify the correct file and component, then make the necessary changes following the project's coding standards.",
+              "status": "pending"
+            }
+          ]
         },
         {
           "taskId": "task_1774013727417_PRIORITY-4-VOICE-3D-MODELS.md-msg5-task2",
           "taskNumber": 2,
           "originalDescription": "The pipeline shows 7 stages as 3D-looking platforms/blocks arranged in a flow:",
-          "status": "pending",
-          "approved": false,
-          "rewritten": false,
-          "microTasks": []
+          "status": "approved",
+          "approved": true,
+          "rewritten": true,
+          "microTasks": [
+            {
+              "id": "task_1774013727417_PRIORITY-4-VOICE-3D-MODELS.md-msg5-task2-micro1",
+              "filePath": "src/app/dashboard/page.tsx",
+              "change": "Analyze and implement the requested feature",
+              "description": "Implement the following task with precision: The pipeline shows 7 stages as 3D-looking platforms/blocks arranged in a flow:. First identify the correct file and component, then make the necessary changes following the project's coding standards.",
+              "status": "pending"
+            }
+          ]
         },
         {
           "taskId": "task_1774013727417_PRIORITY-4-VOICE-3D-MODELS.md-msg5-task3",
           "taskNumber": 3,
           "originalDescription": "Animated data flow:",
-          "status": "pending",
-          "approved": false,
-          "rewritten": false,
-          "microTasks": []
+          "status": "approved",
+          "approved": true,
+          "rewritten": true,
+          "microTasks": [
+            {
+              "id": "task_1774013727417_PRIORITY-4-VOICE-3D-MODELS.md-msg5-task3-micro1",
+              "filePath": "src/app/dashboard/page.tsx",
+              "change": "Analyze and implement the requested feature",
+              "description": "Implement the following task with precision: Animated data flow:. First identify the correct file and component, then make the necessary changes following the project's coding standards.",
+              "status": "pending"
+            }
+          ]
         },
         {
           "taskId": "task_1774013727417_PRIORITY-4-VOICE-3D-MODELS.md-msg5-task4",
           "taskNumber": 4,
           "originalDescription": "Interactive elements:",
-          "status": "pending",
-          "approved": false,
-          "rewritten": false,
-          "microTasks": []
+          "status": "approved",
+          "approved": true,
+          "rewritten": true,
+          "microTasks": [
+            {
+              "id": "task_1774013727417_PRIORITY-4-VOICE-3D-MODELS.md-msg5-task4-micro1",
+              "filePath": "src/app/dashboard/page.tsx",
+              "change": "Analyze and implement the requested feature",
+              "description": "Implement the following task with precision: Interactive elements:. First identify the correct file and component, then make the necessary changes following the project's coding standards.",
+              "status": "pending"
+            }
+          ]
         },
         {
           "taskId": "task_1774013727417_PRIORITY-4-VOICE-3D-MODELS.md-msg5-task5",
           "taskNumber": 5,
           "originalDescription": "Real data connection:",
-          "status": "pending",
-          "approved": false,
-          "rewritten": false,
-          "microTasks": []
+          "status": "approved",
+          "approved": true,
+          "rewritten": true,
+          "microTasks": [
+            {
+              "id": "task_1774013727417_PRIORITY-4-VOICE-3D-MODELS.md-msg5-task5-micro1",
+              "filePath": "src/app/dashboard/page.tsx",
+              "change": "Analyze and implement the requested feature",
+              "description": "Implement the following task with precision: Real data connection:. First identify the correct file and component, then make the necessary changes following the project's coding standards.",
+              "status": "pending"
+            }
+          ]
         },
         {
           "taskId": "task_1774013727417_PRIORITY-4-VOICE-3D-MODELS.md-msg5-task6",
           "taskNumber": 6,
           "originalDescription": "Add this component to the project detail page (/projects/[id]) as the \"Pipeline\" tab content. Also add a smaller version to the Dashboard page.",
-          "status": "pending",
-          "approved": false,
-          "rewritten": false,
-          "microTasks": []
+          "status": "approved",
+          "approved": true,
+          "rewritten": true,
+          "microTasks": [
+            {
+              "id": "task_1774013727417_PRIORITY-4-VOICE-3D-MODELS.md-msg5-task6-micro1",
+              "filePath": "src/app/dashboard/page.tsx",
+              "change": "Locate the component mentioned in the task",
+              "description": "In src/app/dashboard/page.tsx, find the main DashboardPage component. Look for the specific section mentioned in the task: \"Add this component to the project detail page (/projects/[id]) as the \"Pipeline\" tab content. Also add a smaller version to the Dashboard page.\". Identify the exact component or JSX element that needs to be modified.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774013727417_PRIORITY-4-VOICE-3D-MODELS.md-msg5-task6-micro2",
+              "filePath": "src/app/dashboard/page.tsx",
+              "change": "Implement the requested change",
+              "description": "Make the specific change requested in the original task. This involves modifying the identified component to Add this component to the project detail page (/projects/[id]) as the \"Pipeline\" tab content. Also add a smaller version to the Dashboard page.. Ensure proper TypeScript types and React best practices are followed.",
+              "status": "pending"
+            }
+          ]
         }
       ]
     },
@@ -152,55 +408,208 @@
           "taskId": "task_1774013727417_PRIORITY-4-VOICE-3D-MODELS.md-msg7-task1",
           "taskNumber": 1,
           "originalDescription": "Create src/app/dashboard/models/page.tsx — \"AI Models & Resources\" page.",
-          "status": "pending",
-          "approved": false,
-          "rewritten": false,
-          "microTasks": []
+          "status": "approved",
+          "approved": true,
+          "rewritten": true,
+          "microTasks": [
+            {
+              "id": "task_1774013727417_PRIORITY-4-VOICE-3D-MODELS.md-msg7-task1-micro1",
+              "filePath": "src/app/dashboard/models/page.tsx",
+              "change": "Create file with imports",
+              "description": "Create the new file src/app/dashboard/models/page.tsx. Add 'use client' directive at the top. Import React, useState, useEffect from 'react'. Import Card, CardContent, CardDescription, CardHeader, CardTitle from '@/components/ui/card'. Import Badge from '@/components/ui/badge'. Import Button from '@/components/ui/button'. Import Progress from '@/components/ui/progress'. Import Table, TableBody, TableCell, TableHead, TableHeader, TableRow from '@/components/ui/table'. Import BrainCircuit, Cpu, Zap, Clock, DollarSign, AlertTriangle, RefreshCw, Mic, Sparkles from 'lucide-react'. Import toast from sonner.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774013727417_PRIORITY-4-VOICE-3D-MODELS.md-msg7-task1-micro2",
+              "filePath": "src/app/dashboard/models/page.tsx",
+              "change": "Create main component structure",
+              "description": "Define the main exported function component named ModelsPage. Inside, create useState hooks: const [sessions, setSessions] = useState<any[]>([]); const [loading, setLoading] = useState(true); const [tokenUsage, setTokenUsage] = useState({ today: 0, week: 0, month: 0, dailyData: [] }); Create the basic return statement with a div container using className='space-y-6'. Add an h1 with text 'AI Models & Resources' using className='text-3xl font-bold'. Add a paragraph description: 'Manage your AI model connections, monitor token usage, and optimize costs.'",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774013727417_PRIORITY-4-VOICE-3D-MODELS.md-msg7-task1-micro3",
+              "filePath": "src/app/dashboard/models/page.tsx",
+              "change": "Add data fetching logic",
+              "description": "Add a useEffect hook that fetches session data on mount. Inside useEffect, create async function fetchData that calls fetch('/api/bridge/sessions'). Parse the response as JSON. If response has sessions array, call setSessions(data.sessions). Calculate mock token usage: setTokenUsage({ today: Math.floor(Math.random() * 50000) + 10000, week: Math.floor(Math.random() * 200000) + 50000, month: Math.floor(Math.random() * 800000) + 100000, dailyData: Array.from({length: 7}, (_, i) => ({ day: ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'][i], tokens: Math.floor(Math.random() * 30000) + 5000 })) }). Wrap in try-catch, on error show toast.error('Failed to load session data'). Finally setLoading(false). Call fetchData() inside useEffect with empty dependency array.",
+              "status": "pending"
+            }
+          ]
         },
         {
           "taskId": "task_1774013727417_PRIORITY-4-VOICE-3D-MODELS.md-msg7-task2",
           "taskNumber": 2,
           "originalDescription": "Connected Models section — show cards for each model:",
-          "status": "pending",
-          "approved": false,
-          "rewritten": false,
-          "microTasks": []
+          "status": "approved",
+          "approved": true,
+          "rewritten": true,
+          "microTasks": [
+            {
+              "id": "task_1774013727417_PRIORITY-4-VOICE-3D-MODELS.md-msg7-task2-micro1",
+              "filePath": "src/app/dashboard/models/page.tsx",
+              "change": "Add Claude Opus 4 card",
+              "description": "After the page title section, add a new section with h2 'Connected Models' using className='text-xl font-semibold mt-8 mb-4'. Create a div with className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4'. Inside this grid, create the first Card for Claude Opus 4. CardHeader should have CardTitle 'Claude Opus 4' with a green dot indicator using a span with className='inline-block w-2 h-2 bg-green-500 rounded-full ml-2'. CardDescription shows 'Anthropic via OpenClaw'. Add Badge variant='default' showing 'Connected'.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774013727417_PRIORITY-4-VOICE-3D-MODELS.md-msg7-task2-micro2",
+              "filePath": "src/app/dashboard/models/page.tsx",
+              "change": "Add Claude Opus 4 details",
+              "description": "In the Claude Opus 4 Card's CardContent, add a div with className='space-y-2 text-sm'. Add rows for: Plan showing 'Pro Max' in a Badge variant='secondary', Context showing '200K tokens', Cost showing '~$0.015/1K input, ~$0.075/1K output' in text-muted-foreground. Add a div for session usage with label 'Session Usage:' and a Progress component. Calculate contextUsage from sessions data: const activeSession = sessions.find(s => s.model?.includes('opus')); const contextUsage = activeSession ? Math.floor((activeSession.context_used / activeSession.context_limit) * 100) : 45; Pass value={contextUsage} to Progress. Show percentage text next to it.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774013727417_PRIORITY-4-VOICE-3D-MODELS.md-msg7-task2-micro3",
+              "filePath": "src/app/dashboard/models/page.tsx",
+              "change": "Add Claude Sonnet 4 card",
+              "description": "Create second Card for Claude Sonnet 4. CardHeader has CardTitle 'Claude Sonnet 4' with a yellow dot (className='inline-block w-2 h-2 bg-yellow-500 rounded-full ml-2'). CardDescription shows 'Anthropic via OpenClaw'. Badge variant='outline' shows 'Available'. In CardContent, add description text: 'Faster, cheaper alternative for simpler tasks'. Add rows showing Context: '200K tokens', Cost: '~$0.003/1K input, ~$0.015/1K output'. Add small text: 'Recommended for: Code reviews, simple fixes'.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774013727417_PRIORITY-4-VOICE-3D-MODELS.md-msg7-task2-micro4",
+              "filePath": "src/app/dashboard/models/page.tsx",
+              "change": "Add Whisper card",
+              "description": "Create third Card for Whisper (OpenAI). CardHeader has CardTitle 'Whisper' with Mic icon (size 16, className='inline ml-1'). CardDescription shows 'OpenAI'. Add conditional Badge: check if process.env.NEXT_PUBLIC_OPENAI_CONNECTED === 'true' then show 'Connected' variant='default', else show 'Not Connected' variant='destructive'. In CardContent show: Used for: 'Voice transcription', Cost: '$0.006/minute', Quality: 'High accuracy multilingual'. Add note: 'Connect via API key in settings'.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774013727417_PRIORITY-4-VOICE-3D-MODELS.md-msg7-task2-micro5",
+              "filePath": "src/app/dashboard/models/page.tsx",
+              "change": "Add Future Models placeholder card",
+              "description": "Create fourth Card for Future Models with className='border-dashed'. CardHeader has CardTitle 'Coming Soon' with Sparkles icon. CardDescription shows 'Future Integrations'. Add Badge variant='outline' with 'Planned'. In CardContent, create a list using ul with className='space-y-1 text-sm text-muted-foreground'. Add li elements for: 'GPT-5 (OpenAI)', 'Llama 4 (Meta)', 'DeepSeek V3', 'Mistral Large'. Add Button variant='outline' size='sm' disabled with text 'Add API Key to Connect'.",
+              "status": "pending"
+            }
+          ]
         },
         {
           "taskId": "task_1774013727417_PRIORITY-4-VOICE-3D-MODELS.md-msg7-task3",
           "taskNumber": 3,
           "originalDescription": "Token Usage Dashboard:",
-          "status": "pending",
-          "approved": false,
-          "rewritten": false,
-          "microTasks": []
+          "status": "approved",
+          "approved": true,
+          "rewritten": true,
+          "microTasks": [
+            {
+              "id": "task_1774013727417_PRIORITY-4-VOICE-3D-MODELS.md-msg7-task3-micro1",
+              "filePath": "src/app/dashboard/models/page.tsx",
+              "change": "Add today's usage card",
+              "description": "After the Connected Models section, add a new section with h2 'Token Usage Dashboard' using className='text-xl font-semibold mt-8 mb-4'. Create a div with className='grid grid-cols-1 md:grid-cols-3 gap-4'. Create three stat Cards. First Card: CardHeader with CardTitle 'Today' and Zap icon, CardContent showing tokenUsage.today.toLocaleString() tokens in large text (className='text-2xl font-bold'), below show estimated cost calculated as (tokenUsage.today * 0.00003).toFixed(2) with DollarSign icon.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774013727417_PRIORITY-4-VOICE-3D-MODELS.md-msg7-task3-micro2",
+              "filePath": "src/app/dashboard/models/page.tsx",
+              "change": "Add weekly and monthly usage cards",
+              "description": "Create second stat Card for weekly usage. CardHeader has CardTitle 'This Week' with Clock icon. CardContent shows tokenUsage.week.toLocaleString() in className='text-2xl font-bold'. Below show estimated cost: (tokenUsage.week * 0.00003).toFixed(2) with text 'estimated cost'. Third Card for monthly usage: CardTitle 'This Month', CardContent shows tokenUsage.month.toLocaleString() tokens, cost estimate (tokenUsage.month * 0.00003).toFixed(2). Add Badge showing month name using new Date().toLocaleString('default', { month: 'long' }).",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774013727417_PRIORITY-4-VOICE-3D-MODELS.md-msg7-task3-micro3",
+              "filePath": "src/app/dashboard/models/page.tsx",
+              "change": "Add daily usage bar chart",
+              "description": "Below the usage stat cards, add a Card for the daily usage chart. CardHeader has CardTitle 'Daily Usage (Last 7 Days)'. CardContent contains a div with className='h-48 flex items-end justify-between gap-2'. Map over tokenUsage.dailyData to create bar chart columns: tokenUsage.dailyData.map((day, i) => <div key={i} className='flex flex-col items-center gap-1'><div className='bg-primary rounded-t w-8' style={{ height: `${(day.tokens / 35000) * 150}px` }} /><span className='text-xs text-muted-foreground'>{day.day}</span></div>). Add a note below: Badge variant='secondary' with text 'Tracking started today - historical data will accumulate'.",
+              "status": "pending"
+            }
+          ]
         },
         {
           "taskId": "task_1774013727417_PRIORITY-4-VOICE-3D-MODELS.md-msg7-task4",
           "taskNumber": 4,
           "originalDescription": "Smart Model Routing section:",
-          "status": "pending",
-          "approved": false,
-          "rewritten": false,
-          "microTasks": []
+          "status": "approved",
+          "approved": true,
+          "rewritten": true,
+          "microTasks": [
+            {
+              "id": "task_1774013727417_PRIORITY-4-VOICE-3D-MODELS.md-msg7-task4-micro1",
+              "filePath": "src/app/dashboard/models/page.tsx",
+              "change": "Add Smart Model Routing section header",
+              "description": "After Token Usage Dashboard, add section with h2 'Smart Model Routing' and className='text-xl font-semibold mt-8 mb-4'. Add paragraph with className='text-muted-foreground mb-4' explaining: 'Our intelligent routing system automatically selects the optimal model for each task type, balancing quality and cost.' Create a Card containing the routing table.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774013727417_PRIORITY-4-VOICE-3D-MODELS.md-msg7-task4-micro2",
+              "filePath": "src/app/dashboard/models/page.tsx",
+              "change": "Add routing table structure and first rows",
+              "description": "Inside the Card's CardContent, add a Table component. TableHeader contains TableRow with TableHead cells: 'Task Type', 'Recommended Model', 'Reason', 'Est. Cost/Task'. TableBody contains 5 TableRow entries. Row 1: 'Complex Coding', 'Claude Opus 4', 'Best reasoning & code quality', Badge showing '$0.05-0.20'. Row 2: 'Code Review', 'Claude Sonnet 4', 'Fast, accurate for review tasks', Badge showing '$0.01-0.05'.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774013727417_PRIORITY-4-VOICE-3D-MODELS.md-msg7-task4-micro3",
+              "filePath": "src/app/dashboard/models/page.tsx",
+              "change": "Complete routing table rows",
+              "description": "Continue TableBody with Row 3: 'Research Tasks', 'Claude Opus 4', 'Deep reasoning required', Badge showing '$0.10-0.30'. Row 4: 'Simple Tasks', 'Haiku / Local', 'Fast, minimal cost', Badge variant='outline' showing '$0.001-0.01'. Row 5: 'Voice Input', 'Whisper', 'Industry-leading accuracy', Badge showing '$0.01/min'. After the Table, add a small note: 'Note: Routing is currently configured via OpenClaw. Automatic routing coming soon.' with className='text-xs text-muted-foreground mt-4'.",
+              "status": "pending"
+            }
+          ]
         },
         {
           "taskId": "task_1774013727417_PRIORITY-4-VOICE-3D-MODELS.md-msg7-task5",
           "taskNumber": 5,
           "originalDescription": "Session Management:",
-          "status": "pending",
-          "approved": false,
-          "rewritten": false,
-          "microTasks": []
+          "status": "approved",
+          "approved": true,
+          "rewritten": true,
+          "microTasks": [
+            {
+              "id": "task_1774013727417_PRIORITY-4-VOICE-3D-MODELS.md-msg7-task5-micro1",
+              "filePath": "src/app/dashboard/models/page.tsx",
+              "change": "Add Session Management section header",
+              "description": "Add a new section after Smart Model Routing with h2 'Active Sessions' and className='text-xl font-semibold mt-8 mb-4'. Create a Card component. If loading is true, show CardContent with a loading spinner or text 'Loading sessions...'. If sessions.length === 0 and not loading, show CardContent with text 'No active sessions found.'",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774013727417_PRIORITY-4-VOICE-3D-MODELS.md-msg7-task5-micro2",
+              "filePath": "src/app/dashboard/models/page.tsx",
+              "change": "Add sessions table structure",
+              "description": "When sessions exist, render a Table in CardContent. TableHeader has TableRow with TableHead cells: 'Session ID', 'Model', 'Context Usage', 'Last Active', 'Age', 'Actions'. Map over sessions array in TableBody: sessions.map((session, i) => <TableRow key={i}>). In each row: TableCell showing session.id?.slice(0,8) or 'Session ' + (i+1), TableCell showing session.model or 'Claude Opus 4', TableCell with Progress component showing context percentage.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774013727417_PRIORITY-4-VOICE-3D-MODELS.md-msg7-task5-micro3",
+              "filePath": "src/app/dashboard/models/page.tsx",
+              "change": "Add session row details with warning",
+              "description": "For each session row's context usage cell, calculate: const contextPercent = session.context_limit ? Math.floor((session.context_used / session.context_limit) * 100) : 50. Show Progress value={contextPercent} with className='w-24'. Next to Progress show contextPercent + '%'. If contextPercent > 80, add AlertTriangle icon with className='text-yellow-500 ml-2' and title='Session nearing context limit'. TableCell for Last Active: show session.last_active or 'Just now'. TableCell for Age: show session.age or '< 1 hour'.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774013727417_PRIORITY-4-VOICE-3D-MODELS.md-msg7-task5-micro4",
+              "filePath": "src/app/dashboard/models/page.tsx",
+              "change": "Add reset session functionality",
+              "description": "Add a function handleResetSession that takes sessionId as parameter. Inside, show toast.loading('Resetting session...'). Make POST request to '/api/bridge/reset' with body JSON.stringify({ sessionId }). On success, toast.success('Session reset successfully'). On error, toast.error('Failed to reset session'). Refresh sessions by calling fetchData(). In the Actions TableCell, add Button variant='ghost' size='sm' with RefreshCw icon and text 'Reset' that calls handleResetSession(session.id) onClick.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774013727417_PRIORITY-4-VOICE-3D-MODELS.md-msg7-task5-micro5",
+              "filePath": "src/app/dashboard/models/page.tsx",
+              "change": "Add context warning banner",
+              "description": "Below the sessions table but still inside the Card, add a conditional warning banner. Check if any session has context > 80%: const hasHighUsage = sessions.some(s => (s.context_used / s.context_limit) > 0.8). If hasHighUsage, render a div with className='mt-4 p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-lg flex items-center gap-2'. Include AlertTriangle icon className='text-yellow-500', and text: 'One or more sessions are nearing their context limit. Consider using /reset to free up context and maintain optimal performance.'",
+              "status": "pending"
+            }
+          ]
         },
         {
           "taskId": "task_1774013727417_PRIORITY-4-VOICE-3D-MODELS.md-msg7-task6",
           "taskNumber": 6,
           "originalDescription": "Add \"Models\" link in sidebar under MONITORING section. Use BrainCircuit or Cpu icon from lucide-react.",
-          "status": "pending",
-          "approved": false,
-          "rewritten": false,
-          "microTasks": []
+          "status": "approved",
+          "approved": true,
+          "rewritten": true,
+          "microTasks": [
+            {
+              "id": "task_1774013727417_PRIORITY-4-VOICE-3D-MODELS.md-msg7-task6-micro1",
+              "filePath": "src/components/layout/sidebar.tsx",
+              "change": "Import BrainCircuit icon",
+              "description": "At the top of the file where other lucide-react icons are imported, add BrainCircuit to the import statement. Find the existing import line that imports icons from 'lucide-react' and add BrainCircuit to that destructured import list. The import should look like: import { existingIcons, BrainCircuit } from 'lucide-react'.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774013727417_PRIORITY-4-VOICE-3D-MODELS.md-msg7-task6-micro2",
+              "filePath": "src/components/layout/sidebar.tsx",
+              "change": "Add Models navigation item to MONITORING section",
+              "description": "Find the navigation items array or section labeled MONITORING (or similar monitoring/system section). This will be near other items like 'System Status' or 'Analytics'. Add a new navigation item object in this section: { name: 'Models', href: '/dashboard/models', icon: BrainCircuit }. If using a different structure, follow the existing pattern exactly. The Models link should appear after existing monitoring items but before any settings or profile links. Ensure the href matches exactly '/dashboard/models' to route to the new page.",
+              "status": "pending"
+            }
+          ]
         }
       ]
     },
@@ -219,55 +628,257 @@
           "taskId": "task_1774013727417_PRIORITY-4-VOICE-3D-MODELS.md-msg9-task1",
           "taskNumber": 1,
           "originalDescription": "Create src/app/api/projects/[id]/deploy/route.ts:",
-          "status": "pending",
-          "approved": false,
-          "rewritten": false,
-          "microTasks": []
+          "status": "approved",
+          "approved": true,
+          "rewritten": true,
+          "microTasks": [
+            {
+              "id": "task_1774013727417_PRIORITY-4-VOICE-3D-MODELS.md-msg9-task1-micro1",
+              "filePath": "src/app/api/projects/[id]/deploy/route.ts",
+              "change": "Create POST handler skeleton with params extraction",
+              "description": "Create a new API route file for project deployment. Import NextRequest and NextResponse from 'next/server'. Create and export an async POST function that extracts the project ID from the URL params using context.params.id. Add proper TypeScript typing for the request handler with NextRequest as the request type and a context object containing params with id string.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774013727417_PRIORITY-4-VOICE-3D-MODELS.md-msg9-task1-micro2",
+              "filePath": "src/app/api/projects/[id]/deploy/route.ts",
+              "change": "Add project fetch logic with error handling",
+              "description": "Inside the POST function, fetch the project details by calling fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/api/projects/${id}`) and await the JSON response. Store the result in a variable called 'project'. If the fetch fails or project is not found, return NextResponse.json({ error: 'Project not found' }, { status: 404 }). Extract project.name and project.slug from the response for subdomain generation.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774013727417_PRIORITY-4-VOICE-3D-MODELS.md-msg9-task1-micro3",
+              "filePath": "src/app/api/projects/[id]/deploy/route.ts",
+              "change": "Add subdomain generation helper function",
+              "description": "Create a helper function called generateSubdomain that takes projectName as a string parameter. The function should: lowercase the name, replace all spaces with hyphens using .replace(/\\s+/g, '-'), remove any non-alphanumeric characters except hyphens using .replace(/[^a-z0-9-]/g, ''), and return the sanitized string. Use this function to generate the subdomain: const subdomain = generateSubdomain(project.name || project.slug || `project-${id}`).",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774013727417_PRIORITY-4-VOICE-3D-MODELS.md-msg9-task1-micro4",
+              "filePath": "src/app/api/projects/[id]/deploy/route.ts",
+              "change": "Add Bridge API deployment call",
+              "description": "Call the Bridge API deployment endpoint by making a POST fetch request to `http://localhost:4000/api/deploy` with headers {'Content-Type': 'application/json'} and body containing JSON.stringify({ projectId: id, projectName: project.name, subdomain: subdomain, sourcePath: project.path || `/root/projects/${subdomain}` }). Await the response and parse as JSON. Store in variable called deployResult.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774013727417_PRIORITY-4-VOICE-3D-MODELS.md-msg9-task1-micro5",
+              "filePath": "src/app/api/projects/[id]/deploy/route.ts",
+              "change": "Add response construction and error handling",
+              "description": "After receiving deployResult from Bridge API, construct the final response object with the following structure: { subdomain: subdomain, previewUrl: `https://${subdomain}.gen3.ai`, port: deployResult.port, status: deployResult.success ? 'deploying' : 'failed', deployedAt: new Date().toISOString() }. Return this using NextResponse.json(). Add try-catch wrapper around the entire POST function body, catching any errors and returning NextResponse.json({ error: 'Deployment failed', details: error.message }, { status: 500 }).",
+              "status": "pending"
+            }
+          ]
         },
         {
           "taskId": "task_1774013727417_PRIORITY-4-VOICE-3D-MODELS.md-msg9-task2",
           "taskNumber": 2,
           "originalDescription": "Create a deployment helper in the Bridge API (/root/genplatform-api):",
-          "status": "pending",
-          "approved": false,
-          "rewritten": false,
-          "microTasks": []
+          "status": "approved",
+          "approved": true,
+          "rewritten": true,
+          "microTasks": [
+            {
+              "id": "task_1774013727417_PRIORITY-4-VOICE-3D-MODELS.md-msg9-task2-micro1",
+              "filePath": "/root/genplatform-api/routes/deploy.js",
+              "change": "Create deploy route file with imports",
+              "description": "Create a new file deploy.js in the routes directory. Import express at the top with const express = require('express'). Create a router instance with const router = express.Router(). Also import required Node.js modules: const { execSync, spawn } = require('child_process'), const fs = require('fs'), and const path = require('path'). Export the router at the bottom with module.exports = router.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774013727417_PRIORITY-4-VOICE-3D-MODELS.md-msg9-task2-micro2",
+              "filePath": "/root/genplatform-api/routes/deploy.js",
+              "change": "Add port finder helper function",
+              "description": "Create a helper function called findAvailablePort that is async. It should start checking from port 3100. Use a for loop from 3100 to 3200. For each port, try to check if it's in use by running execSync(`lsof -i:${port}`, { stdio: 'ignore' }) inside a try block. If the command succeeds (port in use), continue to next port. If it throws (port free), return that port. If no port found after loop, throw new Error('No available ports').",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774013727417_PRIORITY-4-VOICE-3D-MODELS.md-msg9-task2-micro3",
+              "filePath": "/root/genplatform-api/routes/deploy.js",
+              "change": "Add Caddy configuration helper function",
+              "description": "Create another helper function called addCaddyConfig that takes subdomain and port as parameters. The function should: 1) Define caddyConfigPath as '/etc/caddy/Caddyfile', 2) Create config block string: `\\n${subdomain}.gen3.ai {\\n  reverse_proxy localhost:${port}\\n}\\n`, 3) Append to Caddyfile using fs.appendFileSync(caddyConfigPath, configBlock), 4) Reload Caddy with execSync('systemctl reload caddy'). Wrap in try-catch and log any errors.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774013727417_PRIORITY-4-VOICE-3D-MODELS.md-msg9-task2-micro4",
+              "filePath": "/root/genplatform-api/routes/deploy.js",
+              "change": "Add POST route with validation",
+              "description": "Create the main POST route handler with router.post('/', async (req, res) => {}). Extract projectName, subdomain, and sourcePath from req.body using destructuring. Add validation: if any of these are missing, return res.status(400).json({ error: 'Missing required fields: projectName, subdomain, sourcePath' }). Check if sourcePath exists using fs.existsSync(sourcePath), if not return res.status(404).json({ error: 'Project directory not found', path: sourcePath }).",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774013727417_PRIORITY-4-VOICE-3D-MODELS.md-msg9-task2-micro5",
+              "filePath": "/root/genplatform-api/routes/deploy.js",
+              "change": "Add deployment execution logic with PM2",
+              "description": "Inside the POST handler after validation, call const port = await findAvailablePort(). Then call addCaddyConfig(subdomain, port). Next, start the project with PM2 by running execSync(`cd ${sourcePath} && pm2 start npm --name \"${subdomain}\" -- start -- -p ${port}`, { stdio: 'inherit' }). Wrap all of this in a try-catch block. On success, return res.json({ success: true, port: port, subdomain: subdomain, url: `https://${subdomain}.gen3.ai` }). On error, return res.status(500).json({ success: false, error: error.message }).",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774013727417_PRIORITY-4-VOICE-3D-MODELS.md-msg9-task2-micro6",
+              "filePath": "/root/genplatform-api/routes/deploy.js",
+              "change": "Add deployment status check endpoint",
+              "description": "Add a GET route for checking deployment status: router.get('/status/:subdomain', async (req, res) => {}). Extract subdomain from req.params. Run pm2 jlist command with execSync('pm2 jlist').toString() and parse the JSON result. Find the process matching the subdomain name using .find(p => p.name === subdomain). Return res.json({ running: !!process, status: process?.pm2_env?.status || 'not found', port: process?.pm2_env?.PORT, uptime: process?.pm2_env?.pm_uptime }).",
+              "status": "pending"
+            }
+          ]
         },
         {
           "taskId": "task_1774013727417_PRIORITY-4-VOICE-3D-MODELS.md-msg9-task3",
           "taskNumber": 3,
           "originalDescription": "Register route in Bridge API server.js and restart bridge-api.",
-          "status": "pending",
-          "approved": false,
-          "rewritten": false,
-          "microTasks": []
+          "status": "approved",
+          "approved": true,
+          "rewritten": true,
+          "microTasks": [
+            {
+              "id": "task_1774013727417_PRIORITY-4-VOICE-3D-MODELS.md-msg9-task3-micro1",
+              "filePath": "/root/genplatform-api/server.js",
+              "change": "Import deploy routes module",
+              "description": "At the top of server.js where other routes are imported (look for lines like const skillsRoutes = require('./routes/skills')), add a new import line: const deployRoutes = require('./routes/deploy'). Place this import after the existing route imports to maintain code organization. This imports the deploy router module we created in the previous task.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774013727417_PRIORITY-4-VOICE-3D-MODELS.md-msg9-task3-micro2",
+              "filePath": "/root/genplatform-api/server.js",
+              "change": "Register deploy routes in Express app",
+              "description": "In the middleware section of server.js where routes are registered (look for lines like app.use('/api/skills', skillsRoutes)), add the deploy route registration: app.use('/api/deploy', deployRoutes). Place this after the existing route registrations. This mounts the deploy router at the /api/deploy path, making POST /api/deploy and GET /api/deploy/status/:subdomain available.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774013727417_PRIORITY-4-VOICE-3D-MODELS.md-msg9-task3-micro3",
+              "filePath": "/root/genplatform-api/server.js",
+              "change": "Add route registration logging",
+              "description": "After the deploy route registration, add logging to confirm the route is loaded. Add a console.log statement: console.log('Deploy routes registered at /api/deploy'). This helps with debugging and confirms the route is properly loaded when the server starts. The log should appear during server initialization along with other route registration logs.",
+              "status": "pending"
+            }
+          ]
         },
         {
           "taskId": "task_1774013727417_PRIORITY-4-VOICE-3D-MODELS.md-msg9-task4",
           "taskNumber": 4,
           "originalDescription": "In the project detail page Settings tab, add \"Deploy\" section:",
-          "status": "pending",
-          "approved": false,
-          "rewritten": false,
-          "microTasks": []
+          "status": "approved",
+          "approved": true,
+          "rewritten": true,
+          "microTasks": [
+            {
+              "id": "task_1774013727417_PRIORITY-4-VOICE-3D-MODELS.md-msg9-task4-micro1",
+              "filePath": "src/app/projects/[id]/page.tsx",
+              "change": "Add deployment state variables",
+              "description": "At the top of the component file, add new state variables for deployment tracking. Add: const [deployStatus, setDeployStatus] = useState<'not_deployed' | 'deploying' | 'deployed' | 'failed'>('not_deployed'). Add: const [deployedUrl, setDeployedUrl] = useState<string | null>(null). Add: const [deployingProgress, setDeployingProgress] = useState(0). Import useState if not already imported from 'react'.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774013727417_PRIORITY-4-VOICE-3D-MODELS.md-msg9-task4-micro2",
+              "filePath": "src/app/projects/[id]/page.tsx",
+              "change": "Add handleDeploy function",
+              "description": "Create an async function called handleDeploy inside the component. The function should: 1) Set deployStatus to 'deploying' and deployingProgress to 10, 2) Make a POST fetch to `/api/projects/${id}/deploy` with method 'POST' and headers {'Content-Type': 'application/json'}, 3) Update progress to 50 after fetch starts, 4) Parse response as JSON, 5) If response.ok, set deployStatus to 'deployed', deployedUrl to result.previewUrl, and progress to 100, 6) If error, set deployStatus to 'failed' and show toast.error('Deployment failed').",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774013727417_PRIORITY-4-VOICE-3D-MODELS.md-msg9-task4-micro3",
+              "filePath": "src/app/projects/[id]/page.tsx",
+              "change": "Add Deployment card in Settings tab",
+              "description": "Inside the Settings tab content (find the TabsContent with value='settings'), add a new section before or after existing settings. Create a Card component with CardHeader containing CardTitle 'Deployment' and CardDescription 'Deploy your project to a live subdomain'. Inside CardContent, add a conditional render: if deployStatus === 'not_deployed', show a Badge with 'Not deployed' in gray/secondary variant.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774013727417_PRIORITY-4-VOICE-3D-MODELS.md-msg9-task4-micro4",
+              "filePath": "src/app/projects/[id]/page.tsx",
+              "change": "Add deploy button and progress indicator",
+              "description": "Inside the Deployment Card's CardContent, add the deploy button and status display. Add: {deployStatus === 'not_deployed' && <Button onClick={handleDeploy} className='mt-4'><Rocket className='w-4 h-4 mr-2' />Deploy Project</Button>}. Add: {deployStatus === 'deploying' && <div className='mt-4'><Progress value={deployingProgress} className='mb-2' /><p className='text-sm text-muted-foreground'>Deploying...</p></div>}. Import Rocket icon from lucide-react and Progress from components/ui.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774013727417_PRIORITY-4-VOICE-3D-MODELS.md-msg9-task4-micro5",
+              "filePath": "src/app/projects/[id]/page.tsx",
+              "change": "Add deployed status display with live URL",
+              "description": "Add the deployed state UI inside the Deployment Card. Add: {deployStatus === 'deployed' && deployedUrl && (<div className='mt-4 flex items-center gap-4'><Badge variant='success' className='bg-green-500'>Live</Badge><span className='text-sm'>{deployedUrl}</span><Button variant='outline' size='sm' asChild><a href={deployedUrl} target='_blank' rel='noopener noreferrer'><ExternalLink className='w-4 h-4 mr-2' />Open</a></Button></div>)}. Import ExternalLink from lucide-react.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774013727417_PRIORITY-4-VOICE-3D-MODELS.md-msg9-task4-micro6",
+              "filePath": "src/app/projects/[id]/page.tsx",
+              "change": "Add deployment status check on mount",
+              "description": "Add a useEffect hook to check deployment status on page load. Create: useEffect(() => { const checkDeployStatus = async () => { try { const res = await fetch(`/api/projects/${id}`); const data = await res.json(); if (data.deployedUrl) { setDeployStatus('deployed'); setDeployedUrl(data.deployedUrl); } } catch (e) { console.error('Failed to check deploy status'); } }; checkDeployStatus(); }, [id]). This loads existing deployment status when viewing the project.",
+              "status": "pending"
+            }
+          ]
         },
         {
           "taskId": "task_1774013727417_PRIORITY-4-VOICE-3D-MODELS.md-msg9-task5",
           "taskNumber": 5,
           "originalDescription": "In the Projects list page, deployed projects show a green \"Live\" badge with their subdomain URL.",
-          "status": "pending",
-          "approved": false,
-          "rewritten": false,
-          "microTasks": []
+          "status": "approved",
+          "approved": true,
+          "rewritten": true,
+          "microTasks": [
+            {
+              "id": "task_1774013727417_PRIORITY-4-VOICE-3D-MODELS.md-msg9-task5-micro1",
+              "filePath": "src/app/projects/page.tsx",
+              "change": "Update Project type with deployment fields",
+              "description": "In the project interface or type definition at the top of the file (or in a shared types file), ensure the Project type includes deployment fields. Add to the interface: deployedUrl?: string; deployStatus?: 'not_deployed' | 'deploying' | 'deployed' | 'failed'; subdomain?: string;. This ensures TypeScript recognizes these optional deployment properties on project objects.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774013727417_PRIORITY-4-VOICE-3D-MODELS.md-msg9-task5-micro2",
+              "filePath": "src/app/projects/page.tsx",
+              "change": "Add Live badge to deployed projects",
+              "description": "Find the project card/list item render section (likely inside a .map() function rendering each project). Locate where the project name or title is displayed. After the project name element, add a conditional Badge: {project.deployStatus === 'deployed' && project.subdomain && (<Badge variant='default' className='ml-2 bg-green-500 hover:bg-green-600 text-white text-xs'>Live</Badge>)}. Import Badge from '@/components/ui/badge' if not already imported.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774013727417_PRIORITY-4-VOICE-3D-MODELS.md-msg9-task5-micro3",
+              "filePath": "src/app/projects/page.tsx",
+              "change": "Add subdomain URL link to deployed projects",
+              "description": "Below or next to the Live badge, add the subdomain URL display for deployed projects. Add: {project.deployedUrl && (<a href={project.deployedUrl} target='_blank' rel='noopener noreferrer' className='text-xs text-muted-foreground hover:text-primary ml-2 flex items-center gap-1' onClick={(e) => e.stopPropagation()}><ExternalLink className='w-3 h-3' />{project.subdomain}.gen3.ai</a>)}. Import ExternalLink from 'lucide-react'. The stopPropagation prevents card click when clicking the link.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774013727417_PRIORITY-4-VOICE-3D-MODELS.md-msg9-task5-micro4",
+              "filePath": "src/app/projects/page.tsx",
+              "change": "Add visual styling for deployed project cards",
+              "description": "Add visual distinction for deployed projects in the card styling. Find the Card or container element for each project item. Add conditional className: className={cn('...existing classes...', project.deployStatus === 'deployed' && 'border-green-500/20 bg-green-500/5')}. Import cn from '@/lib/utils' if not already imported. This gives deployed projects a subtle green tint to visually distinguish them in the list.",
+              "status": "pending"
+            }
+          ]
         },
         {
           "taskId": "task_1774013727417_PRIORITY-4-VOICE-3D-MODELS.md-msg9-task6",
           "taskNumber": 6,
           "originalDescription": "The preview tab in project detail automatically uses the subdomain URL for the iframe.",
-          "status": "pending",
-          "approved": false,
-          "rewritten": false,
-          "microTasks": []
+          "status": "approved",
+          "approved": true,
+          "rewritten": true,
+          "microTasks": [
+            {
+              "id": "task_1774013727417_PRIORITY-4-VOICE-3D-MODELS.md-msg9-task6-micro1",
+              "filePath": "src/app/projects/[id]/page.tsx",
+              "change": "Add computed previewUrl with deployed URL priority",
+              "description": "Find the Preview tab content section (TabsContent with value='preview'). Locate where the iframe is rendered. Create a computed preview URL variable before the return statement or at the top of the render: const previewUrl = useMemo(() => { if (deployStatus === 'deployed' && deployedUrl) { return deployedUrl; } return `http://localhost:${project?.devPort || 3000}`; }, [deployStatus, deployedUrl, project?.devPort]). Import useMemo from 'react'.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774013727417_PRIORITY-4-VOICE-3D-MODELS.md-msg9-task6-micro2",
+              "filePath": "src/app/projects/[id]/page.tsx",
+              "change": "Update iframe to use dynamic previewUrl",
+              "description": "Update the iframe src attribute to use the computed previewUrl. Find the <iframe> element in the Preview tab and change its src from the hardcoded localhost URL to src={previewUrl}. Also add key={previewUrl} to force iframe reload when URL changes. The iframe should now automatically show the deployed subdomain URL when the project is deployed, or fall back to localhost for development.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774013727417_PRIORITY-4-VOICE-3D-MODELS.md-msg9-task6-micro3",
+              "filePath": "src/app/projects/[id]/page.tsx",
+              "change": "Add preview URL indicator with environment badge",
+              "description": "Add a URL indicator above or below the iframe to show which URL is being previewed. Add: <div className='flex items-center justify-between p-2 bg-muted rounded-t-lg border-b'><span className='text-xs text-muted-foreground truncate max-w-[80%]'>{previewUrl}</span>{deployStatus === 'deployed' && (<Badge variant='outline' className='text-green-600 border-green-600 text-xs'>Production</Badge>)}{deployStatus !== 'deployed' && (<Badge variant='outline' className='text-yellow-600 border-yellow-600 text-xs'>Development</Badge>)}</div>",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774013727417_PRIORITY-4-VOICE-3D-MODELS.md-msg9-task6-micro4",
+              "filePath": "src/app/projects/[id]/page.tsx",
+              "change": "Add refresh and open-in-new-tab buttons for preview",
+              "description": "Add a refresh button and open-in-new-tab button next to the URL indicator. Inside the URL indicator div, add: <div className='flex gap-2'><Button variant='ghost' size='sm' onClick={() => { const iframe = document.querySelector('iframe'); if (iframe) iframe.src = previewUrl; }} title='Refresh preview'><RefreshCw className='w-4 h-4' /></Button><Button variant='ghost' size='sm' asChild><a href={previewUrl} target='_blank' rel='noopener noreferrer' title='Open in new tab'><ExternalLink className='w-4 h-4' /></a></Button></div>. Import RefreshCw from lucide-react.",
+              "status": "pending"
+            }
+          ]
         }
       ]
     }

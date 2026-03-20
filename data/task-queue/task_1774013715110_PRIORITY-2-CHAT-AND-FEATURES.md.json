@@ -4,7 +4,7 @@
   "uploadedAt": "2026-03-20T13:35:15.269Z",
   "totalMessages": 11,
   "totalTasks": 25,
-  "totalMicroTasks": 0,
+  "totalMicroTasks": 53,
   "messages": [
     {
       "messageNumber": 1,
@@ -85,46 +85,93 @@
           "taskId": "task_1774013715110_PRIORITY-2-CHAT-AND-FEATURES.md-msg5-task1",
           "taskNumber": 1,
           "originalDescription": "The Kanban page at /dashboard/tasks should have:",
-          "status": "pending",
-          "approved": false,
-          "rewritten": false,
-          "microTasks": []
+          "status": "approved",
+          "approved": true,
+          "rewritten": true,
+          "microTasks": [
+            {
+              "id": "task_1774013715110_PRIORITY-2-CHAT-AND-FEATURES.md-msg5-task1-micro1",
+              "filePath": "src/app/dashboard/page.tsx",
+              "change": "Locate the component mentioned in the task",
+              "description": "In src/app/dashboard/page.tsx, find the main DashboardPage component. Look for the specific section mentioned in the task: \"The Kanban page at /dashboard/tasks should have:\". Identify the exact component or JSX element that needs to be modified.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774013715110_PRIORITY-2-CHAT-AND-FEATURES.md-msg5-task1-micro2",
+              "filePath": "src/app/dashboard/page.tsx",
+              "change": "Implement the requested change",
+              "description": "Make the specific change requested in the original task. This involves modifying the identified component to The Kanban page at /dashboard/tasks should have:. Ensure proper TypeScript types and React best practices are followed.",
+              "status": "pending"
+            }
+          ]
         },
         {
           "taskId": "task_1774013715110_PRIORITY-2-CHAT-AND-FEATURES.md-msg5-task2",
           "taskNumber": 2,
           "originalDescription": "Task cards in columns:",
-          "status": "pending",
-          "approved": false,
-          "rewritten": false,
-          "microTasks": []
+          "status": "approved",
+          "approved": true,
+          "rewritten": true,
+          "microTasks": [
+            {
+              "id": "task_1774013715110_PRIORITY-2-CHAT-AND-FEATURES.md-msg5-task2-micro1",
+              "filePath": "src/app/dashboard/page.tsx",
+              "change": "Analyze and implement the requested feature",
+              "description": "Implement the following task with precision: Task cards in columns:. First identify the correct file and component, then make the necessary changes following the project's coding standards.",
+              "status": "pending"
+            }
+          ]
         },
         {
           "taskId": "task_1774013715110_PRIORITY-2-CHAT-AND-FEATURES.md-msg5-task3",
           "taskNumber": 3,
           "originalDescription": "New Task button:",
-          "status": "pending",
-          "approved": false,
-          "rewritten": false,
-          "microTasks": []
+          "status": "approved",
+          "approved": true,
+          "rewritten": true,
+          "microTasks": [
+            {
+              "id": "task_1774013715110_PRIORITY-2-CHAT-AND-FEATURES.md-msg5-task3-micro1",
+              "filePath": "src/app/dashboard/page.tsx",
+              "change": "Analyze and implement the requested feature",
+              "description": "Implement the following task with precision: New Task button:. First identify the correct file and component, then make the necessary changes following the project's coding standards.",
+              "status": "pending"
+            }
+          ]
         },
         {
           "taskId": "task_1774013715110_PRIORITY-2-CHAT-AND-FEATURES.md-msg5-task4",
           "taskNumber": 4,
           "originalDescription": "Click task card → Detail modal:",
-          "status": "pending",
-          "approved": false,
-          "rewritten": false,
-          "microTasks": []
+          "status": "approved",
+          "approved": true,
+          "rewritten": true,
+          "microTasks": [
+            {
+              "id": "task_1774013715110_PRIORITY-2-CHAT-AND-FEATURES.md-msg5-task4-micro1",
+              "filePath": "src/app/dashboard/page.tsx",
+              "change": "Analyze and implement the requested feature",
+              "description": "Implement the following task with precision: Click task card → Detail modal:. First identify the correct file and component, then make the necessary changes following the project's coding standards.",
+              "status": "pending"
+            }
+          ]
         },
         {
           "taskId": "task_1774013715110_PRIORITY-2-CHAT-AND-FEATURES.md-msg5-task5",
           "taskNumber": 5,
           "originalDescription": "Initialize with real tasks from our development:",
-          "status": "pending",
-          "approved": false,
-          "rewritten": false,
-          "microTasks": []
+          "status": "approved",
+          "approved": true,
+          "rewritten": true,
+          "microTasks": [
+            {
+              "id": "task_1774013715110_PRIORITY-2-CHAT-AND-FEATURES.md-msg5-task5-micro1",
+              "filePath": "src/app/dashboard/page.tsx",
+              "change": "Analyze and implement the requested feature",
+              "description": "Implement the following task with precision: Initialize with real tasks from our development:. First identify the correct file and component, then make the necessary changes following the project's coding standards.",
+              "status": "pending"
+            }
+          ]
         }
       ]
     },
@@ -143,46 +190,184 @@
           "taskId": "task_1774013715110_PRIORITY-2-CHAT-AND-FEATURES.md-msg7-task1",
           "taskNumber": 1,
           "originalDescription": "Create/improve the Agents page at src/app/agents/page.tsx or src/app/(dashboard)/agents/page.tsx. Make sure it's accessible from sidebar.",
-          "status": "pending",
-          "approved": false,
-          "rewritten": false,
-          "microTasks": []
+          "status": "approved",
+          "approved": true,
+          "rewritten": true,
+          "microTasks": [
+            {
+              "id": "task_1774013715110_PRIORITY-2-CHAT-AND-FEATURES.md-msg7-task1-micro1",
+              "filePath": "src/app/agents/page.tsx",
+              "change": "Create base AgentsPage component with imports",
+              "description": "Create a new file src/app/agents/page.tsx with a React Server Component. Add 'use client' directive at the top since we'll need interactivity. Import useState, useEffect from React. Import Card, CardContent, CardHeader, CardTitle from '@/components/ui/card'. Import Badge from '@/components/ui/badge'. Import Button from '@/components/ui/button'. Import Tabs, TabsContent, TabsList, TabsTrigger from '@/components/ui/tabs'. Import CheckIcon from 'lucide-react'. Create and export default function AgentsPage() that returns a main container div with className 'p-6 space-y-6'. Add a page title h1 with text 'AI Departments' and className 'text-3xl font-bold'.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774013715110_PRIORITY-2-CHAT-AND-FEATURES.md-msg7-task1-micro2",
+              "filePath": "src/app/agents/page.tsx",
+              "change": "Add DEPARTMENTS constant array with all 7 departments data",
+              "description": "Inside the AgentsPage component, define a constant DEPARTMENTS array containing 7 department objects. Each object has: id (string like 'research'), name (string like 'Research Analyst'), icon (emoji string like '🔬'), skills (array of skill strings), description (string describing the department), color (tailwind color class like 'bg-blue-500'). Populate all 7 departments: Research Analyst with deep-research-pro/exa-search/tavily-search, Architecture & Planning with task-planner/project-architect, Frontend Development with developer/senior-dev/coding-agent, Backend Development with developer/api-builder, Quality Assurance with critical-code-reviewer, Security with security-scanner/security-audit-toolkit, Self-Improvement with self-improving-agent.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774013715110_PRIORITY-2-CHAT-AND-FEATURES.md-msg7-task1-micro3",
+              "filePath": "src/app/agents/page.tsx",
+              "change": "Add all required useState hooks for page state management",
+              "description": "Add useState hooks at the top of AgentsPage component: const [activeCount, setActiveCount] = useState(0) for tracking active departments, const [tasksCompleted, setTasksCompleted] = useState(0) for total completed tasks, const [skillsCount, setSkillsCount] = useState(0) for available skills count, const [viewMode, setViewMode] = useState<'cards' | 'matrix'>('cards') for toggling between views, const [departmentStatus, setDepartmentStatus] = useState<Record<string, {active: boolean, currentTask: string | null, lastAction: string, taskCount: number}>>({}) for individual department states.",
+              "status": "pending"
+            }
+          ]
         },
         {
           "taskId": "task_1774013715110_PRIORITY-2-CHAT-AND-FEATURES.md-msg7-task2",
           "taskNumber": 2,
           "originalDescription": "Header with stats:",
-          "status": "pending",
-          "approved": false,
-          "rewritten": false,
-          "microTasks": []
+          "status": "approved",
+          "approved": true,
+          "rewritten": true,
+          "microTasks": [
+            {
+              "id": "task_1774013715110_PRIORITY-2-CHAT-AND-FEATURES.md-msg7-task2-micro1",
+              "filePath": "src/app/agents/page.tsx",
+              "change": "Add useEffect to fetch gateway status and skills count on mount",
+              "description": "Add a useEffect hook that fetches department status on mount. Inside useEffect, create an async function fetchStatus that calls fetch('/api/bridge/status'). Parse the JSON response. If response.ok and data.gateway is 'running', setActiveCount to at least 1 (or count from data if available). Also fetch('/api/bridge/skills') to get skills array, then setSkillsCount(skills.length). Wrap both fetches in try-catch, log errors to console. Call fetchStatus() at end of useEffect. Add empty dependency array.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774013715110_PRIORITY-2-CHAT-AND-FEATURES.md-msg7-task2-micro2",
+              "filePath": "src/app/agents/page.tsx",
+              "change": "Create 4-column stats grid with department metrics",
+              "description": "Below the h1 title, create a stats header section. Add a div with className 'grid grid-cols-2 md:grid-cols-4 gap-4'. Inside, add 4 Card components for stats. First Card: CardHeader with CardTitle 'Total Departments', CardContent showing '7' with className 'text-3xl font-bold text-blue-600'. Second Card: CardTitle 'Currently Active', CardContent showing {activeCount} with conditional className 'text-green-600' if activeCount > 0 else 'text-gray-400'. Third Card: CardTitle 'Tasks Completed', CardContent showing {tasksCompleted}. Fourth Card: CardTitle 'Skills Available', CardContent showing {skillsCount}.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774013715110_PRIORITY-2-CHAT-AND-FEATURES.md-msg7-task2-micro3",
+              "filePath": "src/app/agents/page.tsx",
+              "change": "Add lucide-react icons to each stats card",
+              "description": "Enhance each stats Card with icons and better styling. For Total Departments card, add a Users icon from lucide-react before the number. For Currently Active, add an Activity icon with a pulsing animation className 'animate-pulse' when activeCount > 0. For Tasks Completed, add a CheckCircle icon. For Skills Available, add a Zap icon. Each icon should have className 'h-5 w-5 mr-2 inline'. Wrap the number and icon in a flex container with items-center.",
+              "status": "pending"
+            }
+          ]
         },
         {
           "taskId": "task_1774013715110_PRIORITY-2-CHAT-AND-FEATURES.md-msg7-task3",
           "taskNumber": 3,
           "originalDescription": "Department cards (2-column grid):",
-          "status": "pending",
-          "approved": false,
-          "rewritten": false,
-          "microTasks": []
+          "status": "approved",
+          "approved": true,
+          "rewritten": true,
+          "microTasks": [
+            {
+              "id": "task_1774013715110_PRIORITY-2-CHAT-AND-FEATURES.md-msg7-task3-micro1",
+              "filePath": "src/app/agents/page.tsx",
+              "change": "Create DepartmentCardsView component with 2-column grid",
+              "description": "Below the stats section, add the main content area. Create a div with className 'mt-8'. Add a conditional render: {viewMode === 'cards' ? <DepartmentCardsView /> : <SkillsMatrixView />}. Before the return statement, define a function component DepartmentCardsView that returns a div with className 'grid grid-cols-1 md:grid-cols-2 gap-6'. Inside, map over DEPARTMENTS array to render department cards.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774013715110_PRIORITY-2-CHAT-AND-FEATURES.md-msg7-task3-micro2",
+              "filePath": "src/app/agents/page.tsx",
+              "change": "Render department Card with icon, name, and border styling",
+              "description": "Inside the DEPARTMENTS.map() in DepartmentCardsView, for each department render a Card with key={dept.id}. The Card should have className 'hover:shadow-lg transition-shadow duration-200 border-l-4' plus a dynamic border color based on dept.color (e.g., 'border-l-blue-500'). Add CardHeader containing a flex div with justify-between items-center. Inside that flex, add the dept.icon as a span with className 'text-2xl mr-2', then dept.name as CardTitle, then a status indicator div.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774013715110_PRIORITY-2-CHAT-AND-FEATURES.md-msg7-task3-micro3",
+              "filePath": "src/app/agents/page.tsx",
+              "change": "Add pulsing status indicator (green=active, gray=idle)",
+              "description": "For the status indicator in each department card header, create a div with className 'flex items-center gap-2'. Add a span for the status dot: className should be 'h-3 w-3 rounded-full' plus conditional 'bg-green-500 animate-pulse' if departmentStatus[dept.id]?.active is true, otherwise 'bg-gray-300'. Add a span with text 'Active' or 'Idle' based on the same condition, with className 'text-sm text-gray-500'.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774013715110_PRIORITY-2-CHAT-AND-FEATURES.md-msg7-task3-micro4",
+              "filePath": "src/app/agents/page.tsx",
+              "change": "Add description paragraph and skills badges section",
+              "description": "Add CardContent to each department card. Start with a p tag containing dept.description with className 'text-gray-600 text-sm mb-4'. Below that, add a div with className 'flex flex-wrap gap-2 mb-4' for skills badges. Map over dept.skills and render each as a Badge component with variant='secondary' and className 'text-xs'. The Badge text should be the skill name.",
+              "status": "pending"
+            }
+          ]
         },
         {
           "taskId": "task_1774013715110_PRIORITY-2-CHAT-AND-FEATURES.md-msg7-task4",
           "taskNumber": 4,
           "originalDescription": "Each card shows:",
-          "status": "pending",
-          "approved": false,
-          "rewritten": false,
-          "microTasks": []
+          "status": "approved",
+          "approved": true,
+          "rewritten": true,
+          "microTasks": [
+            {
+              "id": "task_1774013715110_PRIORITY-2-CHAT-AND-FEATURES.md-msg7-task4-micro1",
+              "filePath": "src/app/agents/page.tsx",
+              "change": "Add current task display section with conditional rendering",
+              "description": "In each department CardContent, after the skills badges, add a 'Current Task' section. Create a div with className 'mb-4'. Add a p with className 'text-xs text-gray-400 uppercase tracking-wide' containing 'Current Task'. Below it, conditionally render: if departmentStatus[dept.id]?.currentTask exists, show it in a p with className 'text-sm font-medium text-blue-600', otherwise show 'No active task' with className 'text-sm text-gray-400 italic'.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774013715110_PRIORITY-2-CHAT-AND-FEATURES.md-msg7-task4-micro2",
+              "filePath": "src/app/agents/page.tsx",
+              "change": "Add 7-bar mini activity chart with placeholder data",
+              "description": "Add a mini weekly activity chart below the current task section. Create a div with className 'mb-4'. Add label p 'Weekly Activity' with className 'text-xs text-gray-400 uppercase tracking-wide mb-2'. Create a flex container div with className 'flex items-end gap-1 h-12'. Generate 7 placeholder bars by mapping Array(7).fill(0).map((_, i) => { const height = Math.floor(Math.random() * 100); return <div key={i} className='flex-1 bg-blue-200 hover:bg-blue-400 transition-colors rounded-t' style={{height: `${Math.max(height, 10)}%`}} /> }). Store random heights in a useMemo to prevent re-renders.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774013715110_PRIORITY-2-CHAT-AND-FEATURES.md-msg7-task4-micro3",
+              "filePath": "src/app/agents/page.tsx",
+              "change": "Add card footer with last action timestamp and task count",
+              "description": "Add a footer section to each department card after the activity chart. Create a div with className 'flex justify-between items-center pt-4 border-t border-gray-100'. On the left side, add a div containing: p with 'Last Action' className 'text-xs text-gray-400', and below it p showing departmentStatus[dept.id]?.lastAction || 'No recent activity' with className 'text-sm'. On the right side, add a div with text-right: p 'Tasks Completed' className 'text-xs text-gray-400', and p showing departmentStatus[dept.id]?.taskCount || 0 with className 'text-lg font-bold text-gray-700'.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774013715110_PRIORITY-2-CHAT-AND-FEATURES.md-msg7-task4-micro4",
+              "filePath": "src/app/agents/page.tsx",
+              "change": "Initialize mock department status data for display",
+              "description": "Initialize departmentStatus with mock data for demonstration. In a useEffect with empty deps, call setDepartmentStatus with an object mapping department IDs to status objects. For 'research': {active: true, currentTask: 'Analyzing competitor pricing strategies', lastAction: '2 minutes ago', taskCount: 47}. For 'frontend': {active: true, currentTask: 'Building dashboard components', lastAction: '5 minutes ago', taskCount: 123}. Set other departments with active: false, currentTask: null, and varying taskCounts and lastAction times like '1 hour ago', '3 hours ago', etc.",
+              "status": "pending"
+            }
+          ]
         },
         {
           "taskId": "task_1774013715110_PRIORITY-2-CHAT-AND-FEATURES.md-msg7-task5",
           "taskNumber": 5,
           "originalDescription": "Toggle view: Cards (default) vs Skills Matrix (table showing departments as rows, skills as columns, checkmark where they match)",
-          "status": "pending",
-          "approved": false,
-          "rewritten": false,
-          "microTasks": []
+          "status": "approved",
+          "approved": true,
+          "rewritten": true,
+          "microTasks": [
+            {
+              "id": "task_1774013715110_PRIORITY-2-CHAT-AND-FEATURES.md-msg7-task5-micro1",
+              "filePath": "src/app/agents/page.tsx",
+              "change": "Add toggle buttons for Cards vs Matrix view",
+              "description": "Add view toggle buttons between the stats header and the main content. Create a div with className 'flex justify-end mt-6 mb-4'. Inside, add a div with className 'inline-flex rounded-lg border border-gray-200 p-1'. Add two Button components: first with variant={viewMode === 'cards' ? 'default' : 'ghost'} onClick={() => setViewMode('cards')} className='px-4 py-2' containing LayoutGrid icon and text 'Cards'. Second Button with variant={viewMode === 'matrix' ? 'default' : 'ghost'} onClick={() => setViewMode('matrix')} containing Table icon and text 'Skills Matrix'.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774013715110_PRIORITY-2-CHAT-AND-FEATURES.md-msg7-task5-micro2",
+              "filePath": "src/app/agents/page.tsx",
+              "change": "Create SkillsMatrixView with table header showing all skills",
+              "description": "Create the SkillsMatrixView function component. First, extract all unique skills from DEPARTMENTS: const allSkills = [...new Set(DEPARTMENTS.flatMap(d => d.skills))].sort(). Return a div with className 'overflow-x-auto'. Inside, create a table with className 'min-w-full border-collapse'. Add thead with tr containing: first th 'Department' with className 'border p-3 bg-gray-50 text-left font-semibold', then map allSkills to create th for each skill with className 'border p-3 bg-gray-50 text-center font-medium text-sm' and the skill name rotated using style={{writingMode: 'vertical-rl'}}.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774013715110_PRIORITY-2-CHAT-AND-FEATURES.md-msg7-task5-micro3",
+              "filePath": "src/app/agents/page.tsx",
+              "change": "Add table body with departments as rows and checkmarks for matching skills",
+              "description": "Add tbody to the SkillsMatrixView table. Map over DEPARTMENTS to create rows. Each tr should have key={dept.id} and className 'hover:bg-gray-50'. First td contains a flex div with dept.icon span and dept.name span, className 'border p-3 font-medium'. Then map over allSkills for each department: create td with className 'border p-3 text-center'. Inside td, check if dept.skills.includes(skill): if true, render CheckIcon with className 'h-5 w-5 text-green-500 mx-auto', if false render a span with className 'text-gray-200' containing '—'.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774013715110_PRIORITY-2-CHAT-AND-FEATURES.md-msg7-task5-micro4",
+              "filePath": "src/app/agents/page.tsx",
+              "change": "Add footer row showing skill coverage count across departments",
+              "description": "Add summary row to the SkillsMatrixView table. After the tbody, add a tfoot. Inside tfoot, add a tr with className 'bg-gray-100 font-semibold'. First td contains 'Skill Coverage' text. Then map over allSkills to create summary tds. For each skill, count how many departments have it: const count = DEPARTMENTS.filter(d => d.skills.includes(skill)).length. Display count in td with className 'border p-3 text-center' and conditional text color: 'text-green-600' if count >= 3, 'text-yellow-600' if count >= 1, 'text-gray-400' if 0.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774013715110_PRIORITY-2-CHAT-AND-FEATURES.md-msg7-task5-micro5",
+              "filePath": "src/app/agents/page.tsx",
+              "change": "Add legend explaining matrix symbols",
+              "description": "Add a legend below the skills matrix table. Create a div with className 'mt-4 flex gap-6 text-sm text-gray-600'. Add three legend items as flex divs: first with CheckIcon className 'h-4 w-4 text-green-500 mr-2' and text 'Skill Available'. Second with span className 'h-4 w-4 inline-block text-gray-300 mr-2' containing '—' and text 'Not Available'. Third showing skill count explanation: 'Numbers in footer show how many departments have each skill'.",
+              "status": "pending"
+            }
+          ]
         }
       ]
     },
@@ -201,46 +386,93 @@
           "taskId": "task_1774013715110_PRIORITY-2-CHAT-AND-FEATURES.md-msg9-task1",
           "taskNumber": 1,
           "originalDescription": "The Ideas page at /ideas or /(dashboard)/ideas. Must be accessible from sidebar. Shows the idea pipeline:",
-          "status": "pending",
-          "approved": false,
-          "rewritten": false,
-          "microTasks": []
+          "status": "approved",
+          "approved": true,
+          "rewritten": true,
+          "microTasks": [
+            {
+              "id": "task_1774013715110_PRIORITY-2-CHAT-AND-FEATURES.md-msg9-task1-micro1",
+              "filePath": "src/app/dashboard/page.tsx",
+              "change": "Locate the component mentioned in the task",
+              "description": "In src/app/dashboard/page.tsx, find the main DashboardPage component. Look for the specific section mentioned in the task: \"The Ideas page at /ideas or /(dashboard)/ideas. Must be accessible from sidebar. Shows the idea pipeline:\". Identify the exact component or JSX element that needs to be modified.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774013715110_PRIORITY-2-CHAT-AND-FEATURES.md-msg9-task1-micro2",
+              "filePath": "src/app/dashboard/page.tsx",
+              "change": "Implement the requested change",
+              "description": "Make the specific change requested in the original task. This involves modifying the identified component to The Ideas page at /ideas or /(dashboard)/ideas. Must be accessible from sidebar. Shows the idea pipeline:. Ensure proper TypeScript types and React best practices are followed.",
+              "status": "pending"
+            }
+          ]
         },
         {
           "taskId": "task_1774013715110_PRIORITY-2-CHAT-AND-FEATURES.md-msg9-task2",
           "taskNumber": 2,
           "originalDescription": "Each idea card:",
-          "status": "pending",
-          "approved": false,
-          "rewritten": false,
-          "microTasks": []
+          "status": "approved",
+          "approved": true,
+          "rewritten": true,
+          "microTasks": [
+            {
+              "id": "task_1774013715110_PRIORITY-2-CHAT-AND-FEATURES.md-msg9-task2-micro1",
+              "filePath": "src/app/dashboard/page.tsx",
+              "change": "Analyze and implement the requested feature",
+              "description": "Implement the following task with precision: Each idea card:. First identify the correct file and component, then make the necessary changes following the project's coding standards.",
+              "status": "pending"
+            }
+          ]
         },
         {
           "taskId": "task_1774013715110_PRIORITY-2-CHAT-AND-FEATURES.md-msg9-task3",
           "taskNumber": 3,
           "originalDescription": "\"Submit Idea\" button:",
-          "status": "pending",
-          "approved": false,
-          "rewritten": false,
-          "microTasks": []
+          "status": "approved",
+          "approved": true,
+          "rewritten": true,
+          "microTasks": [
+            {
+              "id": "task_1774013715110_PRIORITY-2-CHAT-AND-FEATURES.md-msg9-task3-micro1",
+              "filePath": "src/app/dashboard/page.tsx",
+              "change": "Analyze and implement the requested feature",
+              "description": "Implement the following task with precision: \"Submit Idea\" button:. First identify the correct file and component, then make the necessary changes following the project's coding standards.",
+              "status": "pending"
+            }
+          ]
         },
         {
           "taskId": "task_1774013715110_PRIORITY-2-CHAT-AND-FEATURES.md-msg9-task4",
           "taskNumber": 4,
           "originalDescription": "Idea detail — click an idea:",
-          "status": "pending",
-          "approved": false,
-          "rewritten": false,
-          "microTasks": []
+          "status": "approved",
+          "approved": true,
+          "rewritten": true,
+          "microTasks": [
+            {
+              "id": "task_1774013715110_PRIORITY-2-CHAT-AND-FEATURES.md-msg9-task4-micro1",
+              "filePath": "src/app/dashboard/page.tsx",
+              "change": "Analyze and implement the requested feature",
+              "description": "Implement the following task with precision: Idea detail — click an idea:. First identify the correct file and component, then make the necessary changes following the project's coding standards.",
+              "status": "pending"
+            }
+          ]
         },
         {
           "taskId": "task_1774013715110_PRIORITY-2-CHAT-AND-FEATURES.md-msg9-task5",
           "taskNumber": 5,
           "originalDescription": "Initialize with 4 ideas:",
-          "status": "pending",
-          "approved": false,
-          "rewritten": false,
-          "microTasks": []
+          "status": "approved",
+          "approved": true,
+          "rewritten": true,
+          "microTasks": [
+            {
+              "id": "task_1774013715110_PRIORITY-2-CHAT-AND-FEATURES.md-msg9-task5-micro1",
+              "filePath": "src/app/dashboard/page.tsx",
+              "change": "Analyze and implement the requested feature",
+              "description": "Implement the following task with precision: Initialize with 4 ideas:. First identify the correct file and component, then make the necessary changes following the project's coding standards.",
+              "status": "pending"
+            }
+          ]
         }
       ]
     },
@@ -259,46 +491,205 @@
           "taskId": "task_1774013715110_PRIORITY-2-CHAT-AND-FEATURES.md-msg11-task1",
           "taskNumber": 1,
           "originalDescription": "Create src/app/dashboard/integrations/page.tsx. This page shows all connected services.",
-          "status": "pending",
-          "approved": false,
-          "rewritten": false,
-          "microTasks": []
+          "status": "approved",
+          "approved": true,
+          "rewritten": true,
+          "microTasks": [
+            {
+              "id": "task_1774013715110_PRIORITY-2-CHAT-AND-FEATURES.md-msg11-task1-micro1",
+              "filePath": "src/app/dashboard/integrations/page.tsx",
+              "change": "Create base integrations page file with imports",
+              "description": "Create a new file src/app/dashboard/integrations/page.tsx. At the top, add 'use client' directive. Import React, useState, useEffect from 'react'. Import Card, CardContent, CardHeader, CardTitle from '@/components/ui/card'. Import Badge from '@/components/ui/badge'. Import Button from '@/components/ui/button'. Import necessary icons from 'lucide-react': Globe, Bot, Github, Server, Shield, Cpu, RefreshCw, CheckCircle, XCircle, Clock. Create and export default function IntegrationsPage() that returns a main container div with className 'space-y-6'.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774013715110_PRIORITY-2-CHAT-AND-FEATURES.md-msg11-task1-micro2",
+              "filePath": "src/app/dashboard/integrations/page.tsx",
+              "change": "Add state management and TypeScript interfaces",
+              "description": "Inside IntegrationsPage component, add state management. Create useState hooks: const [services, setServices] = useState<ServiceStatus[]>([]); const [loading, setLoading] = useState(true); const [tokenUsage, setTokenUsage] = useState<{used: number, total: number} | null>(null); Define TypeScript interface above the component: interface ServiceStatus { id: string; name: string; icon: React.ReactNode; status: 'connected' | 'disconnected' | 'checking'; details: Record<string, string>; lastChecked: Date | null; }",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774013715110_PRIORITY-2-CHAT-AND-FEATURES.md-msg11-task1-micro3",
+              "filePath": "src/app/dashboard/integrations/page.tsx",
+              "change": "Add page header with title and refresh button",
+              "description": "Add the page header section at the start of the return statement. Create a div with className 'flex items-center justify-between'. Inside, add an h1 with className 'text-2xl font-bold' containing 'APIs & Integrations'. Add a p tag with className 'text-muted-foreground mt-1' containing 'Manage connected services and monitor API status'. On the right side, add a Button with variant='outline' that calls a refreshAllStatuses function, containing RefreshCw icon and text 'Refresh All'.",
+              "status": "pending"
+            }
+          ]
         },
         {
           "taskId": "task_1774013715110_PRIORITY-2-CHAT-AND-FEATURES.md-msg11-task2",
           "taskNumber": 2,
           "originalDescription": "Service cards (each with status indicator):",
-          "status": "pending",
-          "approved": false,
-          "rewritten": false,
-          "microTasks": []
+          "status": "approved",
+          "approved": true,
+          "rewritten": true,
+          "microTasks": [
+            {
+              "id": "task_1774013715110_PRIORITY-2-CHAT-AND-FEATURES.md-msg11-task2-micro1",
+              "filePath": "src/app/dashboard/integrations/page.tsx",
+              "change": "Initialize service definitions in useEffect",
+              "description": "Create a useEffect hook that initializes all service data on component mount. Define an async function initializeServices(). Inside, create an array of initial services with structure: { id: 'openclaw', name: 'OpenClaw Gateway', icon: <Globe className='h-5 w-5' />, status: 'checking', details: {}, lastChecked: null }. Repeat for: 'telegram' with Bot icon, 'github' with Github icon, 'bridge' with Server icon, 'caddy' with Shield icon, 'claude' with Cpu icon. Call setServices(initialServices) then call fetchAllStatuses().",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774013715110_PRIORITY-2-CHAT-AND-FEATURES.md-msg11-task2-micro2",
+              "filePath": "src/app/dashboard/integrations/page.tsx",
+              "change": "Add OpenClaw Gateway status fetcher",
+              "description": "Create async function fetchOpenClawStatus() that fetches from '/api/bridge/status'. On success, return { status: 'connected', details: { model: data.model || 'claude-opus-4', version: data.version || '1.0.0', endpoint: 'OpenRouter Compatible' } }. On error, return { status: 'disconnected', details: { error: 'Unable to connect' } }. Wrap in try-catch and handle network errors gracefully.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774013715110_PRIORITY-2-CHAT-AND-FEATURES.md-msg11-task2-micro3",
+              "filePath": "src/app/dashboard/integrations/page.tsx",
+              "change": "Add Telegram Bot status fetcher with masked data",
+              "description": "Create async function fetchTelegramStatus(). This should fetch from '/api/telegram/status' or return mock data if endpoint doesn't exist. Return { status: 'connected', details: { botName: '@Gen3PlatformBot', ownerChatId: '5109****93', tokenStatus: 'Valid' } }. The chat ID must be masked for security - show only first 4 and last 2 digits with asterisks in between.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774013715110_PRIORITY-2-CHAT-AND-FEATURES.md-msg11-task2-micro4",
+              "filePath": "src/app/dashboard/integrations/page.tsx",
+              "change": "Add GitHub status fetcher",
+              "description": "Create async function fetchGitHubStatus(). Return { status: 'connected', details: { repository: 'immotlh7/genplatform', branch: 'main', lastPush: new Date().toLocaleDateString() } }. If possible, fetch from GitHub API or use environment variable for repo name. Include error handling that sets status to 'disconnected' if fetch fails.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774013715110_PRIORITY-2-CHAT-AND-FEATURES.md-msg11-task2-micro5",
+              "filePath": "src/app/dashboard/integrations/page.tsx",
+              "change": "Add Bridge API status fetcher",
+              "description": "Create async function fetchBridgeStatus() that fetches from '/api/bridge/health'. On success, return { status: 'connected', details: { endpoints: '10+ routes', port: '3001', uptime: data.uptime || 'Active' } }. On error, return { status: 'disconnected', details: { error: 'Bridge unreachable' } }. This checks the local bridge API health endpoint.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774013715110_PRIORITY-2-CHAT-AND-FEATURES.md-msg11-task2-micro6",
+              "filePath": "src/app/dashboard/integrations/page.tsx",
+              "change": "Add Caddy SSL status",
+              "description": "Create async function fetchCaddyStatus(). Return { status: 'connected', details: { domains: 'app.gen3.ai', certificate: 'Valid (Let\\'s Encrypt)', autoRenewal: 'Enabled' } }. Since Caddy status is typically system-level, use static data indicating the server configuration. Status should always show connected if the page loads successfully via HTTPS.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774013715110_PRIORITY-2-CHAT-AND-FEATURES.md-msg11-task2-micro7",
+              "filePath": "src/app/dashboard/integrations/page.tsx",
+              "change": "Add Claude API status",
+              "description": "Create async function fetchClaudeStatus(). Return { status: 'connected', details: { model: 'claude-opus-4', via: 'OpenClaw Gateway', plan: 'Pro Max', contextWindow: '200K tokens' } }. This service status depends on OpenClaw being connected, so you can optionally check OpenClaw status first and inherit its connection state.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774013715110_PRIORITY-2-CHAT-AND-FEATURES.md-msg11-task2-micro8",
+              "filePath": "src/app/dashboard/integrations/page.tsx",
+              "change": "Create master status fetcher function",
+              "description": "Create async function fetchAllStatuses() that calls all individual fetch functions and updates the services state. Use Promise.allSettled to handle partial failures. For each result, find the corresponding service in the services array by id and update its status, details, and set lastChecked to new Date(). Finally call setLoading(false). This function should be called from useEffect and from the Refresh All button.",
+              "status": "pending"
+            }
+          ]
         },
         {
           "taskId": "task_1774013715110_PRIORITY-2-CHAT-AND-FEATURES.md-msg11-task3",
           "taskNumber": 3,
           "originalDescription": "Each card has:",
-          "status": "pending",
-          "approved": false,
-          "rewritten": false,
-          "microTasks": []
+          "status": "approved",
+          "approved": true,
+          "rewritten": true,
+          "microTasks": [
+            {
+              "id": "task_1774013715110_PRIORITY-2-CHAT-AND-FEATURES.md-msg11-task3-micro1",
+              "filePath": "src/app/dashboard/integrations/page.tsx",
+              "change": "Create ServiceCard component structure",
+              "description": "Create a ServiceCard component inside the file (or as a separate component). Props: { service: ServiceStatus, onTestConnection: (id: string) => void }. Return a Card component with CardHeader containing a flex div. Left side shows service.icon and service.name in a CardTitle. Right side shows a Badge with variant based on status: 'default' with green background for connected, 'destructive' for disconnected, 'secondary' for checking.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774013715110_PRIORITY-2-CHAT-AND-FEATURES.md-msg11-task3-micro2",
+              "filePath": "src/app/dashboard/integrations/page.tsx",
+              "change": "Add service details rendering",
+              "description": "In ServiceCard's CardContent, create a div with className 'space-y-3'. Map over Object.entries(service.details) to render each detail. Each entry should be a div with className 'flex justify-between text-sm'. The key should be in a span with className 'text-muted-foreground capitalize' (transform key like 'botName' to 'Bot Name'). The value in a span with className 'font-medium'.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774013715110_PRIORITY-2-CHAT-AND-FEATURES.md-msg11-task3-micro3",
+              "filePath": "src/app/dashboard/integrations/page.tsx",
+              "change": "Add test connection button and timestamp",
+              "description": "Add the Test Connection button and timestamp to ServiceCard. Below the details div, add a div with className 'flex items-center justify-between pt-3 border-t'. Left side: Button with variant='ghost' size='sm' onClick={() => onTestConnection(service.id)}, containing RefreshCw icon (add animate-spin class if status is 'checking') and text 'Test Connection'. Right side: span with className 'text-xs text-muted-foreground' showing Clock icon and service.lastChecked formatted or 'Never checked'.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774013715110_PRIORITY-2-CHAT-AND-FEATURES.md-msg11-task3-micro4",
+              "filePath": "src/app/dashboard/integrations/page.tsx",
+              "change": "Implement test connection functionality",
+              "description": "Create async function testConnection(serviceId: string) in IntegrationsPage. This function should: 1) Update that service's status to 'checking' in state, 2) Call the appropriate fetch function based on serviceId using a switch statement, 3) Update the service with the result including new lastChecked timestamp. Add a toast notification showing 'Testing {serviceName}...' at start and 'Connected!' or 'Failed to connect' at end.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774013715110_PRIORITY-2-CHAT-AND-FEATURES.md-msg11-task3-micro5",
+              "filePath": "src/app/dashboard/integrations/page.tsx",
+              "change": "Render service cards grid",
+              "description": "In the main return statement, below the header, add a div with className 'grid gap-4 md:grid-cols-2 lg:grid-cols-3'. Map over the services state array and render a ServiceCard for each: services.map(service => <ServiceCard key={service.id} service={service} onTestConnection={testConnection} />). Add loading skeleton cards if loading state is true using a conditional render.",
+              "status": "pending"
+            }
+          ]
         },
         {
           "taskId": "task_1774013715110_PRIORITY-2-CHAT-AND-FEATURES.md-msg11-task4",
           "taskNumber": 4,
           "originalDescription": "Token Usage section (if possible):",
-          "status": "pending",
-          "approved": false,
-          "rewritten": false,
-          "microTasks": []
+          "status": "approved",
+          "approved": true,
+          "rewritten": true,
+          "microTasks": [
+            {
+              "id": "task_1774013715110_PRIORITY-2-CHAT-AND-FEATURES.md-msg11-task4-micro1",
+              "filePath": "src/app/dashboard/integrations/page.tsx",
+              "change": "Add token usage fetch function",
+              "description": "Create async function fetchTokenUsage() that fetches from '/api/bridge/sessions'. Parse the response to extract context usage. Return an object { used: number, total: 200000 } where used is calculated from the session data. If the endpoint returns context_used or similar field, use that. Default total to 200000 (200K context). Handle errors gracefully by returning null.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774013715110_PRIORITY-2-CHAT-AND-FEATURES.md-msg11-task4-micro2",
+              "filePath": "src/app/dashboard/integrations/page.tsx",
+              "change": "Integrate token usage fetching",
+              "description": "In useEffect or fetchAllStatuses, call fetchTokenUsage() and setTokenUsage with the result. Add this to the initialization flow so token usage is fetched alongside service statuses. The tokenUsage state should update whenever the page loads or user clicks Refresh All.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774013715110_PRIORITY-2-CHAT-AND-FEATURES.md-msg11-task4-micro3",
+              "filePath": "src/app/dashboard/integrations/page.tsx",
+              "change": "Add Token Usage card component",
+              "description": "Below the services grid, add a new Card for Token Usage. Only render if tokenUsage is not null. CardHeader with CardTitle 'Context Usage'. CardContent with: a div showing 'OpenClaw Session' label, a progress bar (div with bg-muted and inner div with bg-primary and width based on percentage), and text showing '{percentage}% of 200K context used' where percentage = Math.round((tokenUsage.used / tokenUsage.total) * 100).",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774013715110_PRIORITY-2-CHAT-AND-FEATURES.md-msg11-task4-micro4",
+              "filePath": "src/app/dashboard/integrations/page.tsx",
+              "change": "Add detailed token usage display with warnings",
+              "description": "Enhance the Token Usage card with additional details. Add a div below the progress bar with className 'flex justify-between text-xs text-muted-foreground mt-2'. Left side shows 'Used: {tokenUsage.used.toLocaleString()} tokens'. Right side shows 'Available: {(tokenUsage.total - tokenUsage.used).toLocaleString()} tokens'. Add conditional styling: if usage > 80%, make progress bar bg-yellow-500, if > 95% make it bg-red-500.",
+              "status": "pending"
+            }
+          ]
         },
         {
           "taskId": "task_1774013715110_PRIORITY-2-CHAT-AND-FEATURES.md-msg11-task5",
           "taskNumber": 5,
           "originalDescription": "Add link in sidebar under ADMINISTRATION: \"Integrations\" → /dashboard/integrations",
-          "status": "pending",
-          "approved": false,
-          "rewritten": false,
-          "microTasks": []
+          "status": "approved",
+          "approved": true,
+          "rewritten": true,
+          "microTasks": [
+            {
+              "id": "task_1774013715110_PRIORITY-2-CHAT-AND-FEATURES.md-msg11-task5-micro1",
+              "filePath": "src/components/sidebar.tsx",
+              "change": "Locate ADMINISTRATION section",
+              "description": "Locate the ADMINISTRATION section in the sidebar navigation items array. This is typically defined as an array of objects with label, href, and icon properties. Find the array or object that contains items like 'Settings', 'Users', or similar admin links. Do NOT modify any existing styling, layout, or other navigation items.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774013715110_PRIORITY-2-CHAT-AND-FEATURES.md-msg11-task5-micro2",
+              "filePath": "src/components/sidebar.tsx",
+              "change": "Add Integrations link to sidebar navigation",
+              "description": "Add a new navigation item object to the ADMINISTRATION section array. The object should be: { label: 'Integrations', href: '/dashboard/integrations', icon: Plug2 } (or use 'Globe' icon if Plug2 is not imported). Import the icon at the top of the file from 'lucide-react' if not already imported. Insert this item in a logical position within the ADMINISTRATION group, such as after Settings or at the end of the admin items.",
+              "status": "pending"
+            }
+          ]
         }
       ]
     }

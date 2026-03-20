@@ -1061,5 +1061,677 @@
     "type": "task_sent",
     "message": "🚀 Executing Task 1: Open src/components/notifications/notification-system.tsx (o...",
     "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg3-task1"
+  },
+  {
+    "timestamp": "2026-03-20T15:17:49.929Z",
+    "type": "task_done",
+    "message": "✅ Task 1 completed",
+    "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg3-task1"
+  },
+  {
+    "timestamp": "2026-03-20T15:17:50.043Z",
+    "type": "info",
+    "message": "🚀 Auto-execution started after approval"
+  },
+  {
+    "timestamp": "2026-03-20T15:19:17.678Z",
+    "type": "info",
+    "message": "✅ Approved 5 tasks in message 5"
+  },
+  {
+    "timestamp": "2026-03-20T15:19:18.697Z",
+    "type": "info",
+    "message": "No approved tasks found to execute"
+  },
+  {
+    "timestamp": "2026-03-20T15:19:18.702Z",
+    "type": "info",
+    "message": "🚀 Auto-execution started after approval"
+  },
+  {
+    "timestamp": "2026-03-20T15:19:20.691Z",
+    "type": "info",
+    "message": "No approved tasks found to execute"
+  },
+  {
+    "timestamp": "2026-03-20T15:20:01.686Z",
+    "type": "info",
+    "message": "No approved tasks found to execute"
+  },
+  {
+    "timestamp": "2026-03-20T15:20:25.656Z",
+    "type": "info",
+    "message": "✅ Approved 5 tasks in message 7"
+  },
+  {
+    "timestamp": "2026-03-20T15:20:26.667Z",
+    "type": "info",
+    "message": "No approved tasks found to execute"
+  },
+  {
+    "timestamp": "2026-03-20T15:20:26.671Z",
+    "type": "info",
+    "message": "🚀 Auto-execution started after approval"
+  },
+  {
+    "timestamp": "2026-03-20T15:20:28.672Z",
+    "type": "info",
+    "message": "No approved tasks found to execute"
+  },
+  {
+    "timestamp": "2026-03-20T15:21:53.721Z",
+    "type": "info",
+    "message": "✅ Approved 5 tasks in message 9"
+  },
+  {
+    "timestamp": "2026-03-20T15:21:54.732Z",
+    "type": "info",
+    "message": "No approved tasks found to execute"
+  },
+  {
+    "timestamp": "2026-03-20T15:21:54.735Z",
+    "type": "info",
+    "message": "🚀 Auto-execution started after approval"
+  },
+  {
+    "timestamp": "2026-03-20T15:21:56.729Z",
+    "type": "info",
+    "message": "No approved tasks found to execute"
+  },
+  {
+    "timestamp": "2026-03-20T15:22:55.294Z",
+    "type": "info",
+    "message": "✅ Approved 5 tasks in message 11"
+  },
+  {
+    "timestamp": "2026-03-20T15:22:56.302Z",
+    "type": "info",
+    "message": "No approved tasks found to execute"
+  },
+  {
+    "timestamp": "2026-03-20T15:22:56.304Z",
+    "type": "info",
+    "message": "🚀 Auto-execution started after approval"
+  },
+  {
+    "timestamp": "2026-03-20T15:22:58.301Z",
+    "type": "info",
+    "message": "No approved tasks found to execute"
+  },
+  {
+    "timestamp": "2026-03-20T15:24:17.011Z",
+    "type": "info",
+    "message": "✅ Approved 5 tasks in message 3"
+  },
+  {
+    "timestamp": "2026-03-20T15:24:18.019Z",
+    "type": "info",
+    "message": "No approved tasks found to execute"
+  },
+  {
+    "timestamp": "2026-03-20T15:24:18.023Z",
+    "type": "info",
+    "message": "🚀 Auto-execution started after approval"
+  },
+  {
+    "timestamp": "2026-03-20T15:24:20.020Z",
+    "type": "info",
+    "message": "No approved tasks found to execute"
+  },
+  {
+    "timestamp": "2026-03-20T15:25:01.696Z",
+    "type": "info",
+    "message": "No approved tasks found to execute"
+  },
+  {
+    "timestamp": "2026-03-20T15:25:26.242Z",
+    "type": "info",
+    "message": "✅ Approved 5 tasks in message 5"
+  },
+  {
+    "timestamp": "2026-03-20T15:25:27.249Z",
+    "type": "info",
+    "message": "No approved tasks found to execute"
+  },
+  {
+    "timestamp": "2026-03-20T15:25:27.252Z",
+    "type": "info",
+    "message": "🚀 Auto-execution started after approval"
+  },
+  {
+    "timestamp": "2026-03-20T15:25:29.249Z",
+    "type": "info",
+    "message": "No approved tasks found to execute"
+  },
+  {
+    "timestamp": "2026-03-20T15:26:28.700Z",
+    "type": "info",
+    "message": "✅ Approved 5 tasks in message 7"
+  },
+  {
+    "timestamp": "2026-03-20T15:26:29.708Z",
+    "type": "info",
+    "message": "No approved tasks found to execute"
+  },
+  {
+    "timestamp": "2026-03-20T15:26:29.711Z",
+    "type": "info",
+    "message": "🚀 Auto-execution started after approval"
+  },
+  {
+    "timestamp": "2026-03-20T15:26:31.706Z",
+    "type": "info",
+    "message": "No approved tasks found to execute"
+  },
+  {
+    "timestamp": "2026-03-20T15:27:14.245Z",
+    "type": "info",
+    "message": "✅ Approved 5 tasks in message 9"
+  },
+  {
+    "timestamp": "2026-03-20T15:27:15.255Z",
+    "type": "info",
+    "message": "No approved tasks found to execute"
+  },
+  {
+    "timestamp": "2026-03-20T15:27:15.258Z",
+    "type": "info",
+    "message": "🚀 Auto-execution started after approval"
+  },
+  {
+    "timestamp": "2026-03-20T15:27:17.255Z",
+    "type": "info",
+    "message": "No approved tasks found to execute"
+  },
+  {
+    "timestamp": "2026-03-20T15:27:59.751Z",
+    "type": "info",
+    "message": "✅ Approved 4 tasks in message 11"
+  },
+  {
+    "timestamp": "2026-03-20T15:28:00.767Z",
+    "type": "info",
+    "message": "No approved tasks found to execute"
+  },
+  {
+    "timestamp": "2026-03-20T15:28:00.771Z",
+    "type": "info",
+    "message": "🚀 Auto-execution started after approval"
+  },
+  {
+    "timestamp": "2026-03-20T15:28:02.768Z",
+    "type": "info",
+    "message": "No approved tasks found to execute"
+  },
+  {
+    "timestamp": "2026-03-20T15:29:46.716Z",
+    "type": "info",
+    "message": "✅ Approved 5 tasks in message 13"
+  },
+  {
+    "timestamp": "2026-03-20T15:29:47.724Z",
+    "type": "info",
+    "message": "No approved tasks found to execute"
+  },
+  {
+    "timestamp": "2026-03-20T15:29:47.727Z",
+    "type": "info",
+    "message": "🚀 Auto-execution started after approval"
+  },
+  {
+    "timestamp": "2026-03-20T15:29:49.725Z",
+    "type": "info",
+    "message": "No approved tasks found to execute"
+  },
+  {
+    "timestamp": "2026-03-20T15:30:02.210Z",
+    "type": "info",
+    "message": "No approved tasks found to execute"
+  },
+  {
+    "timestamp": "2026-03-20T15:31:02.646Z",
+    "type": "info",
+    "message": "✅ Approved 5 tasks in message 3"
+  },
+  {
+    "timestamp": "2026-03-20T15:31:03.661Z",
+    "type": "info",
+    "message": "No approved tasks found to execute"
+  },
+  {
+    "timestamp": "2026-03-20T15:31:03.665Z",
+    "type": "info",
+    "message": "🚀 Auto-execution started after approval"
+  },
+  {
+    "timestamp": "2026-03-20T15:31:05.656Z",
+    "type": "info",
+    "message": "No approved tasks found to execute"
+  },
+  {
+    "timestamp": "2026-03-20T15:32:36.520Z",
+    "type": "info",
+    "message": "✅ Approved 6 tasks in message 5"
+  },
+  {
+    "timestamp": "2026-03-20T15:32:37.529Z",
+    "type": "info",
+    "message": "No approved tasks found to execute"
+  },
+  {
+    "timestamp": "2026-03-20T15:32:37.531Z",
+    "type": "info",
+    "message": "🚀 Auto-execution started after approval"
+  },
+  {
+    "timestamp": "2026-03-20T15:32:39.528Z",
+    "type": "info",
+    "message": "No approved tasks found to execute"
+  },
+  {
+    "timestamp": "2026-03-20T15:33:45.196Z",
+    "type": "info",
+    "message": "✅ Approved 6 tasks in message 7"
+  },
+  {
+    "timestamp": "2026-03-20T15:33:46.204Z",
+    "type": "info",
+    "message": "No approved tasks found to execute"
+  },
+  {
+    "timestamp": "2026-03-20T15:33:46.206Z",
+    "type": "info",
+    "message": "🚀 Auto-execution started after approval"
+  },
+  {
+    "timestamp": "2026-03-20T15:33:48.203Z",
+    "type": "info",
+    "message": "No approved tasks found to execute"
+  },
+  {
+    "timestamp": "2026-03-20T15:35:01.897Z",
+    "type": "info",
+    "message": "No approved tasks found to execute"
+  },
+  {
+    "timestamp": "2026-03-20T15:35:04.302Z",
+    "type": "info",
+    "message": "✅ Approved 6 tasks in message 9"
+  },
+  {
+    "timestamp": "2026-03-20T15:35:05.313Z",
+    "type": "info",
+    "message": "No approved tasks found to execute"
+  },
+  {
+    "timestamp": "2026-03-20T15:35:05.316Z",
+    "type": "info",
+    "message": "🚀 Auto-execution started after approval"
+  },
+  {
+    "timestamp": "2026-03-20T15:35:07.311Z",
+    "type": "info",
+    "message": "No approved tasks found to execute"
+  },
+  {
+    "timestamp": "2026-03-20T15:36:37.544Z",
+    "type": "info",
+    "message": "✅ Approved 5 tasks in message 3"
+  },
+  {
+    "timestamp": "2026-03-20T15:36:38.552Z",
+    "type": "info",
+    "message": "No approved tasks found to execute"
+  },
+  {
+    "timestamp": "2026-03-20T15:36:38.554Z",
+    "type": "info",
+    "message": "🚀 Auto-execution started after approval"
+  },
+  {
+    "timestamp": "2026-03-20T15:36:40.552Z",
+    "type": "info",
+    "message": "No approved tasks found to execute"
+  },
+  {
+    "timestamp": "2026-03-20T15:37:53.056Z",
+    "type": "info",
+    "message": "✅ Approved 5 tasks in message 5"
+  },
+  {
+    "timestamp": "2026-03-20T15:37:54.063Z",
+    "type": "info",
+    "message": "No approved tasks found to execute"
+  },
+  {
+    "timestamp": "2026-03-20T15:37:54.065Z",
+    "type": "info",
+    "message": "🚀 Auto-execution started after approval"
+  },
+  {
+    "timestamp": "2026-03-20T15:37:56.064Z",
+    "type": "info",
+    "message": "No approved tasks found to execute"
+  },
+  {
+    "timestamp": "2026-03-20T15:39:19.544Z",
+    "type": "info",
+    "message": "✅ Approved 5 tasks in message 7"
+  },
+  {
+    "timestamp": "2026-03-20T15:39:20.553Z",
+    "type": "info",
+    "message": "No approved tasks found to execute"
+  },
+  {
+    "timestamp": "2026-03-20T15:39:20.557Z",
+    "type": "info",
+    "message": "🚀 Auto-execution started after approval"
+  },
+  {
+    "timestamp": "2026-03-20T15:39:22.552Z",
+    "type": "info",
+    "message": "No approved tasks found to execute"
+  },
+  {
+    "timestamp": "2026-03-20T15:40:02.362Z",
+    "type": "info",
+    "message": "No approved tasks found to execute"
+  },
+  {
+    "timestamp": "2026-03-20T15:40:58.917Z",
+    "type": "info",
+    "message": "✅ Approved 5 tasks in message 9"
+  },
+  {
+    "timestamp": "2026-03-20T15:40:59.925Z",
+    "type": "info",
+    "message": "No approved tasks found to execute"
+  },
+  {
+    "timestamp": "2026-03-20T15:40:59.928Z",
+    "type": "info",
+    "message": "🚀 Auto-execution started after approval"
+  },
+  {
+    "timestamp": "2026-03-20T15:41:01.928Z",
+    "type": "info",
+    "message": "No approved tasks found to execute"
+  },
+  {
+    "timestamp": "2026-03-20T15:42:18.530Z",
+    "type": "info",
+    "message": "✅ Approved 5 tasks in message 11"
+  },
+  {
+    "timestamp": "2026-03-20T15:42:19.538Z",
+    "type": "info",
+    "message": "No approved tasks found to execute"
+  },
+  {
+    "timestamp": "2026-03-20T15:42:19.541Z",
+    "type": "info",
+    "message": "🚀 Auto-execution started after approval"
+  },
+  {
+    "timestamp": "2026-03-20T15:42:21.538Z",
+    "type": "info",
+    "message": "No approved tasks found to execute"
+  },
+  {
+    "timestamp": "2026-03-20T15:43:56.070Z",
+    "type": "info",
+    "message": "✅ Approved 5 tasks in message 13"
+  },
+  {
+    "timestamp": "2026-03-20T15:43:57.078Z",
+    "type": "info",
+    "message": "No approved tasks found to execute"
+  },
+  {
+    "timestamp": "2026-03-20T15:43:57.081Z",
+    "type": "info",
+    "message": "🚀 Auto-execution started after approval"
+  },
+  {
+    "timestamp": "2026-03-20T15:43:59.080Z",
+    "type": "info",
+    "message": "No approved tasks found to execute"
+  },
+  {
+    "timestamp": "2026-03-20T15:45:02.278Z",
+    "type": "info",
+    "message": "No approved tasks found to execute"
+  },
+  {
+    "timestamp": "2026-03-20T15:45:24.180Z",
+    "type": "info",
+    "message": "✅ Approved 6 tasks in message 15"
+  },
+  {
+    "timestamp": "2026-03-20T15:45:25.193Z",
+    "type": "info",
+    "message": "No approved tasks found to execute"
+  },
+  {
+    "timestamp": "2026-03-20T15:45:25.196Z",
+    "type": "info",
+    "message": "🚀 Auto-execution started after approval"
+  },
+  {
+    "timestamp": "2026-03-20T15:45:27.192Z",
+    "type": "info",
+    "message": "No approved tasks found to execute"
+  },
+  {
+    "timestamp": "2026-03-20T15:47:06.813Z",
+    "type": "info",
+    "message": "✅ Approved 6 tasks in message 17"
+  },
+  {
+    "timestamp": "2026-03-20T15:47:07.822Z",
+    "type": "info",
+    "message": "No approved tasks found to execute"
+  },
+  {
+    "timestamp": "2026-03-20T15:47:07.827Z",
+    "type": "info",
+    "message": "🚀 Auto-execution started after approval"
+  },
+  {
+    "timestamp": "2026-03-20T15:47:09.823Z",
+    "type": "info",
+    "message": "No approved tasks found to execute"
+  },
+  {
+    "timestamp": "2026-03-20T15:50:02.757Z",
+    "type": "info",
+    "message": "No approved tasks found to execute"
+  },
+  {
+    "timestamp": "2026-03-20T15:55:01.593Z",
+    "type": "info",
+    "message": "No approved tasks found to execute"
+  },
+  {
+    "timestamp": "2026-03-20T16:00:02.272Z",
+    "type": "info",
+    "message": "No approved tasks found to execute"
+  },
+  {
+    "timestamp": "2026-03-20T16:05:02.215Z",
+    "type": "info",
+    "message": "No approved tasks found to execute"
+  },
+  {
+    "timestamp": "2026-03-20T16:10:02.342Z",
+    "type": "info",
+    "message": "No approved tasks found to execute"
+  },
+  {
+    "timestamp": "2026-03-20T16:15:01.480Z",
+    "type": "info",
+    "message": "No approved tasks found to execute"
+  },
+  {
+    "timestamp": "2026-03-20T16:20:01.560Z",
+    "type": "info",
+    "message": "No approved tasks found to execute"
+  },
+  {
+    "timestamp": "2026-03-20T16:25:01.724Z",
+    "type": "info",
+    "message": "No approved tasks found to execute"
+  },
+  {
+    "timestamp": "2026-03-20T16:30:01.752Z",
+    "type": "info",
+    "message": "No approved tasks found to execute"
+  },
+  {
+    "timestamp": "2026-03-20T16:35:01.720Z",
+    "type": "info",
+    "message": "No approved tasks found to execute"
+  },
+  {
+    "timestamp": "2026-03-20T16:40:01.965Z",
+    "type": "info",
+    "message": "No approved tasks found to execute"
+  },
+  {
+    "timestamp": "2026-03-20T16:45:02.193Z",
+    "type": "info",
+    "message": "No approved tasks found to execute"
+  },
+  {
+    "timestamp": "2026-03-20T16:50:02.415Z",
+    "type": "info",
+    "message": "No approved tasks found to execute"
+  },
+  {
+    "timestamp": "2026-03-20T16:55:01.424Z",
+    "type": "info",
+    "message": "No approved tasks found to execute"
+  },
+  {
+    "timestamp": "2026-03-20T17:00:01.668Z",
+    "type": "info",
+    "message": "No approved tasks found to execute"
+  },
+  {
+    "timestamp": "2026-03-20T17:05:01.558Z",
+    "type": "info",
+    "message": "No approved tasks found to execute"
+  },
+  {
+    "timestamp": "2026-03-20T17:10:01.745Z",
+    "type": "info",
+    "message": "No approved tasks found to execute"
+  },
+  {
+    "timestamp": "2026-03-20T17:15:01.758Z",
+    "type": "info",
+    "message": "No approved tasks found to execute"
+  },
+  {
+    "timestamp": "2026-03-20T17:20:02.060Z",
+    "type": "info",
+    "message": "No approved tasks found to execute"
+  },
+  {
+    "timestamp": "2026-03-20T17:25:02.039Z",
+    "type": "info",
+    "message": "No approved tasks found to execute"
+  },
+  {
+    "timestamp": "2026-03-20T17:30:02.434Z",
+    "type": "info",
+    "message": "No approved tasks found to execute"
+  },
+  {
+    "timestamp": "2026-03-20T17:35:02.267Z",
+    "type": "info",
+    "message": "No approved tasks found to execute"
+  },
+  {
+    "timestamp": "2026-03-20T17:40:01.383Z",
+    "type": "info",
+    "message": "No approved tasks found to execute"
+  },
+  {
+    "timestamp": "2026-03-20T17:45:01.440Z",
+    "type": "info",
+    "message": "No approved tasks found to execute"
+  },
+  {
+    "timestamp": "2026-03-20T17:50:01.690Z",
+    "type": "info",
+    "message": "No approved tasks found to execute"
+  },
+  {
+    "timestamp": "2026-03-20T17:55:01.581Z",
+    "type": "info",
+    "message": "No approved tasks found to execute"
+  },
+  {
+    "timestamp": "2026-03-20T18:00:02.461Z",
+    "type": "info",
+    "message": "No approved tasks found to execute"
+  },
+  {
+    "timestamp": "2026-03-20T18:05:01.846Z",
+    "type": "info",
+    "message": "No approved tasks found to execute"
+  },
+  {
+    "timestamp": "2026-03-20T18:10:01.968Z",
+    "type": "info",
+    "message": "No approved tasks found to execute"
+  },
+  {
+    "timestamp": "2026-03-20T18:15:02.110Z",
+    "type": "info",
+    "message": "No approved tasks found to execute"
+  },
+  {
+    "timestamp": "2026-03-20T18:20:02.194Z",
+    "type": "info",
+    "message": "No approved tasks found to execute"
+  },
+  {
+    "timestamp": "2026-03-20T18:25:02.250Z",
+    "type": "info",
+    "message": "No approved tasks found to execute"
+  },
+  {
+    "timestamp": "2026-03-20T18:30:01.547Z",
+    "type": "info",
+    "message": "No approved tasks found to execute"
+  },
+  {
+    "timestamp": "2026-03-20T18:35:01.509Z",
+    "type": "info",
+    "message": "No approved tasks found to execute"
+  },
+  {
+    "timestamp": "2026-03-20T18:40:01.714Z",
+    "type": "info",
+    "message": "No approved tasks found to execute"
+  },
+  {
+    "timestamp": "2026-03-20T18:45:01.687Z",
+    "type": "info",
+    "message": "No approved tasks found to execute"
+  },
+  {
+    "timestamp": "2026-03-20T18:50:01.910Z",
+    "type": "info",
+    "message": "No approved tasks found to execute"
+  },
+  {
+    "timestamp": "2026-03-20T18:54:57.163Z",
+    "type": "task_sent",
+    "message": "🚀 Executing Task 2: The notification \"CPU usage has been above 85%\" is fake/hard...",
+    "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg3-task2"
   }
 ]
