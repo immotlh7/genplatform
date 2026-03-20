@@ -4,7 +4,7 @@
   "uploadedAt": "2026-03-20T08:45:10.369Z",
   "totalMessages": 33,
   "totalTasks": 68,
-  "totalMicroTasks": 110,
+  "totalMicroTasks": 127,
   "messages": [
     {
       "messageNumber": 1,
@@ -72,7 +72,7 @@
           "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg3-task2",
           "taskNumber": 2,
           "originalDescription": "The notification \"CPU usage has been above 85%\" is fake/hardcoded. Remove it. Only show REAL notifications:",
-          "status": "approved",
+          "status": "done",
           "approved": true,
           "rewritten": true,
           "microTasks": [
@@ -105,8 +105,13 @@
               "status": "pending"
             }
           ],
-          "startedAt": "2026-03-20T10:51:51.400Z",
-          "skippedReason": "Duplicate task"
+          "startedAt": "2026-03-20T13:46:01.156Z",
+          "skippedReason": "Duplicate task",
+          "completedAt": "2026-03-20T13:47:44.116Z",
+          "executionResult": {
+            "success": true,
+            "result": "Build ✅ | Applied changes + deployed. === Examining notification system ===\n\"use client\"\n\nimport { useState, useEffect, useCallback } from"
+          }
         },
         {
           "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg3-task3",
@@ -900,15 +905,29 @@
           "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg15-task1",
           "taskNumber": 1,
           "originalDescription": "Skills are loading (27-35 skills from Bridge API). Good. But improve the cards:",
-          "status": "review",
-          "approved": false,
+          "status": "approved",
+          "approved": true,
           "rewritten": true,
           "microTasks": [
             {
               "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg15-task1-micro1",
-              "filePath": "src/app/api/endpoint/route.ts",
-              "change": "Create or update the API route",
-              "description": "In src/app/api/endpoint/route.ts, implement the requested API functionality: Skills are loading (27-35 skills from Bridge API). Good. But improve the cards:. Use Next.js 13+ app router conventions with proper request/response handling.",
+              "filePath": "src/app/dashboard/skills/page.tsx",
+              "change": "Add department mapping constant and helper function",
+              "description": "At the top of the file after imports, create a new constant object called SKILL_DEPARTMENT_MAP that maps skill names to their departments. Define it as: const SKILL_DEPARTMENT_MAP: Record<string, { name: string; icon: string }> = { 'developer': { name: 'Frontend/Backend Dev', icon: '💻' }, 'senior-dev': { name: 'Frontend/Backend Dev', icon: '💻' }, 'coding-agent': { name: 'Frontend/Backend Dev', icon: '💻' }, 'deep-research-pro': { name: 'Research', icon: '🔬' }, 'exa-search': { name: 'Research', icon: '🔬' }, 'tavily-search': { name: 'Research', icon: '🔬' }, 'security-scanner': { name: 'Security', icon: '🛡️' }, 'security-audit-toolkit': { name: 'Security', icon: '🛡️' }, 'critical-code-reviewer': { name: 'QA', icon: '🔍' }, 'auto-continue': { name: 'Planning', icon: '📋' }, 'task-planner': { name: 'Planning', icon: '📋' }, 'self-improving-agent': { name: 'Self-Improvement', icon: '📈' } }. Also create a helper function getDepartment(skillName: string) that returns the matching department or a default { name: 'General', icon: '⚡' } if not found.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg15-task1-micro2",
+              "filePath": "src/app/dashboard/skills/page.tsx",
+              "change": "Update skill card to show name, status badge, category badge, truncated description, and department badge",
+              "description": "Find the skill card rendering section where skills are mapped. For each skill card, update the Card component to include: 1) The skill name as the card title using <CardTitle>{skill.name}</CardTitle>, 2) An active status badge using <Badge variant='success' className='ml-2'>Active</Badge> next to the title, 3) A category badge showing skill.category using <Badge variant='outline'>{skill.category}</Badge>, 4) The description truncated to 100 characters using {skill.description?.substring(0, 100)}{skill.description?.length > 100 ? '...' : ''}, 5) The department badge using the getDepartment helper: const dept = getDepartment(skill.name); then render <Badge className='mt-2'>{dept.icon} {dept.name}</Badge>. Ensure all these elements are properly spaced within CardHeader and CardContent components.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg15-task1-micro3",
+              "filePath": "src/app/dashboard/skills/page.tsx",
+              "change": "Add hover effects and proper styling to skill card badges",
+              "description": "Enhance the visual styling of the skill cards. Add a hover effect to each Card by adding className='hover:shadow-lg transition-shadow cursor-pointer'. For the status badge, use className='bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' to make it clearly visible as an active indicator. For the category badge, use a subtle outline style. For the department badge at the bottom of the card, use className='bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300' to differentiate it from other badges. Add proper spacing using flex and gap utilities: wrap badges in <div className='flex flex-wrap gap-2 mt-2'>.",
               "status": "pending"
             }
           ]
@@ -917,15 +936,50 @@
           "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg15-task2",
           "taskNumber": 2,
           "originalDescription": "Click a skill card → open a detail modal:",
-          "status": "review",
-          "approved": false,
+          "status": "approved",
+          "approved": true,
           "rewritten": true,
           "microTasks": [
             {
               "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg15-task2-micro1",
-              "filePath": "src/app/dashboard/page.tsx",
-              "change": "Analyze and implement the requested feature",
-              "description": "Implement the following task with precision: Click a skill card → open a detail modal:. First identify the correct file and component, then make the necessary changes following the project's coding standards.",
+              "filePath": "src/app/dashboard/skills/page.tsx",
+              "change": "Add state variables for modal control and skill details",
+              "description": "Add new state variables for the modal functionality at the top of the SkillsPage component function. Add: const [selectedSkill, setSelectedSkill] = useState<any>(null); const [isModalOpen, setIsModalOpen] = useState(false); const [skillDetails, setSkillDetails] = useState<any>(null); const [loadingDetails, setLoadingDetails] = useState(false);. These will track which skill is selected, whether the modal is open, the fetched skill details, and the loading state for the detail fetch.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg15-task2-micro2",
+              "filePath": "src/app/dashboard/skills/page.tsx",
+              "change": "Create handleSkillClick function to fetch and display skill details",
+              "description": "Create an async function called handleSkillClick that takes a skill object as parameter. Inside the function: 1) Set setSelectedSkill(skill) to store the clicked skill, 2) Set setIsModalOpen(true) to open the modal, 3) Set setLoadingDetails(true) to show loading state, 4) Make a fetch call: const res = await fetch(`/api/bridge/skills?name=${encodeURIComponent(skill.name)}`), 5) Parse response: const data = await res.json(), 6) Set setSkillDetails(data), 7) Set setLoadingDetails(false) in finally block. Wrap the fetch in try-catch and show toast.error('Failed to load skill details') on error.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg15-task2-micro3",
+              "filePath": "src/app/dashboard/skills/page.tsx",
+              "change": "Add onClick handler to skill cards",
+              "description": "Update each skill Card component to be clickable. Add onClick={() => handleSkillClick(skill)} to the Card component. This will trigger the modal opening and detail fetching when any skill card is clicked. Ensure the cursor-pointer class is already on the Card from the previous styling update.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg15-task2-micro4",
+              "filePath": "src/app/dashboard/skills/page.tsx",
+              "change": "Import Dialog and ScrollArea components",
+              "description": "Import the Dialog components at the top of the file: import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';. Also import ScrollArea if not already imported: import { ScrollArea } from '@/components/ui/scroll-area';. These components will be used to build the skill detail modal.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg15-task2-micro5",
+              "filePath": "src/app/dashboard/skills/page.tsx",
+              "change": "Add skill detail modal with full information display",
+              "description": "At the bottom of the return statement, before the closing fragment or div, add the skill detail modal JSX. Create: <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}><DialogContent className='max-w-2xl max-h-[80vh]'><DialogHeader><DialogTitle className='text-xl'>{selectedSkill?.name}</DialogTitle><DialogDescription>Skill Details</DialogDescription></DialogHeader>{loadingDetails ? (<div className='flex justify-center py-8'><Loader2 className='h-8 w-8 animate-spin' /></div>) : (<div className='space-y-4'><div className='grid grid-cols-2 gap-4'><div><span className='font-semibold'>Category:</span> {skillDetails?.category || selectedSkill?.category}</div><div><span className='font-semibold'>Version:</span> {skillDetails?.version || '1.0'}</div><div><span className='font-semibold'>Department:</span> {getDepartment(selectedSkill?.name).icon} {getDepartment(selectedSkill?.name).name}</div><div><span className='font-semibold'>Last Used:</span> {skillDetails?.lastUsed || 'Never'}</div></div><div><span className='font-semibold'>Description:</span><p className='mt-1 text-muted-foreground'>{skillDetails?.description || selectedSkill?.description}</p></div>{skillDetails?.skillMd && (<div><span className='font-semibold'>SKILL.md Documentation:</span><ScrollArea className='h-48 mt-2 border rounded-md p-4'><pre className='text-sm whitespace-pre-wrap'>{skillDetails.skillMd}</pre></ScrollArea></div>)}</div>)}</DialogContent></Dialog>",
+              "status": "pending"
+            },
+            {
+              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg15-task2-micro6",
+              "filePath": "src/app/api/bridge/skills/route.ts",
+              "change": "Add single skill fetch by name to API route",
+              "description": "Update the GET handler to support fetching a single skill by name. At the beginning of the GET function, check for a name query parameter: const { searchParams } = new URL(request.url); const skillName = searchParams.get('name');. If skillName is provided, filter the skills array to find the matching skill: const skill = skills.find(s => s.name === skillName);. If found, return NextResponse.json({ ...skill, version: skill.version || '1.0', lastUsed: skill.lastUsed || null, skillMd: skill.skillMd || null });. If not found, return NextResponse.json({ error: 'Skill not found' }, { status: 404 });. If no name parameter, return all skills as before.",
               "status": "pending"
             }
           ]
@@ -934,22 +988,36 @@
           "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg15-task3",
           "taskNumber": 3,
           "originalDescription": "\"Add Skill\" button in header should show a message: \"Skills are managed through OpenClaw. Use the Command Center to update skills.\" with a link to /dashboard/command-center.",
-          "status": "review",
-          "approved": false,
+          "status": "approved",
+          "approved": true,
           "rewritten": true,
           "microTasks": [
             {
               "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg15-task3-micro1",
-              "filePath": "src/app/dashboard/page.tsx",
-              "change": "Locate the component mentioned in the task",
-              "description": "In src/app/dashboard/page.tsx, find the main DashboardPage component. Look for the specific section mentioned in the task: \"\"Add Skill\" button in header should show a message: \"Skills are managed through OpenClaw. Use the Command Center to update skills.\" with a link to /dashboard/command-center.\". Identify the exact component or JSX element that needs to be modified.",
+              "filePath": "src/app/dashboard/skills/page.tsx",
+              "change": "Add state for add skill info modal",
+              "description": "Add a new state variable for controlling the add skill info modal: const [showAddSkillInfo, setShowAddSkillInfo] = useState(false);. This will control the visibility of the informational dialog that appears when users click the Add Skill button.",
               "status": "pending"
             },
             {
               "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg15-task3-micro2",
-              "filePath": "src/app/dashboard/page.tsx",
-              "change": "Implement the requested change",
-              "description": "Make the specific change requested in the original task. This involves modifying the identified component to \"Add Skill\" button in header should show a message: \"Skills are managed through OpenClaw. Use the Command Center to update skills.\" with a link to /dashboard/command-center.. Ensure proper TypeScript types and React best practices are followed.",
+              "filePath": "src/app/dashboard/skills/page.tsx",
+              "change": "Update Add Skill button to open info modal",
+              "description": "Find the 'Add Skill' button in the header section of the page. It might be a Button component with text like 'Add Skill' or 'New Skill'. Update its onClick handler to: onClick={() => setShowAddSkillInfo(true)} instead of any existing navigation or action. Keep the button styling the same with the Plus icon if it has one.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg15-task3-micro3",
+              "filePath": "src/app/dashboard/skills/page.tsx",
+              "change": "Import Link component",
+              "description": "Import Link from next/link at the top of the file if not already imported: import Link from 'next/link';. This will be used to create the link to the Command Center in the info dialog.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg15-task3-micro4",
+              "filePath": "src/app/dashboard/skills/page.tsx",
+              "change": "Add informational dialog for Add Skill button",
+              "description": "Add a new Dialog component for the Add Skill information message. Place it near the other Dialog (skill details modal). Create: <Dialog open={showAddSkillInfo} onOpenChange={setShowAddSkillInfo}><DialogContent className='max-w-md'><DialogHeader><DialogTitle>Skills Management</DialogTitle></DialogHeader><div className='space-y-4'><p className='text-muted-foreground'>Skills are managed through OpenClaw. Use the Command Center to update skills.</p><div className='flex justify-end gap-2'><Button variant='outline' onClick={() => setShowAddSkillInfo(false)}>Close</Button><Link href='/dashboard/command-center'><Button>Go to Command Center</Button></Link></div></div></DialogContent></Dialog>. This provides users with the information about where skills are managed and a direct link to access it.",
               "status": "pending"
             }
           ]
@@ -958,15 +1026,50 @@
           "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg15-task4",
           "taskNumber": 4,
           "originalDescription": "Category filter should work with real data:",
-          "status": "review",
-          "approved": false,
+          "status": "approved",
+          "approved": true,
           "rewritten": true,
           "microTasks": [
             {
               "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg15-task4-micro1",
-              "filePath": "src/app/dashboard/page.tsx",
-              "change": "Analyze and implement the requested feature",
-              "description": "Implement the following task with precision: Category filter should work with real data:. First identify the correct file and component, then make the necessary changes following the project's coding standards.",
+              "filePath": "src/app/dashboard/skills/page.tsx",
+              "change": "Add category to skill mapping constant",
+              "description": "Create a constant object CATEGORY_SKILL_MAPPING at the top of the file that maps filter categories to skill names. Define it as: const CATEGORY_SKILL_MAPPING: Record<string, string[]> = { 'development': ['developer', 'senior-dev', 'coding-agent', 'critical-code-reviewer'], 'research': ['deep-research-pro', 'exa-search', 'tavily-search', 'research'], 'security': ['security-scanner', 'security-audit-toolkit', 'security'], 'productivity': ['auto-continue', 'task-planner', 'self-improving-agent'] };. This mapping will be used to filter skills based on selected category.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg15-task4-micro2",
+              "filePath": "src/app/dashboard/skills/page.tsx",
+              "change": "Add active filter state",
+              "description": "Add a state variable for the active filter if not already present: const [activeFilter, setActiveFilter] = useState<string>('all');. This will track which category filter is currently selected by the user.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg15-task4-micro3",
+              "filePath": "src/app/dashboard/skills/page.tsx",
+              "change": "Create filterSkills helper function",
+              "description": "Create a helper function called filterSkills that takes the skills array and returns filtered results based on activeFilter. Implement as: const filterSkills = (skills: any[]) => { if (activeFilter === 'all') return skills; const categorySkills = CATEGORY_SKILL_MAPPING[activeFilter] || []; return skills.filter(skill => { const skillNameLower = skill.name.toLowerCase(); const skillCategoryLower = (skill.category || '').toLowerCase(); return categorySkills.some(cs => skillNameLower.includes(cs) || skillCategoryLower.includes(cs)); }); };. This function checks both skill name and category for matches.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg15-task4-micro4",
+              "filePath": "src/app/dashboard/skills/page.tsx",
+              "change": "Wire up filter buttons with click handlers and active states",
+              "description": "Find the category filter buttons section (likely a row of buttons or tabs showing 'All', 'Development', 'Research', etc.). Update each filter button to: 1) Add onClick={() => setActiveFilter('development')} (or 'research', 'security', 'productivity', 'all' respectively), 2) Add conditional styling to show active state: className={`${activeFilter === 'development' ? 'bg-primary text-primary-foreground' : 'bg-secondary'}`}. Ensure all five filter options are present: All, Development, Research, Security, Productivity.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg15-task4-micro5",
+              "filePath": "src/app/dashboard/skills/page.tsx",
+              "change": "Apply filter function to skills grid rendering",
+              "description": "Update the skills grid rendering to use the filtered skills. Find where skills are mapped to cards and wrap it with the filter function. Change from: {skills.map((skill) => ...)} to: {filterSkills(skills).map((skill) => ...)}. This ensures only skills matching the active filter are displayed in the grid.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg15-task4-micro6",
+              "filePath": "src/app/dashboard/skills/page.tsx",
+              "change": "Optimize filtering with useMemo",
+              "description": "Add a useMemo hook to optimize the filtered skills computation. Import useMemo if not already imported. Create: const filteredSkills = useMemo(() => filterSkills(skills), [skills, activeFilter]);. Then update the grid to use filteredSkills.map() instead of filterSkills(skills).map(). This prevents recalculating the filter on every render unless skills or activeFilter changes.",
               "status": "pending"
             }
           ]
@@ -975,15 +1078,36 @@
           "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg15-task5",
           "taskNumber": 5,
           "originalDescription": "Stats cards at top:",
-          "status": "review",
-          "approved": false,
+          "status": "approved",
+          "approved": true,
           "rewritten": true,
           "microTasks": [
             {
               "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg15-task5-micro1",
-              "filePath": "src/app/dashboard/page.tsx",
-              "change": "Analyze and implement the requested feature",
-              "description": "Implement the following task with precision: Stats cards at top:. First identify the correct file and component, then make the necessary changes following the project's coding standards.",
+              "filePath": "src/app/dashboard/skills/page.tsx",
+              "change": "Create skillStats useMemo for category counts",
+              "description": "Create a useMemo hook to calculate all stat counts from the skills array. Add: const skillStats = useMemo(() => { const total = skills.length; const development = skills.filter(s => CATEGORY_SKILL_MAPPING['development'].some(cs => s.name.toLowerCase().includes(cs) || (s.category || '').toLowerCase().includes(cs))).length; const research = skills.filter(s => CATEGORY_SKILL_MAPPING['research'].some(cs => s.name.toLowerCase().includes(cs) || (s.category || '').toLowerCase().includes(cs))).length; const security = skills.filter(s => CATEGORY_SKILL_MAPPING['security'].some(cs => s.name.toLowerCase().includes(cs) || (s.category || '').toLowerCase().includes(cs))).length; const productivity = skills.filter(s => CATEGORY_SKILL_MAPPING['productivity'].some(cs => s.name.toLowerCase().includes(cs) || (s.category || '').toLowerCase().includes(cs))).length; return { total, development, research, security, productivity }; }, [skills]);. This calculates counts for each category dynamically.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg15-task5-micro2",
+              "filePath": "src/app/dashboard/skills/page.tsx",
+              "change": "Update stats cards with dynamic counts from skillStats",
+              "description": "Find the stats cards section at the top of the page (likely a grid of Card components showing statistics). Update each stats card to use the dynamic skillStats values. The Total Skills card should show: value={skillStats.total}. The Development card should show: value={skillStats.development}. The Research card should show: value={skillStats.research}. The Security card should show: value={skillStats.security}. The Productivity card should show: value={skillStats.productivity}. If the cards don't exist, create them in a grid: <div className='grid grid-cols-2 md:grid-cols-5 gap-4 mb-6'>.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg15-task5-micro3",
+              "filePath": "src/app/dashboard/skills/page.tsx",
+              "change": "Add icons and color coding to stats cards",
+              "description": "Enhance the stats cards with appropriate icons and colors for each category. For Total Skills use a Layers or Grid icon with neutral styling. For Development use Code icon with blue styling: className='text-blue-500'. For Research use Search or Microscope icon with purple styling: className='text-purple-500'. For Security use Shield icon with red styling: className='text-red-500'. For Productivity use Zap or Clock icon with green styling: className='text-green-500'. Import the necessary icons from lucide-react: import { Code, Search, Shield, Zap, Layers } from 'lucide-react';",
+              "status": "pending"
+            },
+            {
+              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg15-task5-micro4",
+              "filePath": "src/app/dashboard/skills/page.tsx",
+              "change": "Make stats cards clickable to filter skills",
+              "description": "Make stats cards clickable to filter by that category. Add onClick handlers to each stats card: onClick={() => setActiveFilter('development')} for the Development card, onClick={() => setActiveFilter('research')} for Research, onClick={() => setActiveFilter('security')} for Security, onClick={() => setActiveFilter('productivity')} for Productivity, and onClick={() => setActiveFilter('all')} for Total Skills. Add cursor-pointer and hover:bg-accent classes to each Card for visual feedback. This creates an intuitive way to filter skills by clicking the stat categories.",
               "status": "pending"
             }
           ]
