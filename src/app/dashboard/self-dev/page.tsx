@@ -1,53 +1,48 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { FileUploader } from '@/components/self-dev/FileUploader';
 import { TaskQueue } from '@/components/self-dev/TaskQueue';
 import { ExecutionMonitor } from '@/components/self-dev/ExecutionMonitor';
 import { PreviewPanel } from '@/components/self-dev/PreviewPanel';
 import { ControlBar } from '@/components/self-dev/ControlBar';
 import { MonitorDashboard } from '@/components/self-dev/MonitorDashboard';
-import { AlertCircle, Activity } from 'lucide-react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Activity, AlertCircle } from 'lucide-react';
 
-interface ExecutionStatus {
-  status: 'idle' | 'analyzing' | 'executing' | 'building' | 'paused' | 'error';
-  overallProgress: {
-    filesTotal: number;
-    filesDone: number;
-    messagesTotal: number;
-    messagesDone: number;
+interface Status {
+  status: 'idle' | 'analyzing' | 'executing' | 'paused' | 'building' | 'error';
+  currentFile?: any;
+  currentMessage?: any;
+  currentTask?: any;
+  overallProgress?: {
     tasksTotal: number;
     tasksDone: number;
     percentage: number;
   };
-  contextEstimate: number;
   elapsedTime: number;
-  currentMessage?: { number: number; title: string };
-  currentFile?: { name: string };
+  contextEstimate: number;
+  error?: string;
 }
 
-const initialStatus: ExecutionStatus = {
+const initialStatus: Status = {
   status: 'idle',
   overallProgress: {
-    filesTotal: 0,
-    filesDone: 0,
-    messagesTotal: 0,
-    messagesDone: 0,
     tasksTotal: 0,
     tasksDone: 0,
     percentage: 0
   },
-  contextEstimate: 0,
-  elapsedTime: 0
+  elapsedTime: 0,
+  contextEstimate: 0
 };
 
 export default function SelfDevPage() {
-  const [status, setStatus] = useState<ExecutionStatus>(initialStatus);
+  const [status, setStatus] = useState<Status>(initialStatus);
   const [error, setError] = useState<string | null>(null);
   const [hasApprovedTasks, setHasApprovedTasks] = useState(false);
   const [activeTab, setActiveTab] = useState('execution');
-
+  const [isExecuting, setIsExecuting] = useState(false);
+  
   useEffect(() => {
     loadStatus();
     const interval = setInterval(loadStatus, 3000);
@@ -59,21 +54,30 @@ export default function SelfDevPage() {
       const response = await fetch('/api/self-dev/status');
       if (response.ok) {
         const data = await response.json();
-        setStatus(data || initialStatus);
-      }
-      
-      // Check for approved tasks
-      try {
-        const queuesResponse = await fetch('/api/self-dev/queues');
-        if (queuesResponse.ok) {
-          const queues = await queuesResponse.json();
-          const approved = Array.isArray(queues) && queues.some((q: any) => 
-            q.messages?.some((m: any) => m.tasks?.some((t: any) => t.approved))
+        
+        // Check queue for approved tasks
+        if (data.queue?.batches) {
+          const hasApproved = data.queue.batches.some((batch: any) =>
+            batch.tasks.some((task: any) => task.approved && task.status !== 'done')
           );
-          setHasApprovedTasks(approved);
+          setHasApprovedTasks(hasApproved);
+          
+          // Check if any task is executing
+          const hasExecuting = data.queue.batches.some((batch: any) =>
+            batch.tasks.some((task: any) => task.status === 'executing')
+          );
+          setIsExecuting(hasExecuting);
+          
+          // Set status based on execution state
+          if (hasExecuting) {
+            setStatus(prev => ({ ...prev, status: 'executing' }));
+          } else if (hasApproved && !hasExecuting) {
+            setStatus(prev => ({ ...prev, status: 'idle' }));
+          }
+        } else {
+          setHasApprovedTasks(false);
+          setIsExecuting(false);
         }
-      } catch (queueError) {
-        console.error('Failed to load queues:', queueError);
       }
     } catch (error) {
       console.error('Failed to load status:', error);
@@ -85,23 +89,54 @@ export default function SelfDevPage() {
     await loadStatus();
   };
 
-  const handleControl = async (action: string, confirmation?: string) => {
+  const handleControl = async (action: string) => {
     setError(null);
-    try {
-      const response = await fetch('/api/self-dev/control', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action, confirmation })
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        setError(errorData.error || 'Control action failed');
-      } else {
-        await loadStatus();
+    
+    if (action === 'start') {
+      // Start execution by calling execute-next
+      try {
+        const response = await fetch('/api/self-dev/execute-next', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' }
+        });
+        
+        if (!response.ok) {
+          const errorData = await response.json();
+          setError(errorData.error || 'Failed to start execution');
+        } else {
+          setStatus(prev => ({ ...prev, status: 'executing' }));
+          await loadStatus();
+        }
+      } catch (err) {
+        setError('Failed to start execution');
       }
-    } catch (err) {
-      setError('Failed to execute control action');
+    } else if (action === 'pause') {
+      // TODO: Implement pause functionality
+      setStatus(prev => ({ ...prev, status: 'paused' }));
+    } else if (action === 'resume') {
+      // Resume by calling execute-next again
+      try {
+        const response = await fetch('/api/self-dev/execute-next', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' }
+        });
+        
+        if (!response.ok) {
+          const errorData = await response.json();
+          setError(errorData.error || 'Failed to resume execution');
+        } else {
+          setStatus(prev => ({ ...prev, status: 'executing' }));
+          await loadStatus();
+        }
+      } catch (err) {
+        setError('Failed to resume execution');
+      }
+    } else if (action === 'skip') {
+      // TODO: Implement skip functionality
+      console.log('Skip not implemented yet');
+    } else if (action === 'retry') {
+      // TODO: Implement retry functionality
+      console.log('Retry not implemented yet');
     }
   };
 
@@ -168,7 +203,7 @@ export default function SelfDevPage() {
               <ExecutionMonitor onRefresh={loadStatus} />
             </TabsContent>
             
-            <TabsContent value="monitor" className="flex-1 overflow-y-auto p-4">
+            <TabsContent value="monitor" className="flex-1 p-4">
               <MonitorDashboard />
             </TabsContent>
           </Tabs>

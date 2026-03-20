@@ -2,7 +2,7 @@
   "fileId": "task_1773982008986_PRIORITY-1-FIX-ALL-PAGES.md",
   "fileName": "PRIORITY-1-FIX-ALL-PAGES.md",
   "totalMessages": 33,
-  "totalMicroTasks": 26,
+  "totalMicroTasks": 24,
   "messages": [
     {
       "messageNumber": 1,
@@ -141,15 +141,22 @@
           "taskId": "task_5_1",
           "taskNumber": 1,
           "originalDescription": "Live Task Monitor widget at the top. Currently shows \"Sprint 0D\" and old data. Fix: - Fetch from /api/bridge/live-status for current task info - Show: Current phase name, current task name, progress bar - Make it clickable → navigates to /dashboard/tasks - If no active task: show \"All tasks complete — waiting for next assignment\" - Remove \"Sprint 0D\" text. Replace with real phase from PROGRESS.md",
-          "status": "review",
-          "approved": false,
+          "status": "approved",
+          "approved": true,
           "rewritten": true,
           "microTasks": [
             {
+              "id": "task_1773982008986_PRIORITY-1-FIX-ALL-PAGES.md-msg5-task1-micro1",
+              "filePath": "src/app/dashboard/page.tsx",
+              "change": "Locate the component mentioned in the task",
+              "description": "In src/app/dashboard/page.tsx, find the main DashboardPage component. Look for the specific section mentioned in the task: \"Live Task Monitor widget at the top. Currently shows \"Sprint 0D\" and old data. Fix: - Fetch from /api/bridge/live-status for current task info - Show: Current phase name, current task name, progress bar - Make it clickable → navigates to /dashboard/tasks - If no active task: show \"All tasks complete — waiting for next assignment\" - Remove \"Sprint 0D\" text. Replace with real phase from PROGRESS.md\". Identify the exact component or JSX element that needs to be modified.",
+              "status": "pending"
+            },
+            {
               "id": "task_1773982008986_PRIORITY-1-FIX-ALL-PAGES.md-msg5-task1-micro2",
-              "filePath": "src/components/notifications/notification-system.tsx",
-              "change": "Update gateway status check logic",
-              "description": "Fix the gateway status detection",
+              "filePath": "src/app/dashboard/page.tsx",
+              "change": "Implement the requested change",
+              "description": "Make the specific change requested in the original task. This involves modifying the identified component to Live Task Monitor widget at the top. Currently shows \"Sprint 0D\" and old data. Fix: - Fetch from /api/bridge/live-status for current task info - Show: Current phase name, current task name, progress bar - Make it clickable → navigates to /dashboard/tasks - If no active task: show \"All tasks complete — waiting for next assignment\" - Remove \"Sprint 0D\" text. Replace with real phase from PROGRESS.md. Ensure proper TypeScript types and React best practices are followed.",
               "status": "pending"
             }
           ]
@@ -158,22 +165,15 @@
           "taskId": "task_5_2",
           "taskNumber": 2,
           "originalDescription": "Stat Cards row (All Projects, Tasks, Team, Automations, Reports, Security). Fix each: - All Projects: fetch /api/projects → show real count + active/completed - Tasks: fetch /api/tasks → show real done/total + completion rate - Team: keep 1 active (hardcoded is fine for now) - Automations: fetch /api/workflows → show real active count - Reports: fetch /api/bridge/reports or keep current if working - Security: show \"Healthy\" with real last check time from /api/bridge/status",
-          "status": "review",
-          "approved": false,
+          "status": "approved",
+          "approved": true,
           "rewritten": true,
           "microTasks": [
             {
-              "id": "task_1773982008986_PRIORITY-1-FIX-ALL-PAGES.md-msg5-task2-micro2",
-              "filePath": "src/components/notifications/notification-system.tsx",
-              "change": "Update gateway status check logic",
-              "description": "Fix the gateway status detection",
-              "status": "pending"
-            },
-            {
-              "id": "task_1773982008986_PRIORITY-1-FIX-ALL-PAGES.md-msg5-task2-micro3",
-              "filePath": "src/components/notifications/notification-system.tsx",
-              "change": "Verify the changes work correctly",
-              "description": "Test the notification system",
+              "id": "task_1773982008986_PRIORITY-1-FIX-ALL-PAGES.md-msg5-task2-micro1",
+              "filePath": "src/app/api/projects/route.ts",
+              "change": "Create or update the API route",
+              "description": "In src/app/api/projects/route.ts, implement the requested API functionality: Stat Cards row (All Projects, Tasks, Team, Automations, Reports, Security). Fix each: - All Projects: fetch /api/projects → show real count + active/completed - Tasks: fetch /api/tasks → show real done/total + completion rate - Team: keep 1 active (hardcoded is fine for now) - Automations: fetch /api/workflows → show real active count - Reports: fetch /api/bridge/reports or keep current if working - Security: show \"Healthy\" with real last check time from /api/bridge/status. Use Next.js 13+ app router conventions with proper request/response handling.",
               "status": "pending"
             }
           ]
@@ -182,22 +182,15 @@
           "taskId": "task_5_3",
           "taskNumber": 3,
           "originalDescription": "System Performance section at bottom. Must show REAL data: - CPU Usage: fetch /api/bridge/metrics → resources.cpu.usage → show percentage with color (green <60, amber <80, red >80) - Memory Usage: same from metrics → resources.memory.usage - Remove any hardcoded percentages",
-          "status": "review",
-          "approved": false,
+          "status": "approved",
+          "approved": true,
           "rewritten": true,
           "microTasks": [
             {
               "id": "task_1773982008986_PRIORITY-1-FIX-ALL-PAGES.md-msg5-task3-micro1",
-              "filePath": "src/app/api/self-dev/route.ts",
-              "change": "Implement the requested functionality",
-              "description": "System Performance section at bottom. Must show RE...",
-              "status": "pending"
-            },
-            {
-              "id": "task_1773982008986_PRIORITY-1-FIX-ALL-PAGES.md-msg5-task3-micro2",
-              "filePath": "src/app/api/self-dev/route.ts",
-              "change": "Add error handling and validation",
-              "description": "Ensure robust implementation",
+              "filePath": "src/app/api/bridge/route.ts",
+              "change": "Create or update the API route",
+              "description": "In src/app/api/bridge/route.ts, implement the requested API functionality: System Performance section at bottom. Must show REAL data: - CPU Usage: fetch /api/bridge/metrics → resources.cpu.usage → show percentage with color (green <60, amber <80, red >80) - Memory Usage: same from metrics → resources.memory.usage - Remove any hardcoded percentages. Use Next.js 13+ app router conventions with proper request/response handling.",
               "status": "pending"
             }
           ]
@@ -206,15 +199,22 @@
           "taskId": "task_5_4",
           "taskNumber": 4,
           "originalDescription": "Quick Actions section. Make ALL buttons work: - \"New Project\" → navigate to /projects with create dialog open, OR call /api/projects POST - \"View Projects\" → navigate to /projects - \"View Reports\" → navigate to /dashboard/reports - \"Generate Report\" → navigate to /dashboard/reports with generate dialog - \"Manage Team\" → navigate to /dashboard/users - \"System Health\" → navigate to /dashboard/monitoring",
-          "status": "review",
-          "approved": false,
+          "status": "approved",
+          "approved": true,
           "rewritten": true,
           "microTasks": [
             {
               "id": "task_1773982008986_PRIORITY-1-FIX-ALL-PAGES.md-msg5-task4-micro1",
-              "filePath": "src/components/notifications/notification-system.tsx",
-              "change": "Locate and analyze the component structure",
-              "description": "Find the notification system component",
+              "filePath": "src/app/dashboard/page.tsx",
+              "change": "Locate the component mentioned in the task",
+              "description": "In src/app/dashboard/page.tsx, find the main DashboardPage component. Look for the specific section mentioned in the task: \"Quick Actions section. Make ALL buttons work: - \"New Project\" → navigate to /projects with create dialog open, OR call /api/projects POST - \"View Projects\" → navigate to /projects - \"View Reports\" → navigate to /dashboard/reports - \"Generate Report\" → navigate to /dashboard/reports with generate dialog - \"Manage Team\" → navigate to /dashboard/users - \"System Health\" → navigate to /dashboard/monitoring\". Identify the exact component or JSX element that needs to be modified.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1773982008986_PRIORITY-1-FIX-ALL-PAGES.md-msg5-task4-micro2",
+              "filePath": "src/app/dashboard/page.tsx",
+              "change": "Implement the requested change",
+              "description": "Make the specific change requested in the original task. This involves modifying the identified component to Quick Actions section. Make ALL buttons work: - \"New Project\" → navigate to /projects with create dialog open, OR call /api/projects POST - \"View Projects\" → navigate to /projects - \"View Reports\" → navigate to /dashboard/reports - \"Generate Report\" → navigate to /dashboard/reports with generate dialog - \"Manage Team\" → navigate to /dashboard/users - \"System Health\" → navigate to /dashboard/monitoring. Ensure proper TypeScript types and React best practices are followed.",
               "status": "pending"
             }
           ]
@@ -223,22 +223,15 @@
           "taskId": "task_5_5",
           "taskNumber": 5,
           "originalDescription": "Activity Stream. Show real recent events: - Fetch last 5 git commits from /api/bridge/logs or hardcode last known commits - Each entry: icon + message + time ago - Remove any fake \"Task 0D-23 completed\" entries",
-          "status": "review",
-          "approved": false,
+          "status": "approved",
+          "approved": true,
           "rewritten": true,
           "microTasks": [
             {
               "id": "task_1773982008986_PRIORITY-1-FIX-ALL-PAGES.md-msg5-task5-micro1",
-              "filePath": "src/app/api/self-dev/route.ts",
-              "change": "Implement the requested functionality",
-              "description": "Activity Stream. Show real recent events: - Fetch ...",
-              "status": "pending"
-            },
-            {
-              "id": "task_1773982008986_PRIORITY-1-FIX-ALL-PAGES.md-msg5-task5-micro2",
-              "filePath": "src/app/api/self-dev/route.ts",
-              "change": "Add error handling and validation",
-              "description": "Ensure robust implementation",
+              "filePath": "src/app/api/bridge/route.ts",
+              "change": "Create or update the API route",
+              "description": "In src/app/api/bridge/route.ts, implement the requested API functionality: Activity Stream. Show real recent events: - Fetch last 5 git commits from /api/bridge/logs or hardcode last known commits - Each entry: icon + message + time ago - Remove any fake \"Task 0D-23 completed\" entries. Use Next.js 13+ app router conventions with proper request/response handling.",
               "status": "pending"
             }
           ]
@@ -247,22 +240,15 @@
           "taskId": "task_5_6",
           "taskNumber": 6,
           "originalDescription": "Workflows section. Either show real workflows from /api/workflows or hide the section if empty. \"No workflows running\" is fine but \"Start Workflow\" button should navigate to /automations.",
-          "status": "review",
-          "approved": false,
+          "status": "approved",
+          "approved": true,
           "rewritten": true,
           "microTasks": [
             {
               "id": "task_1773982008986_PRIORITY-1-FIX-ALL-PAGES.md-msg5-task6-micro1",
-              "filePath": "src/app/api/self-dev/route.ts",
-              "change": "Implement the requested functionality",
-              "description": "Workflows section. Either show real workflows from...",
-              "status": "pending"
-            },
-            {
-              "id": "task_1773982008986_PRIORITY-1-FIX-ALL-PAGES.md-msg5-task6-micro2",
-              "filePath": "src/app/api/self-dev/route.ts",
-              "change": "Add error handling and validation",
-              "description": "Ensure robust implementation",
+              "filePath": "src/app/api/workflows/route.ts",
+              "change": "Create or update the API route",
+              "description": "In src/app/api/workflows/route.ts, implement the requested API functionality: Workflows section. Either show real workflows from /api/workflows or hide the section if empty. \"No workflows running\" is fine but \"Start Workflow\" button should navigate to /automations.. Use Next.js 13+ app router conventions with proper request/response handling.",
               "status": "pending"
             }
           ]
