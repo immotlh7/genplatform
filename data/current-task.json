@@ -1,12 +1,12 @@
 {
-  "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg3-task4",
+  "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg3-task1",
   "messageNumber": 3,
   "messageTitle": "URGENT FIX: The \"Gateway Offline\" notification appears on EVERY page even when gateway is running. F",
   "totalTasks": 68,
-  "completedTasks": 2,
+  "completedTasks": 0,
   "task": {
-    "taskNumber": 4,
-    "description": "Also check if there is a NotificationBell.tsx component that duplicates this logic. If yes, consolidate into one system.",
+    "taskNumber": 1,
+    "description": "Open src/components/notifications/notification-system.tsx (or wherever the Gateway Offline banner is). Find where it checks gateway status. It currently checks incorrectly. Fix the logic:",
     "status": "executing"
   }
 }
