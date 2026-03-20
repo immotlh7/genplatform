@@ -2,7 +2,7 @@
   "fileId": "task_1773982008986_PRIORITY-1-FIX-ALL-PAGES.md",
   "fileName": "PRIORITY-1-FIX-ALL-PAGES.md",
   "totalMessages": 33,
-  "totalMicroTasks": 68,
+  "totalMicroTasks": 9,
   "messages": [
     {
       "messageNumber": 1,
@@ -25,49 +25,30 @@
           "taskId": "task_3_1",
           "taskNumber": 1,
           "originalDescription": "Open src/components/notifications/notification-system.tsx (or wherever the Gateway Offline banner is). Find where it checks gateway status. It currently checks incorrectly. Fix the logic: - Fetch /api/bridge/status - If response has gateway.status === 'running' OR services array has a running gateway → gateway IS online → do NOT show warning - If fetch fails OR gateway not running → show warning - Add try/catch so if Bridge API is down, show \"Connecting...\" not \"Gateway Offline\"",
-          "status": "pending",
-          "approved": false,
+          "status": "review",
+          "approved": true,
           "rewritten": true,
           "microTasks": [
             {
-              "id": "task_3_1_micro_1",
-              "parentTaskId": "task_3_1",
-              "filePath": "src/app/example-0.tsx",
-              "location": "function exampleFunction0",
-              "change": "Add validation for Open src/components/notifications/notification-system.tsx (or wherever the Gateway Offline banner is). Find where it checks gateway status. It currently checks incorrectly. Fix the logic: - Fetch /api/bridge/status - If response has gateway.status === 'running' OR services array has a running gateway → gateway IS online → do NOT show warning - If fetch fails OR gateway not running → show warning - Add try/catch so if Bridge API is down, show \"Connecting...\" not \"Gateway Offline\"",
-              "expectedResult": "Function properly validates input",
-              "status": "pending",
-              "approved": false
+              "id": "task_1773982008986_PRIORITY-1-FIX-ALL-PAGES.md-msg3-task1-micro1",
+              "filePath": "/src/components/example-1.tsx",
+              "change": "Micro-task 1 for Open src/components/notifications/notification-sys...",
+              "description": "Update component 1",
+              "status": "pending"
             },
             {
-              "id": "task_3_1_micro_2",
-              "parentTaskId": "task_3_1",
-              "filePath": "src/app/example-0.tsx",
-              "location": "function exampleFunction0",
-              "change": "Add validation for Open src/components/notifications/notification-system.tsx (or wherever the Gateway Offline banner is). Find where it checks gateway status. It currently checks incorrectly. Fix the logic: - Fetch /api/bridge/status - If response has gateway.status === 'running' OR services array has a running gateway → gateway IS online → do NOT show warning - If fetch fails OR gateway not running → show warning - Add try/catch so if Bridge API is down, show \"Connecting...\" not \"Gateway Offline\"",
-              "expectedResult": "Function properly validates input",
-              "status": "pending",
-              "approved": false
+              "id": "task_1773982008986_PRIORITY-1-FIX-ALL-PAGES.md-msg3-task1-micro2",
+              "filePath": "/src/components/example-2.tsx",
+              "change": "Micro-task 2 for Open src/components/notifications/notification-sys...",
+              "description": "Update component 2",
+              "status": "pending"
             },
             {
-              "id": "task_3_1_micro_3",
-              "parentTaskId": "task_3_1",
-              "filePath": "src/app/example-0.tsx",
-              "location": "function exampleFunction0",
-              "change": "Add validation for Open src/components/notifications/notification-system.tsx (or wherever the Gateway Offline banner is). Find where it checks gateway status. It currently checks incorrectly. Fix the logic: - Fetch /api/bridge/status - If response has gateway.status === 'running' OR services array has a running gateway → gateway IS online → do NOT show warning - If fetch fails OR gateway not running → show warning - Add try/catch so if Bridge API is down, show \"Connecting...\" not \"Gateway Offline\"",
-              "expectedResult": "Function properly validates input",
-              "status": "pending",
-              "approved": false
-            },
-            {
-              "id": "task_3_1_micro_4",
-              "parentTaskId": "task_3_1",
-              "filePath": "src/app/example-0.tsx",
-              "location": "function exampleFunction0",
-              "change": "Add validation for Open src/components/notifications/notification-system.tsx (or wherever the Gateway Offline banner is). Find where it checks gateway status. It currently checks incorrectly. Fix the logic: - Fetch /api/bridge/status - If response has gateway.status === 'running' OR services array has a running gateway → gateway IS online → do NOT show warning - If fetch fails OR gateway not running → show warning - Add try/catch so if Bridge API is down, show \"Connecting...\" not \"Gateway Offline\"",
-              "expectedResult": "Function properly validates input",
-              "status": "pending",
-              "approved": false
+              "id": "task_1773982008986_PRIORITY-1-FIX-ALL-PAGES.md-msg3-task1-micro3",
+              "filePath": "/src/components/example-3.tsx",
+              "change": "Micro-task 3 for Open src/components/notifications/notification-sys...",
+              "description": "Update component 3",
+              "status": "pending"
             }
           ]
         },
@@ -75,29 +56,23 @@
           "taskId": "task_3_2",
           "taskNumber": 2,
           "originalDescription": "The notification \"CPU usage has been above 85%\" is fake/hardcoded. Remove it. Only show REAL notifications: - Gateway status (from /api/bridge/status) - Real CPU alert only if /api/bridge/metrics returns cpu > 85 - Build/deploy status",
-          "status": "pending",
-          "approved": false,
+          "status": "review",
+          "approved": true,
           "rewritten": true,
           "microTasks": [
             {
-              "id": "task_3_2_micro_1",
-              "parentTaskId": "task_3_2",
-              "filePath": "src/app/example-1.tsx",
-              "location": "function exampleFunction1",
-              "change": "Add validation for The notification \"CPU usage has been above 85%\" is fake/hardcoded. Remove it. Only show REAL notifications: - Gateway status (from /api/bridge/status) - Real CPU alert only if /api/bridge/metrics returns cpu > 85 - Build/deploy status",
-              "expectedResult": "Function properly validates input",
-              "status": "pending",
-              "approved": false
+              "id": "task_1773982008986_PRIORITY-1-FIX-ALL-PAGES.md-msg3-task2-micro1",
+              "filePath": "/src/components/example-1.tsx",
+              "change": "Micro-task 1 for The notification \"CPU usage has been above 85%\" is...",
+              "description": "Update component 1",
+              "status": "pending"
             },
             {
-              "id": "task_3_2_micro_2",
-              "parentTaskId": "task_3_2",
-              "filePath": "src/app/example-1.tsx",
-              "location": "function exampleFunction1",
-              "change": "Add validation for The notification \"CPU usage has been above 85%\" is fake/hardcoded. Remove it. Only show REAL notifications: - Gateway status (from /api/bridge/status) - Real CPU alert only if /api/bridge/metrics returns cpu > 85 - Build/deploy status",
-              "expectedResult": "Function properly validates input",
-              "status": "pending",
-              "approved": false
+              "id": "task_1773982008986_PRIORITY-1-FIX-ALL-PAGES.md-msg3-task2-micro2",
+              "filePath": "/src/components/example-2.tsx",
+              "change": "Micro-task 2 for The notification \"CPU usage has been above 85%\" is...",
+              "description": "Update component 2",
+              "status": "pending"
             }
           ]
         },
@@ -105,29 +80,23 @@
           "taskId": "task_3_3",
           "taskNumber": 3,
           "originalDescription": "The notification bell in the top bar shows a red badge with count. Make sure the count matches REAL unread notifications only. If no real alerts, badge should be hidden.",
-          "status": "pending",
-          "approved": false,
+          "status": "review",
+          "approved": true,
           "rewritten": true,
           "microTasks": [
             {
-              "id": "task_3_3_micro_1",
-              "parentTaskId": "task_3_3",
-              "filePath": "src/app/example-2.tsx",
-              "location": "function exampleFunction2",
-              "change": "Add validation for The notification bell in the top bar shows a red badge with count. Make sure the count matches REAL unread notifications only. If no real alerts, badge should be hidden.",
-              "expectedResult": "Function properly validates input",
-              "status": "pending",
-              "approved": false
+              "id": "task_1773982008986_PRIORITY-1-FIX-ALL-PAGES.md-msg3-task3-micro1",
+              "filePath": "/src/components/example-1.tsx",
+              "change": "Micro-task 1 for The notification bell in the top bar shows a red b...",
+              "description": "Update component 1",
+              "status": "pending"
             },
             {
-              "id": "task_3_3_micro_2",
-              "parentTaskId": "task_3_3",
-              "filePath": "src/app/example-2.tsx",
-              "location": "function exampleFunction2",
-              "change": "Add validation for The notification bell in the top bar shows a red badge with count. Make sure the count matches REAL unread notifications only. If no real alerts, badge should be hidden.",
-              "expectedResult": "Function properly validates input",
-              "status": "pending",
-              "approved": false
+              "id": "task_1773982008986_PRIORITY-1-FIX-ALL-PAGES.md-msg3-task3-micro2",
+              "filePath": "/src/components/example-2.tsx",
+              "change": "Micro-task 2 for The notification bell in the top bar shows a red b...",
+              "description": "Update component 2",
+              "status": "pending"
             }
           ]
         },
@@ -135,39 +104,23 @@
           "taskId": "task_3_4",
           "taskNumber": 4,
           "originalDescription": "Also check if there is a NotificationBell.tsx component that duplicates this logic. If yes, consolidate into one system.",
-          "status": "pending",
-          "approved": false,
+          "status": "review",
+          "approved": true,
           "rewritten": true,
           "microTasks": [
             {
-              "id": "task_3_4_micro_1",
-              "parentTaskId": "task_3_4",
-              "filePath": "src/app/example-3.tsx",
-              "location": "function exampleFunction3",
-              "change": "Add validation for Also check if there is a NotificationBell.tsx component that duplicates this logic. If yes, consolidate into one system.",
-              "expectedResult": "Function properly validates input",
-              "status": "pending",
-              "approved": false
+              "id": "task_1773982008986_PRIORITY-1-FIX-ALL-PAGES.md-msg3-task4-micro1",
+              "filePath": "/src/components/example-1.tsx",
+              "change": "Micro-task 1 for Also check if there is a NotificationBell.tsx comp...",
+              "description": "Update component 1",
+              "status": "pending"
             },
             {
-              "id": "task_3_4_micro_2",
-              "parentTaskId": "task_3_4",
-              "filePath": "src/app/example-3.tsx",
-              "location": "function exampleFunction3",
-              "change": "Add validation for Also check if there is a NotificationBell.tsx component that duplicates this logic. If yes, consolidate into one system.",
-              "expectedResult": "Function properly validates input",
-              "status": "pending",
-              "approved": false
-            },
-            {
-              "id": "task_3_4_micro_3",
-              "parentTaskId": "task_3_4",
-              "filePath": "src/app/example-3.tsx",
-              "location": "function exampleFunction3",
-              "change": "Add validation for Also check if there is a NotificationBell.tsx component that duplicates this logic. If yes, consolidate into one system.",
-              "expectedResult": "Function properly validates input",
-              "status": "pending",
-              "approved": false
+              "id": "task_1773982008986_PRIORITY-1-FIX-ALL-PAGES.md-msg3-task4-micro2",
+              "filePath": "/src/components/example-2.tsx",
+              "change": "Micro-task 2 for Also check if there is a NotificationBell.tsx comp...",
+              "description": "Update component 2",
+              "status": "pending"
             }
           ]
         }
@@ -188,7 +141,7 @@
           "taskId": "task_5_1",
           "taskNumber": 1,
           "originalDescription": "Live Task Monitor widget at the top. Currently shows \"Sprint 0D\" and old data. Fix: - Fetch from /api/bridge/live-status for current task info - Show: Current phase name, current task name, progress bar - Make it clickable → navigates to /dashboard/tasks - If no active task: show \"All tasks complete — waiting for next assignment\" - Remove \"Sprint 0D\" text. Replace with real phase from PROGRESS.md",
-          "status": "pending",
+          "status": "rewriting",
           "approved": false,
           "rewritten": false,
           "microTasks": []
@@ -197,7 +150,7 @@
           "taskId": "task_5_2",
           "taskNumber": 2,
           "originalDescription": "Stat Cards row (All Projects, Tasks, Team, Automations, Reports, Security). Fix each: - All Projects: fetch /api/projects → show real count + active/completed - Tasks: fetch /api/tasks → show real done/total + completion rate - Team: keep 1 active (hardcoded is fine for now) - Automations: fetch /api/workflows → show real active count - Reports: fetch /api/bridge/reports or keep current if working - Security: show \"Healthy\" with real last check time from /api/bridge/status",
-          "status": "pending",
+          "status": "rewriting",
           "approved": false,
           "rewritten": false,
           "microTasks": []
@@ -206,7 +159,7 @@
           "taskId": "task_5_3",
           "taskNumber": 3,
           "originalDescription": "System Performance section at bottom. Must show REAL data: - CPU Usage: fetch /api/bridge/metrics → resources.cpu.usage → show percentage with color (green <60, amber <80, red >80) - Memory Usage: same from metrics → resources.memory.usage - Remove any hardcoded percentages",
-          "status": "pending",
+          "status": "rewriting",
           "approved": false,
           "rewritten": false,
           "microTasks": []
@@ -215,7 +168,7 @@
           "taskId": "task_5_4",
           "taskNumber": 4,
           "originalDescription": "Quick Actions section. Make ALL buttons work: - \"New Project\" → navigate to /projects with create dialog open, OR call /api/projects POST - \"View Projects\" → navigate to /projects - \"View Reports\" → navigate to /dashboard/reports - \"Generate Report\" → navigate to /dashboard/reports with generate dialog - \"Manage Team\" → navigate to /dashboard/users - \"System Health\" → navigate to /dashboard/monitoring",
-          "status": "pending",
+          "status": "rewriting",
           "approved": false,
           "rewritten": false,
           "microTasks": []
@@ -224,7 +177,7 @@
           "taskId": "task_5_5",
           "taskNumber": 5,
           "originalDescription": "Activity Stream. Show real recent events: - Fetch last 5 git commits from /api/bridge/logs or hardcode last known commits - Each entry: icon + message + time ago - Remove any fake \"Task 0D-23 completed\" entries",
-          "status": "pending",
+          "status": "rewriting",
           "approved": false,
           "rewritten": false,
           "microTasks": []
@@ -233,7 +186,7 @@
           "taskId": "task_5_6",
           "taskNumber": 6,
           "originalDescription": "Workflows section. Either show real workflows from /api/workflows or hide the section if empty. \"No workflows running\" is fine but \"Start Workflow\" button should navigate to /automations.",
-          "status": "pending",
+          "status": "rewriting",
           "approved": false,
           "rewritten": false,
           "microTasks": []
@@ -255,7 +208,7 @@
           "taskId": "task_7_1",
           "taskNumber": 1,
           "originalDescription": "The user avatar area shows \"U User Member\". Fix: - Show \"Med\" as the name (from auth cookie or hardcode) - Show \"OWNER\" badge instead of \"Member\" (green badge) - The dropdown menu should show: Profile, Settings, Sign out - Profile link → /dashboard/settings (not /profile which is 404)",
-          "status": "pending",
+          "status": "rewriting",
           "approved": false,
           "rewritten": false,
           "microTasks": []
@@ -264,7 +217,7 @@
           "taskId": "task_7_2",
           "taskNumber": 2,
           "originalDescription": "Sign Out button must work: - Clear the auth-token cookie - Redirect to /login - After sign out, accessing /dashboard should redirect to /login (not show data)",
-          "status": "pending",
+          "status": "rewriting",
           "approved": false,
           "rewritten": false,
           "microTasks": []
@@ -273,7 +226,7 @@
           "taskId": "task_7_3",
           "taskNumber": 3,
           "originalDescription": "The \"Select Project\" dropdown in the top bar. Make it functional: - Fetch /api/projects to get project list - When selected, store in localStorage or context - Show selected project name in the dropdown - Default: \"GenPlatform.ai\"",
-          "status": "pending",
+          "status": "rewriting",
           "approved": false,
           "rewritten": false,
           "microTasks": []
@@ -282,7 +235,7 @@
           "taskId": "task_7_4",
           "taskNumber": 4,
           "originalDescription": "Navigation links (Dashboard, Projects, Automations, Reports) — verify all navigate correctly: - Dashboard → /dashboard - Projects → /projects - Automations → /automations - Reports → /dashboard/reports",
-          "status": "pending",
+          "status": "rewriting",
           "approved": false,
           "rewritten": false,
           "microTasks": []
@@ -947,5 +900,5 @@
   ],
   "analyzedAt": "2026-03-20T04:46:49.134Z",
   "status": "analyzed",
-  "hasApprovedTasks": false
+  "hasApprovedTasks": true
 }
