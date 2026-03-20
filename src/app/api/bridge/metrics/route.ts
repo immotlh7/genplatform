@@ -1,76 +1,51 @@
-import { NextResponse } from 'next/server';
+import { NextResponse } from "next/server"
+import os from "os"
+
+const BRIDGE_URL = process.env.BRIDGE_API_URL || "http://localhost:3010"
 
 export async function GET() {
   try {
-    const BRIDGE_URL = process.env.BRIDGE_API_URL || 'http://localhost:3001';
-    const res = await fetch(`${BRIDGE_URL}/api/system/metrics`, { cache: 'no-store' });
-    const raw = await res.json();
-    
-    const totalMem = parseFloat(raw.memory?.totalGB || '0') * 1024 * 1024 * 1024;
-    const usedMem = parseFloat(raw.memory?.usedGB || '0') * 1024 * 1024 * 1024;
-    const freeMem = parseFloat(raw.memory?.freeGB || '0') * 1024 * 1024 * 1024;
-    const memPercent = parseFloat(raw.memory?.percent || '0');
-    
-    const diskTotal = 193 * 1024 * 1024 * 1024;
-    const diskPercent = raw.disk?.percent || 0;
-    const diskUsed = Math.round(diskTotal * diskPercent / 100);
-    const diskFree = diskTotal - diskUsed;
+    // Try to get metrics from bridge
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 5000)
 
-    const resources = {
-      cpu: {
-        usage: raw.cpu?.usage || 0,
-        cores: raw.cpu?.cores || 1,
-        model: raw.cpu?.model || 'Unknown',
-        frequency: 2500,
-        temperature: null
-      },
-      memory: {
-        total: totalMem,
-        used: usedMem,
-        free: freeMem,
-        available: freeMem,
-        usage: memPercent,
-        percent: memPercent,
-        swap: { total: 0, used: 0, free: 0 }
-      },
-      disk: {
-        total: diskTotal,
-        used: diskUsed,
-        free: diskFree,
-        usage: diskPercent,
-        percent: diskPercent,
-        mounts: [{
-          filesystem: '/dev/sda1',
-          mountpoint: '/',
-          total: diskTotal,
-          used: diskUsed,
-          available: diskFree,
-          usage: diskPercent
-        }]
-      },
-      network: {
-        interfaces: [{
-          name: 'eth0',
-          bytesReceived: 0,
-          bytesTransmitted: 0,
-          packetsReceived: 0,
-          packetsTransmitted: 0,
-          errors: 0
-        }]
-      },
-      uptime: raw.uptime?.seconds || 0,
-      loadAverage: [0.5, 0.4, 0.3],
-      hostname: raw.hostname || 'srv1480109',
-      processes: {
-        total: 150,
-        running: 3,
-        sleeping: 145,
-        zombie: 0
-      }
-    };
+    const response = await fetch(`${BRIDGE_URL}/metrics`, {
+      method: "GET",
+      headers: { "Content-Type": "application/json" },
+      signal: controller.signal,
+      cache: "no-store"
+    })
 
-    return NextResponse.json({ resources, raw });
-  } catch (e: any) {
-    return NextResponse.json({ error: e.message, resources: null }, { status: 500 });
+    clearTimeout(timeoutId)
+
+    if (response.ok) {
+      const data = await response.json()
+      return NextResponse.json(data)
+    }
+  } catch (error) {
+    // Bridge metrics not available, return system metrics
   }
+
+  // Return system-level metrics as fallback
+  const cpus = os.cpus()
+  const totalMemory = os.totalmem()
+  const freeMemory = os.freemem()
+  const usedMemory = totalMemory - freeMemory
+  const memoryUsagePercent = (usedMemory / totalMemory) * 100
+
+  // Calculate CPU usage (simplified)
+  const cpuUsage = cpus.reduce((acc, cpu) => {
+    const total = Object.values(cpu.times).reduce((a, b) => a + b, 0)
+    const idle = cpu.times.idle
+    return acc + ((total - idle) / total) * 100
+  }, 0) / cpus.length
+
+  return NextResponse.json({
+    cpu: cpuUsage,
+    memory: memoryUsagePercent,
+    totalMemory: totalMemory,
+    freeMemory: freeMemory,
+    uptime: os.uptime(),
+    timestamp: new Date().toISOString()
+  })
 }

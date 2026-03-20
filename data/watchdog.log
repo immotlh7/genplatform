@@ -45,3 +45,10 @@
 [2026-03-20T14:20:01.659Z] → Found: task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md Msg 3 (needsRewrite: false)
 [2026-03-20T14:20:01.751Z] ❌ Execute failed: {"error":"Execution locked","lockedBy":"task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg3-task3","
 [2026-03-20T14:20:01.899Z] Done. Issues: 1, Fixes: 0
+[2026-03-20T14:25:01.434Z] --- Watchdog run ---
+[2026-03-20T14:25:01.476Z] ✅ Site up
+[2026-03-20T14:25:01.781Z] ✅ pm2 online
+[2026-03-20T14:25:01.791Z] 📊 Queue: 4/255 done, 15 approved, 0 executing
+[2026-03-20T14:25:01.791Z] ⚠️ Pipeline stalled — finding next message...
+[2026-03-20T14:25:01.792Z] → Found: task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md Msg 3 (needsRewrite: false)
+[2026-03-20T14:25:01.903Z] Done. Issues: 1, Fixes: 0

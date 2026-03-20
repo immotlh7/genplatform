@@ -211,7 +211,7 @@
           "rewritten": true,
           "microTasks": [
             {
-              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg5-task1-micro1",
+              "id": "task_1774003310394_PRIORITY-2-CHAT-AND-FEATURES.md-msg5-task1-micro1",
               "filePath": "src/app/dashboard/page.tsx",
               "change": "Analyze and implement the requested feature",
               "description": "Implement the following task with precision: Live Task Monitor widget at the top. Currently shows \"Sprint 0D\" and old data. Fix:. First identify the correct file and component, then make the necessary changes following the project's coding standards.",
@@ -228,7 +228,7 @@
           "rewritten": true,
           "microTasks": [
             {
-              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg5-task2-micro1",
+              "id": "task_1774003310394_PRIORITY-2-CHAT-AND-FEATURES.md-msg5-task2-micro1",
               "filePath": "src/app/dashboard/page.tsx",
               "change": "Analyze and implement the requested feature",
               "description": "Implement the following task with precision: Stat Cards row (All Projects, Tasks, Team, Automations, Reports, Security). Fix each:. First identify the correct file and component, then make the necessary changes following the project's coding standards.",
@@ -245,7 +245,7 @@
           "rewritten": true,
           "microTasks": [
             {
-              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg5-task3-micro1",
+              "id": "task_1774003310394_PRIORITY-2-CHAT-AND-FEATURES.md-msg5-task3-micro1",
               "filePath": "src/app/dashboard/page.tsx",
               "change": "Analyze and implement the requested feature",
               "description": "Implement the following task with precision: System Performance section at bottom. Must show REAL data:. First identify the correct file and component, then make the necessary changes following the project's coding standards.",
@@ -262,7 +262,7 @@
           "rewritten": true,
           "microTasks": [
             {
-              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg5-task4-micro1",
+              "id": "task_1774003310394_PRIORITY-2-CHAT-AND-FEATURES.md-msg5-task4-micro1",
               "filePath": "src/app/dashboard/page.tsx",
               "change": "Analyze and implement the requested feature",
               "description": "Implement the following task with precision: Quick Actions section. Make ALL buttons work:. First identify the correct file and component, then make the necessary changes following the project's coding standards.",
@@ -279,7 +279,7 @@
           "rewritten": true,
           "microTasks": [
             {
-              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg5-task5-micro1",
+              "id": "task_1774003310394_PRIORITY-2-CHAT-AND-FEATURES.md-msg5-task5-micro1",
               "filePath": "src/app/dashboard/page.tsx",
               "change": "Analyze and implement the requested feature",
               "description": "Implement the following task with precision: Activity Stream. Show real recent events:. First identify the correct file and component, then make the necessary changes following the project's coding standards.",
@@ -296,7 +296,7 @@
           "rewritten": true,
           "microTasks": [
             {
-              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg5-task6-micro1",
+              "id": "task_1774003310394_PRIORITY-2-CHAT-AND-FEATURES.md-msg5-task6-micro1",
               "filePath": "src/app/api/workflows/route.ts",
               "change": "Create or update the API route",
               "description": "In src/app/api/workflows/route.ts, implement the requested API functionality: Workflows section. Either show real workflows from /api/workflows or hide the section if empty. \"No workflows running\" is fine but \"Start Workflow\" button should navigate to /automations.. Use Next.js 13+ app router conventions with proper request/response handling.",
