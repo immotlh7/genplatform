@@ -26,6 +26,7 @@ export function ExecutionMonitor({ onRefresh }: ExecutionMonitorProps) {
   const [status, setStatus] = useState<any>({});
   const [queues, setQueues] = useState<any[]>([]);
   const [executingTasks, setExecutingTasks] = useState<ExecutingTask[]>([]);
+  const [error, setError] = useState<string | null>(null);
   
   useEffect(() => {
     loadStatus();
@@ -42,11 +43,12 @@ export function ExecutionMonitor({ onRefresh }: ExecutionMonitorProps) {
       const response = await fetch('/api/self-dev/status');
       if (response.ok) {
         const data = await response.json();
-        setStatus(data);
+        setStatus(data || {});
         if (onRefresh) onRefresh();
       }
     } catch (error) {
       console.error('Failed to load status:', error);
+      setError('Failed to load status');
     }
   };
 
@@ -55,25 +57,37 @@ export function ExecutionMonitor({ onRefresh }: ExecutionMonitorProps) {
       const response = await fetch('/api/self-dev/queues');
       if (response.ok) {
         const data = await response.json();
+        
+        // Ensure data is an array before processing
+        if (!Array.isArray(data)) {
+          console.error('Queues data is not an array:', data);
+          setQueues([]);
+          return;
+        }
+        
         setQueues(data);
         
         // Extract currently executing tasks
         const executing: ExecutingTask[] = [];
         data.forEach((queue: any) => {
-          queue.messages?.forEach((msg: any) => {
-            msg.tasks?.forEach((task: any) => {
-              if (task.status === 'executing' && task.microTasks) {
+          if (!queue.messages || !Array.isArray(queue.messages)) return;
+          
+          queue.messages.forEach((msg: any) => {
+            if (!msg.tasks || !Array.isArray(msg.tasks)) return;
+            
+            msg.tasks.forEach((task: any) => {
+              if (task.status === 'executing' && task.microTasks && Array.isArray(task.microTasks)) {
                 const executingMicroTaskIndex = task.microTasks.findIndex((mt: any) => mt.status === 'executing');
                 if (executingMicroTaskIndex >= 0) {
                   executing.push({
                     fileId: queue.fileId,
                     messageNumber: msg.messageNumber,
                     taskNumber: task.taskNumber,
-                    taskDescription: task.originalDescription,
+                    taskDescription: task.originalDescription || '',
                     currentMicroTask: executingMicroTaskIndex + 1,
                     totalMicroTasks: task.microTasks.length,
-                    microTaskDescription: task.microTasks[executingMicroTaskIndex].change,
-                    startedAt: new Date().toISOString() // Would need to track this properly
+                    microTaskDescription: task.microTasks[executingMicroTaskIndex]?.change || '',
+                    startedAt: new Date().toISOString()
                   });
                 }
               }
@@ -90,9 +104,16 @@ export function ExecutionMonitor({ onRefresh }: ExecutionMonitorProps) {
         if (newLogs.length > 0) {
           setLogs(prev => [...newLogs, ...prev].slice(0, 100)); // Keep last 100 logs
         }
+        
+        setError(null);
+      } else {
+        console.error('Failed to fetch queues:', response.status);
+        setQueues([]);
       }
     } catch (error) {
       console.error('Failed to load queues:', error);
+      setQueues([]);
+      setError('Failed to load task queues');
     }
   };
 
@@ -102,7 +123,7 @@ export function ExecutionMonitor({ onRefresh }: ExecutionMonitorProps) {
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
-  // Calculate review status
+  // Calculate review status with better error handling
   const calculateReviewStatus = () => {
     let totalTasks = 0;
     let rewrittenTasks = 0;
@@ -112,28 +133,30 @@ export function ExecutionMonitor({ onRefresh }: ExecutionMonitorProps) {
     let doneCount = 0;
     let failedCount = 0;
     
-    queues.forEach(queue => {
-      if (queue.messages) {
-        queue.messages.forEach((msg: any) => {
-          if (msg.tasks) {
-            msg.tasks.forEach((task: any) => {
-              totalTasks++;
-              if (task.rewritten) {
-                rewrittenTasks++;
-                if (task.approved) {
-                  approvedTasks++;
-                } else {
-                  pendingReview++;
+    if (Array.isArray(queues)) {
+      queues.forEach(queue => {
+        if (queue.messages && Array.isArray(queue.messages)) {
+          queue.messages.forEach((msg: any) => {
+            if (msg.tasks && Array.isArray(msg.tasks)) {
+              msg.tasks.forEach((task: any) => {
+                totalTasks++;
+                if (task.rewritten) {
+                  rewrittenTasks++;
+                  if (task.approved) {
+                    approvedTasks++;
+                  } else {
+                    pendingReview++;
+                  }
                 }
-              }
-              if (task.status === 'executing') executingCount++;
-              if (task.status === 'done') doneCount++;
-              if (task.status === 'failed') failedCount++;
-            });
-          }
-        });
-      }
-    });
+                if (task.status === 'executing') executingCount++;
+                if (task.status === 'done') doneCount++;
+                if (task.status === 'failed') failedCount++;
+              });
+            }
+          });
+        }
+      });
+    }
     
     return { totalTasks, rewrittenTasks, approvedTasks, pendingReview, executingCount, doneCount, failedCount };
   };
@@ -142,6 +165,26 @@ export function ExecutionMonitor({ onRefresh }: ExecutionMonitorProps) {
   const isInReviewMode = reviewStatus.pendingReview > 0 || (reviewStatus.rewrittenTasks > 0 && reviewStatus.approvedTasks === 0);
   const isExecuting = reviewStatus.executingCount > 0;
 
+  // Error state
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full text-red-400">
+        <XCircle className="h-12 w-12 mb-4 opacity-50" />
+        <p className="text-lg mb-2">{error}</p>
+        <button 
+          onClick={() => {
+            setError(null);
+            loadQueues();
+          }}
+          className="text-sm underline hover:no-underline"
+        >
+          Try again
+        </button>
+      </div>
+    );
+  }
+
+  // Empty state
   if (status.status === 'idle' && queues.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center h-full text-gray-400">
@@ -152,6 +195,7 @@ export function ExecutionMonitor({ onRefresh }: ExecutionMonitorProps) {
     );
   }
 
+  // Review mode
   if (isInReviewMode && !isExecuting) {
     return (
       <div className="h-full flex flex-col">
