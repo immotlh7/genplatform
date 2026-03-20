@@ -226,70 +226,87 @@ async function main() {
   const qStats = getQueueStats();
   log(`📊 Queue: ${qStats.done}/${qStats.total} done, ${qStats.approved} approved, ${qStats.executing} executing`);
 
-  const lastActivityAge = (Date.now() - state.lastActivity) / 60000;
+  const lastActivityAge = (Date.now() - (state.lastActivity || 0)) / 60000;
   const hasWork = qStats.approved > 0 || qStats.pending > 0;
 
-  if (hasWork && qStats.executing === 0 && lastActivityAge > 1) {
-    // Pipeline stalled — find next message and trigger
-    issues.push(`Pipeline idle for ${lastActivityAge.toFixed(0)} min`);
-    log('⚠️ Pipeline stalled — finding next message...');
+  if (qStats.executing > 0) {
+    // A task is currently running — do NOT trigger another one
+    state.lastActivity = Date.now();
+    state.consecutiveIdle = 0;
+    log(`✅ Task executing — waiting for completion`);
+
+  } else if (hasWork && lastActivityAge > 1) {
+    // No task executing and work exists — find and trigger next
+    log('🔍 No active task — finding next...');
 
     const next = findNextPendingMessage();
     if (next) {
-      log(`→ Found: ${next.fileId} Msg ${next.messageNumber} (needsRewrite: ${next.needsRewrite})`);
+      log(`→ Next: ${next.fileId.substring(0,40)} Msg ${next.messageNumber}`);
 
       if (next.needsRewrite) {
-        // Rewrite first
+        await notify(`🔍 Found: Msg ${next.messageNumber} needs rewrite
+⏳ Running rewrite...`);
         const rw = await apiCall('/api/self-dev/rewrite', 'POST', {
-          fileId: next.fileId,
-          messageNumber: next.messageNumber,
-          forceRewrite: true
+          fileId: next.fileId, messageNumber: next.messageNumber, forceRewrite: true
         });
         if (rw.success) {
-          log(`✅ Rewrote Msg ${next.messageNumber}: ${rw.microTasksGenerated} tasks`);
+          await notify(`✅ Rewrite done: ${rw.microTasksGenerated} micro-tasks created
+⏳ Approving...`);
           await new Promise(r => setTimeout(r, 1000));
-          // Approve
           const ap = await apiCall('/api/self-dev/approve', 'POST', {
-            fileId: next.fileId,
-            messageNumber: next.messageNumber,
-            approved: true
+            fileId: next.fileId, messageNumber: next.messageNumber, approved: true
           });
           if (ap.approvedTasks > 0) {
-            fixes.push(`Rewrite+Approved Msg ${next.messageNumber} (${ap.approvedTasks} tasks)`);
+            await notify(`✅ Approved ${ap.approvedTasks} tasks
+🚀 Starting execution...`);
             state.lastActivity = Date.now();
-            state.consecutiveIdle = 0;
+            // Trigger first task
+            await new Promise(r => setTimeout(r, 1000));
+            const ex = await apiCall('/api/self-dev/execute-next', 'POST');
+            if (ex.success || ex.sent) {
+              await notify(`🚀 Executing Task ${ex.taskNumber}/${ex.totalTasks}
+📋 ${next.fileId.replace(/task_\d+_/,'').substring(0,30)}`);
+              state.lastActivity = Date.now();
+            }
           }
         } else {
-          log(`❌ Rewrite failed: ${JSON.stringify(rw).substring(0, 100)}`);
-          state.consecutiveIdle = (state.consecutiveIdle || 0) + 1;
+          await notify(`❌ Rewrite failed: ${JSON.stringify(rw).substring(0,80)}
+⏭️ Skipping message ${next.messageNumber}`);
         }
+
       } else if (next.hasApproved) {
-        // Trigger execution
+        // Task approved and ready — trigger it
         const ex = await apiCall('/api/self-dev/execute-next', 'POST');
-        if (ex.sent || ex.success) {
-          fixes.push(`Triggered: Msg${next.messageNumber}-T${ex.taskNumber}`);
+        if (ex.success || ex.sent) {
+          await notify(`🚀 Task ${ex.taskNumber}/${ex.totalTasks} started
+📋 ${(ex.taskId||'').split('-task')[0].replace(/.*task_\d+_/,'').substring(0,40)}`);
           state.lastActivity = Date.now();
           state.consecutiveIdle = 0;
-          log(`✅ Triggered: Task ${ex.taskNumber} executing`);
+          log(`✅ Task ${ex.taskNumber} triggered`);
         } else {
-          log(`❌ Execute failed: ${JSON.stringify(ex).substring(0, 100)}`);
-          // Try once more after clearing lock
-          fs.writeFileSync('/root/genplatform/data/execution-lock.json', JSON.stringify({locked:false,taskId:null,lockedAt:null,attempts:0},null,2));
+          log(`⚠️ Execute returned: ${JSON.stringify(ex).substring(0,80)}`);
+          // Clear lock and retry once
+          fs.writeFileSync('/root/genplatform/data/execution-lock.json',
+            JSON.stringify({locked:false,taskId:null,lockedAt:null,attempts:0},null,2));
+          await new Promise(r => setTimeout(r, 1000));
           const ex2 = await apiCall('/api/self-dev/execute-next', 'POST');
-          if (ex2.sent || ex2.success) {
-            fixes.push(`Retry triggered: Msg${next.messageNumber}-T${ex2.taskNumber}`);
+          if (ex2.success || ex2.sent) {
+            await notify(`🔧 Lock cleared & restarted
+🚀 Task ${ex2.taskNumber} executing now`);
             state.lastActivity = Date.now();
-            log(`✅ Retry triggered: Task ${ex2.taskNumber}`);
+          } else {
+            await notify(`❌ Cannot start task: ${JSON.stringify(ex2).substring(0,100)}`);
           }
         }
       }
     } else {
-      log('✅ No pending messages found — all done!');
+      log('🎉 All tasks complete!');
+      await notify('🎉 ALL TASKS COMPLETE!
+
+Check: https://app.gen3.ai');
     }
-  } else if (qStats.executing > 0) {
-    state.lastActivity = Date.now();
-    state.consecutiveIdle = 0;
-    log('✅ Pipeline is executing');
+  } else {
+    log('✅ System idle - no work pending');
   }
 
   // ── CHECK 5: Stale executing task in non-main queues ──
@@ -329,7 +346,7 @@ async function main() {
   const now = Date.now();
   const timeSinceNotify = (now - (state.lastNotify || 0)) / 60000;
 
-  if (issues.length > 0 || timeSinceNotify >= 5 || fixes.length > 0) {
+  if (issues.length > 0 || timeSinceNotify >= 5) {
     const elapsed = Math.round((now - (state.startTime || now)) / 60000);
     let msg = `🤖 Watchdog Report\n\n`;
     msg += `📊 Progress: ${qStats.done}/${qStats.total} tasks done\n`;

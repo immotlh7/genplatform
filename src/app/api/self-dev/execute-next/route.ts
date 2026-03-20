@@ -272,8 +272,8 @@ export async function executeNext() {
 
     await addLog({ timestamp: new Date().toISOString(), type: 'task_sent', message: `🚀 Executing Task ${foundTask.taskNumber}: ${foundTask.originalDescription.substring(0, 60)}...`, taskId: foundTask.taskId });
 
-    // Notify start
-    await notify(`🔨 Starting Task ${foundTask.taskNumber}/${totalTasks}\n\n${foundTask.originalDescription.substring(0, 150)}\n\n⏳ Executing...`);
+    // Notify start - LIVE
+    await notify(`🔨 Task ${foundTask.taskNumber}/${totalTasks} started\n\n📋 ${foundTask.originalDescription.substring(0, 120)}\n\n⏳ Claude is writing code...`);
 
     // Execute with Claude
     const result = await executeTaskWithClaude(foundTask, foundMessage);
@@ -301,11 +301,24 @@ export async function executeNext() {
       taskId: foundTask.taskId
     });
 
-    // Notify result
-    await notify(result.success
-      ? `✅ Task ${foundTask.taskNumber}/${totalTasks} DONE\n\n${foundTask.originalDescription.substring(0, 100)}\n\nProgress: ${completedTasks + 1}/${totalTasks}`
-      : `❌ Task ${foundTask.taskNumber} FAILED\n\n${result.result.substring(0, 200)}`
-    );
+    // Notify result - LIVE
+    if (result.success) {
+      await notify(
+        `✅ Task ${foundTask.taskNumber}/${totalTasks} DONE\n` +
+        `━━━━━━━━━━━━━━━━━━\n` +
+        `📝 ${foundTask.originalDescription.substring(0, 100)}\n` +
+        `📊 Progress: ${completedTasks + 1}/${totalTasks} tasks done\n` +
+        `🚀 Next task starting...`
+      );
+    } else {
+      await notify(
+        `❌ Task ${foundTask.taskNumber} FAILED (auto-skip)\n` +
+        `━━━━━━━━━━━━━━━━━━\n` +
+        `📝 ${foundTask.originalDescription.substring(0, 80)}\n` +
+        `💬 ${result.result.substring(0, 150)}\n` +
+        `⏭️ Moving to next task...`
+      );
+    }
 
     // Individual file already saved via foundQueueFile
 
