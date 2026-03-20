@@ -4,7 +4,7 @@
   "uploadedAt": "2026-03-20T08:45:10.369Z",
   "totalMessages": 33,
   "totalTasks": 68,
-  "totalMicroTasks": 34,
+  "totalMicroTasks": 38,
   "messages": [
     {
       "messageNumber": 1,
@@ -699,37 +699,69 @@
           "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg17-task1",
           "taskNumber": 1,
           "originalDescription": "Stats cards fix:",
-          "status": "pending",
+          "status": "review",
           "approved": false,
-          "rewritten": false,
-          "microTasks": []
+          "rewritten": true,
+          "microTasks": [
+            {
+              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg17-task1-micro1",
+              "filePath": "src/app/dashboard/page.tsx",
+              "change": "Analyze and implement the requested feature",
+              "description": "Implement the following task with precision: Stats cards fix:. First identify the correct file and component, then make the necessary changes following the project's coding standards.",
+              "status": "pending"
+            }
+          ]
         },
         {
           "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg17-task2",
           "taskNumber": 2,
           "originalDescription": "Job list is working. Improve each job card:",
-          "status": "pending",
+          "status": "review",
           "approved": false,
-          "rewritten": false,
-          "microTasks": []
+          "rewritten": true,
+          "microTasks": [
+            {
+              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg17-task2-micro1",
+              "filePath": "src/app/dashboard/page.tsx",
+              "change": "Analyze and implement the requested feature",
+              "description": "Implement the following task with precision: Job list is working. Improve each job card:. First identify the correct file and component, then make the necessary changes following the project's coding standards.",
+              "status": "pending"
+            }
+          ]
         },
         {
           "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg17-task3",
           "taskNumber": 3,
           "originalDescription": "\"New Job\" button — make it smart:",
-          "status": "pending",
+          "status": "review",
           "approved": false,
-          "rewritten": false,
-          "microTasks": []
+          "rewritten": true,
+          "microTasks": [
+            {
+              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg17-task3-micro1",
+              "filePath": "src/app/dashboard/page.tsx",
+              "change": "Analyze and implement the requested feature",
+              "description": "Implement the following task with precision: \"New Job\" button — make it smart:. First identify the correct file and component, then make the necessary changes following the project's coding standards.",
+              "status": "pending"
+            }
+          ]
         },
         {
           "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg17-task4",
           "taskNumber": 4,
           "originalDescription": "Each job should show the cron expression in human readable form:",
-          "status": "pending",
+          "status": "review",
           "approved": false,
-          "rewritten": false,
-          "microTasks": []
+          "rewritten": true,
+          "microTasks": [
+            {
+              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg17-task4-micro1",
+              "filePath": "src/app/dashboard/page.tsx",
+              "change": "Analyze and implement the requested feature",
+              "description": "Implement the following task with precision: Each job should show the cron expression in human readable form:. First identify the correct file and component, then make the necessary changes following the project's coding standards.",
+              "status": "pending"
+            }
+          ]
         }
       ]
     },

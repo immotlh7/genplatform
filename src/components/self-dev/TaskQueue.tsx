@@ -102,12 +102,15 @@ export function TaskQueue({ className = '', hideActions = false }: TaskQueueProp
     const response = await fetch('/api/self-dev/rewrite', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ fileId, messageNumber, forceRewrite: false })
+      body: JSON.stringify({ fileId, messageNumber, forceRewrite: true })
     });
     
     if (!response.ok) {
       throw new Error('Failed to rewrite tasks');
     }
+    
+    // Refresh the queue so micro-tasks appear immediately
+    await fetchQueues();
   };
 
   const handleApprove = async (fileId: string, messageNumber: number) => {
