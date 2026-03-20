@@ -169,6 +169,7 @@ export function TaskQueue({ className = '', hideActions = false }: TaskQueueProp
   };
 
   const getTaskStatus = (task: Task): string => {
+    if (task.status === 'done') return 'done';
     if (task.completedIcon === '✅') return 'done';
     if (task.executionResult?.success) return 'done';
     if (task.executionResult?.success === false) return 'failed';
