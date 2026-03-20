@@ -15,7 +15,7 @@ export async function GET() {
     const notifications: SystemNotification[] = [];
     const BRIDGE_URL = process.env.BRIDGE_API_URL || 'http://localhost:3001';
     
-    // Check system metrics
+    // Check system metrics - ONLY show if actually high
     try {
       const metricsRes = await fetch(`${BRIDGE_URL}/api/metrics`, {
         cache: 'no-store',
@@ -25,8 +25,8 @@ export async function GET() {
       if (metricsRes.ok) {
         const metrics = await metricsRes.json();
         
-        // CPU warning
-        if (metrics.cpu?.usage > 80) {
+        // CPU warning - ONLY if actually > 85%
+        if (metrics.cpu?.usage > 85) {
           notifications.push({
             id: `cpu-high-${Date.now()}`,
             title: 'High CPU Usage',
@@ -68,7 +68,7 @@ export async function GET() {
       console.error('Failed to fetch metrics:', metricsError);
     }
     
-    // Check gateway status
+    // Check gateway status - FIXED LOGIC
     try {
       const statusRes = await fetch(`${BRIDGE_URL}/api/status`, {
         cache: 'no-store',
@@ -78,17 +78,17 @@ export async function GET() {
       if (statusRes.ok) {
         const status = await statusRes.json();
         
-        if (status.gateway?.running) {
-          notifications.push({
-            id: `gateway-online-${Date.now()}`,
-            title: 'System Online',
-            message: `Gateway running with ${status.gateway.sessions?.active || 0} active sessions • Model: ${status.gateway.model || 'default'}`,
-            type: 'success',
-            timestamp: new Date().toISOString(),
-            read: false,
-            source: 'OpenClaw Gateway'
-          });
-        } else {
+        // Check multiple ways to determine if gateway is running
+        const gatewayRunning = 
+          status.gateway?.status === 'running' || 
+          status.gateway?.running === true ||
+          (status.services && status.services.some((s: any) => 
+            (s.name === 'gateway' || s.name === 'openclaw-gateway') && 
+            (s.status === 'running' || s.running === true)
+          ));
+        
+        if (!gatewayRunning) {
+          // ONLY show offline warning if gateway is actually not running
           notifications.push({
             id: `gateway-offline-${Date.now()}`,
             title: 'Gateway Offline',
@@ -99,15 +99,26 @@ export async function GET() {
             source: 'OpenClaw Gateway'
           });
         }
+        // Remove the "System Online" notification - not needed when everything is working
       } else {
-        throw new Error('Status check failed');
+        // If status check fails, it might mean Bridge API is down
+        notifications.push({
+          id: `bridge-connecting-${Date.now()}`,
+          title: 'Connecting...',
+          message: 'Connecting to Bridge API service',
+          type: 'info',
+          timestamp: new Date().toISOString(),
+          read: false,
+          source: 'System'
+        });
       }
     } catch (statusError) {
+      // Bridge API is down - show "Connecting..." not "Gateway Offline"
       notifications.push({
-        id: `bridge-error-${Date.now()}`,
-        title: 'Bridge API Connection Issue',
-        message: 'Unable to connect to Bridge API. Check if the service is running.',
-        type: 'error',
+        id: `bridge-connecting-${Date.now()}`,
+        title: 'Connecting...',
+        message: 'Connecting to Bridge API service',
+        type: 'info',
         timestamp: new Date().toISOString(),
         read: false,
         source: 'System'
