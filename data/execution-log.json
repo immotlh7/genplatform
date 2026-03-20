@@ -95,5 +95,16 @@
     "type": "build",
     "message": "🔨 Build completed successfully - npm run build && pm2 restart",
     "taskId": null
+  },
+  {
+    "timestamp": "2026-03-20T08:37:57.694Z",
+    "type": "info",
+    "message": "▶️ Execution resumed - Auto-mode enabled"
+  },
+  {
+    "timestamp": "2026-03-20T08:37:57.794Z",
+    "type": "task_sent",
+    "message": "📤 Task task_1773991930050_PRIORITY-1-FIX-ALL-PAGES.md-msg3-task3 sent - The notification bell in the top bar shows a red badge with count. Make sure the count matches REAL unread notifications only. If no real alerts, badge should be hidden.",
+    "taskId": "task_1773991930050_PRIORITY-1-FIX-ALL-PAGES.md-msg3-task3"
   }
 ]

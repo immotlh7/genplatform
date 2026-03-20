@@ -49,9 +49,13 @@ async function addLog(log: ExecutionLog) {
 
 async function executeNextTask() {
   try {
-    // Import and call execute-next directly
-    const { executeNext } = await import('../self-dev/execute-next/route');
-    const result = await executeNext();
+    // Call execute-next API directly
+    const response = await fetch('http://localhost:3000/api/self-dev/execute-next', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' }
+    });
+    
+    const result = await response.json();
     console.log('[WEBHOOK] Execute next result:', result);
     return result;
   } catch (error) {
@@ -101,6 +105,7 @@ export async function POST(request: NextRequest) {
             if (task.status === 'executing') {
               task.status = 'done';
               task.completedAt = new Date().toISOString();
+              task.completedIcon = '✅';
               foundTask = true;
               
               await addLog({
@@ -141,8 +146,10 @@ export async function POST(request: NextRequest) {
           // Check if auto-mode is on
           const config = await getConfig();
           if (config.autoMode) {
-            // Execute next task
-            await executeNextTask();
+            // Wait 2 seconds then execute next task
+            setTimeout(() => {
+              executeNextTask();
+            }, 2000);
           }
         }
       } catch (error) {
@@ -206,7 +213,9 @@ export async function POST(request: NextRequest) {
           const config = await getConfig();
           if (config.autoMode && !text.includes('stop')) {
             // Execute next task even after failure
-            await executeNextTask();
+            setTimeout(() => {
+              executeNextTask();
+            }, 2000);
           }
         }
       } catch (error) {

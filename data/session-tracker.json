@@ -1,7 +1,7 @@
 {
-  "tasksSentInSession": 5,
+  "tasksSentInSession": 6,
   "lastReset": "2026-03-20T08:02:03.568Z",
-  "totalTasksSent": 5,
+  "totalTasksSent": 6,
   "currentBatch": 2,
-  "tasksInCurrentBatch": 0
+  "tasksInCurrentBatch": 1
 }
