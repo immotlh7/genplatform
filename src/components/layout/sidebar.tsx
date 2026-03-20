@@ -27,7 +27,9 @@ import {
   Users,
   TrendingUp,
   Bot,
-  Wrench
+  Wrench,
+  CheckSquare,
+  Lightbulb
 } from 'lucide-react'
 
 interface AutomationStatus {
@@ -131,6 +133,9 @@ export function Sidebar() {
         { name: 'Memory', href: '/dashboard/memory', icon: Brain },
         { name: 'Cron Jobs', href: '/dashboard/cron', icon: Clock },
         { name: 'Projects', href: '/dashboard/projects', icon: Folder },
+        { name: 'Tasks', href: '/dashboard/tasks', icon: CheckSquare },
+        { name: 'Ideas', href: '/ideas', icon: Lightbulb },
+        { name: 'Agents', href: '/agents', icon: Bot },
         { 
           name: 'Self-Dev', 
           href: '/dashboard/self-dev', 
