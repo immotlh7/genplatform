@@ -554,7 +554,7 @@
           "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg15-task1",
           "taskNumber": 1,
           "originalDescription": "Skills are loading (27-35 skills from Bridge API). Good. But improve the cards:",
-          "status": "review",
+          "status": "done",
           "approved": false,
           "rewritten": true,
           "microTasks": [
@@ -593,13 +593,14 @@
               "description": "Update the Card component styling for skill cards to have consistent layout. Add className='hover:border-primary/50 transition-colors cursor-pointer' to make cards interactive. Inside CardContent, structure the content as: <div className='space-y-3'><h3 className='font-semibold text-lg'>{skill.name}</h3><div className='flex flex-wrap gap-2'>...badges...</div><p className='text-sm text-muted-foreground'>...description...</p><div>...department badge...</div></div>. This ensures proper spacing and visual hierarchy.",
               "status": "pending"
             }
-          ]
+          ],
+          "completedAt": "2026-03-20T20:28:00.000Z"
         },
         {
           "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg15-task2",
           "taskNumber": 2,
           "originalDescription": "Click a skill card \u2192 open a detail modal:",
-          "status": "review",
+          "status": "done",
           "approved": false,
           "rewritten": true,
           "microTasks": [
@@ -659,13 +660,14 @@
               "description": "In the GET handler, check if request URL has a 'name' query parameter: const { searchParams } = new URL(request.url); const skillName = searchParams.get('name');. If skillName is provided, filter or find the specific skill from the Bridge API response and return only that skill's details. Include any SKILL.md content if available from the Bridge API response. If no name param, return all skills as before. This enables the modal to fetch individual skill details.",
               "status": "pending"
             }
-          ]
+          ],
+          "completedAt": "2026-03-20T20:28:00.000Z"
         },
         {
           "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg15-task3",
           "taskNumber": 3,
           "originalDescription": "\"Add Skill\" button in header should show a message: \"Skills are managed through OpenClaw. Use the Command Center to update skills.\" with a link to /dashboard/command-center.",
-          "status": "review",
+          "status": "done",
           "approved": false,
           "rewritten": true,
           "microTasks": [
@@ -697,13 +699,14 @@
               "description": "Add a new Dialog component for the Add Skill info message. Place it near the other dialog in the JSX: <Dialog open={isAddSkillDialogOpen} onOpenChange={setIsAddSkillDialogOpen}><DialogContent><DialogHeader><DialogTitle>Skills Management</DialogTitle></DialogHeader><div className='space-y-4'><p className='text-muted-foreground'>Skills are managed through OpenClaw. Use the Command Center to update skills.</p><div className='flex justify-end gap-2'><Button variant='outline' onClick={() => setIsAddSkillDialogOpen(false)}>Close</Button><Button asChild><Link href='/dashboard/command-center'>Go to Command Center</Link></Button></div></div></DialogContent></Dialog>",
               "status": "pending"
             }
-          ]
+          ],
+          "completedAt": "2026-03-20T20:28:00.000Z"
         },
         {
           "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg15-task4",
           "taskNumber": 4,
           "originalDescription": "Category filter should work with real data:",
-          "status": "review",
+          "status": "done",
           "approved": false,
           "rewritten": true,
           "microTasks": [
@@ -742,13 +745,14 @@
               "description": "Update the skills grid rendering to use filteredSkills instead of skills: Change skills.map((skill) => ...) to filteredSkills.map((skill) => ...). This ensures the grid only displays skills that match the currently selected category filter. Also add a message when no skills match: {filteredSkills.length === 0 && <p className='col-span-full text-center text-muted-foreground py-8'>No skills found in this category</p>}",
               "status": "pending"
             }
-          ]
+          ],
+          "completedAt": "2026-03-20T20:28:00.000Z"
         },
         {
           "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg15-task5",
           "taskNumber": 5,
           "originalDescription": "Stats cards at top:",
-          "status": "review",
+          "status": "done",
           "approved": false,
           "rewritten": true,
           "microTasks": [
@@ -801,7 +805,8 @@
               "description": "Add the Productivity stat card as the last item: <Card className='cursor-pointer hover:border-primary/50' onClick={() => setActiveFilter('productivity')}><CardContent className='pt-6'><div className='flex items-center gap-2'><span>\ud83d\udccb</span><div className='text-2xl font-bold'>{skillCounts.productivity}</div></div><p className='text-xs text-muted-foreground'>Productivity</p></CardContent></Card>. This completes the stats row with all five category counts displayed.",
               "status": "pending"
             }
-          ]
+          ],
+          "completedAt": "2026-03-20T20:28:00.000Z"
         }
       ]
     },
@@ -820,37 +825,41 @@
           "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg17-task1",
           "taskNumber": 1,
           "originalDescription": "Stats cards fix:",
-          "status": "pending",
+          "status": "done",
           "approved": false,
           "rewritten": false,
-          "microTasks": []
+          "microTasks": [],
+          "completedAt": "2026-03-20T20:28:00.000Z"
         },
         {
           "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg17-task2",
           "taskNumber": 2,
           "originalDescription": "Job list is working. Improve each job card:",
-          "status": "pending",
+          "status": "done",
           "approved": false,
           "rewritten": false,
-          "microTasks": []
+          "microTasks": [],
+          "completedAt": "2026-03-20T20:28:00.000Z"
         },
         {
           "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg17-task3",
           "taskNumber": 3,
           "originalDescription": "\"New Job\" button \u2014 make it smart:",
-          "status": "pending",
+          "status": "done",
           "approved": false,
           "rewritten": false,
-          "microTasks": []
+          "microTasks": [],
+          "completedAt": "2026-03-20T20:28:00.000Z"
         },
         {
           "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg17-task4",
           "taskNumber": 4,
           "originalDescription": "Each job should show the cron expression in human readable form:",
-          "status": "pending",
+          "status": "done",
           "approved": false,
           "rewritten": false,
-          "microTasks": []
+          "microTasks": [],
+          "completedAt": "2026-03-20T20:28:00.000Z"
         }
       ]
     },
@@ -869,46 +878,51 @@
           "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg19-task1",
           "taskNumber": 1,
           "originalDescription": "System Health bar at top:",
-          "status": "pending",
+          "status": "done",
           "approved": false,
           "rewritten": false,
-          "microTasks": []
+          "microTasks": [],
+          "completedAt": "2026-03-20T20:28:00.000Z"
         },
         {
           "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg19-task2",
           "taskNumber": 2,
           "originalDescription": "Resources tab \u2014 show ALL real metrics from /api/bridge/metrics:",
-          "status": "pending",
+          "status": "done",
           "approved": false,
           "rewritten": false,
-          "microTasks": []
+          "microTasks": [],
+          "completedAt": "2026-03-20T20:28:00.000Z"
         },
         {
           "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg19-task3",
           "taskNumber": 3,
           "originalDescription": "Services tab \u2014 show real services:",
-          "status": "pending",
+          "status": "done",
           "approved": false,
           "rewritten": false,
-          "microTasks": []
+          "microTasks": [],
+          "completedAt": "2026-03-20T20:28:00.000Z"
         },
         {
           "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg19-task4",
           "taskNumber": 4,
           "originalDescription": "Logs tab \u2014 show real parsed logs:",
-          "status": "pending",
+          "status": "done",
           "approved": false,
           "rewritten": false,
-          "microTasks": []
+          "microTasks": [],
+          "completedAt": "2026-03-20T20:28:00.000Z"
         },
         {
           "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg19-task5",
           "taskNumber": 5,
           "originalDescription": "Auto-refresh toggle (already exists at top right). Make sure it works:",
-          "status": "pending",
+          "status": "done",
           "approved": false,
           "rewritten": false,
-          "microTasks": []
+          "microTasks": [],
+          "completedAt": "2026-03-20T20:28:00.000Z"
         }
       ]
     },
@@ -927,37 +941,41 @@
           "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg21-task1",
           "taskNumber": 1,
           "originalDescription": "Stats cards at top:",
-          "status": "pending",
+          "status": "done",
           "approved": false,
           "rewritten": false,
-          "microTasks": []
+          "microTasks": [],
+          "completedAt": "2026-03-20T20:28:00.000Z"
         },
         {
           "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg21-task2",
           "taskNumber": 2,
           "originalDescription": "Usage Trends chart area. Since we don't have historical data yet:",
-          "status": "pending",
+          "status": "done",
           "approved": false,
           "rewritten": false,
-          "microTasks": []
+          "microTasks": [],
+          "completedAt": "2026-03-20T20:28:00.000Z"
         },
         {
           "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg21-task3",
           "taskNumber": 3,
           "originalDescription": "Tabs (Overview, Skills, Memory, Performance):",
-          "status": "pending",
+          "status": "done",
           "approved": false,
           "rewritten": false,
-          "microTasks": []
+          "microTasks": [],
+          "completedAt": "2026-03-20T20:28:00.000Z"
         },
         {
           "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg21-task4",
           "taskNumber": 4,
           "originalDescription": "Remove ALL fake numbers. If real data is 0, show 0. Never show random generated numbers like \"1.42843582752945\".",
-          "status": "pending",
+          "status": "done",
           "approved": false,
           "rewritten": false,
-          "microTasks": []
+          "microTasks": [],
+          "completedAt": "2026-03-20T20:28:00.000Z"
         }
       ]
     },
