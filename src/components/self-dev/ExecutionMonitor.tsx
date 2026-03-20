@@ -10,10 +10,22 @@ interface ExecutionMonitorProps {
   onRefresh?: () => void;
 }
 
+interface ExecutingTask {
+  fileId: string;
+  messageNumber: number;
+  taskNumber: number;
+  taskDescription: string;
+  currentMicroTask: number;
+  totalMicroTasks: number;
+  microTaskDescription: string;
+  startedAt: string;
+}
+
 export function ExecutionMonitor({ onRefresh }: ExecutionMonitorProps) {
   const [logs, setLogs] = useState<string[]>([]);
   const [status, setStatus] = useState<any>({});
   const [queues, setQueues] = useState<any[]>([]);
+  const [executingTasks, setExecutingTasks] = useState<ExecutingTask[]>([]);
   
   useEffect(() => {
     loadStatus();
@@ -44,6 +56,40 @@ export function ExecutionMonitor({ onRefresh }: ExecutionMonitorProps) {
       if (response.ok) {
         const data = await response.json();
         setQueues(data);
+        
+        // Extract currently executing tasks
+        const executing: ExecutingTask[] = [];
+        data.forEach((queue: any) => {
+          queue.messages?.forEach((msg: any) => {
+            msg.tasks?.forEach((task: any) => {
+              if (task.status === 'executing' && task.microTasks) {
+                const executingMicroTaskIndex = task.microTasks.findIndex((mt: any) => mt.status === 'executing');
+                if (executingMicroTaskIndex >= 0) {
+                  executing.push({
+                    fileId: queue.fileId,
+                    messageNumber: msg.messageNumber,
+                    taskNumber: task.taskNumber,
+                    taskDescription: task.originalDescription,
+                    currentMicroTask: executingMicroTaskIndex + 1,
+                    totalMicroTasks: task.microTasks.length,
+                    microTaskDescription: task.microTasks[executingMicroTaskIndex].change,
+                    startedAt: new Date().toISOString() // Would need to track this properly
+                  });
+                }
+              }
+            });
+          });
+        });
+        setExecutingTasks(executing);
+        
+        // Update logs
+        const newLogs: string[] = [];
+        executing.forEach(task => {
+          newLogs.push(`[EXECUTING] Task ${task.taskNumber}: ${task.microTaskDescription} (${task.currentMicroTask}/${task.totalMicroTasks})`);
+        });
+        if (newLogs.length > 0) {
+          setLogs(prev => [...newLogs, ...prev].slice(0, 100)); // Keep last 100 logs
+        }
       }
     } catch (error) {
       console.error('Failed to load queues:', error);
@@ -62,6 +108,9 @@ export function ExecutionMonitor({ onRefresh }: ExecutionMonitorProps) {
     let rewrittenTasks = 0;
     let approvedTasks = 0;
     let pendingReview = 0;
+    let executingCount = 0;
+    let doneCount = 0;
+    let failedCount = 0;
     
     queues.forEach(queue => {
       if (queue.messages) {
@@ -77,17 +126,21 @@ export function ExecutionMonitor({ onRefresh }: ExecutionMonitorProps) {
                   pendingReview++;
                 }
               }
+              if (task.status === 'executing') executingCount++;
+              if (task.status === 'done') doneCount++;
+              if (task.status === 'failed') failedCount++;
             });
           }
         });
       }
     });
     
-    return { totalTasks, rewrittenTasks, approvedTasks, pendingReview };
+    return { totalTasks, rewrittenTasks, approvedTasks, pendingReview, executingCount, doneCount, failedCount };
   };
 
   const reviewStatus = calculateReviewStatus();
   const isInReviewMode = reviewStatus.pendingReview > 0 || (reviewStatus.rewrittenTasks > 0 && reviewStatus.approvedTasks === 0);
+  const isExecuting = reviewStatus.executingCount > 0;
 
   if (status.status === 'idle' && queues.length === 0) {
     return (
@@ -99,7 +152,7 @@ export function ExecutionMonitor({ onRefresh }: ExecutionMonitorProps) {
     );
   }
 
-  if (isInReviewMode) {
+  if (isInReviewMode && !isExecuting) {
     return (
       <div className="h-full flex flex-col">
         <div className="flex items-center justify-between mb-4">
@@ -194,16 +247,18 @@ export function ExecutionMonitor({ onRefresh }: ExecutionMonitorProps) {
     );
   }
 
-  // Execution mode display (when tasks are running)
+  // Execution mode display (when tasks are running or complete)
   return (
     <div className="h-full flex flex-col">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold">Execution Log</h3>
+        <h3 className="text-lg font-semibold">
+          {isExecuting ? '⚡ Execution Progress' : '📊 Execution Summary'}
+        </h3>
         <div className="flex items-center gap-2">
-          {status.status === 'executing' && (
-            <Badge variant="default" className="bg-blue-600">
+          {isExecuting && (
+            <Badge variant="default" className="bg-blue-600 animate-pulse">
               <Loader2 className="h-3 w-3 mr-1 animate-spin" />
-              Executing
+              {reviewStatus.executingCount} Executing
             </Badge>
           )}
           {status.elapsedTime > 0 && (
@@ -214,49 +269,94 @@ export function ExecutionMonitor({ onRefresh }: ExecutionMonitorProps) {
         </div>
       </div>
 
-      <ScrollArea className="flex-1 rounded-lg bg-gray-900/50 border border-gray-700 p-4">
-        {status.currentMessage && (
-          <div className="mb-4 pb-4 border-b border-gray-700">
-            <div className="flex items-center gap-2 mb-2">
-              <Zap className="h-4 w-4 text-blue-400" />
-              <span className="text-sm font-medium text-blue-400">Current Task</span>
+      {/* Execution Stats */}
+      <div className="grid grid-cols-3 gap-4 mb-4">
+        <div className="bg-gray-900/50 p-3 rounded-lg border border-gray-700">
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-gray-400">Completed</span>
+            <div className="flex items-center gap-1">
+              <CheckCircle className="h-4 w-4 text-green-500" />
+              <span className="text-lg font-bold text-green-400">{reviewStatus.doneCount}</span>
             </div>
-            <p className="text-sm text-gray-300">
-              Message {status.currentMessage.number}: {status.currentMessage.title}
-            </p>
-            {status.currentFile && (
-              <p className="text-xs text-gray-500 mt-1">
-                File: {status.currentFile.name}
-              </p>
-            )}
           </div>
-        )}
+        </div>
+        <div className="bg-gray-900/50 p-3 rounded-lg border border-gray-700">
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-gray-400">Executing</span>
+            <div className="flex items-center gap-1">
+              <Loader2 className="h-4 w-4 text-blue-500 animate-spin" />
+              <span className="text-lg font-bold text-blue-400">{reviewStatus.executingCount}</span>
+            </div>
+          </div>
+        </div>
+        <div className="bg-gray-900/50 p-3 rounded-lg border border-gray-700">
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-gray-400">Failed</span>
+            <div className="flex items-center gap-1">
+              <XCircle className="h-4 w-4 text-red-500" />
+              <span className="text-lg font-bold text-red-400">{reviewStatus.failedCount}</span>
+            </div>
+          </div>
+        </div>
+      </div>
 
+      {/* Currently Executing Tasks */}
+      {executingTasks.length > 0 && (
+        <div className="mb-4 space-y-2">
+          <h4 className="text-sm font-medium text-gray-400">Currently Executing:</h4>
+          {executingTasks.map((task, idx) => (
+            <div key={idx} className="bg-blue-900/20 p-3 rounded-lg border border-blue-700/50">
+              <div className="flex items-start gap-2">
+                <Zap className="h-4 w-4 text-blue-400 flex-shrink-0 mt-0.5 animate-pulse" />
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-blue-300">
+                    Task {task.taskNumber}: {task.taskDescription}
+                  </p>
+                  <p className="text-xs text-gray-400 mt-1">
+                    Micro-task {task.currentMicroTask}/{task.totalMicroTasks}: {task.microTaskDescription}
+                  </p>
+                  <div className="mt-2">
+                    <Progress 
+                      value={(task.currentMicroTask / task.totalMicroTasks) * 100} 
+                      className="h-1"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Execution Log */}
+      <ScrollArea className="flex-1 rounded-lg bg-gray-900/50 border border-gray-700 p-4">
         {logs.length === 0 ? (
           <div className="text-center text-gray-500 py-8">
             <Clock className="h-8 w-8 mx-auto mb-2 opacity-50" />
-            <p>Waiting for execution to start...</p>
+            <p>{isExecuting ? 'Waiting for task updates...' : 'No recent execution activity'}</p>
           </div>
         ) : (
           <div className="space-y-2">
             {logs.map((log, index) => (
               <div key={index} className="text-xs font-mono text-gray-300 break-all">
-                {log}
+                <span className="text-gray-500">[{new Date().toLocaleTimeString()}]</span> {log}
               </div>
             ))}
           </div>
         )}
       </ScrollArea>
 
-      {status.overallProgress && status.overallProgress.tasksTotal > 0 && (
+      {/* Overall Progress */}
+      {reviewStatus.totalTasks > 0 && (
         <div className="mt-4">
           <div className="flex justify-between text-sm mb-2">
             <span className="text-gray-400">Overall Progress</span>
             <span className="text-gray-300">
-              {status.overallProgress.tasksDone} / {status.overallProgress.tasksTotal} tasks
+              {reviewStatus.doneCount} / {reviewStatus.totalTasks} tasks 
+              ({Math.round((reviewStatus.doneCount / reviewStatus.totalTasks) * 100)}%)
             </span>
           </div>
-          <Progress value={status.overallProgress.percentage || 0} className="h-2" />
+          <Progress value={(reviewStatus.doneCount / reviewStatus.totalTasks) * 100} className="h-2" />
         </div>
       )}
     </div>

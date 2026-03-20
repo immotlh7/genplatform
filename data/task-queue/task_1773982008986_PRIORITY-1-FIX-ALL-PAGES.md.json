@@ -2,7 +2,7 @@
   "fileId": "task_1773982008986_PRIORITY-1-FIX-ALL-PAGES.md",
   "fileName": "PRIORITY-1-FIX-ALL-PAGES.md",
   "totalMessages": 33,
-  "totalMicroTasks": 19,
+  "totalMicroTasks": 26,
   "messages": [
     {
       "messageNumber": 1,
@@ -284,37 +284,90 @@
           "taskId": "task_7_1",
           "taskNumber": 1,
           "originalDescription": "The user avatar area shows \"U User Member\". Fix: - Show \"Med\" as the name (from auth cookie or hardcode) - Show \"OWNER\" badge instead of \"Member\" (green badge) - The dropdown menu should show: Profile, Settings, Sign out - Profile link → /dashboard/settings (not /profile which is 404)",
-          "status": "rewriting",
+          "status": "review",
           "approved": false,
-          "rewritten": false,
-          "microTasks": []
+          "rewritten": true,
+          "microTasks": [
+            {
+              "id": "task_1773982008986_PRIORITY-1-FIX-ALL-PAGES.md-msg7-task1-micro1",
+              "filePath": "src/app/dashboard/page.tsx",
+              "change": "Locate the component mentioned in the task",
+              "description": "In src/app/dashboard/page.tsx, find the main DashboardPage component. Look for the specific section mentioned in the task: \"The user avatar area shows \"U User Member\". Fix: - Show \"Med\" as the name (from auth cookie or hardcode) - Show \"OWNER\" badge instead of \"Member\" (green badge) - The dropdown menu should show: Profile, Settings, Sign out - Profile link → /dashboard/settings (not /profile which is 404)\". Identify the exact component or JSX element that needs to be modified.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1773982008986_PRIORITY-1-FIX-ALL-PAGES.md-msg7-task1-micro2",
+              "filePath": "src/app/dashboard/page.tsx",
+              "change": "Implement the requested change",
+              "description": "Make the specific change requested in the original task. This involves modifying the identified component to The user avatar area shows \"U User Member\". Fix: - Show \"Med\" as the name (from auth cookie or hardcode) - Show \"OWNER\" badge instead of \"Member\" (green badge) - The dropdown menu should show: Profile, Settings, Sign out - Profile link → /dashboard/settings (not /profile which is 404). Ensure proper TypeScript types and React best practices are followed.",
+              "status": "pending"
+            }
+          ]
         },
         {
           "taskId": "task_7_2",
           "taskNumber": 2,
           "originalDescription": "Sign Out button must work: - Clear the auth-token cookie - Redirect to /login - After sign out, accessing /dashboard should redirect to /login (not show data)",
-          "status": "rewriting",
+          "status": "review",
           "approved": false,
-          "rewritten": false,
-          "microTasks": []
+          "rewritten": true,
+          "microTasks": [
+            {
+              "id": "task_1773982008986_PRIORITY-1-FIX-ALL-PAGES.md-msg7-task2-micro1",
+              "filePath": "src/app/dashboard/page.tsx",
+              "change": "Locate the component mentioned in the task",
+              "description": "In src/app/dashboard/page.tsx, find the main DashboardPage component. Look for the specific section mentioned in the task: \"Sign Out button must work: - Clear the auth-token cookie - Redirect to /login - After sign out, accessing /dashboard should redirect to /login (not show data)\". Identify the exact component or JSX element that needs to be modified.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1773982008986_PRIORITY-1-FIX-ALL-PAGES.md-msg7-task2-micro2",
+              "filePath": "src/app/dashboard/page.tsx",
+              "change": "Implement the requested change",
+              "description": "Make the specific change requested in the original task. This involves modifying the identified component to Sign Out button must work: - Clear the auth-token cookie - Redirect to /login - After sign out, accessing /dashboard should redirect to /login (not show data). Ensure proper TypeScript types and React best practices are followed.",
+              "status": "pending"
+            }
+          ]
         },
         {
           "taskId": "task_7_3",
           "taskNumber": 3,
           "originalDescription": "The \"Select Project\" dropdown in the top bar. Make it functional: - Fetch /api/projects to get project list - When selected, store in localStorage or context - Show selected project name in the dropdown - Default: \"GenPlatform.ai\"",
-          "status": "rewriting",
+          "status": "review",
           "approved": false,
-          "rewritten": false,
-          "microTasks": []
+          "rewritten": true,
+          "microTasks": [
+            {
+              "id": "task_1773982008986_PRIORITY-1-FIX-ALL-PAGES.md-msg7-task3-micro1",
+              "filePath": "src/app/api/projects/route.ts",
+              "change": "Create or update the API route",
+              "description": "In src/app/api/projects/route.ts, implement the requested API functionality: The \"Select Project\" dropdown in the top bar. Make it functional: - Fetch /api/projects to get project list - When selected, store in localStorage or context - Show selected project name in the dropdown - Default: \"GenPlatform.ai\". Use Next.js 13+ app router conventions with proper request/response handling.",
+              "status": "pending"
+            }
+          ]
         },
         {
           "taskId": "task_7_4",
           "taskNumber": 4,
           "originalDescription": "Navigation links (Dashboard, Projects, Automations, Reports) — verify all navigate correctly: - Dashboard → /dashboard - Projects → /projects - Automations → /automations - Reports → /dashboard/reports",
-          "status": "rewriting",
+          "status": "review",
           "approved": false,
-          "rewritten": false,
-          "microTasks": []
+          "rewritten": true,
+          "microTasks": [
+            {
+              "id": "task_1773982008986_PRIORITY-1-FIX-ALL-PAGES.md-msg7-task4-micro1",
+              "filePath": "src/app/dashboard/page.tsx",
+              "change": "Locate the component mentioned in the task",
+              "description": "In src/app/dashboard/page.tsx, find the main DashboardPage component. Look for the specific section mentioned in the task: \"Navigation links (Dashboard, Projects, Automations, Reports) — verify all navigate correctly: - Dashboard → /dashboard - Projects → /projects - Automations → /automations - Reports → /dashboard/reports\". Identify the exact component or JSX element that needs to be modified.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1773982008986_PRIORITY-1-FIX-ALL-PAGES.md-msg7-task4-micro2",
+              "filePath": "src/app/dashboard/page.tsx",
+              "change": "Implement the requested change",
+              "description": "Make the specific change requested in the original task. This involves modifying the identified component to Navigation links (Dashboard, Projects, Automations, Reports) — verify all navigate correctly: - Dashboard → /dashboard - Projects → /projects - Automations → /automations - Reports → /dashboard/reports. Ensure proper TypeScript types and React best practices are followed.",
+              "status": "pending"
+            }
+          ]
         }
       ]
     },

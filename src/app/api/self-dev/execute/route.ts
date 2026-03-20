@@ -1,29 +1,50 @@
 import { NextRequest, NextResponse } from 'next/server';
+import fs from 'fs/promises';
+import path from 'path';
 
 const TELEGRAM_BOT_TOKEN = '8635233052:AAGsuMzqhTHwQsFg4qGYPfUEyZPiLsAceA4';
 const TELEGRAM_CHAT_ID = '510906393'; // Your OpenClaw agent chat
+const TASK_QUEUE_DIR = '/root/genplatform/data/task-queue';
 
 interface MicroTask {
-  taskId: string;
-  action: string;
+  id: string;
   filePath: string;
+  change: string;
   description: string;
-  specificChanges: string;
-  estimatedMinutes: number;
+  status?: string;
 }
 
 export async function POST(request: NextRequest) {
   try {
-    const { task, projectContext } = await request.json();
+    const { fileId, messageNumber, taskNumber, microTaskIndex, projectContext } = await request.json();
     
-    if (!task || !task.taskId) {
-      return NextResponse.json({ error: 'Invalid task' }, { status: 400 });
+    if (!fileId || !messageNumber || !taskNumber || microTaskIndex === undefined) {
+      return NextResponse.json({ error: 'Invalid parameters' }, { status: 400 });
     }
     
-    const microTask = task as MicroTask;
+    // Load queue to get the micro-task
+    const queuePath = path.join(TASK_QUEUE_DIR, fileId + '.json');
+    const queue = JSON.parse(await fs.readFile(queuePath, 'utf-8'));
+    
+    const message = queue.messages.find((m: any) => m.messageNumber === messageNumber);
+    if (!message) {
+      return NextResponse.json({ error: 'Message not found' }, { status: 404 });
+    }
+    
+    const task = message.tasks.find((t: any) => t.taskNumber === taskNumber);
+    if (!task || !task.microTasks || !task.microTasks[microTaskIndex]) {
+      return NextResponse.json({ error: 'Micro-task not found' }, { status: 404 });
+    }
+    
+    const microTask = task.microTasks[microTaskIndex];
+    
+    // Update micro-task status to executing
+    microTask.status = 'executing';
+    task.status = 'executing';
+    await fs.writeFile(queuePath, JSON.stringify(queue, null, 2));
     
     // Format the task for the Developer agent
-    const taskMessage = formatTaskForDeveloper(microTask, projectContext);
+    const taskMessage = formatTaskForDeveloper(microTask, task, message, projectContext);
     
     // Send to Telegram
     const telegramResponse = await fetch(
@@ -42,13 +63,18 @@ export async function POST(request: NextRequest) {
     if (!telegramResponse.ok) {
       const error = await telegramResponse.text();
       console.error('Telegram API error:', error);
+      
+      // Mark as failed
+      microTask.status = 'failed';
+      await fs.writeFile(queuePath, JSON.stringify(queue, null, 2));
+      
       return NextResponse.json({ error: 'Failed to send task' }, { status: 500 });
     }
     
     const telegramData = await telegramResponse.json();
     
     return NextResponse.json({
-      taskId: microTask.taskId,
+      taskId: microTask.id,
       status: 'sent',
       telegramMessageId: telegramData.result.message_id,
       sentAt: new Date().toISOString()
@@ -60,18 +86,19 @@ export async function POST(request: NextRequest) {
   }
 }
 
-function formatTaskForDeveloper(task: MicroTask, projectContext: string): string {
-  return `🤖 *MICRO-TASK: ${task.taskId}*
+function formatTaskForDeveloper(microTask: MicroTask, task: any, message: any, projectContext: string): string {
+  return `🤖 *MICRO-TASK: ${microTask.id}*
 
-*Action:* ${task.action}
-*File:* \`${task.filePath}\`
+*Original Task ${task.taskNumber}:* ${task.originalDescription}
+*File:* \`${microTask.filePath}\`
 
-*Task:* ${task.description}
+*Specific Changes Required:*
+${microTask.description}
 
-*Specific Changes:*
-${task.specificChanges}
+*Summary:* ${microTask.change}
 
 *Context:* ${projectContext || 'GenPlatform.ai development'}
+*Message:* ${message.messageNumber} / Task: ${task.taskNumber}
 
-When complete, reply "✅ DONE" and wait for the next task.`;
+When complete, reply with the result. The orchestrator will mark this as complete.`;
 }

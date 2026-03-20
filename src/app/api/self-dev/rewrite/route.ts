@@ -45,7 +45,7 @@ Output JSON format:
 
 export async function POST(request: NextRequest) {
   try {
-    const { fileId, messageNumber } = await request.json();
+    const { fileId, messageNumber, forceRewrite = false } = await request.json();
     
     if (!fileId || !messageNumber) {
       return NextResponse.json({ error: 'Missing required parameters' }, { status: 400 });
@@ -61,7 +61,21 @@ export async function POST(request: NextRequest) {
     }
     
     // Prepare tasks for rewriting
-    const tasksToRewrite = message.tasks.filter((t: any) => !t.rewritten);
+    let tasksToRewrite = message.tasks.filter((t: any) => !t.rewritten);
+    
+    // If force rewrite, include all tasks regardless of status
+    if (forceRewrite) {
+      tasksToRewrite = message.tasks;
+      // Reset tasks for re-rewriting
+      tasksToRewrite.forEach((task: any) => {
+        task.rewritten = false;
+        task.approved = false;
+        task.status = 'pending';
+        task.microTasks = [];
+        delete task.executionResult;
+      });
+    }
+    
     if (tasksToRewrite.length === 0) {
       return NextResponse.json({ message: 'All tasks already rewritten' });
     }
@@ -174,6 +188,24 @@ export async function POST(request: NextRequest) {
     );
     
     await fs.writeFile(queuePath, JSON.stringify(queue, null, 2));
+    
+    // Send notification to Telegram about rewrite completion
+    const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || '8635233052:AAGsuMzqhTHwQsFg4qGYPfUEyZPiLsAceA4';
+    const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID || '510906393';
+    
+    const notificationText = `[ORCHESTRATOR] ✅ Rewrite complete for Message ${messageNumber}:
+- Generated ${message.tasks.reduce((sum: number, task: any) => sum + (task.microTasks?.length || 0), 0)} micro-tasks
+- Ready for review and approval`;
+    
+    fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chat_id: TELEGRAM_CHAT_ID,
+        text: notificationText,
+        parse_mode: 'Markdown'
+      })
+    }).catch(err => console.error('Failed to send notification:', err));
     
     return NextResponse.json({ 
       success: true,
