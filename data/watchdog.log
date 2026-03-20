@@ -67,3 +67,11 @@
 [2026-03-20T14:35:02.177Z] ⚠️ Pipeline stalled — finding next message...
 [2026-03-20T14:35:02.179Z] → Found: task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md Msg 3 (needsRewrite: false)
 [2026-03-20T14:35:02.273Z] Done. Issues: 1, Fixes: 0
+[2026-03-20T14:40:01.887Z] --- Watchdog run ---
+[2026-03-20T14:40:01.933Z] ✅ Site up
+[2026-03-20T14:40:02.277Z] ✅ pm2 online
+[2026-03-20T14:40:02.284Z] 📊 Queue: 1/255 done, 23 approved, 0 executing
+[2026-03-20T14:40:02.284Z] ⚠️ Pipeline stalled — finding next message...
+[2026-03-20T14:40:02.289Z] → Found: task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md Msg 3 (needsRewrite: false)
+[2026-03-20T14:40:17.298Z] ❌ Execute failed: {}
+[2026-03-20T14:40:17.391Z] Done. Issues: 1, Fixes: 0
