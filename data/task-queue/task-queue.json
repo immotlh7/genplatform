@@ -595,8 +595,8 @@
           "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg15-task1",
           "taskNumber": 1,
           "originalDescription": "Skills are loading (27-35 skills from Bridge API). Good. But improve the cards:",
-          "status": "approved",
-          "approved": true,
+          "status": "review",
+          "approved": false,
           "rewritten": true,
           "microTasks": [
             {
@@ -612,8 +612,8 @@
           "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg15-task2",
           "taskNumber": 2,
           "originalDescription": "Click a skill card → open a detail modal:",
-          "status": "approved",
-          "approved": true,
+          "status": "review",
+          "approved": false,
           "rewritten": true,
           "microTasks": [
             {
@@ -629,8 +629,8 @@
           "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg15-task3",
           "taskNumber": 3,
           "originalDescription": "\"Add Skill\" button in header should show a message: \"Skills are managed through OpenClaw. Use the Command Center to update skills.\" with a link to /dashboard/command-center.",
-          "status": "approved",
-          "approved": true,
+          "status": "review",
+          "approved": false,
           "rewritten": true,
           "microTasks": [
             {
@@ -653,8 +653,8 @@
           "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg15-task4",
           "taskNumber": 4,
           "originalDescription": "Category filter should work with real data:",
-          "status": "approved",
-          "approved": true,
+          "status": "review",
+          "approved": false,
           "rewritten": true,
           "microTasks": [
             {
@@ -670,8 +670,8 @@
           "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg15-task5",
           "taskNumber": 5,
           "originalDescription": "Stats cards at top:",
-          "status": "approved",
-          "approved": true,
+          "status": "review",
+          "approved": false,
           "rewritten": true,
           "microTasks": [
             {

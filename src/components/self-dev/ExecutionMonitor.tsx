@@ -22,8 +22,10 @@ export function ExecutionMonitor({ onRefresh }: ExecutionMonitorProps) {
   const [status, setStatus] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const logsEndRef = useRef<HTMLDivElement>(null);
+  const logsContainerRef = useRef<HTMLDivElement>(null);
   const [autoScroll, setAutoScroll] = useState(true);
+  const [userScrolled, setUserScrolled] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -33,13 +35,10 @@ export function ExecutionMonitor({ onRefresh }: ExecutionMonitorProps) {
 
   useEffect(() => {
     // Auto-scroll to bottom when new logs arrive
-    if (autoScroll && scrollAreaRef.current) {
-      const scrollContainer = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]');
-      if (scrollContainer) {
-        scrollContainer.scrollTop = scrollContainer.scrollHeight;
-      }
+    if (autoScroll && !userScrolled && logsEndRef.current) {
+      logsEndRef.current.scrollIntoView({ behavior: 'smooth' });
     }
-  }, [logs, autoScroll]);
+  }, [logs, autoScroll, userScrolled]);
 
   const loadData = async () => {
     try {
@@ -216,30 +215,40 @@ export function ExecutionMonitor({ onRefresh }: ExecutionMonitorProps) {
             Auto-scroll {autoScroll ? 'ON' : 'OFF'}
           </button>
         </div>
-        <ScrollArea className="h-full" ref={scrollAreaRef}>
-          <div className="space-y-1 pr-4">
+        <div
+          ref={logsContainerRef}
+          className="h-48 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-gray-800"
+          onScroll={(e) => {
+            const el = e.currentTarget;
+            const atBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 30;
+            setUserScrolled(!atBottom);
+            if (atBottom) setAutoScroll(true);
+          }}
+        >
+          <div className="space-y-1 pr-2">
             {logs.length === 0 ? (
               <p className="text-gray-500 text-sm text-center py-8">
                 No execution logs yet. Approve tasks to begin.
               </p>
             ) : (
-              logs.map((log, index) => (
+              [...logs].reverse().map((log, index) => (
                 <div
                   key={index}
                   className="flex items-start gap-2 py-1 px-2 hover:bg-gray-800/30 rounded text-xs"
                 >
-                  <span className="text-gray-500 font-mono flex-shrink-0">
+                  <span className="text-gray-500 font-mono flex-shrink-0 w-16">
                     {formatTime(log.timestamp)}
                   </span>
                   {getLogIcon(log.type)}
-                  <span className={`flex-1 ${getLogColor(log.type)}`}>
+                  <span className={`flex-1 break-all ${getLogColor(log.type)}`}>
                     {log.message}
                   </span>
                 </div>
               ))
             )}
+            <div ref={logsEndRef} />
           </div>
-        </ScrollArea>
+        </div>
       </div>
 
       {/* Progress Bar */}
