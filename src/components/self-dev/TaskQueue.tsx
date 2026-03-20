@@ -27,6 +27,7 @@ interface Task {
   approved: boolean;
   rewritten: boolean;
   microTasks?: MicroTask[];
+  completedIcon?: string;
   executionResult?: {
     success: boolean;
     message?: string;
@@ -48,138 +49,56 @@ interface TaskQueue {
   fileName: string;
   totalMessages: number;
   totalTasks?: number;
-  totalMicroTasks: number;
+  totalMicroTasks?: number;
+  autoMode?: boolean;
   messages?: Message[];
-  createdAt: string;
-  status?: string;
+  batches?: any[]; // For old format compatibility
 }
 
-export function TaskQueue() {
+interface TaskQueueProps {
+  className?: string;
+  hideActions?: boolean;
+}
+
+export function TaskQueue({ className = '', hideActions = false }: TaskQueueProps) {
   const [queues, setQueues] = useState<TaskQueue[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [expandedFiles, setExpandedFiles] = useState<Set<string>>(new Set());
   const [expandedMessages, setExpandedMessages] = useState<Set<string>>(new Set());
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [rewritingMessage, setRewritingMessage] = useState<string | null>(null);
-  const [approvingMessage, setApprovingMessage] = useState<string | null>(null);
-  const [selectedMessage, setSelectedMessage] = useState<{fileId: string, messageNumber: number} | null>(null);
-  
+  const [selectedMessage, setSelectedMessage] = useState<{ fileId: string; messageNumber: number } | null>(null);
+  const [showManager, setShowManager] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+
   useEffect(() => {
-    loadQueues();
-    const interval = setInterval(loadQueues, 5000);
-    return () => clearInterval(interval);
+    fetchQueues();
   }, []);
 
-  const loadQueues = async () => {
+  const fetchQueues = async () => {
     try {
+      setRefreshing(true);
       const response = await fetch('/api/self-dev/queues');
-      if (response.ok) {
-        const data = await response.json();
-        if (Array.isArray(data)) {
-          setQueues(data);
-          setError(null);
-        } else {
-          setQueues([]);
-          setError('Invalid data format received');
-        }
-      } else {
-        setError('Failed to load task queues');
+      if (!response.ok) {
+        throw new Error('Failed to fetch queues');
       }
-    } catch (error) {
-      console.error('Failed to load queues:', error);
-      setError('Failed to load task queues');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const toggleFile = (fileId: string) => {
-    setExpandedFiles(prev => {
-      const next = new Set(prev);
-      if (next.has(fileId)) {
-        next.delete(fileId);
-      } else {
-        next.add(fileId);
-      }
-      return next;
-    });
-  };
-
-  const toggleMessage = (fileId: string, messageNumber: number) => {
-    const key = `${fileId}-${messageNumber}`;
-    setExpandedMessages(prev => {
-      const next = new Set(prev);
-      if (next.has(key)) {
-        next.delete(key);
-      } else {
-        next.add(key);
-      }
-      return next;
-    });
-  };
-
-  const handleRewrite = async (fileId: string, messageNumber: number) => {
-    const key = `${fileId}-${messageNumber}`;
-    setRewritingMessage(key);
-    try {
-      const response = await fetch('/api/self-dev/rewrite', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ fileId, messageNumber })
-      });
+      const data = await response.json();
+      setQueues(data.queues || []);
+      setError(null);
       
-      if (response.ok) {
-        await loadQueues();
-      } else {
-        console.error('Failed to rewrite message');
+      // Auto-expand first file if none expanded
+      if (data.queues && data.queues.length > 0 && expandedFiles.size === 0) {
+        setExpandedFiles(new Set([data.queues[0].fileId]));
       }
-    } catch (error) {
-      console.error('Failed to rewrite:', error);
+    } catch (err: any) {
+      setError(err.message);
     } finally {
-      setRewritingMessage(null);
+      setLoading(false);
+      setRefreshing(false);
     }
   };
 
-  const handleApprove = async (fileId: string, messageNumber: number, approved: boolean, taskId: string | 'all') => {
-    const key = `${fileId}-${messageNumber}`;
-    setApprovingMessage(key);
-    try {
-      const response = await fetch('/api/self-dev/approve', {
-        method: 'POST', 
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ fileId, messageNumber, approved, taskId })
-      });
-      
-      if (response.ok) {
-        await loadQueues();
-      }
-    } catch (error) {
-      console.error('Failed to approve:', error);
-    } finally {
-      setApprovingMessage(null);
-    }
-  };
-
-  const handleReject = async (fileId: string, messageNumber: number, taskId: string | 'all') => {
-    try {
-      const response = await fetch('/api/self-dev/reject', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ fileId, messageNumber, taskId })
-      });
-      
-      if (response.ok) {
-        await loadQueues();
-      }
-    } catch (error) {
-      console.error('Failed to reject:', error);
-    }
-  };
-
-  const handleDelete = async (fileId: string, messageNumber: number) => {
-    if (!confirm('Are you sure you want to delete this message and all its tasks?')) {
-      return;
-    }
+  const handleDeleteMessage = async (fileId: string, messageNumber: number) => {
+    if (!confirm('Are you sure you want to delete this message?')) return;
     
     try {
       const response = await fetch('/api/self-dev/delete-message', {
@@ -188,48 +107,139 @@ export function TaskQueue() {
         body: JSON.stringify({ fileId, messageNumber })
       });
       
-      if (response.ok) {
-        await loadQueues();
+      if (!response.ok) {
+        throw new Error('Failed to delete message');
       }
-    } catch (error) {
-      console.error('Failed to delete:', error);
+      
+      await fetchQueues();
+    } catch (err: any) {
+      console.error('Delete error:', err);
+      alert('Failed to delete message');
     }
   };
 
+  const toggleFile = (fileId: string) => {
+    setExpandedFiles(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(fileId)) {
+        newSet.delete(fileId);
+      } else {
+        newSet.add(fileId);
+      }
+      return newSet;
+    });
+  };
+
+  const toggleMessage = (fileId: string, messageNumber: number) => {
+    const key = `${fileId}-${messageNumber}`;
+    setExpandedMessages(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(key)) {
+        newSet.delete(key);
+      } else {
+        newSet.add(key);
+      }
+      return newSet;
+    });
+  };
+
   const getTaskStatus = (task: Task): string => {
-    if (task.status === 'done') return 'done';
-    if (task.status === 'failed' || task.status === 'skipped') return 'failed';
-    if (task.status === 'executing') return 'executing';
-    if (task.approved) return 'approved';
-    if (task.rewritten) return 'review';
-    return 'pending';
+    if (task.executionResult?.success) return 'done';
+    if (task.executionResult?.success === false) return 'failed';
+    
+    // Check if task has micro-tasks
+    if (task.microTasks && task.microTasks.length > 0) {
+      const allDone = task.microTasks.every(mt => mt.status === 'done');
+      const anyFailed = task.microTasks.some(mt => mt.status === 'failed');
+      const anyExecuting = task.microTasks.some(mt => mt.status === 'executing');
+      
+      if (allDone) return 'done';
+      if (anyFailed) return 'failed';
+      if (anyExecuting) return 'executing';
+      if (task.approved) return 'approved';
+    }
+    
+    return task.status || 'pending';
   };
 
   const getMessageStatus = (message: Message): string => {
-    if (!message.tasks || message.tasks.length === 0) return 'empty';
+    if (!message.tasks || message.tasks.length === 0) return 'pending';
     
-    const allDone = message.tasks.every(t => t.status === 'done');
+    const allDone = message.tasks.every(task => {
+      const status = getTaskStatus(task);
+      return status === 'done';
+    });
+    
+    const anyFailed = message.tasks.some(task => {
+      const status = getTaskStatus(task);
+      return status === 'failed';
+    });
+    
+    const anyExecuting = message.tasks.some(task => {
+      const status = getTaskStatus(task);
+      return status === 'executing';
+    });
+    
+    const anyApproved = message.tasks.some(task => {
+      const status = getTaskStatus(task);
+      return status === 'approved';
+    });
+    
+    const anyReview = message.tasks.some(task => {
+      const status = getTaskStatus(task);
+      return status === 'review' || task.rewritten;
+    });
+    
     if (allDone) return 'done';
-    
-    const anyFailed = message.tasks.some(t => t.status === 'failed' || t.status === 'skipped');
     if (anyFailed) return 'failed';
-    
-    const anyExecuting = message.tasks.some(t => t.status === 'executing');
     if (anyExecuting) return 'executing';
-    
-    const allApproved = message.tasks.every(t => t.approved);
-    if (allApproved) return 'approved';
-    
-    const allRewritten = message.tasks.every(t => t.rewritten);
-    if (allRewritten) return 'review';
+    if (anyApproved) return 'approved';
+    if (anyReview) return 'review';
     
     return 'pending';
+  };
+
+  const countMicroTasks = (queue: TaskQueue) => {
+    if (!queue.messages) return { total: 0, pending: 0, executing: 0, done: 0, failed: 0 };
+    
+    let total = 0;
+    let pending = 0;
+    let executing = 0;
+    let done = 0;
+    let failed = 0;
+    
+    queue.messages.forEach(msg => {
+      if (msg.tasks) {
+        msg.tasks.forEach(task => {
+          if (task.microTasks) {
+            task.microTasks.forEach(micro => {
+              total++;
+              switch (micro.status) {
+                case 'executing':
+                  executing++;
+                  break;
+                case 'done':
+                  done++;
+                  break;
+                case 'failed':
+                  failed++;
+                  break;
+                default:
+                  pending++;
+              }
+            });
+          }
+        });
+      }
+    });
+    
+    return { total, pending, executing, done, failed };
   };
 
   const StatusIcon = ({ status }: { status: string }) => {
     switch (status) {
       case 'done':
-        return <CheckCircle className="h-4 w-4 text-green-500" />;
+        return <span className="text-green-500">✅</span>;
       case 'failed':
         return <XCircle className="h-4 w-4 text-red-500" />;
       case 'executing':
@@ -253,9 +263,18 @@ export function TaskQueue() {
       pending: 'bg-gray-700 text-gray-300'
     };
     
+    const labels: Record<string, string> = {
+      done: '✅ done',
+      failed: 'failed',
+      executing: 'executing',
+      approved: 'approved',
+      review: 'review',
+      pending: 'pending'
+    };
+    
     return (
       <Badge className={cn("text-xs", variants[status] || variants.pending)}>
-        {status}
+        {labels[status] || status}
       </Badge>
     );
   };
@@ -276,127 +295,110 @@ export function TaskQueue() {
     if (newIndex !== currentIndex) {
       const newMessage = queue.messages[newIndex];
       setSelectedMessage({ fileId: selectedMessage.fileId, messageNumber: newMessage.messageNumber });
-      
-      const key = `${selectedMessage.fileId}-${newMessage.messageNumber}`;
-      if (!expandedMessages.has(key)) {
-        toggleMessage(selectedMessage.fileId, newMessage.messageNumber);
-      }
+      // Auto-expand the new message
+      setExpandedMessages(prev => {
+        const newSet = new Set(prev);
+        newSet.add(`${selectedMessage.fileId}-${newMessage.messageNumber}`);
+        return newSet;
+      });
     }
   };
 
-  const getMicroTaskStatus = (queue: TaskQueue) => {
-    let total = 0;
-    let executing = 0;
-    let done = 0;
-    let failed = 0;
-    
-    queue.messages?.forEach(msg => {
-      msg.tasks?.forEach(task => {
-        if (task.microTasks) {
-          task.microTasks.forEach(micro => {
-            total++;
-            if (micro.status === 'executing') executing++;
-            else if (micro.status === 'done') done++;
-            else if (micro.status === 'failed') failed++;
-          });
-        }
-      });
-    });
-    
-    return { total, executing, done, failed };
-  };
-
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-32">
-        <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="flex flex-col items-center justify-center h-32 text-red-400">
-        <XCircle className="h-6 w-6 mb-2" />
-        <p className="text-sm">{error}</p>
-        <Button 
-          variant="outline" 
-          size="sm" 
-          className="mt-2"
-          onClick={loadQueues}
-        >
-          <RefreshCw className="h-3 w-3 mr-1" />
-          Retry
-        </Button>
-      </div>
-    );
-  }
+  if (loading && !refreshing) return <div className="text-center p-4 text-gray-500">Loading task queue...</div>;
+  if (error) return <div className="text-center p-4 text-red-500">Error: {error}</div>;
 
   if (queues.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center h-32 text-gray-400">
-        <FileText className="h-6 w-6 mb-2" />
-        <p className="text-sm">No task files uploaded yet</p>
+      <div className={cn("space-y-4", className)}>
+        <div className="text-center p-8 bg-gray-800/50 rounded-lg border border-gray-700">
+          <p className="text-gray-400">No task files uploaded yet</p>
+          <p className="text-sm text-gray-500 mt-2">
+            Upload a task file to start processing
+          </p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-3">
-      {/* Queue Manager Button */}
-      <div className="flex justify-end mb-2">
-        <QueueManager />
-      </div>
-
-      {/* Navigation Controls */}
-      {selectedMessage && (
-        <div className="bg-blue-900/20 p-2 rounded-lg border border-blue-700/50 flex items-center justify-between">
-          <span className="text-xs text-blue-300">
-            Message {selectedMessage.messageNumber}
-          </span>
-          <div className="flex items-center gap-1">
+    <div className={cn("space-y-4", className)}>
+      {/* Header Actions */}
+      {!hideActions && (
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-semibold text-white">Task Queue</h3>
+          <div className="flex gap-2">
             <Button
+              onClick={() => setShowManager(!showManager)}
+              variant="outline"
               size="sm"
-              variant="ghost"
-              className="h-6 w-6 p-0"
-              onClick={() => navigateMessage('prev')}
+              className="text-xs"
             >
-              <ChevronLeft className="h-3 w-3" />
+              <Zap className="h-3 w-3 mr-1" />
+              Queue Manager
             </Button>
             <Button
+              onClick={fetchQueues}
+              disabled={refreshing}
+              variant="outline"
               size="sm"
-              variant="ghost"
-              className="h-6 w-6 p-0"
-              onClick={() => navigateMessage('next')}
+              className="text-xs"
             >
-              <ChevronRight className="h-3 w-3" />
+              <RefreshCw className={cn("h-3 w-3", refreshing && "animate-spin")} />
             </Button>
           </div>
         </div>
       )}
 
-      {/* Queue Files */}
-      {queues.map((queue) => {
+      {/* Queue Manager Modal */}
+      {showManager && (
+        <div className="mb-4">
+          <QueueManager 
+            onClose={() => setShowManager(false)}
+            onRefresh={fetchQueues}
+          />
+        </div>
+      )}
+
+      {/* Navigation */}
+      {selectedMessage && (
+        <div className="flex items-center justify-between p-2 bg-gray-800/50 rounded-lg border border-gray-600/50">
+          <Button
+            onClick={() => navigateMessage('prev')}
+            variant="ghost"
+            size="sm"
+            className="text-xs"
+          >
+            <ChevronLeft className="h-3 w-3 mr-1" />
+            Previous
+          </Button>
+          <span className="text-xs text-gray-400">
+            Navigate messages with arrow buttons
+          </span>
+          <Button
+            onClick={() => navigateMessage('next')}
+            variant="ghost"
+            size="sm"
+            className="text-xs"
+          >
+            Next
+            <ChevronRight className="h-3 w-3 ml-1" />
+          </Button>
+        </div>
+      )}
+
+      {/* Task Files */}
+      {queues.map(queue => {
         const isExpanded = expandedFiles.has(queue.fileId);
         const messages = (queue.messages || []).filter(m => m.tasks && m.tasks.length > 0);
-        const approvedMessages = messages.filter(m => 
-          m.tasks && m.tasks.every(t => t.approved)
-        );
-        const reviewMessages = messages.filter(m => 
-          getMessageStatus(m) === 'review'
-        );
-        const executingMessages = messages.filter(m => 
-          m.tasks && m.tasks.some(t => t.status === 'executing')
-        );
-        const doneMessages = messages.filter(m => 
-          m.tasks && m.tasks.length > 0 && m.tasks.every(t => t.status === 'done')
-        );
-        const failedMessages = messages.filter(m => 
-          m.tasks && m.tasks.some(t => t.status === 'failed')
-        );
-
-        const microTaskStatus = getMicroTaskStatus(queue);
-
+        const doneMessages = messages.filter(m => getMessageStatus(m) === 'done');
+        const failedMessages = messages.filter(m => getMessageStatus(m) === 'failed');
+        const executingMessages = messages.filter(m => getMessageStatus(m) === 'executing');
+        const approvedMessages = messages.filter(m => getMessageStatus(m) === 'approved');
+        const reviewMessages = messages.filter(m => getMessageStatus(m) === 'review');
+        
+        // Count micro-tasks
+        const microTaskStatus = countMicroTasks(queue);
+        
         return (
           <div key={queue.fileId} className="bg-gray-700/50 rounded-lg border border-gray-600 overflow-hidden">
             {/* File Header */}
@@ -421,7 +423,7 @@ export function TaskQueue() {
                 )}
                 {doneMessages.length > 0 && (
                   <Badge className="text-xs bg-green-700 text-green-100">
-                    {doneMessages.length} done
+                    ✅ {doneMessages.length} done
                   </Badge>
                 )}
                 {failedMessages.length > 0 && (
@@ -502,195 +504,161 @@ export function TaskQueue() {
                           </div>
                           <div className="flex items-center gap-2">
                             <StatusBadge status={messageStatus} />
-                            {message.tasks && (
-                              <span className="text-xs text-gray-500">
-                                {message.tasks.length} tasks
-                              </span>
+                            {!hideActions && (
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDeleteMessage(queue.fileId, message.messageNumber);
+                                }}
+                                className="h-6 px-2"
+                              >
+                                <Trash2 className="h-3 w-3 text-red-400" />
+                              </Button>
                             )}
                           </div>
                         </div>
                       </div>
 
-                      {/* Message Actions and Tasks */}
+                      {/* Message Content */}
                       {isMessageExpanded && (
-                        <div className="bg-gray-800/20 px-3 pb-3">
-                          {/* Message Actions */}
-                          <div className="flex items-center gap-2 mb-3 pt-2">
-                            {messageStatus === 'pending' && (
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                className="text-xs"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleRewrite(queue.fileId, message.messageNumber);
-                                }}
-                                disabled={rewritingMessage === `${queue.fileId}-${message.messageNumber}`}
-                              >
-                                {rewritingMessage === `${queue.fileId}-${message.messageNumber}` ? (
-                                  <>
-                                    <Loader2 className="h-3 w-3 mr-1 animate-spin" />
-                                    Rewriting...
-                                  </>
-                                ) : (
-                                  <>
-                                    <Zap className="h-3 w-3 mr-1" />
-                                    Rewrite to Micro-tasks
-                                  </>
-                                )}
-                              </Button>
-                            )}
-                            
-                            {messageStatus === 'review' && (
-                              <>
-                                <Button
-                                  size="sm"
-                                  variant="default"
-                                  className="text-xs"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleApprove(queue.fileId, message.messageNumber, true, 'all');
-                                  }}
-                                  disabled={approvingMessage === `${queue.fileId}-${message.messageNumber}`}
-                                >
-                                  <Check className="h-3 w-3 mr-1" />
-                                  Approve All
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  className="text-xs text-red-400 border-red-400 hover:bg-red-400 hover:text-white"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleReject(queue.fileId, message.messageNumber, 'all');
-                                  }}
-                                >
-                                  <X className="h-3 w-3 mr-1" />
-                                  Reject All
-                                </Button>
-                              </>
-                            )}
-                            
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              className="text-xs text-red-400 hover:bg-red-900/20 ml-auto"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleDelete(queue.fileId, message.messageNumber);
-                              }}
-                            >
-                              <Trash2 className="h-3 w-3 mr-1" />
-                              Delete Message
-                            </Button>
-                          </div>
+                        <div className="px-3 pb-3">
+                          {/* Original Content */}
+                          {message.originalContent && (
+                            <div className="mt-2 p-2 bg-gray-800/50 rounded text-xs text-gray-300 max-h-32 overflow-y-auto">
+                              <pre className="whitespace-pre-wrap">{message.originalContent}</pre>
+                            </div>
+                          )}
 
                           {/* Tasks */}
-                          <div className="space-y-2">
-                            {message.tasks?.map((task) => (
-                              <div key={task.taskId} className="bg-gray-700/30 rounded p-2 text-xs">
-                                <div className="flex items-start justify-between">
-                                  <div className="flex-1">
-                                    <div className="flex items-center gap-2 mb-1">
-                                      <StatusIcon status={getTaskStatus(task)} />
-                                      <span className="font-medium text-gray-100">
-                                        Task {task.taskNumber}
-                                      </span>
-                                      <StatusBadge status={getTaskStatus(task)} />
-                                      {task.approved && !task.status && (
-                                        <Badge className="text-xs bg-green-700 text-green-100">
-                                          Approved
-                                        </Badge>
-                                      )}
+                          {message.tasks && message.tasks.length > 0 && (
+                            <div className="mt-3 space-y-2">
+                              <div className="text-xs font-medium text-gray-400 mb-1">Tasks:</div>
+                              {message.tasks.map((task, taskIndex) => {
+                                const taskStatus = getTaskStatus(task);
+                                const hasWarning = task.rewritten && !task.approved;
+                                
+                                return (
+                                  <div 
+                                    key={task.taskId || taskIndex}
+                                    className={cn(
+                                      "p-2 bg-gray-800/30 rounded border text-xs",
+                                      taskStatus === 'done' && "border-green-700/50 bg-green-900/10",
+                                      taskStatus === 'failed' && "border-red-700/50 bg-red-900/10",
+                                      taskStatus === 'executing' && "border-blue-700/50 bg-blue-900/10",
+                                      taskStatus === 'approved' && "border-blue-600/50",
+                                      hasWarning && "border-yellow-600/50",
+                                      !hasWarning && taskStatus === 'pending' && "border-gray-700/50"
+                                    )}
+                                  >
+                                    <div className="flex items-start justify-between gap-2">
+                                      <div className="flex items-start gap-2 flex-1">
+                                        <StatusIcon status={taskStatus} />
+                                        <div className="flex-1">
+                                          <div className="flex items-center gap-2">
+                                            <span className="font-medium text-gray-200">
+                                              Task {task.taskNumber}
+                                            </span>
+                                            {hasWarning && (
+                                              <AlertCircle className="h-3 w-3 text-yellow-500" />
+                                            )}
+                                          </div>
+                                          <p className="text-gray-400 mt-0.5 leading-relaxed">
+                                            {task.originalDescription}
+                                          </p>
+                                          
+                                          {/* Show micro-tasks if any */}
+                                          {task.microTasks && task.microTasks.length > 0 && (
+                                            <div className="mt-2 space-y-1 pl-4 border-l border-gray-700">
+                                              {task.microTasks.map((micro, microIndex) => (
+                                                <div key={micro.id || microIndex} className="flex items-center gap-2">
+                                                  {micro.status === 'done' ? (
+                                                    <span className="text-green-500 text-xs">✅</span>
+                                                  ) : micro.status === 'executing' ? (
+                                                    <Loader2 className="h-3 w-3 text-blue-500 animate-spin" />
+                                                  ) : micro.status === 'failed' ? (
+                                                    <XCircle className="h-3 w-3 text-red-500" />
+                                                  ) : (
+                                                    <Clock className="h-3 w-3 text-gray-500" />
+                                                  )}
+                                                  <span className="text-xs text-gray-400">
+                                                    {micro.filePath}
+                                                  </span>
+                                                </div>
+                                              ))}
+                                            </div>
+                                          )}
+                                        </div>
+                                      </div>
+                                      <div className="flex items-center gap-1">
+                                        <StatusBadge status={taskStatus} />
+                                      </div>
                                     </div>
-                                    <p className="text-gray-300 mb-1">{task.originalDescription}</p>
                                     
-                                    {/* Task Actions */}
-                                    {getTaskStatus(task) === 'review' && !task.approved && (
+                                    {/* Retry/Skip buttons for failed tasks */}
+                                    {!hideActions && taskStatus === 'failed' && (
                                       <div className="flex gap-2 mt-2">
                                         <Button
                                           size="sm"
                                           variant="outline"
                                           className="h-6 text-xs"
-                                          onClick={() => handleApprove(queue.fileId, message.messageNumber, true, task.taskId)}
+                                          onClick={async () => {
+                                            try {
+                                              await fetch('/api/self-dev/control', {
+                                                method: 'POST',
+                                                headers: { 'Content-Type': 'application/json' },
+                                                body: JSON.stringify({ action: 'retry' })
+                                              });
+                                              await fetchQueues();
+                                            } catch (err) {
+                                              console.error('Retry error:', err);
+                                            }
+                                          }}
                                         >
-                                          <Check className="h-3 w-3 mr-1" />
-                                          Approve
+                                          <RotateCcw className="h-3 w-3 mr-1" />
+                                          Retry
                                         </Button>
                                         <Button
                                           size="sm"
-                                          variant="ghost"
-                                          className="h-6 text-xs text-red-400"
-                                          onClick={() => handleReject(queue.fileId, message.messageNumber, task.taskId)}
+                                          variant="outline"
+                                          className="h-6 text-xs"
+                                          onClick={async () => {
+                                            try {
+                                              await fetch('/api/self-dev/control', {
+                                                method: 'POST',
+                                                headers: { 'Content-Type': 'application/json' },
+                                                body: JSON.stringify({ action: 'skip' })
+                                              });
+                                              await fetchQueues();
+                                            } catch (err) {
+                                              console.error('Skip error:', err);
+                                            }
+                                          }}
                                         >
-                                          <X className="h-3 w-3 mr-1" />
-                                          Reject
+                                          <SkipForward className="h-3 w-3 mr-1" />
+                                          Skip
                                         </Button>
                                       </div>
                                     )}
-                                    
-                                    {/* Execution Result */}
-                                    {task.executionResult && (
-                                      <div className={cn(
-                                        "mt-2 p-2 rounded text-xs",
-                                        task.executionResult.success ? "bg-green-900/20 text-green-400" : "bg-red-900/20 text-red-400"
-                                      )}>
-                                        {task.executionResult.message || (task.executionResult.success ? 'Completed successfully' : 'Failed')}
-                                        {task.executionResult.completedAt && (
-                                          <span className="text-gray-500 ml-2">
-                                            at {new Date(task.executionResult.completedAt).toLocaleTimeString()}
-                                          </span>
-                                        )}
-                                      </div>
-                                    )}
-                                    
-                                    {/* Micro-tasks */}
-                                    {task.microTasks && task.microTasks.length > 0 && (
-                                      <div className="mt-2 space-y-1">
-                                        <p className="text-xs font-medium text-green-400">
-                                          Rewritten as {task.microTasks.length} micro-tasks:
-                                        </p>
-                                        {task.microTasks.map((micro: any, idx: number) => (
-                                          <div key={micro.id} className="text-xs text-gray-400 pl-4">
-                                            <div className="mb-1 flex items-center gap-2">
-                                              <span className="text-gray-500">{idx + 1}.</span> 
-                                              <span className="text-blue-400">{micro.filePath}</span>
-                                              {micro.status && (
-                                                <StatusBadge status={micro.status} />
-                                              )}
-                                            </div>
-                                            <div className="pl-4 text-gray-300">
-                                              {micro.description}
-                                            </div>
-                                          </div>
-                                        ))}
-                                      </div>
-                                    )}
                                   </div>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
+                                );
+                              })}
+                            </div>
+                          )}
+
+                          {/* Commit Message */}
+                          {message.commitMessage && (
+                            <div className="mt-2 p-2 bg-green-900/20 rounded text-xs">
+                              <span className="text-green-400">Commit:</span>
+                              <span className="ml-2 text-gray-300">{message.commitMessage}</span>
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>
                   );
                 })}
-                
-                {/* Bulk Actions */}
-                {reviewMessages.length > 0 && (
-                  <div className="p-3 bg-gray-900/30 border-t border-gray-600/50">
-                    <Button
-                      variant="default"
-                      size="sm"
-                      className="w-full"
-                      onClick={() => handleApprove(queue.fileId, 1, true, 'all')}
-                    >
-                      <Check className="h-4 w-4 mr-2" />
-                      Approve All Messages ({reviewMessages.length})
-                    </Button>
-                  </div>
-                )}
               </div>
             )}
           </div>
