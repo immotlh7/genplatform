@@ -53,12 +53,17 @@ export function TaskQueue() {
       if (response.ok) {
         const data = await response.json();
         if (data.overallProgress.filesTotal > 0) {
-          // Load actual queue data (in production, this would be a proper API)
-          // For now, using the uploaded file data
-          const files = await fetch('/api/self-dev/queues').catch(() => null);
-          if (files && files.ok) {
-            const queuesData = await files.json();
-            setQueues(queuesData);
+          // Load actual queue data
+          try {
+            const files = await fetch('/api/self-dev/queues');
+            if (files.ok) {
+              const queuesData = await files.json();
+              if (Array.isArray(queuesData)) {
+                setQueues(queuesData);
+              }
+            }
+          } catch (queueError) {
+            console.error('Failed to fetch queue data:', queueError);
           }
         }
         setLoading(false);
@@ -120,9 +125,12 @@ export function TaskQueue() {
       if (queues.length > 0) {
         expandedMessages.clear();
         // Auto-expand all messages
-        queues[0].messages.forEach(msg => {
-          expandedMessages.add(`${fileId}-${msg.messageNumber}`);
-        });
+        const queue = queues.find(q => q.fileId === fileId);
+        if (queue && queue.messages) {
+          queue.messages.forEach(msg => {
+            expandedMessages.add(`${fileId}-${msg.messageNumber}`);
+          });
+        }
       }
     }
     setExpandedFiles(newExpanded);
@@ -159,9 +167,9 @@ export function TaskQueue() {
     <div className="space-y-3">
       {queues.map(queue => {
         const isExpanded = expandedFiles.has(queue.fileId) || true; // Auto-expand
-        const approvedMessages = queue.messages.filter(m => 
-          m.tasks.some(t => t.approved)
-        ).length;
+        const approvedMessages = queue.messages ? queue.messages.filter(m => 
+          m.tasks && m.tasks.some(t => t.approved)
+        ).length : 0;
 
         return (
           <div key={queue.fileId} className="text-sm">
@@ -190,15 +198,15 @@ export function TaskQueue() {
             </div>
 
             {/* Messages */}
-            {isExpanded && queue.messages.length > 0 && (
+            {isExpanded && queue.messages && queue.messages.length > 0 && (
               <div className="ml-6 mt-1 space-y-3">
                 {queue.messages.map(message => {
                   const messageId = `${queue.fileId}-${message.messageNumber}`;
                   const isMessageExpanded = expandedMessages.has(messageId) || true; // Auto-expand
                   const isRewriting = rewriting === messageId;
                   const isApproving = approving === messageId;
-                  const allTasksRewritten = message.tasks.every(t => t.rewritten);
-                  const hasApprovedTasks = message.tasks.some(t => t.approved);
+                  const allTasksRewritten = message.tasks ? message.tasks.every(t => t.rewritten) : false;
+                  const hasApprovedTasks = message.tasks ? message.tasks.some(t => t.approved) : false;
 
                   return (
                     <div key={messageId} className="border border-gray-200 dark:border-gray-700 rounded-lg p-3">
@@ -213,7 +221,7 @@ export function TaskQueue() {
                             {message.summary}
                           </span>
                           <span className="text-xs text-gray-500">
-                            ({message.tasks.length} tasks)
+                            ({message.tasks ? message.tasks.length : 0} tasks)
                           </span>
                         </div>
                         
@@ -225,7 +233,7 @@ export function TaskQueue() {
                             </Badge>
                           )}
                           
-                          {!allTasksRewritten && (
+                          {!allTasksRewritten && message.tasks && message.tasks.length > 0 && (
                             <Button
                               size="sm"
                               variant="outline"
@@ -264,7 +272,7 @@ export function TaskQueue() {
                       </div>
 
                       {/* Tasks */}
-                      {isMessageExpanded && (
+                      {isMessageExpanded && message.tasks && (
                         <div className="space-y-2">
                           {message.tasks.map(task => (
                             <div key={task.taskId} className="ml-2 p-2 bg-gray-50 dark:bg-gray-800 rounded">
@@ -297,7 +305,7 @@ export function TaskQueue() {
                 })}
                 
                 {/* Approve All Button */}
-                {queue.messages.some(m => m.tasks.every(t => t.rewritten) && !m.tasks.some(t => t.approved)) && (
+                {queue.messages.some(m => m.tasks && m.tasks.every(t => t.rewritten) && !m.tasks.some(t => t.approved)) && (
                   <div className="flex justify-center mt-4">
                     <Button
                       variant="default"
