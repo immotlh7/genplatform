@@ -1,3 +1,3 @@
-export { NotificationSystem, useNotifications } from "./notification-system"
-export { NotificationProvider, useNotificationContext } from "./notification-context"
-export type { Notification } from "./notification-context"
+export { NotificationSystem } from "./notification-system"
+export { NotificationBell } from "./NotificationBell"
+export type { Notification, NotificationBellProps } from "./NotificationBell"

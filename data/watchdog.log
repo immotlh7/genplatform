@@ -1,0 +1,13 @@
+[2026-03-20T13:50:54.725Z] --- Watchdog run ---
+[2026-03-20T13:50:54.763Z] ✅ Site up
+[2026-03-20T13:50:54.910Z] ✅ pm2 online
+[2026-03-20T13:50:54.914Z] 📊 Queue: 18/255 done, 28 approved, 0 executing
+[2026-03-20T13:50:54.914Z] ⚠️ Pipeline stalled — finding next message...
+[2026-03-20T13:50:54.915Z] → Found: task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md Msg 3 (needsRewrite: false)
+[2026-03-20T13:50:54.930Z] ❌ Execute failed: {"error":"Execution locked","lockedBy":"task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg3-task4","
+[2026-03-20T13:50:55.010Z] Done. Issues: 1, Fixes: 0
+[2026-03-20T13:51:24.417Z] --- Watchdog run ---
+[2026-03-20T13:51:24.444Z] ✅ Site up
+[2026-03-20T13:51:24.609Z] ✅ pm2 online
+[2026-03-20T13:51:24.614Z] 📊 Queue: 18/255 done, 28 approved, 0 executing
+[2026-03-20T13:51:24.618Z] Done. Issues: 0, Fixes: 0

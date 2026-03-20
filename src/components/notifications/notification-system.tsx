@@ -1,40 +1,41 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
-import { Bell, X, AlertTriangle, CheckCircle, Info, Wifi, WifiOff, Loader2 } from "lucide-react"
+import { NotificationBell, Notification } from "./NotificationBell"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { AlertTriangle, X, Wifi, WifiOff, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover"
-import { Badge } from "@/components/ui/badge"
-import { cn } from "@/lib/utils"
-
-interface Notification {
-  id: string
-  type: "success" | "warning" | "error" | "info"
-  title: string
-  message: string
-  timestamp: Date
-  read: boolean
-  persistent?: boolean
-}
 
 interface GatewayStatus {
-  status: "running" | "stopped" | "error" | "connecting"
-  lastChecked: Date
+  status: 'running' | 'stopped' | 'error' | 'unknown' | 'connecting'
+  message?: string
+}
+
+interface BridgeStatusResponse {
+  gateway?: {
+    status: string
+    port?: number
+  }
+  services?: Array<{
+    name: string
+    status: string
+  }>
+  status?: string
+}
+
+interface BridgeMetricsResponse {
+  cpu?: number
+  memory?: number
+  uptime?: number
 }
 
 export function NotificationSystem() {
   const [notifications, setNotifications] = useState<Notification[]>([])
-  const [gatewayStatus, setGatewayStatus] = useState<GatewayStatus>({
-    status: "connecting",
-    lastChecked: new Date()
-  })
-  const [isOpen, setIsOpen] = useState(false)
+  const [gatewayStatus, setGatewayStatus] = useState<GatewayStatus>({ status: 'connecting' })
+  const [showBanner, setShowBanner] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
 
-  // Check gateway status from the Bridge API
+  // Check gateway status
   const checkGatewayStatus = useCallback(async () => {
     try {
       const response = await fetch('/api/bridge/status', {
@@ -44,61 +45,56 @@ export function NotificationSystem() {
       })
 
       if (!response.ok) {
-        // API endpoint exists but returned error
-        setGatewayStatus({ status: "error", lastChecked: new Date() })
+        // API returned error - might be connecting or bridge issue
+        if (response.status === 503 || response.status === 502) {
+          setGatewayStatus({ status: 'connecting', message: 'Connecting to gateway...' })
+          setShowBanner(false)
+        } else {
+          setGatewayStatus({ status: 'error', message: 'Unable to check gateway status' })
+          setShowBanner(true)
+        }
         return
       }
 
-      const data = await response.json()
+      const data: BridgeStatusResponse = await response.json()
       
-      // Check multiple ways the gateway could be reported as running
-      let isRunning = false
-      
-      // Method 1: Direct gateway status
-      if (data.gateway?.status === 'running' || data.gateway?.status === 'online') {
-        isRunning = true
-      }
-      
-      // Method 2: Check services array for running gateway
-      if (data.services && Array.isArray(data.services)) {
-        const gatewayService = data.services.find((s: any) => 
-          s.name?.toLowerCase().includes('gateway') || 
-          s.type?.toLowerCase().includes('gateway')
-        )
-        if (gatewayService && (gatewayService.status === 'running' || gatewayService.status === 'online')) {
-          isRunning = true
-        }
-      }
-      
-      // Method 3: Check if bridge itself reports connected status
-      if (data.connected === true || data.status === 'connected' || data.status === 'running') {
-        isRunning = true
-      }
-      
-      // Method 4: Check for any running services (indicates gateway is working)
-      if (data.services && Array.isArray(data.services) && data.services.length > 0) {
-        const hasRunningService = data.services.some((s: any) => 
-          s.status === 'running' || s.status === 'online'
-        )
-        if (hasRunningService) {
-          isRunning = true
-        }
-      }
+      // Check if gateway is running - multiple ways to determine this
+      const isGatewayRunning = 
+        // Direct gateway status check
+        data.gateway?.status === 'running' ||
+        data.gateway?.status === 'online' ||
+        // Overall status check
+        data.status === 'running' ||
+        data.status === 'online' ||
+        data.status === 'ok' ||
+        // Check services array for running gateway
+        data.services?.some(s => 
+          (s.name === 'gateway' || s.name === 'bridge' || s.name === 'local-gateway') && 
+          (s.status === 'running' || s.status === 'online' || s.status === 'active')
+        ) ||
+        // If we got a successful response with gateway info, assume it's running
+        (data.gateway && data.gateway.port)
 
-      setGatewayStatus({
-        status: isRunning ? "running" : "stopped",
-        lastChecked: new Date()
-      })
-
+      if (isGatewayRunning) {
+        setGatewayStatus({ status: 'running', message: 'Gateway is online' })
+        setShowBanner(false)
+      } else {
+        setGatewayStatus({ status: 'stopped', message: 'Gateway is offline' })
+        setShowBanner(true)
+      }
     } catch (error) {
-      // Network error or API not available - show connecting, not offline
-      console.log('Gateway status check failed:', error)
-      setGatewayStatus({ status: "connecting", lastChecked: new Date() })
+      // Network error - likely connecting or bridge not reachable
+      console.error('Failed to check gateway status:', error)
+      setGatewayStatus({ status: 'connecting', message: 'Connecting to services...' })
+      // Don't show banner for connection issues - might just be loading
+      setShowBanner(false)
+    } finally {
+      setIsLoading(false)
     }
   }, [])
 
   // Check for real CPU alerts from metrics
-  const checkMetricsAlerts = useCallback(async () => {
+  const checkMetrics = useCallback(async () => {
     try {
       const response = await fetch('/api/bridge/metrics', {
         method: 'GET',
@@ -108,214 +104,136 @@ export function NotificationSystem() {
 
       if (!response.ok) return
 
-      const data = await response.json()
+      const data: BridgeMetricsResponse = await response.json()
       
-      // Only add CPU alert if it's actually above 85%
-      if (data.cpu && typeof data.cpu === 'number' && data.cpu > 85) {
-        const existingAlert = notifications.find(n => n.id === 'cpu-high-alert')
-        if (!existingAlert) {
+      // Only add CPU alert if CPU is actually above 85%
+      if (data.cpu && data.cpu > 85) {
+        const existingCpuAlert = notifications.find(n => n.id === 'cpu-high')
+        if (!existingCpuAlert) {
           addNotification({
-            id: 'cpu-high-alert',
-            type: 'warning',
+            id: 'cpu-high',
             title: 'High CPU Usage',
-            message: `CPU usage is at ${Math.round(data.cpu)}%`,
-            persistent: false
+            message: `CPU usage is at ${data.cpu.toFixed(1)}%`,
+            type: 'warning',
+            read: false,
+            timestamp: new Date()
           })
         }
       } else {
         // Remove CPU alert if CPU is back to normal
-        setNotifications(prev => prev.filter(n => n.id !== 'cpu-high-alert'))
+        setNotifications(prev => prev.filter(n => n.id !== 'cpu-high'))
       }
-
     } catch (error) {
-      // Silently fail - metrics not critical
-      console.log('Metrics check failed:', error)
+      // Silently fail - metrics endpoint might not be available
+      console.debug('Metrics check failed:', error)
     }
   }, [notifications])
 
-  // Add a notification
-  const addNotification = useCallback((notif: Omit<Notification, 'timestamp' | 'read'>) => {
+  // Add notification helper
+  const addNotification = useCallback((notification: Notification) => {
     setNotifications(prev => {
-      // Don't add duplicates
-      if (prev.some(n => n.id === notif.id)) {
+      // Don't add duplicate notifications
+      if (prev.find(n => n.id === notification.id)) {
         return prev
       }
-      return [{
-        ...notif,
-        timestamp: new Date(),
-        read: false
-      }, ...prev].slice(0, 20) // Keep max 20 notifications
+      return [notification, ...prev].slice(0, 20) // Keep max 20 notifications
     })
   }, [])
 
-  // Remove a notification
-  const removeNotification = useCallback((id: string) => {
-    setNotifications(prev => prev.filter(n => n.id !== id))
+  // Mark notification as read
+  const markAsRead = useCallback((id: string) => {
+    setNotifications(prev => 
+      prev.map(n => n.id === id ? { ...n, read: true } : n)
+    )
   }, [])
 
   // Mark all as read
-  const markAllRead = useCallback(() => {
+  const markAllAsRead = useCallback(() => {
     setNotifications(prev => prev.map(n => ({ ...n, read: true })))
+  }, [])
+
+  // Dismiss notification
+  const dismissNotification = useCallback((id: string) => {
+    setNotifications(prev => prev.filter(n => n.id !== id))
   }, [])
 
   // Initial check and polling
   useEffect(() => {
-    // Initial checks
+    // Initial check
     checkGatewayStatus()
-    checkMetricsAlerts()
+    checkMetrics()
 
     // Poll every 30 seconds
     const statusInterval = setInterval(checkGatewayStatus, 30000)
-    const metricsInterval = setInterval(checkMetricsAlerts, 60000)
+    const metricsInterval = setInterval(checkMetrics, 60000)
 
     return () => {
       clearInterval(statusInterval)
       clearInterval(metricsInterval)
     }
-  }, [checkGatewayStatus, checkMetricsAlerts])
+  }, [checkGatewayStatus, checkMetrics])
 
-  // Count unread notifications (excluding gateway status which is shown separately)
+  // Update notifications based on gateway status
+  useEffect(() => {
+    if (gatewayStatus.status === 'stopped' || gatewayStatus.status === 'error') {
+      addNotification({
+        id: 'gateway-offline',
+        title: 'Gateway Offline',
+        message: gatewayStatus.message || 'The local gateway is not running',
+        type: 'error',
+        read: false,
+        timestamp: new Date()
+      })
+    } else if (gatewayStatus.status === 'running') {
+      // Remove gateway offline notification when it comes back online
+      setNotifications(prev => prev.filter(n => n.id !== 'gateway-offline'))
+    }
+  }, [gatewayStatus, addNotification])
+
   const unreadCount = notifications.filter(n => !n.read).length
 
-  // Only show badge if there are real unread notifications
-  const showBadge = unreadCount > 0
-
-  const getIcon = (type: Notification['type']) => {
-    switch (type) {
-      case 'success':
-        return <CheckCircle className="h-4 w-4 text-green-500" />
-      case 'warning':
-        return <AlertTriangle className="h-4 w-4 text-yellow-500" />
-      case 'error':
-        return <AlertTriangle className="h-4 w-4 text-red-500" />
-      default:
-        return <Info className="h-4 w-4 text-blue-500" />
-    }
-  }
-
-  const getGatewayStatusDisplay = () => {
-    switch (gatewayStatus.status) {
-      case 'running':
-        return {
-          icon: <Wifi className="h-4 w-4 text-green-500" />,
-          text: 'Gateway Online',
-          className: 'text-green-600 bg-green-50'
-        }
-      case 'stopped':
-        return {
-          icon: <WifiOff className="h-4 w-4 text-red-500" />,
-          text: 'Gateway Offline',
-          className: 'text-red-600 bg-red-50'
-        }
-      case 'connecting':
-        return {
-          icon: <Loader2 className="h-4 w-4 text-blue-500 animate-spin" />,
-          text: 'Connecting...',
-          className: 'text-blue-600 bg-blue-50'
-        }
-      case 'error':
-        return {
-          icon: <AlertTriangle className="h-4 w-4 text-yellow-500" />,
-          text: 'Status Unknown',
-          className: 'text-yellow-600 bg-yellow-50'
-        }
-    }
-  }
-
-  const gatewayDisplay = getGatewayStatusDisplay()
-
   return (
-    <Popover open={isOpen} onOpenChange={setIsOpen}>
-      <PopoverTrigger asChild>
-        <Button variant="ghost" size="icon" className="relative">
-          <Bell className="h-5 w-5" />
-          {showBadge && (
-            <Badge 
-              className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs"
-              variant="destructive"
-            >
-              {unreadCount > 9 ? '9+' : unreadCount}
-            </Badge>
-          )}
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent className="w-80 p-0" align="end">
-        <div className="flex items-center justify-between p-4 border-b">
-          <h4 className="font-semibold">Notifications</h4>
-          {unreadCount > 0 && (
-            <Button variant="ghost" size="sm" onClick={markAllRead}>
-              Mark all read
-            </Button>
-          )}
+    <>
+      {/* Banner for gateway offline - only show if truly offline */}
+      {showBanner && gatewayStatus.status !== 'connecting' && !isLoading && (
+        <div className="fixed top-0 left-0 right-0 z-50 bg-yellow-500/90 text-black px-4 py-2 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <WifiOff className="h-4 w-4" />
+            <span className="text-sm font-medium">
+              {gatewayStatus.message || 'Gateway is offline. Some features may be unavailable.'}
+            </span>
+          </div>
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="h-6 w-6 p-0 hover:bg-yellow-600/50"
+            onClick={() => setShowBanner(false)}
+          >
+            <X className="h-4 w-4" />
+          </Button>
         </div>
-        
-        {/* Gateway Status - Always shown at top */}
-        <div className={cn(
-          "flex items-center gap-2 px-4 py-3 border-b",
-          gatewayDisplay.className
-        )}>
-          {gatewayDisplay.icon}
-          <span className="text-sm font-medium">{gatewayDisplay.text}</span>
-        </div>
+      )}
 
-        {/* Notifications List */}
-        <div className="max-h-[300px] overflow-y-auto">
-          {notifications.length === 0 ? (
-            <div className="p-4 text-center text-muted-foreground text-sm">
-              No notifications
-            </div>
-          ) : (
-            notifications.map((notif) => (
-              <div
-                key={notif.id}
-                className={cn(
-                  "flex items-start gap-3 p-4 border-b hover:bg-muted/50 transition-colors",
-                  !notif.read && "bg-muted/30"
-                )}
-              >
-                {getIcon(notif.type)}
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium">{notif.title}</p>
-                  <p className="text-xs text-muted-foreground truncate">
-                    {notif.message}
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {formatTimeAgo(notif.timestamp)}
-                  </p>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-6 w-6 shrink-0"
-                  onClick={() => removeNotification(notif.id)}
-                >
-                  <X className="h-3 w-3" />
-                </Button>
-              </div>
-            ))
-          )}
+      {/* Connecting indicator - subtle, not alarming */}
+      {gatewayStatus.status === 'connecting' && isLoading && (
+        <div className="fixed top-0 left-0 right-0 z-50 bg-blue-500/80 text-white px-4 py-1 flex items-center justify-center">
+          <Loader2 className="h-3 w-3 animate-spin mr-2" />
+          <span className="text-xs">Connecting to services...</span>
         </div>
-      </PopoverContent>
-    </Popover>
+      )}
+
+      {/* Notification Bell */}
+      <NotificationBell
+        notifications={notifications}
+        unreadCount={unreadCount}
+        onMarkAsRead={markAsRead}
+        onMarkAllAsRead={markAllAsRead}
+        onDismiss={dismissNotification}
+      />
+    </>
   )
 }
 
-function formatTimeAgo(date: Date): string {
-  const seconds = Math.floor((new Date().getTime() - date.getTime()) / 1000)
-  
-  if (seconds < 60) return 'Just now'
-  if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`
-  if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`
-  return `${Math.floor(seconds / 86400)}d ago`
-}
-
-// Export a hook for other components to add notifications
-export function useNotifications() {
-  // This would need a context provider for full implementation
-  // For now, this is a placeholder
-  return {
-    addNotification: (notif: Omit<Notification, 'id' | 'timestamp' | 'read'>) => {
-      console.log('Notification:', notif)
-    }
-  }
-}
+// Export for direct use in navbar if needed
+export { NotificationBell } from "./NotificationBell"
+export type { Notification } from "./NotificationBell"
