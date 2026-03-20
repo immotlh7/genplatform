@@ -94,9 +94,29 @@ Write and execute the implementation. After completion run: npm run build && pm2
   const responseText = response.content[0].type === 'text' ? response.content[0].text : '';
   
   // Extract bash script
-  const bashMatch = responseText.match(/```bash\n([\s\S]*?)```/);
+  let bashMatch = responseText.match(/```bash\n([\s\S]*?)```/);
+  // Also try without language tag
+  if (!bashMatch) bashMatch = responseText.match(/```\n([\s\S]*?)```/);
+  // Try sh block
+  if (!bashMatch) bashMatch = responseText.match(/```sh\n([\s\S]*?)```/);
   if (!bashMatch) {
-    return { success: false, result: 'No bash script found in response' };
+    // Retry once with explicit instruction
+    const retry = await anthropic.messages.create({
+      model: 'claude-opus-4-5',
+      max_tokens: 4000,
+      system: 'You MUST respond with ONLY a bash script inside triple backticks. No explanation. Just the code.',
+      messages: [{ role: 'user', content: 'Implement this task for /root/genplatform (Next.js 16 TypeScript): ' + task.originalDescription.substring(0, 500) + '
+
+Respond with ONLY:
+```bash
+your commands here
+```' }]
+    });
+    const retryText = retry.content[0].type === 'text' ? retry.content[0].text : '';
+    bashMatch = retryText.match(/```bash\n([\s\S]*?)```/) || retryText.match(/```\n([\s\S]*?)```/);
+    if (!bashMatch) {
+      return { success: false, result: 'Claude did not return executable code after retry' };
+    }
   }
 
   const script = bashMatch[1];
