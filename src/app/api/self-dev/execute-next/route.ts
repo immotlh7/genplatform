@@ -105,12 +105,7 @@ Write and execute the implementation. After completion run: npm run build && pm2
       model: 'claude-opus-4-5',
       max_tokens: 4000,
       system: 'You MUST respond with ONLY a bash script inside triple backticks. No explanation. Just the code.',
-      messages: [{ role: 'user', content: 'Implement this task for /root/genplatform (Next.js 16 TypeScript): ' + task.originalDescription.substring(0, 500) + '
-
-Respond with ONLY:
-```bash
-your commands here
-```' }]
+      messages: [{ role: 'user', content: 'Implement this task for /root/genplatform (Next.js 16 TypeScript): ' + task.originalDescription.substring(0, 500) + '\n\nRespond with ONLY a bash script in ```bash blocks. No text outside the script.' }]
     });
     const retryText = retry.content[0].type === 'text' ? retry.content[0].text : '';
     bashMatch = retryText.match(/```bash\n([\s\S]*?)```/) || retryText.match(/```\n([\s\S]*?)```/);
