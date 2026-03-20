@@ -1,12 +1,12 @@
 {
-  "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg9-task2",
+  "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg9-task3",
   "messageNumber": 9,
   "messageTitle": "Fix the Command Center page to be useful and connected to real actions.",
   "totalTasks": 68,
-  "completedTasks": 20,
+  "completedTasks": 21,
   "task": {
-    "taskNumber": 2,
-    "description": "Quick Actions — make ALL buttons execute real commands:",
+    "taskNumber": 3,
+    "description": "Remove the \"Terminal\" and \"Services\" tabs if they don't have real content. Keep only \"Quick Actions\" tab.",
     "status": "executing"
   }
 }

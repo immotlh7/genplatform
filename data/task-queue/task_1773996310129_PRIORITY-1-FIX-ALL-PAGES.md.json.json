@@ -4,7 +4,7 @@
   "uploadedAt": "2026-03-20T08:45:10.369Z",
   "totalMessages": 33,
   "totalTasks": 68,
-  "totalMicroTasks": 127,
+  "totalMicroTasks": 154,
   "messages": [
     {
       "messageNumber": 1,
@@ -448,7 +448,7 @@
           "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg9-task2",
           "taskNumber": 2,
           "originalDescription": "Quick Actions — make ALL buttons execute real commands:",
-          "status": "approved",
+          "status": "done",
           "approved": true,
           "rewritten": true,
           "microTasks": [
@@ -459,7 +459,13 @@
               "description": "Implement the following task with precision: Quick Actions — make ALL buttons execute real commands:. First identify the correct file and component, then make the necessary changes following the project's coding standards.",
               "status": "pending"
             }
-          ]
+          ],
+          "startedAt": "2026-03-20T13:54:33.914Z",
+          "completedAt": "2026-03-20T13:56:08.206Z",
+          "executionResult": {
+            "success": true,
+            "result": "Build ✅ | Applied changes + deployed. === Checking Command Center page ===\nsrc/components/ui/command.tsx\nsrc/lib/commander-client.ts\n\"use "
+          }
         },
         {
           "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg9-task3",
@@ -1225,15 +1231,50 @@
           "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg19-task1",
           "taskNumber": 1,
           "originalDescription": "System Health bar at top:",
-          "status": "review",
-          "approved": false,
+          "status": "approved",
+          "approved": true,
           "rewritten": true,
           "microTasks": [
             {
               "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg19-task1-micro1",
-              "filePath": "src/app/dashboard/page.tsx",
-              "change": "Analyze and implement the requested feature",
-              "description": "Implement the following task with precision: System Health bar at top:. First identify the correct file and component, then make the necessary changes following the project's coding standards.",
+              "filePath": "src/app/dashboard/monitoring/page.tsx",
+              "change": "Add healthStatus state variable",
+              "description": "At the top of the MonitoringPage component, add a new state variable for system health status: const [healthStatus, setHealthStatus] = useState<{services: {running: number, total: number}, resources: 'Healthy' | 'Warning' | 'Critical', network: 'Connected'}>({services: {running: 0, total: 0}, resources: 'Healthy', network: 'Connected'}). This state will hold the aggregated health data for the top status bar display.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg19-task1-micro2",
+              "filePath": "src/app/dashboard/monitoring/page.tsx",
+              "change": "Add fetchHealthStatus function for services count",
+              "description": "Create a new async function called fetchHealthStatus that fetches from '/api/bridge/status' and counts services. Inside: const statusRes = await fetch('/api/bridge/status'); const statusData = await statusRes.json(); const services = statusData.services || []; const running = services.filter((s: any) => s.status === 'running').length; const total = services.length; Update healthStatus state with setHealthStatus(prev => ({...prev, services: {running, total}})).",
+              "status": "pending"
+            },
+            {
+              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg19-task1-micro3",
+              "filePath": "src/app/dashboard/monitoring/page.tsx",
+              "change": "Add resource health calculation to fetchHealthStatus",
+              "description": "Extend the fetchHealthStatus function to also fetch metrics and determine resource health. Add: const metricsRes = await fetch('/api/bridge/metrics'); const metricsData = await metricsRes.json(); const cpu = metricsData.cpu?.percent || 0; const ram = metricsData.memory?.percent || 0; const disk = metricsData.disk?.percent || 0; let resourceStatus: 'Healthy' | 'Warning' | 'Critical' = 'Healthy'; if (cpu >= 80 || ram >= 80 || disk >= 90) resourceStatus = 'Warning'; if (cpu >= 95 || ram >= 95 || disk >= 98) resourceStatus = 'Critical'; setHealthStatus(prev => ({...prev, resources: resourceStatus})).",
+              "status": "pending"
+            },
+            {
+              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg19-task1-micro4",
+              "filePath": "src/app/dashboard/monitoring/page.tsx",
+              "change": "Call fetchHealthStatus on mount and during polling",
+              "description": "In the useEffect hook that runs on component mount, call fetchHealthStatus() to load initial health data. If there's an existing useEffect for data fetching, add fetchHealthStatus() call inside it. If no such useEffect exists, create one: useEffect(() => { fetchHealthStatus(); }, []). Also call fetchHealthStatus in the refresh/polling logic if auto-refresh is enabled.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg19-task1-micro5",
+              "filePath": "src/app/dashboard/monitoring/page.tsx",
+              "change": "Update System Health bar JSX with dynamic healthStatus values",
+              "description": "Find the System Health bar section at the top of the page JSX (likely a div with Cards or status indicators). Replace hardcoded values with dynamic data: For Services card, change the value/display to show `${healthStatus.services.running}/${healthStatus.services.total} Running`. For Resources card, show healthStatus.resources with appropriate color (green for Healthy, amber for Warning, red for Critical). For Network card, always show 'Connected' with a green indicator since the page loaded successfully.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg19-task1-micro6",
+              "filePath": "src/app/dashboard/monitoring/page.tsx",
+              "change": "Add color-coded badges/indicators to health status items",
+              "description": "Add visual indicators to the health bar: For Services, add a Badge or colored dot that is green if running === total, amber if running > 0 but less than total, red if running === 0. For Resources, use Badge with variant='success' for Healthy, variant='warning' for Warning, variant='destructive' for Critical. For Network, always show a green dot with 'Connected' text.",
               "status": "pending"
             }
           ]
@@ -1242,15 +1283,64 @@
           "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg19-task2",
           "taskNumber": 2,
           "originalDescription": "Resources tab — show ALL real metrics from /api/bridge/metrics:",
-          "status": "review",
-          "approved": false,
+          "status": "approved",
+          "approved": true,
           "rewritten": true,
           "microTasks": [
             {
               "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg19-task2-micro1",
-              "filePath": "src/app/api/bridge/route.ts",
-              "change": "Create or update the API route",
-              "description": "In src/app/api/bridge/route.ts, implement the requested API functionality: Resources tab — show ALL real metrics from /api/bridge/metrics:. Use Next.js 13+ app router conventions with proper request/response handling.",
+              "filePath": "src/app/dashboard/monitoring/page.tsx",
+              "change": "Add comprehensive metrics state variable",
+              "description": "Add a comprehensive metrics state variable at the top of the component: const [metrics, setMetrics] = useState<{cpu: {percent: number}, memory: {used: number, total: number, percent: number}, disk: {used: number, total: number, percent: number}, swap?: {used: number, total: number}, loadAvg?: number[], uptime?: number}>({cpu: {percent: 0}, memory: {used: 0, total: 0, percent: 0}, disk: {used: 0, total: 0, percent: 0}}). This will store all resource metrics from the API.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg19-task2-micro2",
+              "filePath": "src/app/dashboard/monitoring/page.tsx",
+              "change": "Create/update fetchMetrics function with full data mapping",
+              "description": "Create or update a fetchMetrics async function: const fetchMetrics = async () => { try { const res = await fetch('/api/bridge/metrics'); const data = await res.json(); setMetrics({ cpu: {percent: data.cpu?.percent || 0}, memory: {used: data.memory?.used || 0, total: data.memory?.total || 0, percent: data.memory?.percent || 0}, disk: {used: data.disk?.used || 0, total: data.disk?.total || 0, percent: data.disk?.percent || 0}, swap: data.swap, loadAvg: data.loadAvg || data.load_average, uptime: data.uptime }); } catch (e) { console.error('Failed to fetch metrics', e); } };",
+              "status": "pending"
+            },
+            {
+              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg19-task2-micro3",
+              "filePath": "src/app/dashboard/monitoring/page.tsx",
+              "change": "Update CPU Usage display with real metrics and progress bar",
+              "description": "In the Resources tab content section (inside TabsContent value='resources' or similar), find the CPU Usage display. Replace any hardcoded percentage with metrics.cpu.percent. Add a Progress component: <Progress value={metrics.cpu.percent} className={metrics.cpu.percent > 80 ? 'bg-red-500' : 'bg-green-500'} />. Show the percentage as text: <span className='text-2xl font-bold'>{metrics.cpu.percent.toFixed(1)}%</span>.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg19-task2-micro4",
+              "filePath": "src/app/dashboard/monitoring/page.tsx",
+              "change": "Update Memory Usage with used/total GB and percentage bar",
+              "description": "In the Resources tab, find or create the Memory Usage section. Create a helper function to format bytes: const formatBytes = (bytes: number) => (bytes / 1024 / 1024 / 1024).toFixed(2) + ' GB'. Display: <Progress value={metrics.memory.percent} />. Show text: {formatBytes(metrics.memory.used)} / {formatBytes(metrics.memory.total)} ({metrics.memory.percent.toFixed(1)}%). Use red color if percent > 80.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg19-task2-micro5",
+              "filePath": "src/app/dashboard/monitoring/page.tsx",
+              "change": "Update Disk Usage with used/total GB and percentage bar",
+              "description": "In the Resources tab, find or create the Disk Usage section. Using the same formatBytes helper, display: <Progress value={metrics.disk.percent} className={metrics.disk.percent > 90 ? 'bg-red-500' : ''} />. Show text: {formatBytes(metrics.disk.used)} / {formatBytes(metrics.disk.total)} ({metrics.disk.percent.toFixed(1)}%). Add warning styling when disk usage exceeds 90%.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg19-task2-micro6",
+              "filePath": "src/app/dashboard/monitoring/page.tsx",
+              "change": "Add conditional Swap usage display",
+              "description": "Add a Swap section in the Resources tab, conditionally rendered: {metrics.swap && (<div className='space-y-2'><h4>Swap Usage</h4><Progress value={(metrics.swap.used / metrics.swap.total) * 100} /><span>{formatBytes(metrics.swap.used)} / {formatBytes(metrics.swap.total)}</span></div>)}. This only shows if swap data is available from the API response.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg19-task2-micro7",
+              "filePath": "src/app/dashboard/monitoring/page.tsx",
+              "change": "Add Load Average display with 1min, 5min, 15min values",
+              "description": "Add a Load Average section in the Resources tab, conditionally rendered: {metrics.loadAvg && metrics.loadAvg.length >= 3 && (<div><h4>Load Average</h4><div className='flex gap-4'><span>1min: {metrics.loadAvg[0].toFixed(2)}</span><span>5min: {metrics.loadAvg[1].toFixed(2)}</span><span>15min: {metrics.loadAvg[2].toFixed(2)}</span></div></div>)}. Display all three load average values in a row.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg19-task2-micro8",
+              "filePath": "src/app/dashboard/monitoring/page.tsx",
+              "change": "Add Uptime display with formatted days/hours/minutes",
+              "description": "Add an Uptime section in the Resources tab. Create a formatUptime helper: const formatUptime = (seconds: number) => { const days = Math.floor(seconds / 86400); const hours = Math.floor((seconds % 86400) / 3600); const mins = Math.floor((seconds % 3600) / 60); return `${days}d ${hours}h ${mins}m`; }. Display: {metrics.uptime !== undefined && (<div><h4>System Uptime</h4><span className='text-xl'>{formatUptime(metrics.uptime)}</span></div>)}.",
               "status": "pending"
             }
           ]
@@ -1259,15 +1349,50 @@
           "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg19-task3",
           "taskNumber": 3,
           "originalDescription": "Services tab — show real services:",
-          "status": "review",
-          "approved": false,
+          "status": "approved",
+          "approved": true,
           "rewritten": true,
           "microTasks": [
             {
               "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg19-task3-micro1",
-              "filePath": "src/app/dashboard/page.tsx",
-              "change": "Analyze and implement the requested feature",
-              "description": "Implement the following task with precision: Services tab — show real services:. First identify the correct file and component, then make the necessary changes following the project's coding standards.",
+              "filePath": "src/app/dashboard/monitoring/page.tsx",
+              "change": "Add services state array",
+              "description": "Add a services state variable: const [services, setServices] = useState<Array<{name: string, status: 'running' | 'stopped' | string, uptime?: string | number, port?: number | string}>>([]);. This will hold the array of services returned from the bridge status API endpoint.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg19-task3-micro2",
+              "filePath": "src/app/dashboard/monitoring/page.tsx",
+              "change": "Create fetchServices function",
+              "description": "Create a fetchServices async function: const fetchServices = async () => { try { const res = await fetch('/api/bridge/status'); const data = await res.json(); const serviceList = data.services || []; setServices(serviceList); } catch (e) { console.error('Failed to fetch services', e); setServices([]); } };. Call this function in useEffect on mount and during auto-refresh polling.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg19-task3-micro3",
+              "filePath": "src/app/dashboard/monitoring/page.tsx",
+              "change": "Render dynamic services list with status indicators",
+              "description": "In the Services tab content (TabsContent value='services'), replace any mock/static service list with a dynamic map over the services state: {services.map((service, index) => (<Card key={index} className='p-4'><div className='flex items-center justify-between'><div className='flex items-center gap-3'><div className={`w-3 h-3 rounded-full ${service.status === 'running' ? 'bg-green-500' : 'bg-red-500'}`} /><span className='font-medium'>{service.name}</span></div><Badge variant={service.status === 'running' ? 'success' : 'destructive'}>{service.status}</Badge></div></Card>))}",
+              "status": "pending"
+            },
+            {
+              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg19-task3-micro4",
+              "filePath": "src/app/dashboard/monitoring/page.tsx",
+              "change": "Add uptime and port display to each service card",
+              "description": "Enhance each service Card to show uptime and port information. Inside the Card, add: <div className='mt-2 text-sm text-muted-foreground'>{service.port && <span>Port: {service.port}</span>}{service.uptime && <span className='ml-4'>Uptime: {typeof service.uptime === 'number' ? formatUptime(service.uptime) : service.uptime}</span>}</div>. This displays the port number and formatted uptime for each service.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg19-task3-micro5",
+              "filePath": "src/app/dashboard/monitoring/page.tsx",
+              "change": "Add empty state and loading state for services",
+              "description": "Add an empty state for when no services are returned: {services.length === 0 && (<div className='text-center py-8 text-muted-foreground'><p>No services found. The Bridge API may be unavailable.</p></div>)}. Also add a loading state: const [servicesLoading, setServicesLoading] = useState(true); Set to false after fetchServices completes. Show a Spinner or 'Loading services...' while servicesLoading is true.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg19-task3-micro6",
+              "filePath": "src/app/dashboard/monitoring/page.tsx",
+              "change": "Add service name mapping for friendly display names",
+              "description": "Ensure the expected services are displayed prominently. If the API returns generic names, create a mapping: const serviceDisplayNames: Record<string, string> = {'openclaw-gateway': 'OpenClaw Gateway', 'bridge-api': 'Bridge API', 'genplatform-app': 'Next.js (genplatform-app)'}. When rendering, use: {serviceDisplayNames[service.name] || service.name}. This ensures friendly names are shown.",
               "status": "pending"
             }
           ]
@@ -1276,15 +1401,50 @@
           "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg19-task4",
           "taskNumber": 4,
           "originalDescription": "Logs tab — show real parsed logs:",
-          "status": "review",
-          "approved": false,
+          "status": "approved",
+          "approved": true,
           "rewritten": true,
           "microTasks": [
             {
               "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg19-task4-micro1",
-              "filePath": "src/app/dashboard/page.tsx",
-              "change": "Analyze and implement the requested feature",
-              "description": "Implement the following task with precision: Logs tab — show real parsed logs:. First identify the correct file and component, then make the necessary changes following the project's coding standards.",
+              "filePath": "src/app/dashboard/monitoring/page.tsx",
+              "change": "Add logs state and logsContainerRef for auto-scroll",
+              "description": "Add a logs state variable: const [logs, setLogs] = useState<Array<{timestamp?: string, level: 'info' | 'warn' | 'error' | string, message: string, raw?: string}>>([]);. Also add a ref for auto-scroll: const logsContainerRef = useRef<HTMLDivElement>(null);. Import useRef from React if not already imported.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg19-task4-micro2",
+              "filePath": "src/app/dashboard/monitoring/page.tsx",
+              "change": "Create fetchLogs function with parsing logic",
+              "description": "Create a fetchLogs async function: const fetchLogs = async () => { try { const res = await fetch('/api/bridge/logs'); const data = await res.json(); const lines = data.lines || data.logs || []; const parsedLogs = lines.map((line: any) => { if (typeof line === 'string') { const level = line.toLowerCase().includes('error') ? 'error' : line.toLowerCase().includes('warn') ? 'warn' : 'info'; return {message: line, level, raw: line}; } return line; }); setLogs(parsedLogs); } catch (e) { console.error('Failed to fetch logs', e); } };",
+              "status": "pending"
+            },
+            {
+              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg19-task4-micro3",
+              "filePath": "src/app/dashboard/monitoring/page.tsx",
+              "change": "Add useEffect for auto-scroll on logs update",
+              "description": "Add auto-scroll effect: useEffect(() => { if (logsContainerRef.current) { logsContainerRef.current.scrollTop = logsContainerRef.current.scrollHeight; } }, [logs]);. This scrolls to the bottom of the logs container whenever new logs are loaded, ensuring the most recent entries are visible.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg19-task4-micro4",
+              "filePath": "src/app/dashboard/monitoring/page.tsx",
+              "change": "Create color-coded logs display with scrollable container",
+              "description": "In the Logs tab content (TabsContent value='logs'), create the logs display container: <div ref={logsContainerRef} className='h-96 overflow-y-auto bg-black/90 rounded-lg p-4 font-mono text-sm'>{logs.map((log, i) => (<div key={i} className={`py-1 ${log.level === 'error' ? 'text-red-400' : log.level === 'warn' ? 'text-amber-400' : 'text-gray-300'}`}>{log.timestamp && <span className='text-gray-500 mr-2'>[{log.timestamp}]</span>}<span className='uppercase mr-2'>[{log.level}]</span><span>{log.message}</span></div>))}</div>",
+              "status": "pending"
+            },
+            {
+              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg19-task4-micro5",
+              "filePath": "src/app/dashboard/monitoring/page.tsx",
+              "change": "Add Refresh button above logs display",
+              "description": "Add a Refresh button for logs at the top of the Logs tab content: <div className='flex justify-between items-center mb-4'><h3 className='text-lg font-medium'>System Logs</h3><Button variant='outline' size='sm' onClick={() => fetchLogs()}><RefreshCw className='w-4 h-4 mr-2' />Refresh</Button></div>. Import RefreshCw from lucide-react and Button from components/ui/button.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg19-task4-micro6",
+              "filePath": "src/app/dashboard/monitoring/page.tsx",
+              "change": "Add loading and empty states for logs display",
+              "description": "Add loading and empty states for logs: const [logsLoading, setLogsLoading] = useState(false);. In fetchLogs, set setLogsLoading(true) at start and setLogsLoading(false) in finally block. In the logs container, show: {logsLoading && <div className='text-center py-4'>Loading logs...</div>} and {!logsLoading && logs.length === 0 && <div className='text-center py-4 text-gray-500'>No logs available</div>}.",
               "status": "pending"
             }
           ]
@@ -1293,15 +1453,50 @@
           "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg19-task5",
           "taskNumber": 5,
           "originalDescription": "Auto-refresh toggle (already exists at top right). Make sure it works:",
-          "status": "review",
-          "approved": false,
+          "status": "approved",
+          "approved": true,
           "rewritten": true,
           "microTasks": [
             {
               "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg19-task5-micro1",
-              "filePath": "src/app/dashboard/page.tsx",
-              "change": "Analyze and implement the requested feature",
-              "description": "Implement the following task with precision: Auto-refresh toggle (already exists at top right). Make sure it works:. First identify the correct file and component, then make the necessary changes following the project's coding standards.",
+              "filePath": "src/app/dashboard/monitoring/page.tsx",
+              "change": "Ensure auto-refresh state and intervalRef exist",
+              "description": "Verify auto-refresh state variables exist at the top of the component. If not, add: const [autoRefresh, setAutoRefresh] = useState(false); const [refreshInterval, setRefreshInterval] = useState(5000);. Also add a ref to store the interval ID: const intervalRef = useRef<NodeJS.Timeout | null>(null);. Import useRef if not already imported.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg19-task5-micro2",
+              "filePath": "src/app/dashboard/monitoring/page.tsx",
+              "change": "Create refreshAllData function combining all fetches",
+              "description": "Create a refreshAllData function that calls all fetch functions: const refreshAllData = async () => { await Promise.all([fetchMetrics(), fetchServices(), fetchLogs(), fetchHealthStatus()]); };. This consolidates all data fetching into one function for the polling mechanism to use.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg19-task5-micro3",
+              "filePath": "src/app/dashboard/monitoring/page.tsx",
+              "change": "Add useEffect for polling with proper cleanup",
+              "description": "Add a useEffect to handle the polling logic: useEffect(() => { if (autoRefresh) { intervalRef.current = setInterval(() => { refreshAllData(); }, refreshInterval); } else { if (intervalRef.current) { clearInterval(intervalRef.current); intervalRef.current = null; } } return () => { if (intervalRef.current) { clearInterval(intervalRef.current); } }; }, [autoRefresh, refreshInterval]);. This starts/stops polling based on autoRefresh state and respects the selected interval.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg19-task5-micro4",
+              "filePath": "src/app/dashboard/monitoring/page.tsx",
+              "change": "Connect Switch component to autoRefresh state",
+              "description": "Find the auto-refresh toggle in the page header/top right area. Ensure it's a Switch component connected to state: <Switch checked={autoRefresh} onCheckedChange={setAutoRefresh} />. Add a label: <Label htmlFor='auto-refresh'>Auto-refresh</Label>. The switch should toggle the autoRefresh state which triggers the polling useEffect.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg19-task5-micro5",
+              "filePath": "src/app/dashboard/monitoring/page.tsx",
+              "change": "Create/connect interval selector dropdown",
+              "description": "Find or create the interval selector dropdown near the auto-refresh toggle. Implement as: <Select value={refreshInterval.toString()} onValueChange={(v) => setRefreshInterval(parseInt(v))}><SelectTrigger className='w-24'><SelectValue /></SelectTrigger><SelectContent><SelectItem value='5000'>5s</SelectItem><SelectItem value='10000'>10s</SelectItem><SelectItem value='30000'>30s</SelectItem><SelectItem value='60000'>1m</SelectItem></SelectContent></Select>. Import Select components from @/components/ui/select.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg19-task5-micro6",
+              "filePath": "src/app/dashboard/monitoring/page.tsx",
+              "change": "Add visual indicator for active auto-refresh",
+              "description": "Add visual feedback when auto-refresh is active. Near the toggle, add: {autoRefresh && <span className='text-xs text-green-500 flex items-center gap-1'><span className='w-2 h-2 bg-green-500 rounded-full animate-pulse' />Refreshing every {refreshInterval / 1000}s</span>}. This shows users that automatic polling is active and at what interval.",
               "status": "pending"
             }
           ]
