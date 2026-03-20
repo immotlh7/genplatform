@@ -1,8 +1,47 @@
 import { NextRequest, NextResponse } from 'next/server';
 import fs from 'fs/promises';
 import path from 'path';
+import Anthropic from '@anthropic-ai/sdk';
 
 const TASK_QUEUE_DIR = '/root/genplatform/data/task-queue';
+
+const anthropic = new Anthropic({
+  apiKey: process.env.ANTHROPIC_API_KEY || '',
+});
+
+const REWRITE_PROMPT = `You are rewriting development tasks into ultra-precise micro-tasks. RULES:
+1. Each micro-task = ONE specific change in ONE specific file
+2. You MUST specify the EXACT file path based on the task description
+3. You MUST describe EXACTLY what code to write or change
+4. You MUST include the function name or component name to edit
+5. A task about Dashboard → file is src/app/dashboard/page.tsx
+6. A task about Skills → file is src/app/dashboard/skills/page.tsx
+7. A task about Memory → file is src/app/dashboard/memory/page.tsx
+8. A task about an API → file is src/app/api/[name]/route.ts
+9. NEVER point to notification-system.tsx unless the task is about notifications
+10. Make tasks MORE detailed not less. Original 1 task should become 3-8 micro-tasks
+11. Each micro-task description must be at least 50 words with specific code instructions
+
+Examples of GOOD micro-tasks:
+- "src/app/dashboard/page.tsx - In the StatsGrid component, find the Card with title 'All Projects'. Replace the hardcoded value='3' with a dynamic fetch: const res = await fetch('/api/projects'); const data = await res.json(); use data.projects.length. Update the Card's value prop to show this count."
+- "src/app/dashboard/skills/page.tsx - In the SkillsPage component's useEffect hook, add error handling for the fetch('/api/bridge/skills') call. Wrap in try-catch, show toast.error('Failed to load skills') on error, and set a fallback empty array for skills state."
+
+Output JSON format:
+{
+  "tasks": [
+    {
+      "taskNumber": 1,
+      "originalDescription": "...",
+      "microTasks": [
+        {
+          "filePath": "exact/path/to/file.tsx",
+          "description": "Detailed 50+ word description of exactly what to change, including function names, variable names, and specific code to write",
+          "change": "Short summary of the change"
+        }
+      ]
+    }
+  ]
+}`;
 
 export async function POST(request: NextRequest) {
   try {
@@ -21,63 +60,101 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Message not found' }, { status: 404 });
     }
     
-    // For now, simulate rewriting by generating micro-tasks immediately
-    // In production, this would send to Telegram and wait for webhook response
-    message.tasks.forEach((task: any) => {
-      if (!task.rewritten) {
-        // Generate 2-4 micro-tasks based on the task description
+    // Prepare tasks for rewriting
+    const tasksToRewrite = message.tasks.filter((t: any) => !t.rewritten);
+    if (tasksToRewrite.length === 0) {
+      return NextResponse.json({ message: 'All tasks already rewritten' });
+    }
+    
+    // Use Claude to rewrite tasks into micro-tasks
+    try {
+      const tasksText = tasksToRewrite.map((t: any) => 
+        `Task ${t.taskNumber}: ${t.originalDescription}`
+      ).join('\n');
+      
+      const claudeResponse = await anthropic.messages.create({
+        model: 'claude-3-sonnet-20240229',
+        max_tokens: 4000,
+        temperature: 0.3,
+        system: REWRITE_PROMPT,
+        messages: [{
+          role: 'user',
+          content: `Rewrite these tasks into ultra-precise micro-tasks:\n\n${tasksText}`
+        }]
+      });
+      
+      const responseText = claudeResponse.content[0].type === 'text' 
+        ? claudeResponse.content[0].text 
+        : '';
+        
+      // Extract JSON from response
+      const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) {
+        throw new Error('No valid JSON found in response');
+      }
+      
+      const rewrittenData = JSON.parse(jsonMatch[0]);
+      
+      // Update tasks with micro-tasks
+      rewrittenData.tasks.forEach((rewrittenTask: any) => {
+        const task = message.tasks.find((t: any) => t.taskNumber === rewrittenTask.taskNumber);
+        if (task) {
+          task.microTasks = rewrittenTask.microTasks.map((micro: any, idx: number) => ({
+            id: `${fileId}-msg${messageNumber}-task${task.taskNumber}-micro${idx + 1}`,
+            filePath: micro.filePath,
+            change: micro.change,
+            description: micro.description,
+            status: 'pending'
+          }));
+          task.rewritten = true;
+          task.status = 'review';
+        }
+      });
+      
+    } catch (claudeError) {
+      console.error('Claude rewrite failed, using fallback:', claudeError);
+      
+      // Fallback: generate detailed micro-tasks based on patterns
+      tasksToRewrite.forEach((task: any) => {
         const microTasks = [];
-        const taskWords = task.originalDescription.split(' ').slice(0, 10).join(' ');
+        const taskLower = task.originalDescription.toLowerCase();
         
-        // Create realistic micro-tasks based on common patterns
-        if (task.originalDescription.toLowerCase().includes('open') || 
-            task.originalDescription.toLowerCase().includes('find')) {
-          microTasks.push({
-            id: `${fileId}-msg${messageNumber}-task${task.taskNumber}-micro1`,
-            filePath: 'src/components/notifications/notification-system.tsx',
-            change: 'Locate and analyze the component structure',
-            description: 'Find the notification system component',
-            status: 'pending'
-          });
-        }
-        
-        if (task.originalDescription.toLowerCase().includes('fix') || 
-            task.originalDescription.toLowerCase().includes('update')) {
-          microTasks.push({
-            id: `${fileId}-msg${messageNumber}-task${task.taskNumber}-micro2`,
-            filePath: 'src/components/notifications/notification-system.tsx',
-            change: 'Update gateway status check logic',
-            description: 'Fix the gateway status detection',
-            status: 'pending'
-          });
-        }
-        
-        if (task.originalDescription.toLowerCase().includes('check') || 
-            task.originalDescription.toLowerCase().includes('verify')) {
-          microTasks.push({
-            id: `${fileId}-msg${messageNumber}-task${task.taskNumber}-micro3`,
-            filePath: 'src/components/notifications/notification-system.tsx',
-            change: 'Verify the changes work correctly',
-            description: 'Test the notification system',
-            status: 'pending'
-          });
-        }
-        
-        // Default micro-tasks if none of the above
-        if (microTasks.length === 0) {
+        if (taskLower.includes('dashboard')) {
           microTasks.push(
             {
               id: `${fileId}-msg${messageNumber}-task${task.taskNumber}-micro1`,
-              filePath: 'src/app/api/self-dev/route.ts',
-              change: 'Implement the requested functionality',
-              description: taskWords.substring(0, 50) + '...',
+              filePath: 'src/app/dashboard/page.tsx',
+              change: 'Locate the component mentioned in the task',
+              description: `In src/app/dashboard/page.tsx, find the main DashboardPage component. Look for the specific section mentioned in the task: "${task.originalDescription}". Identify the exact component or JSX element that needs to be modified.`,
               status: 'pending'
             },
             {
               id: `${fileId}-msg${messageNumber}-task${task.taskNumber}-micro2`,
-              filePath: 'src/app/api/self-dev/route.ts',
-              change: 'Add error handling and validation',
-              description: 'Ensure robust implementation',
+              filePath: 'src/app/dashboard/page.tsx',
+              change: 'Implement the requested change',
+              description: `Make the specific change requested in the original task. This involves modifying the identified component to ${task.originalDescription}. Ensure proper TypeScript types and React best practices are followed.`,
+              status: 'pending'
+            }
+          );
+        } else if (taskLower.includes('api')) {
+          const apiName = taskLower.match(/api[\/\s]+(\w+)/)?.[1] || 'endpoint';
+          microTasks.push(
+            {
+              id: `${fileId}-msg${messageNumber}-task${task.taskNumber}-micro1`,
+              filePath: `src/app/api/${apiName}/route.ts`,
+              change: 'Create or update the API route',
+              description: `In src/app/api/${apiName}/route.ts, implement the requested API functionality: ${task.originalDescription}. Use Next.js 13+ app router conventions with proper request/response handling.`,
+              status: 'pending'
+            }
+          );
+        } else {
+          // Generic detailed micro-tasks
+          microTasks.push(
+            {
+              id: `${fileId}-msg${messageNumber}-task${task.taskNumber}-micro1`,
+              filePath: 'src/app/dashboard/page.tsx',
+              change: 'Analyze and implement the requested feature',
+              description: `Implement the following task with precision: ${task.originalDescription}. First identify the correct file and component, then make the necessary changes following the project's coding standards.`,
               status: 'pending'
             }
           );
@@ -86,8 +163,8 @@ export async function POST(request: NextRequest) {
         task.microTasks = microTasks;
         task.rewritten = true;
         task.status = 'review';
-      }
-    });
+      });
+    }
     
     // Update total micro-tasks count
     queue.totalMicroTasks = queue.messages.reduce((sum: number, msg: any) => 
@@ -98,8 +175,6 @@ export async function POST(request: NextRequest) {
     
     await fs.writeFile(queuePath, JSON.stringify(queue, null, 2));
     
-    // In production, this would send to Telegram
-    // For now, return immediate success
     return NextResponse.json({ 
       success: true,
       message: 'Tasks rewritten successfully',
