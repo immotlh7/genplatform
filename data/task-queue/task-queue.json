@@ -4,7 +4,7 @@
   "uploadedAt": "2026-03-20T08:45:10.369Z",
   "totalMessages": 33,
   "totalTasks": 68,
-  "totalMicroTasks": 20,
+  "totalMicroTasks": 34,
   "messages": [
     {
       "messageNumber": 1,
@@ -329,28 +329,53 @@
           "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg9-task1",
           "taskNumber": 1,
           "originalDescription": "Status cards at top. Fix each:",
-          "status": "pending",
-          "approved": false,
-          "rewritten": false,
-          "microTasks": []
+          "status": "executing",
+          "approved": true,
+          "rewritten": true,
+          "microTasks": [
+            {
+              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg9-task1-micro1",
+              "filePath": "src/app/dashboard/page.tsx",
+              "change": "Analyze and implement the requested feature",
+              "description": "Implement the following task with precision: Status cards at top. Fix each:. First identify the correct file and component, then make the necessary changes following the project's coding standards.",
+              "status": "pending"
+            }
+          ],
+          "startedAt": "2026-03-20T13:03:26.772Z"
         },
         {
           "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg9-task2",
           "taskNumber": 2,
           "originalDescription": "Quick Actions — make ALL buttons execute real commands:",
-          "status": "pending",
-          "approved": false,
-          "rewritten": false,
-          "microTasks": []
+          "status": "approved",
+          "approved": true,
+          "rewritten": true,
+          "microTasks": [
+            {
+              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg9-task2-micro1",
+              "filePath": "src/app/dashboard/page.tsx",
+              "change": "Analyze and implement the requested feature",
+              "description": "Implement the following task with precision: Quick Actions — make ALL buttons execute real commands:. First identify the correct file and component, then make the necessary changes following the project's coding standards.",
+              "status": "pending"
+            }
+          ]
         },
         {
           "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg9-task3",
           "taskNumber": 3,
           "originalDescription": "Remove the \"Terminal\" and \"Services\" tabs if they don't have real content. Keep only \"Quick Actions\" tab.",
-          "status": "pending",
-          "approved": false,
-          "rewritten": false,
-          "microTasks": []
+          "status": "approved",
+          "approved": true,
+          "rewritten": true,
+          "microTasks": [
+            {
+              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg9-task3-micro1",
+              "filePath": "src/app/dashboard/page.tsx",
+              "change": "Analyze and implement the requested feature",
+              "description": "Implement the following task with precision: Remove the \"Terminal\" and \"Services\" tabs if they don't have real content. Keep only \"Quick Actions\" tab.. First identify the correct file and component, then make the necessary changes following the project's coding standards.",
+              "status": "pending"
+            }
+          ]
         }
       ]
     },
@@ -472,46 +497,86 @@
           "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg13-task1",
           "taskNumber": 1,
           "originalDescription": "Settings page — make Save Changes work:",
-          "status": "pending",
-          "approved": false,
-          "rewritten": false,
-          "microTasks": []
+          "status": "approved",
+          "approved": true,
+          "rewritten": true,
+          "microTasks": [
+            {
+              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg13-task1-micro1",
+              "filePath": "src/app/dashboard/page.tsx",
+              "change": "Analyze and implement the requested feature",
+              "description": "Implement the following task with precision: Settings page — make Save Changes work:. First identify the correct file and component, then make the necessary changes following the project's coding standards.",
+              "status": "pending"
+            }
+          ]
         },
         {
           "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg13-task2",
           "taskNumber": 2,
           "originalDescription": "Password change:",
-          "status": "pending",
-          "approved": false,
-          "rewritten": false,
-          "microTasks": []
+          "status": "approved",
+          "approved": true,
+          "rewritten": true,
+          "microTasks": [
+            {
+              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg13-task2-micro1",
+              "filePath": "src/app/dashboard/page.tsx",
+              "change": "Analyze and implement the requested feature",
+              "description": "Implement the following task with precision: Password change:. First identify the correct file and component, then make the necessary changes following the project's coding standards.",
+              "status": "pending"
+            }
+          ]
         },
         {
           "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg13-task3",
           "taskNumber": 3,
           "originalDescription": "Sign Out — fix completely:",
-          "status": "pending",
-          "approved": false,
-          "rewritten": false,
-          "microTasks": []
+          "status": "approved",
+          "approved": true,
+          "rewritten": true,
+          "microTasks": [
+            {
+              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg13-task3-micro1",
+              "filePath": "src/app/dashboard/page.tsx",
+              "change": "Analyze and implement the requested feature",
+              "description": "Implement the following task with precision: Sign Out — fix completely:. First identify the correct file and component, then make the necessary changes following the project's coding standards.",
+              "status": "pending"
+            }
+          ]
         },
         {
           "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg13-task4",
           "taskNumber": 4,
           "originalDescription": "Login page security:",
-          "status": "pending",
-          "approved": false,
-          "rewritten": false,
-          "microTasks": []
+          "status": "approved",
+          "approved": true,
+          "rewritten": true,
+          "microTasks": [
+            {
+              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg13-task4-micro1",
+              "filePath": "src/app/dashboard/page.tsx",
+              "change": "Analyze and implement the requested feature",
+              "description": "Implement the following task with precision: Login page security:. First identify the correct file and component, then make the necessary changes following the project's coding standards.",
+              "status": "pending"
+            }
+          ]
         },
         {
           "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg13-task5",
           "taskNumber": 5,
           "originalDescription": "Notifications settings (Daily Reports toggle, System Alerts toggle):",
-          "status": "pending",
-          "approved": false,
-          "rewritten": false,
-          "microTasks": []
+          "status": "approved",
+          "approved": true,
+          "rewritten": true,
+          "microTasks": [
+            {
+              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg13-task5-micro1",
+              "filePath": "src/app/dashboard/page.tsx",
+              "change": "Analyze and implement the requested feature",
+              "description": "Implement the following task with precision: Notifications settings (Daily Reports toggle, System Alerts toggle):. First identify the correct file and component, then make the necessary changes following the project's coding standards.",
+              "status": "pending"
+            }
+          ]
         }
       ]
     },
@@ -530,46 +595,93 @@
           "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg15-task1",
           "taskNumber": 1,
           "originalDescription": "Skills are loading (27-35 skills from Bridge API). Good. But improve the cards:",
-          "status": "pending",
-          "approved": false,
-          "rewritten": false,
-          "microTasks": []
+          "status": "approved",
+          "approved": true,
+          "rewritten": true,
+          "microTasks": [
+            {
+              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg15-task1-micro1",
+              "filePath": "src/app/api/endpoint/route.ts",
+              "change": "Create or update the API route",
+              "description": "In src/app/api/endpoint/route.ts, implement the requested API functionality: Skills are loading (27-35 skills from Bridge API). Good. But improve the cards:. Use Next.js 13+ app router conventions with proper request/response handling.",
+              "status": "pending"
+            }
+          ]
         },
         {
           "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg15-task2",
           "taskNumber": 2,
           "originalDescription": "Click a skill card → open a detail modal:",
-          "status": "pending",
-          "approved": false,
-          "rewritten": false,
-          "microTasks": []
+          "status": "approved",
+          "approved": true,
+          "rewritten": true,
+          "microTasks": [
+            {
+              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg15-task2-micro1",
+              "filePath": "src/app/dashboard/page.tsx",
+              "change": "Analyze and implement the requested feature",
+              "description": "Implement the following task with precision: Click a skill card → open a detail modal:. First identify the correct file and component, then make the necessary changes following the project's coding standards.",
+              "status": "pending"
+            }
+          ]
         },
         {
           "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg15-task3",
           "taskNumber": 3,
           "originalDescription": "\"Add Skill\" button in header should show a message: \"Skills are managed through OpenClaw. Use the Command Center to update skills.\" with a link to /dashboard/command-center.",
-          "status": "pending",
-          "approved": false,
-          "rewritten": false,
-          "microTasks": []
+          "status": "approved",
+          "approved": true,
+          "rewritten": true,
+          "microTasks": [
+            {
+              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg15-task3-micro1",
+              "filePath": "src/app/dashboard/page.tsx",
+              "change": "Locate the component mentioned in the task",
+              "description": "In src/app/dashboard/page.tsx, find the main DashboardPage component. Look for the specific section mentioned in the task: \"\"Add Skill\" button in header should show a message: \"Skills are managed through OpenClaw. Use the Command Center to update skills.\" with a link to /dashboard/command-center.\". Identify the exact component or JSX element that needs to be modified.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg15-task3-micro2",
+              "filePath": "src/app/dashboard/page.tsx",
+              "change": "Implement the requested change",
+              "description": "Make the specific change requested in the original task. This involves modifying the identified component to \"Add Skill\" button in header should show a message: \"Skills are managed through OpenClaw. Use the Command Center to update skills.\" with a link to /dashboard/command-center.. Ensure proper TypeScript types and React best practices are followed.",
+              "status": "pending"
+            }
+          ]
         },
         {
           "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg15-task4",
           "taskNumber": 4,
           "originalDescription": "Category filter should work with real data:",
-          "status": "pending",
-          "approved": false,
-          "rewritten": false,
-          "microTasks": []
+          "status": "approved",
+          "approved": true,
+          "rewritten": true,
+          "microTasks": [
+            {
+              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg15-task4-micro1",
+              "filePath": "src/app/dashboard/page.tsx",
+              "change": "Analyze and implement the requested feature",
+              "description": "Implement the following task with precision: Category filter should work with real data:. First identify the correct file and component, then make the necessary changes following the project's coding standards.",
+              "status": "pending"
+            }
+          ]
         },
         {
           "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg15-task5",
           "taskNumber": 5,
           "originalDescription": "Stats cards at top:",
-          "status": "pending",
-          "approved": false,
-          "rewritten": false,
-          "microTasks": []
+          "status": "approved",
+          "approved": true,
+          "rewritten": true,
+          "microTasks": [
+            {
+              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg15-task5-micro1",
+              "filePath": "src/app/dashboard/page.tsx",
+              "change": "Analyze and implement the requested feature",
+              "description": "Implement the following task with precision: Stats cards at top:. First identify the correct file and component, then make the necessary changes following the project's coding standards.",
+              "status": "pending"
+            }
+          ]
         }
       ]
     },

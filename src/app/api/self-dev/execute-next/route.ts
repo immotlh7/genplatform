@@ -166,12 +166,33 @@ export async function executeNext() {
     // Check execution lock first
     const lock = await getExecutionLock();
     if (lock.locked) {
-      console.log('[EXECUTE-NEXT] Execution locked, skipping');
-      return {
-        error: 'Execution locked',
-        lockedBy: lock.taskId,
-        message: 'Another task is currently executing'
-      };
+      // Auto-release lock if older than 10 minutes (task got stuck)
+      const lockAge = lock.lockedAt 
+        ? (Date.now() - new Date(lock.lockedAt).getTime()) / 1000 / 60 
+        : 999;
+      if (lockAge > 10) {
+        console.log('[EXECUTE-NEXT] Lock expired after', lockAge.toFixed(1), 'min - auto-releasing');
+        // Reset stuck task status
+        try {
+          const queueData = await fs.readFile(TASK_QUEUE_FILE, 'utf-8');
+          const q = JSON.parse(queueData);
+          q.messages?.forEach((m: any) => m.tasks?.forEach((t: any) => {
+            if (t.taskId === lock.taskId && t.status === 'executing') {
+              t.status = 'approved';
+              delete t.startedAt;
+            }
+          }));
+          await fs.writeFile(TASK_QUEUE_FILE, JSON.stringify(q, null, 2));
+        } catch {}
+        await fs.writeFile(EXECUTION_LOCK_FILE, JSON.stringify({ locked: false, taskId: null, lockedAt: null, attempts: 0 }, null, 2));
+      } else {
+        console.log('[EXECUTE-NEXT] Execution locked, skipping');
+        return {
+          error: 'Execution locked',
+          lockedBy: lock.taskId,
+          message: 'Another task is currently executing'
+        };
+      }
     }
     
     // Load task queue ONCE to find next task

@@ -189,6 +189,20 @@ export async function POST(request: NextRequest) {
     
     await fs.writeFile(queuePath, JSON.stringify(queue, null, 2));
     
+    // Also sync to main task-queue.json so approve can find rewritten=true
+    const mainQueuePath = '/root/genplatform/data/task-queue/task-queue.json';
+    try {
+      const mainQueue = JSON.parse(await fs.readFile(mainQueuePath, 'utf-8'));
+      const mainMsg = mainQueue.messages.find((m: any) => m.messageNumber === messageNumber);
+      if (mainMsg) {
+        mainMsg.tasks = message.tasks;
+        mainQueue.totalMicroTasks = queue.totalMicroTasks;
+        await fs.writeFile(mainQueuePath, JSON.stringify(mainQueue, null, 2));
+      }
+    } catch (e) {
+      console.error('Failed to sync to main queue:', e);
+    }
+    
     // Send notification to Telegram about rewrite completion
     const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || '8635233052:AAGsuMzqhTHwQsFg4qGYPfUEyZPiLsAceA4';
     const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID || '8630551989';
