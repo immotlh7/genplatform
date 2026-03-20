@@ -108,7 +108,7 @@ export async function POST(request: NextRequest) {
     
     // Also send to Telegram for orchestrator analysis (async)
     const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || '8635233052:AAGsuMzqhTHwQsFg4qGYPfUEyZPiLsAceA4';
-    const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID || '510906393';
+    const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID || '8630551989';
     
     const orchestratorPrompt = `[ORCHESTRATOR] Analyze this uploaded file and prepare for task execution:
 

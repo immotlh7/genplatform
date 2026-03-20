@@ -22,7 +22,7 @@ const SESSION_TRACKER_FILE = '/root/genplatform/data/session-tracker.json';
 const EXECUTION_LOG_FILE = '/root/genplatform/data/execution-log.json';
 
 const TELEGRAM_BOT_TOKEN = '8635233052:AAGsuMzqhTHwQsFg4qGYPfUEyZPiLsAceA4';
-const TELEGRAM_CHAT_ID = '510906393';
+const TELEGRAM_CHAT_ID = '8630551989';
 
 async function getSessionTracker(): Promise<SessionTracker> {
   try {
@@ -99,7 +99,7 @@ export async function executeNext() {
     try {
       const data = await fs.readFile(TASK_QUEUE_FILE, 'utf-8');
       queue = JSON.parse(data);
-      console.log('[EXECUTE-NEXT] Loaded queue with', queue.batches?.length || 0, 'batches');
+      console.log('[EXECUTE-NEXT] Loaded queue');
     } catch (error) {
       console.error('[EXECUTE-NEXT] Failed to load queue:', error);
       return { 
@@ -110,24 +110,48 @@ export async function executeNext() {
 
     // Find next approved but unexecuted task
     let foundTask = null;
-    let foundBatch = null;
+    let foundMessage = null;
+    let foundParentTask = null;
     
     console.log('[EXECUTE-NEXT] Looking for approved tasks...');
     
-    for (const batch of queue.batches || []) {
-      for (const task of batch.tasks || []) {
-        console.log(`[EXECUTE-NEXT] Checking task ${task.id}: approved=${task.approved}, status=${task.status}`);
-        if (task.approved && (!task.status || task.status === 'approved')) {
+    // Support both "batches" and "messages" structure
+    const collections = queue.messages || [];
+    console.log('[EXECUTE-NEXT] Found', collections.length, 'messages');
+    
+    for (const message of collections) {
+      const tasks = message.tasks || [];
+      console.log(`[EXECUTE-NEXT] Checking message ${message.messageNumber} with ${tasks.length} tasks`);
+      
+      for (const task of tasks) {
+        // Skip if not approved
+        if (!task.approved) continue;
+        
+        // Check if the main task itself needs execution
+        if (!task.status || task.status === 'pending' || task.status === 'approved') {
           foundTask = task;
-          foundBatch = batch;
-          console.log('[EXECUTE-NEXT] Found task to execute:', task.id, task.description);
+          foundMessage = message;
+          console.log('[EXECUTE-NEXT] Found approved task to execute:', task.taskId);
           break;
+        }
+        
+        // If task has been started, check micro-tasks
+        if (task.microTasks && task.microTasks.length > 0) {
+          for (const microTask of task.microTasks) {
+            if (!microTask.status || microTask.status === 'pending') {
+              foundTask = microTask;
+              foundMessage = message;
+              foundParentTask = task;
+              console.log('[EXECUTE-NEXT] Found micro-task to execute:', microTask.id);
+              break;
+            }
+          }
         }
       }
       if (foundTask) break;
     }
 
-    if (!foundTask || !foundBatch) {
+    if (!foundTask || !foundMessage) {
       console.log('[EXECUTE-NEXT] No approved tasks found');
       await addLog({
         timestamp: new Date().toISOString(),
@@ -179,34 +203,61 @@ export async function executeNext() {
       });
     }
 
-    // Update task status to executing
-    foundTask.status = 'executing';
-    foundTask.startedAt = new Date().toISOString();
+    // Format the task message using ORIGINAL task descriptions
+    let taskMessage = '';
     
-    // Format the task message (concise, under 500 tokens)
-    let taskMessage = `<b>MICRO-TASK: ${foundTask.id}</b>\n\n`;
-    taskMessage += `<b>PROTECTED:</b> Never modify self-dev/**, sidebar.tsx, navbar.tsx, layout.tsx, globals.css.\n`;
-    taskMessage += `<b>Project:</b> /root/genplatform\n\n`;
-    
-    taskMessage += `<b>Task:</b> ${foundTask.description}\n`;
-    taskMessage += `<b>File:</b> ${foundTask.filePath}\n\n`;
-    
-    taskMessage += `<b>Specific Changes:</b>\n`;
-    foundTask.specificChanges.slice(0, 3).forEach((change: string, idx: number) => {
-      taskMessage += `${idx + 1}. ${change}\n`;
-    });
+    // If it's a main task (not a micro-task)
+    if (!foundParentTask) {
+      taskMessage = `<b>📋 MESSAGE ${foundMessage.messageNumber} - TASK ${foundTask.taskNumber}</b>\n\n`;
+      taskMessage += `<b>📁 Project:</b> /root/genplatform\n`;
+      taskMessage += `<b>🌐 Site:</b> https://app.gen3.ai\n\n`;
+      taskMessage += `<b>🛡️ PROTECTED FILES:</b>\n`;
+      taskMessage += `Never modify: self-dev/**, sidebar.tsx, navbar.tsx, layout.tsx, globals.css\n\n`;
+      taskMessage += `<b>✏️ TASK DESCRIPTION:</b>\n`;
+      taskMessage += `${foundTask.originalDescription}\n\n`;
+      
+      // Add the full context from the message if available
+      const messageIndex = foundMessage.originalContent.indexOf(`Task ${foundTask.taskNumber}:`);
+      if (messageIndex > -1) {
+        const nextTaskIndex = foundMessage.originalContent.indexOf(`Task ${foundTask.taskNumber + 1}:`, messageIndex);
+        const endIndex = nextTaskIndex > -1 ? nextTaskIndex : foundMessage.originalContent.indexOf('\nAfter ALL:', messageIndex);
+        
+        if (endIndex > -1) {
+          const fullTaskContent = foundMessage.originalContent.substring(messageIndex, endIndex).trim();
+          taskMessage += `<b>📝 FULL TASK DETAILS:</b>\n`;
+          taskMessage += `${fullTaskContent}\n\n`;
+        }
+      }
+    } else {
+      // It's a micro-task - use better formatting
+      taskMessage = `<b>🔧 MICRO-TASK: ${foundParentTask.taskNumber}</b>\n\n`;
+      taskMessage += `<b>📁 Project:</b> /root/genplatform\n`;
+      taskMessage += `<b>🛡️ PROTECTED:</b> Never modify self-dev/**, sidebar.tsx, navbar.tsx, layout.tsx, globals.css\n\n`;
+      taskMessage += `<b>📋 Original Task:</b>\n`;
+      taskMessage += `${foundParentTask.originalDescription}\n\n`;
+      
+      if (foundTask.filePath) {
+        taskMessage += `<b>📄 File:</b> ${foundTask.filePath}\n\n`;
+      }
+    }
     
     // Add build instruction every 5 tasks
     tracker.tasksInCurrentBatch++;
     if (tracker.tasksInCurrentBatch >= 5) {
-      taskMessage += `\n<b>After completing this task, also run:</b>\n`;
-      taskMessage += `npm run build && pm2 restart genplatform-app`;
+      taskMessage += `<b>🔨 BUILD REQUIRED:</b>\n`;
+      taskMessage += `After completing this task, run:\n`;
+      taskMessage += `<code>npm run build && pm2 restart genplatform-app</code>\n\n`;
       tracker.tasksInCurrentBatch = 0;
       tracker.currentBatch++;
     }
 
-    taskMessage += `\n\nAfter completing: report ✅ Done or ❌ Failed.`;
+    taskMessage += `<b>📊 Progress:</b> Task ${tracker.totalTasksSent + 1} of session\n\n`;
+    taskMessage += `After completing: reply with ✅ Done or ❌ Failed`;
 
+    // Update task status to executing BEFORE saving
+    foundTask.status = 'executing';
+    foundTask.startedAt = new Date().toISOString();
+    
     console.log('[EXECUTE-NEXT] Saving queue with executing status');
     
     // Save queue with updated status
@@ -228,15 +279,15 @@ export async function executeNext() {
       await addLog({
         timestamp: new Date().toISOString(),
         type: 'task_sent',
-        message: `📤 Task ${foundTask.id} sent to Developer - ${foundTask.description}`,
-        taskId: foundTask.id
+        message: `📤 Task ${foundTask.taskId || foundTask.id} sent - ${foundTask.originalDescription || foundTask.description}`,
+        taskId: foundTask.taskId || foundTask.id
       });
       
       return {
-        taskId: foundTask.id,
+        taskId: foundTask.taskId || foundTask.id,
         sent: true,
-        batch: foundBatch.id,
-        description: foundTask.description,
+        batch: foundMessage.messageNumber,
+        description: foundTask.originalDescription || foundTask.description,
         sessionTasks: tracker.tasksSentInSession,
         totalTasks: tracker.totalTasksSent,
         needsBuild: tracker.tasksInCurrentBatch === 0
@@ -244,7 +295,7 @@ export async function executeNext() {
     } else {
       console.log('[EXECUTE-NEXT] Failed to send to Telegram');
       
-      // Failed to send
+      // Failed to send - revert status
       foundTask.status = 'approved';
       delete foundTask.startedAt;
       await fs.writeFile(TASK_QUEUE_FILE, JSON.stringify(queue, null, 2));
@@ -252,13 +303,13 @@ export async function executeNext() {
       await addLog({
         timestamp: new Date().toISOString(),
         type: 'error',
-        message: `Failed to send task ${foundTask.id} to Telegram`,
-        taskId: foundTask.id
+        message: `Failed to send task ${foundTask.taskId || foundTask.id} to Telegram`,
+        taskId: foundTask.taskId || foundTask.id
       });
       
       return { 
         error: 'Failed to send task to Telegram',
-        taskId: foundTask.id 
+        taskId: foundTask.taskId || foundTask.id 
       };
     }
     

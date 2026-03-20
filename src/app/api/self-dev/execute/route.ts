@@ -3,7 +3,7 @@ import fs from 'fs/promises';
 import path from 'path';
 
 const TELEGRAM_BOT_TOKEN = '8635233052:AAGsuMzqhTHwQsFg4qGYPfUEyZPiLsAceA4';
-const TELEGRAM_CHAT_ID = '510906393'; // Your OpenClaw agent chat
+const TELEGRAM_CHAT_ID = '8630551989'; // Your OpenClaw agent chat
 const TASK_QUEUE_DIR = '/root/genplatform/data/task-queue';
 
 interface MicroTask {

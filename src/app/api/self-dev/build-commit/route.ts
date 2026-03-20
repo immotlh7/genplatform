@@ -4,7 +4,7 @@ import { promisify } from 'util';
 
 const execAsync = promisify(exec);
 const TELEGRAM_BOT_TOKEN = '8635233052:AAGsuMzqhTHwQsFg4qGYPfUEyZPiLsAceA4';
-const TELEGRAM_CHAT_ID = '510906393';
+const TELEGRAM_CHAT_ID = '8630551989';
 
 export async function POST(request: NextRequest) {
   try {

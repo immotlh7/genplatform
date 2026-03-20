@@ -4,7 +4,7 @@ import { scanForInjection } from '@/lib/prompt-scanner'
 import { z } from 'zod'
 
 const BOT_TOKEN = '8635233052:AAGsuMzqhTHwQsFg4qGYPfUEyZPiLsAceA4'
-const CHAT_ID = '510906393'
+const CHAT_ID = '8630551989'
 
 interface Project {
   id: string

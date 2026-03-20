@@ -191,7 +191,7 @@ export async function POST(request: NextRequest) {
     
     // Send notification to Telegram about rewrite completion
     const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || '8635233052:AAGsuMzqhTHwQsFg4qGYPfUEyZPiLsAceA4';
-    const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID || '510906393';
+    const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID || '8630551989';
     
     const notificationText = `[ORCHESTRATOR] ✅ Rewrite complete for Message ${messageNumber}:
 - Generated ${message.tasks.reduce((sum: number, task: any) => sum + (task.microTasks?.length || 0), 0)} micro-tasks
