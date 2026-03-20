@@ -1,1 +1,6 @@
-{"locked":false,"taskId":null,"lockedAt":null,"attempts":0}
+{
+  "locked": true,
+  "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg9-task1",
+  "lockedAt": "2026-03-20T13:51:36.495Z",
+  "attempts": 0
+}
