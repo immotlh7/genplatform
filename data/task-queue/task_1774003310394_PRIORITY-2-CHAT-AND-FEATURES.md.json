@@ -4,7 +4,7 @@
   "uploadedAt": "2026-03-20T08:45:10.369Z",
   "totalMessages": 33,
   "totalTasks": 68,
-  "totalMicroTasks": 100,
+  "totalMicroTasks": 124,
   "messages": [
     {
       "messageNumber": 1,
@@ -1183,46 +1183,219 @@
           "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg19-task1",
           "taskNumber": 1,
           "originalDescription": "System Health bar at top:",
-          "status": "pending",
-          "approved": false,
-          "rewritten": false,
-          "microTasks": []
+          "status": "approved",
+          "approved": true,
+          "rewritten": true,
+          "microTasks": [
+            {
+              "id": "task_1774003310394_PRIORITY-2-CHAT-AND-FEATURES.md-msg19-task1-micro1",
+              "filePath": "src/app/dashboard/monitoring/page.tsx",
+              "change": "Add systemHealth state variable",
+              "description": "At the top of the MonitoringPage component, add a new state variable for system health: const [systemHealth, setSystemHealth] = useState({ services: { running: 0, total: 0 }, resources: 'Unknown', network: 'Connected' }). This state will track the aggregated health status displayed in the top bar. Initialize with default values so the UI renders immediately while data loads.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774003310394_PRIORITY-2-CHAT-AND-FEATURES.md-msg19-task1-micro2",
+              "filePath": "src/app/dashboard/monitoring/page.tsx",
+              "change": "Add fetchSystemHealth function with dual API calls",
+              "description": "Create a new async function called fetchSystemHealth that makes two API calls: first fetch('/api/bridge/status') to get services array, then fetch('/api/bridge/metrics') to get resource metrics. For services, count how many have status='running' vs total length. For resources, check if cpu_percent<80 AND memory_percent<80 AND disk_percent<90 - if all true set 'Healthy', else 'Warning'. Network is always 'Connected'. Update systemHealth state with these values.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774003310394_PRIORITY-2-CHAT-AND-FEATURES.md-msg19-task1-micro3",
+              "filePath": "src/app/dashboard/monitoring/page.tsx",
+              "change": "Render System Health bar with 3 status cards",
+              "description": "In the JSX, find or create the System Health bar section at the very top of the page content (after any headers). Create a flex container with 3 Card components side by side. First Card: title='Services' with value showing '{systemHealth.services.running}/{systemHealth.services.total} Running' and a green/yellow icon based on ratio. Second Card: title='Resources' showing systemHealth.resources with green checkmark if 'Healthy' or amber warning if not. Third Card: title='Network' always showing 'Connected' with green status dot.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774003310394_PRIORITY-2-CHAT-AND-FEATURES.md-msg19-task1-micro4",
+              "filePath": "src/app/dashboard/monitoring/page.tsx",
+              "change": "Call fetchSystemHealth on mount and refresh",
+              "description": "In the main useEffect hook that runs on component mount, call fetchSystemHealth() immediately. Also ensure this function is called whenever the auto-refresh interval fires. Add fetchSystemHealth to the dependency array or call it alongside any existing metric fetching logic so all health data stays synchronized.",
+              "status": "pending"
+            }
+          ]
         },
         {
           "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg19-task2",
           "taskNumber": 2,
           "originalDescription": "Resources tab — show ALL real metrics from /api/bridge/metrics:",
-          "status": "pending",
-          "approved": false,
-          "rewritten": false,
-          "microTasks": []
+          "status": "approved",
+          "approved": true,
+          "rewritten": true,
+          "microTasks": [
+            {
+              "id": "task_1774003310394_PRIORITY-2-CHAT-AND-FEATURES.md-msg19-task2-micro1",
+              "filePath": "src/app/dashboard/monitoring/page.tsx",
+              "change": "Add comprehensive metrics state with all fields",
+              "description": "Add a comprehensive metrics state: const [metrics, setMetrics] = useState({ cpu_percent: 0, memory_used: 0, memory_total: 0, memory_percent: 0, disk_used: 0, disk_total: 0, disk_percent: 0, swap_used: 0, swap_total: 0, load_1: 0, load_5: 0, load_15: 0, uptime: '' }). This state will hold all resource metrics returned from the bridge API for display in the Resources tab.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774003310394_PRIORITY-2-CHAT-AND-FEATURES.md-msg19-task2-micro2",
+              "filePath": "src/app/dashboard/monitoring/page.tsx",
+              "change": "Add fetchMetrics function to get real data",
+              "description": "Create async function fetchMetrics that calls fetch('/api/bridge/metrics'), parses the JSON response, and updates the metrics state. The API returns fields like cpu_percent, memory_used_gb, memory_total_gb, disk_used_gb, disk_total_gb, swap_used_gb, swap_total_gb, load_average (array of 3), and uptime_seconds. Map these to your state, converting uptime_seconds to human readable string like '5d 12h 30m'.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774003310394_PRIORITY-2-CHAT-AND-FEATURES.md-msg19-task2-micro3",
+              "filePath": "src/app/dashboard/monitoring/page.tsx",
+              "change": "Render CPU, Memory, Disk cards with real data",
+              "description": "In the Resources tab content section, create a grid layout with 6 metric cards. First card: 'CPU Usage' showing Progress bar with value={metrics.cpu_percent} and text '{metrics.cpu_percent}%'. Second card: 'Memory Usage' showing Progress bar with value={metrics.memory_percent} and text '{metrics.memory_used}GB / {metrics.memory_total}GB'. Third card: 'Disk Usage' with Progress bar value={metrics.disk_percent} and text showing used/total GB.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774003310394_PRIORITY-2-CHAT-AND-FEATURES.md-msg19-task2-micro4",
+              "filePath": "src/app/dashboard/monitoring/page.tsx",
+              "change": "Render Swap, Load Average, Uptime cards",
+              "description": "Continue the Resources tab grid with 3 more cards. Fourth card: 'Swap Usage' showing Progress bar with swap_used/swap_total in GB (handle case where swap is 0 or undefined). Fifth card: 'Load Average' displaying three values in a row: '1m: {metrics.load_1} | 5m: {metrics.load_5} | 15m: {metrics.load_15}'. Sixth card: 'System Uptime' showing the human-readable uptime string with a clock icon.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774003310394_PRIORITY-2-CHAT-AND-FEATURES.md-msg19-task2-micro5",
+              "filePath": "src/app/dashboard/monitoring/page.tsx",
+              "change": "Add color-coded progress bars based on thresholds",
+              "description": "Add color coding to all Progress bars based on thresholds: if value < 60, use green (className='bg-green-500'), if value >= 60 && < 80 use amber (className='bg-amber-500'), if value >= 80 use red (className='bg-red-500'). Apply this logic to CPU, Memory, Disk, and Swap progress bars by creating a helper function getProgressColor(percent) that returns the appropriate Tailwind class.",
+              "status": "pending"
+            }
+          ]
         },
         {
           "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg19-task3",
           "taskNumber": 3,
           "originalDescription": "Services tab — show real services:",
-          "status": "pending",
-          "approved": false,
-          "rewritten": false,
-          "microTasks": []
+          "status": "approved",
+          "approved": true,
+          "rewritten": true,
+          "microTasks": [
+            {
+              "id": "task_1774003310394_PRIORITY-2-CHAT-AND-FEATURES.md-msg19-task3-micro1",
+              "filePath": "src/app/dashboard/monitoring/page.tsx",
+              "change": "Add services state array",
+              "description": "Add services state: const [services, setServices] = useState<Array<{ name: string, status: string, uptime: string, port: number | null }>>([]).This array will hold the list of services returned from the bridge status API. Each service object contains name, status (running/stopped), uptime duration, and optional port number.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774003310394_PRIORITY-2-CHAT-AND-FEATURES.md-msg19-task3-micro2",
+              "filePath": "src/app/dashboard/monitoring/page.tsx",
+              "change": "Add fetchServices function",
+              "description": "Create async function fetchServices that calls fetch('/api/bridge/status'), parses JSON, extracts the services array from response. The API returns services with fields: name, status, uptime_seconds, port. Map uptime_seconds to human readable string. Update services state. Handle errors gracefully by setting services to empty array and showing toast.error('Failed to load services').",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774003310394_PRIORITY-2-CHAT-AND-FEATURES.md-msg19-task3-micro3",
+              "filePath": "src/app/dashboard/monitoring/page.tsx",
+              "change": "Render services table with status indicators",
+              "description": "In the Services tab content, create a Table component with columns: Status (icon), Name, Port, Uptime. Map over services array to create TableRow for each service. For Status column: render a green Circle icon (className='text-green-500 fill-green-500') if service.status === 'running', red Circle icon (className='text-red-500 fill-red-500') if stopped. Name column shows service.name. Port shows service.port or '-'. Uptime shows formatted uptime string.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774003310394_PRIORITY-2-CHAT-AND-FEATURES.md-msg19-task3-micro4",
+              "filePath": "src/app/dashboard/monitoring/page.tsx",
+              "change": "Add services summary counts above table",
+              "description": "Above the services table, add a summary row showing: 'Total: {services.length} | Running: {services.filter(s => s.status === 'running').length} | Stopped: {services.filter(s => s.status !== 'running').length}'. Style running count in green text, stopped count in red text if > 0. This gives at-a-glance service health overview.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774003310394_PRIORITY-2-CHAT-AND-FEATURES.md-msg19-task3-micro5",
+              "filePath": "src/app/dashboard/monitoring/page.tsx",
+              "change": "Handle service name normalization",
+              "description": "Ensure the expected services are displayed by checking if the services array includes: 'OpenClaw Gateway' or 'openclaw', 'Bridge API' or 'bridge', 'genplatform-app' or 'Next.js'. If the API doesn't return these exact names, add a mapping function that normalizes service names for display. Show all services returned by the API, not just hardcoded ones.",
+              "status": "pending"
+            }
+          ]
         },
         {
           "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg19-task4",
           "taskNumber": 4,
           "originalDescription": "Logs tab — show real parsed logs:",
-          "status": "pending",
-          "approved": false,
-          "rewritten": false,
-          "microTasks": []
+          "status": "approved",
+          "approved": true,
+          "rewritten": true,
+          "microTasks": [
+            {
+              "id": "task_1774003310394_PRIORITY-2-CHAT-AND-FEATURES.md-msg19-task4-micro1",
+              "filePath": "src/app/dashboard/monitoring/page.tsx",
+              "change": "Add logs state array and scroll ref",
+              "description": "Add logs state: const [logs, setLogs] = useState<Array<{ timestamp: string, level: 'info' | 'warn' | 'error', message: string }>>([]).Also add a ref for auto-scrolling: const logsEndRef = useRef<HTMLDivElement>(null). This ref will be used to scroll to the bottom of the logs container when new logs arrive.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774003310394_PRIORITY-2-CHAT-AND-FEATURES.md-msg19-task4-micro2",
+              "filePath": "src/app/dashboard/monitoring/page.tsx",
+              "change": "Add fetchLogs function with parsing logic",
+              "description": "Create async function fetchLogs that calls fetch('/api/bridge/logs'), parses JSON response which contains a lines array. Each line is a raw log string. Parse each line to extract timestamp (first part before space), level (look for [INFO], [WARN], [WARNING], [ERROR] patterns), and message (rest of the line). Normalize level to lowercase 'info', 'warn', or 'error'. Update logs state with parsed array.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774003310394_PRIORITY-2-CHAT-AND-FEATURES.md-msg19-task4-micro3",
+              "filePath": "src/app/dashboard/monitoring/page.tsx",
+              "change": "Render color-coded logs in scrollable container",
+              "description": "In the Logs tab content, create a scrollable container: div with className='h-96 overflow-y-auto bg-gray-900 rounded-lg p-4 font-mono text-sm'. Map over logs array to render each log entry as a div. Apply conditional text color: info logs get 'text-gray-400', warn logs get 'text-amber-400', error logs get 'text-red-400'. Format: '{timestamp} [{level.toUpperCase()}] {message}'. Add <div ref={logsEndRef} /> at the end.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774003310394_PRIORITY-2-CHAT-AND-FEATURES.md-msg19-task4-micro4",
+              "filePath": "src/app/dashboard/monitoring/page.tsx",
+              "change": "Add auto-scroll effect for logs",
+              "description": "Add useEffect that triggers auto-scroll whenever logs state changes: useEffect(() => { logsEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [logs]). This ensures the logs container automatically scrolls to show the newest entries at the bottom whenever new logs are fetched or added.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774003310394_PRIORITY-2-CHAT-AND-FEATURES.md-msg19-task4-micro5",
+              "filePath": "src/app/dashboard/monitoring/page.tsx",
+              "change": "Add logs toolbar with refresh button and count",
+              "description": "Above the logs container, add a toolbar with: Button with RefreshCw icon and text 'Refresh' that calls fetchLogs() on click. Add a badge showing total log count: '{logs.length} entries'. Optionally add filter buttons for log levels: 'All', 'Errors', 'Warnings' that filter the displayed logs array without refetching.",
+              "status": "pending"
+            }
+          ]
         },
         {
           "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg19-task5",
           "taskNumber": 5,
           "originalDescription": "Auto-refresh toggle (already exists at top right). Make sure it works:",
-          "status": "pending",
-          "approved": false,
-          "rewritten": false,
-          "microTasks": []
+          "status": "approved",
+          "approved": true,
+          "rewritten": true,
+          "microTasks": [
+            {
+              "id": "task_1774003310394_PRIORITY-2-CHAT-AND-FEATURES.md-msg19-task5-micro1",
+              "filePath": "src/app/dashboard/monitoring/page.tsx",
+              "change": "Add auto-refresh state variables",
+              "description": "Add auto-refresh state variables: const [autoRefresh, setAutoRefresh] = useState(false) for toggle state, const [refreshInterval, setRefreshInterval] = useState(5000) for poll rate in milliseconds. Also add const [intervalId, setIntervalId] = useState<NodeJS.Timeout | null>(null) to track the active interval so it can be cleared.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774003310394_PRIORITY-2-CHAT-AND-FEATURES.md-msg19-task5-micro2",
+              "filePath": "src/app/dashboard/monitoring/page.tsx",
+              "change": "Add fetchAllData function to refresh everything",
+              "description": "Create a fetchAllData function that calls all fetch functions in parallel: await Promise.all([fetchSystemHealth(), fetchMetrics(), fetchServices(), fetchLogs()]). This single function will be called both on initial mount and during auto-refresh intervals to update all monitoring data at once.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774003310394_PRIORITY-2-CHAT-AND-FEATURES.md-msg19-task5-micro3",
+              "filePath": "src/app/dashboard/monitoring/page.tsx",
+              "change": "Add useEffect for interval management",
+              "description": "Add useEffect for auto-refresh logic: useEffect(() => { if (autoRefresh) { const id = setInterval(fetchAllData, refreshInterval); setIntervalId(id); return () => clearInterval(id); } else { if (intervalId) clearInterval(intervalId); setIntervalId(null); } }, [autoRefresh, refreshInterval]). This starts/stops polling based on toggle state and restarts when interval changes.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774003310394_PRIORITY-2-CHAT-AND-FEATURES.md-msg19-task5-micro4",
+              "filePath": "src/app/dashboard/monitoring/page.tsx",
+              "change": "Render auto-refresh toggle and interval selector",
+              "description": "In the page header/toolbar area, locate or create the auto-refresh toggle UI. Add a Switch component with checked={autoRefresh} and onCheckedChange={setAutoRefresh}. Label it 'Auto-refresh'. Next to it, add a Select dropdown with options: 5000ms (5s), 10000ms (10s), 30000ms (30s), 60000ms (1m). The Select value={refreshInterval} and onValueChange={(v) => setRefreshInterval(Number(v))}.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774003310394_PRIORITY-2-CHAT-AND-FEATURES.md-msg19-task5-micro5",
+              "filePath": "src/app/dashboard/monitoring/page.tsx",
+              "change": "Add visual indicator for refresh state",
+              "description": "Add visual feedback for auto-refresh state: when autoRefresh is true, show a small spinning RefreshCw icon next to the toggle with className='animate-spin h-4 w-4 text-blue-500'. Also show text 'Refreshing every {refreshInterval/1000}s' in small gray text. When autoRefresh is false, the icon should be static and text shows 'Auto-refresh off'.",
+              "status": "pending"
+            }
+          ]
         }
       ]
     },
