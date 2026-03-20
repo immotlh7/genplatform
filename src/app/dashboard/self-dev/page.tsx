@@ -6,7 +6,9 @@ import { TaskQueue } from '@/components/self-dev/TaskQueue';
 import { ExecutionMonitor } from '@/components/self-dev/ExecutionMonitor';
 import { PreviewPanel } from '@/components/self-dev/PreviewPanel';
 import { ControlBar } from '@/components/self-dev/ControlBar';
-import { AlertCircle } from 'lucide-react';
+import { MonitorDashboard } from '@/components/self-dev/MonitorDashboard';
+import { AlertCircle, Activity } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 interface ExecutionStatus {
   status: 'idle' | 'analyzing' | 'executing' | 'building' | 'paused' | 'error';
@@ -44,6 +46,7 @@ export default function SelfDevPage() {
   const [status, setStatus] = useState<ExecutionStatus>(initialStatus);
   const [error, setError] = useState<string | null>(null);
   const [hasApprovedTasks, setHasApprovedTasks] = useState(false);
+  const [activeTab, setActiveTab] = useState('execution');
 
   useEffect(() => {
     loadStatus();
@@ -140,14 +143,35 @@ export default function SelfDevPage() {
           </div>
         </div>
         
-        {/* Middle Panel - Execution Monitor */}
+        {/* Middle Panel - Execution Monitor with Tabs */}
         <div className="bg-gray-800 border border-gray-700 rounded-lg overflow-hidden flex flex-col">
-          <div className="p-4 border-b border-gray-700">
-            <h2 className="font-semibold text-white">Execution Monitor</h2>
-          </div>
-          <div className="flex-1 overflow-y-auto p-4">
-            <ExecutionMonitor onRefresh={loadStatus} />
-          </div>
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
+            <div className="border-b border-gray-700">
+              <TabsList className="w-full justify-start bg-transparent h-auto p-0">
+                <TabsTrigger 
+                  value="execution" 
+                  className="data-[state=active]:bg-gray-700 rounded-none px-6 py-3"
+                >
+                  Execution Monitor
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="monitor" 
+                  className="data-[state=active]:bg-gray-700 rounded-none px-6 py-3"
+                >
+                  <Activity className="h-4 w-4 mr-2" />
+                  System Monitor
+                </TabsTrigger>
+              </TabsList>
+            </div>
+            
+            <TabsContent value="execution" className="flex-1 overflow-y-auto p-4">
+              <ExecutionMonitor onRefresh={loadStatus} />
+            </TabsContent>
+            
+            <TabsContent value="monitor" className="flex-1 overflow-y-auto p-4">
+              <MonitorDashboard />
+            </TabsContent>
+          </Tabs>
         </div>
         
         {/* Right Panel - Live Preview */}

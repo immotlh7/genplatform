@@ -37,11 +37,39 @@ export async function POST(request: NextRequest) {
     }
     
     const microTask = task.microTasks[microTaskIndex];
+    const microTaskId = microTask.id;
     
     // Update micro-task status
     microTask.status = success ? 'done' : 'failed';
     if (error) {
       microTask.error = error;
+    }
+    
+    // Log to monitor
+    await logToMonitor(success ? 'task_complete' : 'task_failed', {
+      fileId,
+      messageNumber,
+      taskNumber,
+      microTaskId,
+      details: message || (success ? `Completed: ${microTask.description}` : `Failed: ${error}`),
+      autoFix: !success
+    });
+    
+    // If successful, trigger auto-review
+    if (success) {
+      console.log('Triggering auto-review for completed task...');
+      
+      // Run auto-review asynchronously
+      fetch('http://localhost:3000/api/self-dev/auto-review', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          fileId,
+          messageNumber,
+          taskNumber,
+          microTaskId
+        })
+      }).catch(err => console.error('Auto-review failed to start:', err));
     }
     
     // Check if all micro-tasks are complete for this task
@@ -79,7 +107,9 @@ export async function POST(request: NextRequest) {
 ❌ Failed: ${failedCount} tasks
 🔢 Total: ${msg.tasks.length} tasks
 
-${failedCount > 0 ? '⚠️ Some tasks failed. You may want to re-rewrite them.' : '🎉 All tasks completed successfully!'}`;
+${failedCount > 0 ? '⚠️ Some tasks failed. You may want to re-rewrite them.' : '🎉 All tasks completed successfully!'}
+
+🔄 Running final build check...`;
         
         // Send notification to Telegram
         await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
@@ -91,6 +121,22 @@ ${failedCount > 0 ? '⚠️ Some tasks failed. You may want to re-rewrite them.'
             parse_mode: 'Markdown'
           })
         }).catch(err => console.error('Failed to send completion notification:', err));
+        
+        // Trigger final build and commit if all successful
+        if (failedCount === 0) {
+          console.log('All tasks successful, triggering final build and commit...');
+          
+          // Run build and commit asynchronously
+          fetch('http://localhost:3000/api/self-dev/build-commit', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              fileId,
+              messageNumber,
+              commitMessage: `Complete: Message ${messageNumber} - ${msg.summary}`
+            })
+          }).catch(err => console.error('Build-commit failed:', err));
+        }
       }
     }
     
@@ -101,7 +147,8 @@ ${failedCount > 0 ? '⚠️ Some tasks failed. You may want to re-rewrite them.'
       success: true,
       microTaskStatus: microTask.status,
       taskStatus: task.status,
-      message: 'Task completion recorded'
+      message: 'Task completion recorded',
+      autoReviewTriggered: success
     });
     
   } catch (error) {
@@ -110,5 +157,18 @@ ${failedCount > 0 ? '⚠️ Some tasks failed. You may want to re-rewrite them.'
       error: 'Failed to update task status', 
       details: error instanceof Error ? error.message : 'Unknown error' 
     }, { status: 500 });
+  }
+}
+
+// Helper function to log to monitor
+async function logToMonitor(action: string, data: any) {
+  try {
+    await fetch('http://localhost:3000/api/self-dev/monitor', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action, data })
+    });
+  } catch (error) {
+    console.error('Failed to log to monitor:', error);
   }
 }
