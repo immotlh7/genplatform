@@ -4,7 +4,7 @@
   "uploadedAt": "2026-03-20T08:45:10.369Z",
   "totalMessages": 33,
   "totalTasks": 68,
-  "totalMicroTasks": 144,
+  "totalMicroTasks": 163,
   "messages": [
     {
       "messageNumber": 1,
@@ -1656,46 +1656,184 @@
           "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg25-task1",
           "taskNumber": 1,
           "originalDescription": "Verify the page loads at /automations. Currently it shows 404 sometimes. Check the route:",
-          "status": "pending",
-          "approved": false,
-          "rewritten": false,
-          "microTasks": []
+          "status": "approved",
+          "approved": true,
+          "rewritten": true,
+          "microTasks": [
+            {
+              "id": "task_1774003310394_PRIORITY-2-CHAT-AND-FEATURES.md-msg25-task1-micro1",
+              "filePath": "src/app/automations/page.tsx",
+              "change": "Ensure automations page exists at correct route path",
+              "description": "Check if file exists at src/app/automations/page.tsx. If it does NOT exist, create it with a basic React component: export default function AutomationsPage() { return <div className='p-6'><h1 className='text-2xl font-bold'>Automations</h1></div> }. If it exists but is in src/app/(dashboard)/automations/page.tsx, move it to src/app/automations/page.tsx because the sidebar links to /automations which requires the non-grouped route structure.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774003310394_PRIORITY-2-CHAT-AND-FEATURES.md-msg25-task1-micro2",
+              "filePath": "src/app/automations/page.tsx",
+              "change": "Add all required imports for the automations page",
+              "description": "At the top of the file, add the required imports for the page: import { useState, useEffect } from 'react'; import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'; import { Button } from '@/components/ui/button'; import { Badge } from '@/components/ui/badge'; import { toast } from 'sonner'; import { Play, Pencil, Trash2, Plus, Store, Zap, GitBranch, Code, CheckCircle, XCircle, Clock } from 'lucide-react';. Add 'use client'; at the very top since we'll use useState.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774003310394_PRIORITY-2-CHAT-AND-FEATURES.md-msg25-task1-micro3",
+              "filePath": "src/app/automations/layout.tsx",
+              "change": "Create layout wrapper for automations route",
+              "description": "Create layout file if it doesn't exist to ensure proper rendering. Add: export default function AutomationsLayout({ children }: { children: React.ReactNode }) { return <>{children}</>; }. This ensures the route is properly recognized by Next.js App Router and prevents 404 errors from layout mismatches.",
+              "status": "pending"
+            }
+          ]
         },
         {
           "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg25-task2",
           "taskNumber": 2,
           "originalDescription": "Stats cards:",
-          "status": "pending",
-          "approved": false,
-          "rewritten": false,
-          "microTasks": []
+          "status": "approved",
+          "approved": true,
+          "rewritten": true,
+          "microTasks": [
+            {
+              "id": "task_1774003310394_PRIORITY-2-CHAT-AND-FEATURES.md-msg25-task2-micro1",
+              "filePath": "src/app/api/workflows/route.ts",
+              "change": "Create workflows API endpoint with statistics",
+              "description": "Create or update the GET handler to return workflow statistics. Add: export async function GET() { const workflows = [ { id: '1', name: 'Idea to MVP', status: 'active', runs: 45, successful: 42 }, { id: '2', name: 'Bug Fix Pipeline', status: 'active', runs: 120, successful: 115 }, { id: '3', name: 'Code Review', status: 'paused', runs: 89, successful: 85 } ]; const stats = { total: workflows.length, active: workflows.filter(w => w.status === 'active').length, totalRuns: workflows.reduce((a,b) => a + b.runs, 0), successfulRuns: workflows.reduce((a,b) => a + b.successful, 0), failed: workflows.filter(w => w.status === 'failed').length }; return Response.json({ workflows, stats }); }",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774003310394_PRIORITY-2-CHAT-AND-FEATURES.md-msg25-task2-micro2",
+              "filePath": "src/app/automations/page.tsx",
+              "change": "Add state and fetch logic for workflow statistics",
+              "description": "Inside the AutomationsPage component, add state for stats: const [stats, setStats] = useState({ total: 0, active: 0, successRate: 0, failed: 0 }); Add useEffect to fetch stats: useEffect(() => { async function loadStats() { try { const res = await fetch('/api/workflows'); const data = await res.json(); const successRate = data.stats.totalRuns > 0 ? Math.round((data.stats.successfulRuns / data.stats.totalRuns) * 100) : 0; setStats({ total: data.stats.total, active: data.stats.active, successRate, failed: data.stats.failed }); } catch (e) { toast.error('Failed to load workflow stats'); } } loadStats(); }, []);",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774003310394_PRIORITY-2-CHAT-AND-FEATURES.md-msg25-task2-micro3",
+              "filePath": "src/app/automations/page.tsx",
+              "change": "Render four stats cards with dynamic values",
+              "description": "In the JSX return, after the page title, add a stats grid: <div className='grid grid-cols-1 md:grid-cols-4 gap-4 mb-6'><Card><CardHeader className='pb-2'><CardTitle className='text-sm font-medium text-muted-foreground'>Total Workflows</CardTitle></CardHeader><CardContent><div className='text-2xl font-bold'>{stats.total}</div></CardContent></Card><Card><CardHeader className='pb-2'><CardTitle className='text-sm font-medium text-muted-foreground'>Active Workflows</CardTitle></CardHeader><CardContent><div className='text-2xl font-bold text-green-600'>{stats.active}</div></CardContent></Card><Card><CardHeader className='pb-2'><CardTitle className='text-sm font-medium text-muted-foreground'>Success Rate</CardTitle></CardHeader><CardContent><div className='text-2xl font-bold text-blue-600'>{stats.successRate}%</div></CardContent></Card><Card><CardHeader className='pb-2'><CardTitle className='text-sm font-medium text-muted-foreground'>Failed Workflows</CardTitle></CardHeader><CardContent><div className='text-2xl font-bold text-red-600'>{stats.failed}</div></CardContent></Card></div>",
+              "status": "pending"
+            }
+          ]
         },
         {
           "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg25-task3",
           "taskNumber": 3,
           "originalDescription": "Workflow list. Show 3 demo workflows that make sense:",
-          "status": "pending",
-          "approved": false,
-          "rewritten": false,
-          "microTasks": []
+          "status": "approved",
+          "approved": true,
+          "rewritten": true,
+          "microTasks": [
+            {
+              "id": "task_1774003310394_PRIORITY-2-CHAT-AND-FEATURES.md-msg25-task3-micro1",
+              "filePath": "src/app/automations/page.tsx",
+              "change": "Add workflow state with proper typing",
+              "description": "Add workflow state and type definition at the top of the component: interface Workflow { id: string; name: string; description: string; type: string; lastRun: string; status: 'active' | 'paused' | 'failed'; icon: any; } const [workflows, setWorkflows] = useState<Workflow[]>([]); Then in the existing useEffect after setting stats, add: setWorkflows(data.workflows.map((w: any) => ({ ...w, icon: w.name.includes('Idea') ? Zap : w.name.includes('Bug') ? GitBranch : Code })));",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774003310394_PRIORITY-2-CHAT-AND-FEATURES.md-msg25-task3-micro2",
+              "filePath": "src/app/api/workflows/route.ts",
+              "change": "Add complete workflow data with descriptions and metadata",
+              "description": "Update the workflows array in the GET handler to include full workflow details: const workflows = [ { id: '1', name: 'Idea to MVP', description: 'Takes an idea, analyzes feasibility, creates project tasks, and assigns to appropriate agents for execution', type: 'Pipeline', lastRun: '2 hours ago', status: 'active', runs: 45, successful: 42 }, { id: '2', name: 'Bug Fix Pipeline', description: 'Automatically detects bugs from error logs, creates fix tasks, assigns to dev agent, and initiates code review', type: 'Automated', lastRun: '30 minutes ago', status: 'active', runs: 120, successful: 115 }, { id: '3', name: 'Code Review', description: 'Triggered on code push, performs automated review, checks for issues, and generates detailed reports', type: 'Trigger', lastRun: '1 hour ago', status: 'paused', runs: 89, successful: 85 } ];",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774003310394_PRIORITY-2-CHAT-AND-FEATURES.md-msg25-task3-micro3",
+              "filePath": "src/app/automations/page.tsx",
+              "change": "Add action handler functions for Run, Edit, Delete",
+              "description": "Add handler functions for workflow actions before the return statement: const handleRunWorkflow = async (id: string) => { toast.success('Workflow started successfully'); }; const handleEditWorkflow = (id: string) => { toast.info('Edit functionality coming soon'); }; const handleDeleteWorkflow = async (id: string) => { if (confirm('Delete this workflow?')) { setWorkflows(prev => prev.filter(w => w.id !== id)); toast.success('Workflow deleted'); } };",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774003310394_PRIORITY-2-CHAT-AND-FEATURES.md-msg25-task3-micro4",
+              "filePath": "src/app/automations/page.tsx",
+              "change": "Render workflow cards with all details and action buttons",
+              "description": "After the stats grid, add the workflow list section: <div className='space-y-4'><div className='flex justify-between items-center'><h2 className='text-xl font-semibold'>Workflows</h2></div>{workflows.map(workflow => (<Card key={workflow.id} className='hover:border-primary/50 transition-colors'><CardHeader><div className='flex items-start justify-between'><div className='flex items-center gap-3'><div className='p-2 bg-primary/10 rounded-lg'>{workflow.name.includes('Idea') ? <Zap className='h-5 w-5 text-primary' /> : workflow.name.includes('Bug') ? <GitBranch className='h-5 w-5 text-primary' /> : <Code className='h-5 w-5 text-primary' />}</div><div><CardTitle className='text-lg'>{workflow.name}</CardTitle><CardDescription className='mt-1'>{workflow.description}</CardDescription></div></div><Badge variant={workflow.status === 'active' ? 'default' : workflow.status === 'paused' ? 'secondary' : 'destructive'}>{workflow.status}</Badge></div></CardHeader><CardContent><div className='flex items-center justify-between'><div className='flex items-center gap-4 text-sm text-muted-foreground'><span className='flex items-center gap-1'><Clock className='h-4 w-4' />{workflow.lastRun}</span><span>Type: {workflow.type}</span></div><div className='flex gap-2'><Button size='sm' onClick={() => handleRunWorkflow(workflow.id)}><Play className='h-4 w-4 mr-1' />Run</Button><Button size='sm' variant='outline' onClick={() => handleEditWorkflow(workflow.id)}><Pencil className='h-4 w-4' /></Button><Button size='sm' variant='outline' onClick={() => handleDeleteWorkflow(workflow.id)}><Trash2 className='h-4 w-4' /></Button></div></div></CardContent></Card>))}</div>",
+              "status": "pending"
+            }
+          ]
         },
         {
           "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg25-task4",
           "taskNumber": 4,
           "originalDescription": "\"New Workflow\" button:",
-          "status": "pending",
-          "approved": false,
-          "rewritten": false,
-          "microTasks": []
+          "status": "approved",
+          "approved": true,
+          "rewritten": true,
+          "microTasks": [
+            {
+              "id": "task_1774003310394_PRIORITY-2-CHAT-AND-FEATURES.md-msg25-task4-micro1",
+              "filePath": "src/app/automations/page.tsx",
+              "change": "Add state for modal visibility and form data",
+              "description": "Add modal state and form state at the top of the component after other useState declarations: const [showNewWorkflow, setShowNewWorkflow] = useState(false); const [newWorkflow, setNewWorkflow] = useState({ name: '', description: '', trigger: 'manual', steps: '' });",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774003310394_PRIORITY-2-CHAT-AND-FEATURES.md-msg25-task4-micro2",
+              "filePath": "src/app/api/workflows/route.ts",
+              "change": "Create POST endpoint for new workflows",
+              "description": "Add POST handler after the GET handler: export async function POST(request: Request) { try { const body = await request.json(); const newWorkflow = { id: Date.now().toString(), name: body.name, description: body.description, type: body.trigger === 'manual' ? 'Manual' : body.trigger === 'scheduled' ? 'Scheduled' : 'Trigger', trigger: body.trigger, steps: body.steps, lastRun: 'Never', status: 'active', runs: 0, successful: 0 }; return Response.json({ success: true, workflow: newWorkflow }); } catch (error) { return Response.json({ error: 'Failed to create workflow' }, { status: 500 }); } }",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774003310394_PRIORITY-2-CHAT-AND-FEATURES.md-msg25-task4-micro3",
+              "filePath": "src/app/automations/page.tsx",
+              "change": "Add form submission handler with API call",
+              "description": "Add the submit handler function before the return statement: const handleCreateWorkflow = async () => { if (!newWorkflow.name.trim()) { toast.error('Please enter a workflow name'); return; } try { const res = await fetch('/api/workflows', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(newWorkflow) }); const data = await res.json(); if (data.success) { setWorkflows(prev => [...prev, { ...data.workflow, icon: Zap }]); setShowNewWorkflow(false); setNewWorkflow({ name: '', description: '', trigger: 'manual', steps: '' }); toast.success('Workflow created successfully!'); } } catch (e) { toast.error('Failed to create workflow'); } };",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774003310394_PRIORITY-2-CHAT-AND-FEATURES.md-msg25-task4-micro4",
+              "filePath": "src/app/automations/page.tsx",
+              "change": "Import dialog and form components",
+              "description": "Add import for Dialog components at the top: import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'; import { Input } from '@/components/ui/input'; import { Label } from '@/components/ui/label'; import { Textarea } from '@/components/ui/textarea'; import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774003310394_PRIORITY-2-CHAT-AND-FEATURES.md-msg25-task4-micro5",
+              "filePath": "src/app/automations/page.tsx",
+              "change": "Add New Workflow button in page header",
+              "description": "In the header section where 'Workflows' title is, add the New Workflow button: <div className='flex justify-between items-center mb-6'><div><h1 className='text-2xl font-bold'>Automations</h1><p className='text-muted-foreground'>Create and manage automated workflows</p></div><div className='flex gap-2'><Button onClick={() => setShowNewWorkflow(true)}><Plus className='h-4 w-4 mr-2' />New Workflow</Button></div></div>",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774003310394_PRIORITY-2-CHAT-AND-FEATURES.md-msg25-task4-micro6",
+              "filePath": "src/app/automations/page.tsx",
+              "change": "Add complete modal with form fields for new workflow",
+              "description": "Before the closing div of the component's return, add the modal JSX: <Dialog open={showNewWorkflow} onOpenChange={setShowNewWorkflow}><DialogContent className='sm:max-w-[500px]'><DialogHeader><DialogTitle>Create New Workflow</DialogTitle></DialogHeader><div className='space-y-4 py-4'><div className='space-y-2'><Label htmlFor='name'>Name</Label><Input id='name' placeholder='My Workflow' value={newWorkflow.name} onChange={(e) => setNewWorkflow(prev => ({ ...prev, name: e.target.value }))} /></div><div className='space-y-2'><Label htmlFor='description'>Description</Label><Textarea id='description' placeholder='What does this workflow do?' value={newWorkflow.description} onChange={(e) => setNewWorkflow(prev => ({ ...prev, description: e.target.value }))} /></div><div className='space-y-2'><Label>Trigger</Label><Select value={newWorkflow.trigger} onValueChange={(value) => setNewWorkflow(prev => ({ ...prev, trigger: value }))}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value='manual'>Manual</SelectItem><SelectItem value='scheduled'>Scheduled</SelectItem><SelectItem value='on_push'>On Code Push</SelectItem></SelectContent></Select></div><div className='space-y-2'><Label htmlFor='steps'>Steps (one per line)</Label><Textarea id='steps' placeholder='Analyze input&#10;Generate tasks&#10;Assign to agents' rows={4} value={newWorkflow.steps} onChange={(e) => setNewWorkflow(prev => ({ ...prev, steps: e.target.value }))} /></div></div><DialogFooter><Button variant='outline' onClick={() => setShowNewWorkflow(false)}>Cancel</Button><Button onClick={handleCreateWorkflow}>Create Workflow</Button></DialogFooter></DialogContent></Dialog>",
+              "status": "pending"
+            }
+          ]
         },
         {
           "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg25-task5",
           "taskNumber": 5,
           "originalDescription": "\"Browse Marketplace\" button → show message: \"Marketplace coming soon. Currently 3 built-in workflows available.\"",
-          "status": "pending",
-          "approved": false,
-          "rewritten": false,
-          "microTasks": []
+          "status": "approved",
+          "approved": true,
+          "rewritten": true,
+          "microTasks": [
+            {
+              "id": "task_1774003310394_PRIORITY-2-CHAT-AND-FEATURES.md-msg25-task5-micro1",
+              "filePath": "src/app/automations/page.tsx",
+              "change": "Add state for marketplace modal",
+              "description": "Add marketplace state after other useState declarations: const [showMarketplace, setShowMarketplace] = useState(false);",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774003310394_PRIORITY-2-CHAT-AND-FEATURES.md-msg25-task5-micro2",
+              "filePath": "src/app/automations/page.tsx",
+              "change": "Add Browse Marketplace button next to New Workflow",
+              "description": "In the header section where the New Workflow button is, add the Browse Marketplace button right before it: <Button variant='outline' onClick={() => setShowMarketplace(true)}><Store className='h-4 w-4 mr-2' />Browse Marketplace</Button>. The buttons should be inside a flex container with gap-2.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774003310394_PRIORITY-2-CHAT-AND-FEATURES.md-msg25-task5-micro3",
+              "filePath": "src/app/automations/page.tsx",
+              "change": "Add marketplace dialog with coming soon message and built-in workflow count",
+              "description": "After the New Workflow Dialog, add the Marketplace Dialog: <Dialog open={showMarketplace} onOpenChange={setShowMarketplace}><DialogContent><DialogHeader><DialogTitle className='flex items-center gap-2'><Store className='h-5 w-5' />Workflow Marketplace</DialogTitle></DialogHeader><div className='py-6 text-center'><div className='mx-auto w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-4'><Store className='h-8 w-8 text-primary' /></div><h3 className='text-lg font-semibold mb-2'>Coming Soon!</h3><p className='text-muted-foreground mb-4'>The workflow marketplace is under development. Browse and install community-created workflows soon.</p><div className='bg-muted/50 rounded-lg p-4'><p className='text-sm font-medium'>Currently Available</p><p className='text-2xl font-bold text-primary'>3 Built-in Workflows</p><p className='text-xs text-muted-foreground mt-1'>Idea to MVP • Bug Fix Pipeline • Code Review</p></div></div><DialogFooter><Button onClick={() => setShowMarketplace(false)}>Got it</Button></DialogFooter></DialogContent></Dialog>",
+              "status": "pending"
+            }
+          ]
         }
       ]
     },
