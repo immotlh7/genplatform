@@ -1,0 +1,12 @@
+{
+  "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg3-task3",
+  "messageNumber": 3,
+  "messageTitle": "Fix Gateway Offline notification",
+  "totalTasks": 68,
+  "completedTasks": 2,
+  "task": {
+    "taskNumber": 3,
+    "description": "The notification bell in the top bar shows a red badge with count. Make sure the count matches REAL unread notifications only. If no real alerts, badge should be hidden.",
+    "status": "executing"
+  }
+}

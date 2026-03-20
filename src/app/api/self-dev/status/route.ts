@@ -2,53 +2,59 @@ import { NextRequest, NextResponse } from 'next/server';
 import fs from 'fs/promises';
 import path from 'path';
 
-const TASK_QUEUE_FILE = '/root/genplatform/data/task-queue/task-queue.json';
+const CURRENT_TASK_FILE = '/root/genplatform/data/current-task.json';
+const EXECUTION_LOG_FILE = '/root/genplatform/data/execution-log.json';
 const CONFIG_FILE = '/root/genplatform/data/self-dev-config.json';
-
-interface SelfDevConfig {
-  autoMode: boolean;
-  lastUpdated: string;
-}
-
-async function getConfig(): Promise<SelfDevConfig> {
-  try {
-    const data = await fs.readFile(CONFIG_FILE, 'utf-8');
-    return JSON.parse(data);
-  } catch {
-    return { autoMode: false, lastUpdated: new Date().toISOString() };
-  }
-}
 
 export async function GET(request: NextRequest) {
   try {
-    // Read task queue
-    let queue = null;
+    // Read current task (small file)
+    let currentTask = null;
     try {
-      const data = await fs.readFile(TASK_QUEUE_FILE, 'utf-8');
-      queue = JSON.parse(data);
-    } catch (error) {
-      // No queue file yet
-    }
-
-    // Get config
-    const config = await getConfig();
-
-    // Sync auto-mode between config and queue
-    if (queue && config.autoMode !== undefined) {
-      queue.autoMode = config.autoMode;
-    }
-
+      const currentData = await fs.readFile(CURRENT_TASK_FILE, 'utf-8');
+      currentTask = JSON.parse(currentData);
+    } catch {}
+    
+    // Read config
+    let config = { autoMode: false };
+    try {
+      const configData = await fs.readFile(CONFIG_FILE, 'utf-8');
+      config = JSON.parse(configData);
+    } catch {}
+    
+    // Read last 20 lines of execution log only
+    let recentLogs = [];
+    try {
+      const logsData = await fs.readFile(EXECUTION_LOG_FILE, 'utf-8');
+      const logs = JSON.parse(logsData);
+      recentLogs = logs.slice(-20); // Last 20 entries only
+    } catch {}
+    
+    // Calculate stats from current task
+    const stats = {
+      totalTasks: currentTask?.totalTasks || 0,
+      completedTasks: currentTask?.completedTasks || 0,
+      executingTasks: currentTask?.task?.status === 'executing' ? 1 : 0,
+      currentTaskId: currentTask?.taskId,
+      currentTaskDescription: currentTask?.task?.description
+    };
+    
     return NextResponse.json({
-      queue,
-      autoMode: config.autoMode,
-      configLastUpdated: config.lastUpdated
+      currentTask,
+      config,
+      stats,
+      recentLogs,
+      timestamp: new Date().toISOString()
     });
     
   } catch (error) {
     console.error('Status error:', error);
-    return NextResponse.json(
-      { error: 'Failed to get status' },
-      { status: 500 }
-    );
+    return NextResponse.json({
+      currentTask: null,
+      config: { autoMode: false },
+      stats: {},
+      recentLogs: [],
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
   }
 }
