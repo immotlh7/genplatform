@@ -8,26 +8,26 @@
   "messages": [
     {
       "messageNumber": 1,
-      "summary": "═══════════════════════════════════════════════════════════════",
-      "originalContent": "# ═══════════════════════════════════════════════════════════════\n# الأولوية 5: Pipeline الأفكار الكامل + البنية التحتية\n# ═══════════════════════════════════════════════════════════════",
+      "summary": "\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550",
+      "originalContent": "# \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\n# \u0627\u0644\u0623\u0648\u0644\u0648\u064a\u0629 5: Pipeline \u0627\u0644\u0623\u0641\u0643\u0627\u0631 \u0627\u0644\u0643\u0627\u0645\u0644 + \u0627\u0644\u0628\u0646\u064a\u0629 \u0627\u0644\u062a\u062d\u062a\u064a\u0629\n# \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550",
       "tasks": []
     },
     {
       "messageNumber": 2,
-      "summary": "الرسالة 32: مسار الفكرة الكامل — المرحلة 1: الاستقبال والتحليل",
-      "originalContent": "# الرسالة 32: مسار الفكرة الكامل — المرحلة 1: الاستقبال والتحليل",
+      "summary": "\u0627\u0644\u0631\u0633\u0627\u0644\u0629 32: \u0645\u0633\u0627\u0631 \u0627\u0644\u0641\u0643\u0631\u0629 \u0627\u0644\u0643\u0627\u0645\u0644 \u2014 \u0627\u0644\u0645\u0631\u062d\u0644\u0629 1: \u0627\u0644\u0627\u0633\u062a\u0642\u0628\u0627\u0644 \u0648\u0627\u0644\u062a\u062d\u0644\u064a\u0644",
+      "originalContent": "# \u0627\u0644\u0631\u0633\u0627\u0644\u0629 32: \u0645\u0633\u0627\u0631 \u0627\u0644\u0641\u0643\u0631\u0629 \u0627\u0644\u0643\u0627\u0645\u0644 \u2014 \u0627\u0644\u0645\u0631\u062d\u0644\u0629 1: \u0627\u0644\u0627\u0633\u062a\u0642\u0628\u0627\u0644 \u0648\u0627\u0644\u062a\u062d\u0644\u064a\u0644",
       "tasks": []
     },
     {
       "messageNumber": 3,
       "summary": "Build Phase 1 of the complete Idea-to-Project pipeline: Reception and Deep Analysis.",
-      "originalContent": "Build Phase 1 of the complete Idea-to-Project pipeline: Reception and Deep Analysis.\n\nProject: /root/genplatform. Site: https://app.gen3.ai.\nDESIGN PROTECTION: Do NOT modify sidebar.tsx, navbar.tsx, layout.tsx, globals.css.\n\nTask 1: Enhance the Ideas Lab page. When user submits a new idea, show an immediate pipeline tracker:\n- Horizontal progress bar with 7 stages as circles connected by lines:\n  ● Submitted → ● Analyzing → ● Review → ● Planning → ● Task Generation → ● Development → ● Complete\n- Current stage is highlighted (amber pulsing), completed stages are green, future stages are gray\n- This tracker appears at the top of the idea detail view\n\nTask 2: Create src/app/api/ideas/[id]/deep-analyze/route.ts — comprehensive analysis:\n- POST sends to OpenClaw via Telegram with this detailed prompt:\n\"🔬 DEEP ANALYSIS — Idea: {title}\nDescription: {description}\n\nProvide a comprehensive professional analysis in JSON format:\n{\n  \"summary\": \"2-3 sentence overview\",\n  \"marketAnalysis\": {\n    \"marketSize\": \"estimated TAM\",\n    \"growthRate\": \"annual growth %\",\n    \"competitors\": [{\"name\":\"\",\"strength\":\"\",\"weakness\":\"\"}],\n    \"opportunity\": \"what gap this fills\"\n  },\n  \"technicalAnalysis\": {\n    \"feasibility\": 1-10,\n    \"recommendedStack\": [\"Next.js\",\"PostgreSQL\",...],\n    \"aiTools\": [\"which AI/ML tools to use\"],\n    \"hostingNeeds\": \"server requirements\",\n    \"estimatedDevTime\": \"X weeks\"\n  },\n  \"features\": {\n    \"mvp\": [\"feature1\",\"feature2\"],\n    \"phase2\": [\"feature3\",\"feature4\"],\n    \"future\": [\"feature5\",\"feature6\"]\n  },\n  \"costEstimate\": {\n    \"development\": \"$X\",\n    \"hosting\": \"$X/month\",\n    \"apis\": \"$X/month\",\n    \"total\": \"$X\"\n  },\n  \"risks\": [\"risk1\",\"risk2\"],\n  \"recommendation\": \"GO or NO-GO with reasoning\"\n}\"\n- Returns {success: true, analysisId}\n\nTask 3: When analysis response comes back from OpenClaw, parse and display in the idea detail:\n- Market Analysis card: competitors table, market size, opportunity\n- Technical card: feasibility score (visual gauge), tech stack badges, dev time\n- Features card: MVP features list, Phase 2 list, Future list\n- Cost card: breakdown table\n- Recommendation card: GO/NO-GO with big badge\n\nTask 4: Below the analysis, show two buttons:\n- \"✅ Approve Analysis — Proceed to Planning\" → moves to next stage\n- \"✏️ Request Revision — Modify and Re-analyze\" → lets user add notes and re-triggers analysis\n- \"❌ Reject — Archive Idea\" → moves idea to rejected\n\nTask 5: Store analysis results in the idea object via PUT /api/ideas/[id] with analysisData field.\n\nAfter ALL: npm run build && pm2 restart genplatform-app && git add -A && git commit -m \"Idea pipeline: deep analysis with structured results\" && git push\n\n🔗 Preview: https://app.gen3.ai/ideas\nDo all 5 tasks NOW.",
+      "originalContent": "Build Phase 1 of the complete Idea-to-Project pipeline: Reception and Deep Analysis.\n\nProject: /root/genplatform. Site: https://app.gen3.ai.\nDESIGN PROTECTION: Do NOT modify sidebar.tsx, navbar.tsx, layout.tsx, globals.css.\n\nTask 1: Enhance the Ideas Lab page. When user submits a new idea, show an immediate pipeline tracker:\n- Horizontal progress bar with 7 stages as circles connected by lines:\n  \u25cf Submitted \u2192 \u25cf Analyzing \u2192 \u25cf Review \u2192 \u25cf Planning \u2192 \u25cf Task Generation \u2192 \u25cf Development \u2192 \u25cf Complete\n- Current stage is highlighted (amber pulsing), completed stages are green, future stages are gray\n- This tracker appears at the top of the idea detail view\n\nTask 2: Create src/app/api/ideas/[id]/deep-analyze/route.ts \u2014 comprehensive analysis:\n- POST sends to OpenClaw via Telegram with this detailed prompt:\n\"\ud83d\udd2c DEEP ANALYSIS \u2014 Idea: {title}\nDescription: {description}\n\nProvide a comprehensive professional analysis in JSON format:\n{\n  \"summary\": \"2-3 sentence overview\",\n  \"marketAnalysis\": {\n    \"marketSize\": \"estimated TAM\",\n    \"growthRate\": \"annual growth %\",\n    \"competitors\": [{\"name\":\"\",\"strength\":\"\",\"weakness\":\"\"}],\n    \"opportunity\": \"what gap this fills\"\n  },\n  \"technicalAnalysis\": {\n    \"feasibility\": 1-10,\n    \"recommendedStack\": [\"Next.js\",\"PostgreSQL\",...],\n    \"aiTools\": [\"which AI/ML tools to use\"],\n    \"hostingNeeds\": \"server requirements\",\n    \"estimatedDevTime\": \"X weeks\"\n  },\n  \"features\": {\n    \"mvp\": [\"feature1\",\"feature2\"],\n    \"phase2\": [\"feature3\",\"feature4\"],\n    \"future\": [\"feature5\",\"feature6\"]\n  },\n  \"costEstimate\": {\n    \"development\": \"$X\",\n    \"hosting\": \"$X/month\",\n    \"apis\": \"$X/month\",\n    \"total\": \"$X\"\n  },\n  \"risks\": [\"risk1\",\"risk2\"],\n  \"recommendation\": \"GO or NO-GO with reasoning\"\n}\"\n- Returns {success: true, analysisId}\n\nTask 3: When analysis response comes back from OpenClaw, parse and display in the idea detail:\n- Market Analysis card: competitors table, market size, opportunity\n- Technical card: feasibility score (visual gauge), tech stack badges, dev time\n- Features card: MVP features list, Phase 2 list, Future list\n- Cost card: breakdown table\n- Recommendation card: GO/NO-GO with big badge\n\nTask 4: Below the analysis, show two buttons:\n- \"\u2705 Approve Analysis \u2014 Proceed to Planning\" \u2192 moves to next stage\n- \"\u270f\ufe0f Request Revision \u2014 Modify and Re-analyze\" \u2192 lets user add notes and re-triggers analysis\n- \"\u274c Reject \u2014 Archive Idea\" \u2192 moves idea to rejected\n\nTask 5: Store analysis results in the idea object via PUT /api/ideas/[id] with analysisData field.\n\nAfter ALL: npm run build && pm2 restart genplatform-app && git add -A && git commit -m \"Idea pipeline: deep analysis with structured results\" && git push\n\n\ud83d\udd17 Preview: https://app.gen3.ai/ideas\nDo all 5 tasks NOW.",
       "tasks": [
         {
           "taskId": "task_1774013732864_PRIORITY-5-PIPELINE-INFRASTRUCTURE.md-msg3-task1",
           "taskNumber": 1,
           "originalDescription": "Enhance the Ideas Lab page. When user submits a new idea, show an immediate pipeline tracker:",
-          "status": "approved",
+          "status": "done",
           "approved": true,
           "rewritten": true,
           "microTasks": [
@@ -38,13 +38,14 @@
               "description": "Implement the following task with precision: Enhance the Ideas Lab page. When user submits a new idea, show an immediate pipeline tracker:. First identify the correct file and component, then make the necessary changes following the project's coding standards.",
               "status": "pending"
             }
-          ]
+          ],
+          "completedAt": "2026-03-20T20:25:00.000Z"
         },
         {
           "taskId": "task_1774013732864_PRIORITY-5-PIPELINE-INFRASTRUCTURE.md-msg3-task2",
           "taskNumber": 2,
-          "originalDescription": "Create src/app/api/ideas/[id]/deep-analyze/route.ts — comprehensive analysis:",
-          "status": "approved",
+          "originalDescription": "Create src/app/api/ideas/[id]/deep-analyze/route.ts \u2014 comprehensive analysis:",
+          "status": "done",
           "approved": true,
           "rewritten": true,
           "microTasks": [
@@ -52,16 +53,17 @@
               "id": "task_1774013732864_PRIORITY-5-PIPELINE-INFRASTRUCTURE.md-msg3-task2-micro1",
               "filePath": "src/app/api/ideas/route.ts",
               "change": "Create or update the API route",
-              "description": "In src/app/api/ideas/route.ts, implement the requested API functionality: Create src/app/api/ideas/[id]/deep-analyze/route.ts — comprehensive analysis:. Use Next.js 13+ app router conventions with proper request/response handling.",
+              "description": "In src/app/api/ideas/route.ts, implement the requested API functionality: Create src/app/api/ideas/[id]/deep-analyze/route.ts \u2014 comprehensive analysis:. Use Next.js 13+ app router conventions with proper request/response handling.",
               "status": "pending"
             }
-          ]
+          ],
+          "completedAt": "2026-03-20T20:25:00.000Z"
         },
         {
           "taskId": "task_1774013732864_PRIORITY-5-PIPELINE-INFRASTRUCTURE.md-msg3-task3",
           "taskNumber": 3,
           "originalDescription": "When analysis response comes back from OpenClaw, parse and display in the idea detail:",
-          "status": "approved",
+          "status": "done",
           "approved": true,
           "rewritten": true,
           "microTasks": [
@@ -72,13 +74,14 @@
               "description": "Implement the following task with precision: When analysis response comes back from OpenClaw, parse and display in the idea detail:. First identify the correct file and component, then make the necessary changes following the project's coding standards.",
               "status": "pending"
             }
-          ]
+          ],
+          "completedAt": "2026-03-20T20:25:00.000Z"
         },
         {
           "taskId": "task_1774013732864_PRIORITY-5-PIPELINE-INFRASTRUCTURE.md-msg3-task4",
           "taskNumber": 4,
           "originalDescription": "Below the analysis, show two buttons:",
-          "status": "approved",
+          "status": "done",
           "approved": true,
           "rewritten": true,
           "microTasks": [
@@ -89,13 +92,14 @@
               "description": "Implement the following task with precision: Below the analysis, show two buttons:. First identify the correct file and component, then make the necessary changes following the project's coding standards.",
               "status": "pending"
             }
-          ]
+          ],
+          "completedAt": "2026-03-20T20:25:00.000Z"
         },
         {
           "taskId": "task_1774013732864_PRIORITY-5-PIPELINE-INFRASTRUCTURE.md-msg3-task5",
           "taskNumber": 5,
           "originalDescription": "Store analysis results in the idea object via PUT /api/ideas/[id] with analysisData field.",
-          "status": "approved",
+          "status": "done",
           "approved": true,
           "rewritten": true,
           "microTasks": [
@@ -106,26 +110,27 @@
               "description": "In src/app/api/ideas/route.ts, implement the requested API functionality: Store analysis results in the idea object via PUT /api/ideas/[id] with analysisData field.. Use Next.js 13+ app router conventions with proper request/response handling.",
               "status": "pending"
             }
-          ]
+          ],
+          "completedAt": "2026-03-20T20:25:00.000Z"
         }
       ]
     },
     {
       "messageNumber": 4,
-      "summary": "الرسالة 33: مسار الفكرة — المرحلة 2: التحسين والتخطيط",
-      "originalContent": "# الرسالة 33: مسار الفكرة — المرحلة 2: التحسين والتخطيط",
+      "summary": "\u0627\u0644\u0631\u0633\u0627\u0644\u0629 33: \u0645\u0633\u0627\u0631 \u0627\u0644\u0641\u0643\u0631\u0629 \u2014 \u0627\u0644\u0645\u0631\u062d\u0644\u0629 2: \u0627\u0644\u062a\u062d\u0633\u064a\u0646 \u0648\u0627\u0644\u062a\u062e\u0637\u064a\u0637",
+      "originalContent": "# \u0627\u0644\u0631\u0633\u0627\u0644\u0629 33: \u0645\u0633\u0627\u0631 \u0627\u0644\u0641\u0643\u0631\u0629 \u2014 \u0627\u0644\u0645\u0631\u062d\u0644\u0629 2: \u0627\u0644\u062a\u062d\u0633\u064a\u0646 \u0648\u0627\u0644\u062a\u062e\u0637\u064a\u0637",
       "tasks": []
     },
     {
       "messageNumber": 5,
       "summary": "Build Phase 2 of pipeline: Improvement Review and Architecture Planning.",
-      "originalContent": "Build Phase 2 of pipeline: Improvement Review and Architecture Planning.\n\nProject: /root/genplatform. Site: https://app.gen3.ai.\nDESIGN PROTECTION: Do NOT modify sidebar.tsx, navbar.tsx, layout.tsx, globals.css.\n\nTask 1: Create src/app/api/ideas/[id]/improve/route.ts:\n- POST sends to OpenClaw: \"📈 IMPROVEMENT REVIEW for: {title}\n  Current analysis: {summary of analysis}\n  Current features: {MVP features list}\n  \n  Review this idea and suggest:\n  1. Additional features that would increase value\n  2. Better technical approaches\n  3. UX improvements\n  4. Monetization strategies not yet considered\n  5. Integration opportunities (APIs, platforms, partnerships)\n  6. Competitive advantages to develop\n  \n  Return as JSON: {improvements: [{title, description, impact: high/medium/low, effort: high/medium/low}], overallScore: 1-10}\"\n\nTask 2: Display improvements in idea detail as a card list:\n- Each improvement: title, description, impact badge (green/amber/red), effort badge\n- Checkbox to accept/reject each improvement\n- \"Apply Selected Improvements\" button → updates the idea features and re-saves\n\nTask 3: Create src/app/api/ideas/[id]/architect/route.ts:\n- POST sends to OpenClaw: \"📋 ARCHITECTURE PLAN for: {title}\n  Approved features: {list}\n  Tech stack: {stack}\n  \n  Create a detailed architecture plan:\n  1. System architecture (components, services, databases)\n  2. File structure (folders, key files)\n  3. API endpoints needed\n  4. Database schema (tables, relationships)\n  5. Third-party integrations\n  6. Deployment strategy\n  \n  Return as JSON with clear structure\"\n\nTask 4: Display architecture plan as:\n- System diagram (text-based, showing components and connections)\n- File structure tree\n- API endpoints table\n- Database tables list\n- \"Approve Architecture — Generate Tasks\" button\n\nTask 5: Pipeline tracker at top updates: Analysis ✅ → Improvement ✅ → Architecture (current) → ...\n\nAfter ALL: npm run build && pm2 restart genplatform-app && git add -A && git commit -m \"Idea pipeline: improvement review + architecture planning\" && git push\n\n🔗 Preview: https://app.gen3.ai/ideas\nDo all 5 tasks NOW.",
+      "originalContent": "Build Phase 2 of pipeline: Improvement Review and Architecture Planning.\n\nProject: /root/genplatform. Site: https://app.gen3.ai.\nDESIGN PROTECTION: Do NOT modify sidebar.tsx, navbar.tsx, layout.tsx, globals.css.\n\nTask 1: Create src/app/api/ideas/[id]/improve/route.ts:\n- POST sends to OpenClaw: \"\ud83d\udcc8 IMPROVEMENT REVIEW for: {title}\n  Current analysis: {summary of analysis}\n  Current features: {MVP features list}\n  \n  Review this idea and suggest:\n  1. Additional features that would increase value\n  2. Better technical approaches\n  3. UX improvements\n  4. Monetization strategies not yet considered\n  5. Integration opportunities (APIs, platforms, partnerships)\n  6. Competitive advantages to develop\n  \n  Return as JSON: {improvements: [{title, description, impact: high/medium/low, effort: high/medium/low}], overallScore: 1-10}\"\n\nTask 2: Display improvements in idea detail as a card list:\n- Each improvement: title, description, impact badge (green/amber/red), effort badge\n- Checkbox to accept/reject each improvement\n- \"Apply Selected Improvements\" button \u2192 updates the idea features and re-saves\n\nTask 3: Create src/app/api/ideas/[id]/architect/route.ts:\n- POST sends to OpenClaw: \"\ud83d\udccb ARCHITECTURE PLAN for: {title}\n  Approved features: {list}\n  Tech stack: {stack}\n  \n  Create a detailed architecture plan:\n  1. System architecture (components, services, databases)\n  2. File structure (folders, key files)\n  3. API endpoints needed\n  4. Database schema (tables, relationships)\n  5. Third-party integrations\n  6. Deployment strategy\n  \n  Return as JSON with clear structure\"\n\nTask 4: Display architecture plan as:\n- System diagram (text-based, showing components and connections)\n- File structure tree\n- API endpoints table\n- Database tables list\n- \"Approve Architecture \u2014 Generate Tasks\" button\n\nTask 5: Pipeline tracker at top updates: Analysis \u2705 \u2192 Improvement \u2705 \u2192 Architecture (current) \u2192 ...\n\nAfter ALL: npm run build && pm2 restart genplatform-app && git add -A && git commit -m \"Idea pipeline: improvement review + architecture planning\" && git push\n\n\ud83d\udd17 Preview: https://app.gen3.ai/ideas\nDo all 5 tasks NOW.",
       "tasks": [
         {
           "taskId": "task_1774013732864_PRIORITY-5-PIPELINE-INFRASTRUCTURE.md-msg5-task1",
           "taskNumber": 1,
           "originalDescription": "Create src/app/api/ideas/[id]/improve/route.ts:",
-          "status": "approved",
+          "status": "done",
           "approved": true,
           "rewritten": true,
           "microTasks": [
@@ -140,7 +145,7 @@
               "id": "task_1774013732864_PRIORITY-5-PIPELINE-INFRASTRUCTURE.md-msg5-task1-micro2",
               "filePath": "src/app/api/ideas/[id]/improve/route.ts",
               "change": "Build the OpenClaw prompt string",
-              "description": "After fetching the idea, check if it exists - if not, return NextResponse.json({ error: 'Idea not found' }, { status: 404 }). Then construct the prompt string using template literals: start with '📈 IMPROVEMENT REVIEW for: ' followed by idea.title. Add 'Current analysis: ' with idea.analysis or a summary. Add 'Current features: ' with idea.mvpFeatures joined as a comma-separated list. Include the full instruction block asking for: 1. Additional features that would increase value, 2. Better technical approaches, 3. UX improvements, 4. Monetization strategies not yet considered, 5. Integration opportunities, 6. Competitive advantages to develop. End with 'Return as JSON: {improvements: [{title, description, impact: high/medium/low, effort: high/medium/low}], overallScore: 1-10}'",
+              "description": "After fetching the idea, check if it exists - if not, return NextResponse.json({ error: 'Idea not found' }, { status: 404 }). Then construct the prompt string using template literals: start with '\ud83d\udcc8 IMPROVEMENT REVIEW for: ' followed by idea.title. Add 'Current analysis: ' with idea.analysis or a summary. Add 'Current features: ' with idea.mvpFeatures joined as a comma-separated list. Include the full instruction block asking for: 1. Additional features that would increase value, 2. Better technical approaches, 3. UX improvements, 4. Monetization strategies not yet considered, 5. Integration opportunities, 6. Competitive advantages to develop. End with 'Return as JSON: {improvements: [{title, description, impact: high/medium/low, effort: high/medium/low}], overallScore: 1-10}'",
               "status": "pending"
             },
             {
@@ -157,13 +162,14 @@
               "description": "After receiving the improvements from OpenClaw, use prisma.idea.update to save the improvements to the database. The update should use where: { id } and data: { improvements: JSON.stringify(improvements), improvementScore: overallScore, status: 'improvement_review' }. Return NextResponse.json({ success: true, improvements, overallScore }) on successful completion. Make sure the improvements field in your Prisma schema can store JSON - if it's a String type, stringify the array before saving.",
               "status": "pending"
             }
-          ]
+          ],
+          "completedAt": "2026-03-20T20:25:00.000Z"
         },
         {
           "taskId": "task_1774013732864_PRIORITY-5-PIPELINE-INFRASTRUCTURE.md-msg5-task2",
           "taskNumber": 2,
           "originalDescription": "Display improvements in idea detail as a card list:",
-          "status": "approved",
+          "status": "done",
           "approved": true,
           "rewritten": true,
           "microTasks": [
@@ -202,13 +208,14 @@
               "description": "Add a toggleImprovement function: const toggleImprovement = (index: number) => { setImprovements(prev => prev.map((imp, i) => i === index ? {...imp, selected: !imp.selected} : imp)); }. Below the improvements list, add a Button labeled 'Apply Selected Improvements'. Create an async function handleApplyImprovements that filters improvements where selected === true, then makes a PATCH request to `/api/ideas/${id}` with body containing the selected improvements to merge into mvpFeatures. After success, show toast.success('Improvements applied!') and refresh the idea data.",
               "status": "pending"
             }
-          ]
+          ],
+          "completedAt": "2026-03-20T20:25:00.000Z"
         },
         {
           "taskId": "task_1774013732864_PRIORITY-5-PIPELINE-INFRASTRUCTURE.md-msg5-task3",
           "taskNumber": 3,
           "originalDescription": "Create src/app/api/ideas/[id]/architect/route.ts:",
-          "status": "approved",
+          "status": "done",
           "approved": true,
           "rewritten": true,
           "microTasks": [
@@ -223,7 +230,7 @@
               "id": "task_1774013732864_PRIORITY-5-PIPELINE-INFRASTRUCTURE.md-msg5-task3-micro2",
               "filePath": "src/app/api/ideas/[id]/architect/route.ts",
               "change": "Construct detailed architecture prompt",
-              "description": "Build the architecture prompt string. Start with '📋 ARCHITECTURE PLAN for: ' + idea.title. Add 'Approved features: ' followed by a numbered list combining mvpFeatures and any selected improvements. Add 'Tech stack: ' with idea.techStack (either as string or parsed array). Include the detailed instruction: 'Create a detailed architecture plan: 1. System architecture (components, services, databases), 2. File structure (folders, key files), 3. API endpoints needed, 4. Database schema (tables, relationships), 5. Third-party integrations, 6. Deployment strategy'. End with 'Return as JSON with clear structure for each section'.",
+              "description": "Build the architecture prompt string. Start with '\ud83d\udccb ARCHITECTURE PLAN for: ' + idea.title. Add 'Approved features: ' followed by a numbered list combining mvpFeatures and any selected improvements. Add 'Tech stack: ' with idea.techStack (either as string or parsed array). Include the detailed instruction: 'Create a detailed architecture plan: 1. System architecture (components, services, databases), 2. File structure (folders, key files), 3. API endpoints needed, 4. Database schema (tables, relationships), 5. Third-party integrations, 6. Deployment strategy'. End with 'Return as JSON with clear structure for each section'.",
               "status": "pending"
             },
             {
@@ -240,13 +247,14 @@
               "description": "Save the architecture plan to the database using prisma.idea.update with where: { id } and data: { architecture: JSON.stringify(architectureData), status: 'architecture_complete' }. If the architecture field doesn't exist in your schema, you may need to add it as a String type. Return NextResponse.json({ success: true, architecture: architectureData }). Include the full architecture object in the response so the frontend can display it immediately without another fetch.",
               "status": "pending"
             }
-          ]
+          ],
+          "completedAt": "2026-03-20T20:25:00.000Z"
         },
         {
           "taskId": "task_1774013732864_PRIORITY-5-PIPELINE-INFRASTRUCTURE.md-msg5-task4",
           "taskNumber": 4,
           "originalDescription": "Display architecture plan as:",
-          "status": "approved",
+          "status": "done",
           "approved": true,
           "rewritten": true,
           "microTasks": [
@@ -261,14 +269,14 @@
               "id": "task_1774013732864_PRIORITY-5-PIPELINE-INFRASTRUCTURE.md-msg5-task4-micro2",
               "filePath": "src/app/ideas/[id]/page.tsx",
               "change": "Render text-based system architecture diagram",
-              "description": "Create a SystemDiagram component section within the page. When architecture is not null, render a Card with title 'System Architecture'. Inside, create a text-based diagram using a pre tag with monospace font: display each component from architecture.systemArchitecture on its own line, use ASCII characters like boxes (┌─┐ │ └─┘) and arrows (→ ← ↓ ↑) to show connections between components, services, and databases. Map over systemArchitecture.components to generate the diagram structure dynamically.",
+              "description": "Create a SystemDiagram component section within the page. When architecture is not null, render a Card with title 'System Architecture'. Inside, create a text-based diagram using a pre tag with monospace font: display each component from architecture.systemArchitecture on its own line, use ASCII characters like boxes (\u250c\u2500\u2510 \u2502 \u2514\u2500\u2518) and arrows (\u2192 \u2190 \u2193 \u2191) to show connections between components, services, and databases. Map over systemArchitecture.components to generate the diagram structure dynamically.",
               "status": "pending"
             },
             {
               "id": "task_1774013732864_PRIORITY-5-PIPELINE-INFRASTRUCTURE.md-msg5-task4-micro3",
               "filePath": "src/app/ideas/[id]/page.tsx",
               "change": "Display file structure as tree view",
-              "description": "Create a FileStructureTree section. Render a Card with title 'File Structure'. Inside, create a recursive component or use a pre tag to display the file tree. Map over architecture.fileStructure which should be an array of {name: string, type: 'folder'|'file', children?: array}. Use indentation (2 spaces per level) and icons: 📁 for folders, 📄 for files. Render folders with their children nested below them. Use a recursive function renderFileTree(items, depth) that handles the nesting.",
+              "description": "Create a FileStructureTree section. Render a Card with title 'File Structure'. Inside, create a recursive component or use a pre tag to display the file tree. Map over architecture.fileStructure which should be an array of {name: string, type: 'folder'|'file', children?: array}. Use indentation (2 spaces per level) and icons: \ud83d\udcc1 for folders, \ud83d\udcc4 for files. Render folders with their children nested below them. Use a recursive function renderFileTree(items, depth) that handles the nesting.",
               "status": "pending"
             },
             {
@@ -289,16 +297,17 @@
               "id": "task_1774013732864_PRIORITY-5-PIPELINE-INFRASTRUCTURE.md-msg5-task4-micro6",
               "filePath": "src/app/ideas/[id]/page.tsx",
               "change": "Add approve and generate tasks button",
-              "description": "At the bottom of the architecture section, add a prominent Button with text 'Approve Architecture — Generate Tasks'. Style it with className='w-full mt-4 bg-gradient-to-r from-green-500 to-emerald-600'. Create an async function handleApproveArchitecture that makes a POST to `/api/ideas/${id}/tasks/generate` (to be created in next phase), then on success shows toast.success('Tasks generated!') and navigates to a tasks view or updates the pipeline status. The button should be disabled if architecture is null.",
+              "description": "At the bottom of the architecture section, add a prominent Button with text 'Approve Architecture \u2014 Generate Tasks'. Style it with className='w-full mt-4 bg-gradient-to-r from-green-500 to-emerald-600'. Create an async function handleApproveArchitecture that makes a POST to `/api/ideas/${id}/tasks/generate` (to be created in next phase), then on success shows toast.success('Tasks generated!') and navigates to a tasks view or updates the pipeline status. The button should be disabled if architecture is null.",
               "status": "pending"
             }
-          ]
+          ],
+          "completedAt": "2026-03-20T20:25:00.000Z"
         },
         {
           "taskId": "task_1774013732864_PRIORITY-5-PIPELINE-INFRASTRUCTURE.md-msg5-task5",
           "taskNumber": 5,
-          "originalDescription": "Pipeline tracker at top updates: Analysis ✅ → Improvement ✅ → Architecture (current) → ...",
-          "status": "approved",
+          "originalDescription": "Pipeline tracker at top updates: Analysis \u2705 \u2192 Improvement \u2705 \u2192 Architecture (current) \u2192 ...",
+          "status": "done",
           "approved": true,
           "rewritten": true,
           "microTasks": [
@@ -313,7 +322,7 @@
               "id": "task_1774013732864_PRIORITY-5-PIPELINE-INFRASTRUCTURE.md-msg5-task5-micro2",
               "filePath": "src/app/ideas/[id]/page.tsx",
               "change": "Render pipeline stages with status indicators",
-              "description": "Render the pipeline tracker as a horizontal flex container with items-center and justify-between. Map over PIPELINE_STAGES. For each stage, render a div containing: a circular indicator (w-8 h-8 rounded-full flex items-center justify-center), the stage label below it. Determine if stage is complete (before current), current, or pending. Complete stages: bg-green-500 with a checkmark ✅ icon. Current stage: bg-blue-500 with a pulsing ring animation (animate-ping). Pending stages: bg-gray-300 with empty circle.",
+              "description": "Render the pipeline tracker as a horizontal flex container with items-center and justify-between. Map over PIPELINE_STAGES. For each stage, render a div containing: a circular indicator (w-8 h-8 rounded-full flex items-center justify-center), the stage label below it. Determine if stage is complete (before current), current, or pending. Complete stages: bg-green-500 with a checkmark \u2705 icon. Current stage: bg-blue-500 with a pulsing ring animation (animate-ping). Pending stages: bg-gray-300 with empty circle.",
               "status": "pending"
             },
             {
@@ -330,26 +339,27 @@
               "description": "Make the pipeline tracker interactive. When a completed stage is clicked, scroll to that section of the page using document.getElementById and scrollIntoView({ behavior: 'smooth' }). Add IDs to each section: id='section-analysis', id='section-improvement', id='section-architecture'. Add cursor-pointer and hover:scale-105 transition to completed stages. For the current stage, add a tooltip or small text below saying '(Current Step)'. Pending stages should have cursor-not-allowed and opacity-50 to indicate they can't be accessed yet.",
               "status": "pending"
             }
-          ]
+          ],
+          "completedAt": "2026-03-20T20:25:00.000Z"
         }
       ]
     },
     {
       "messageNumber": 6,
-      "summary": "الرسالة 34: مسار الفكرة — المرحلة 3: توليد المهام وتوزيعها",
-      "originalContent": "# الرسالة 34: مسار الفكرة — المرحلة 3: توليد المهام وتوزيعها",
+      "summary": "\u0627\u0644\u0631\u0633\u0627\u0644\u0629 34: \u0645\u0633\u0627\u0631 \u0627\u0644\u0641\u0643\u0631\u0629 \u2014 \u0627\u0644\u0645\u0631\u062d\u0644\u0629 3: \u062a\u0648\u0644\u064a\u062f \u0627\u0644\u0645\u0647\u0627\u0645 \u0648\u062a\u0648\u0632\u064a\u0639\u0647\u0627",
+      "originalContent": "# \u0627\u0644\u0631\u0633\u0627\u0644\u0629 34: \u0645\u0633\u0627\u0631 \u0627\u0644\u0641\u0643\u0631\u0629 \u2014 \u0627\u0644\u0645\u0631\u062d\u0644\u0629 3: \u062a\u0648\u0644\u064a\u062f \u0627\u0644\u0645\u0647\u0627\u0645 \u0648\u062a\u0648\u0632\u064a\u0639\u0647\u0627",
       "tasks": []
     },
     {
       "messageNumber": 7,
       "summary": "Build Phase 3: Task Generation and Agent Distribution.",
-      "originalContent": "Build Phase 3: Task Generation and Agent Distribution.\n\nProject: /root/genplatform. Site: https://app.gen3.ai.\nDESIGN PROTECTION: Do NOT modify sidebar.tsx, navbar.tsx, layout.tsx, globals.css.\n\nTask 1: Create src/app/api/ideas/[id]/generate-tasks/route.ts:\n- POST sends to OpenClaw: \"📋 TASK GENERATION for project: {title}\n  Architecture: {architecture summary}\n  Features: {features list}\n  \n  Generate ALL tasks needed to build this project. Be extremely thorough — generate as many tasks as needed for professional quality. For EACH task provide:\n  {\n    name: 'task name',\n    description: 'detailed description of what to do',\n    department: 'Frontend/Backend/Security/QA/Research/Planning',\n    estimatedMinutes: number,\n    priority: 'high/medium/low',\n    phase: 'MVP/Phase2/Phase3',\n    dependencies: ['task names this depends on']\n  }\n  \n  Generate minimum 50 tasks for a thorough project. Cover: setup, frontend pages, API routes, database, auth, testing, security, deployment, documentation.\"\n\nTask 2: When tasks come back, create them all via POST /api/tasks (loop):\n- Each task gets: projectId from the new project, status='backlog', sprint assignment based on phase\n- Show progress: \"Creating task 1/73... 15/73... 73/73 ✅\"\n- All tasks appear in the Kanban board\n\nTask 3: Auto-assign tasks to departments using src/lib/task-router.ts:\n- Frontend keywords → 💻 Frontend Dev\n- API/database keywords → ⚙️ Backend Dev\n- Test/review keywords → 🔍 QA\n- Security keywords → 🛡️ Security\n- Show assignment summary: \"Frontend: 25 tasks | Backend: 20 | QA: 15 | Security: 8 | Other: 5\"\n\nTask 4: Create the project automatically:\n- POST /api/projects with idea's data (name, description, tech stack from analysis)\n- Set previewUrl to \"{slug}.gen3.ai\"\n- Link all generated tasks to this project\n- Navigate to the new project detail page\n\nTask 5: Show the task distribution as a visual:\n- Pie chart or horizontal bar showing tasks per department\n- Priority breakdown: high/medium/low counts\n- Phase breakdown: MVP/Phase2/Phase3 counts\n- \"Start Development\" button → changes first batch of tasks to \"planned\"\n\nAfter ALL: npm run build && pm2 restart genplatform-app && git add -A && git commit -m \"Idea pipeline: task generation + auto-assignment\" && git push\n\n🔗 Preview: https://app.gen3.ai/ideas\nDo all 5 tasks NOW.",
+      "originalContent": "Build Phase 3: Task Generation and Agent Distribution.\n\nProject: /root/genplatform. Site: https://app.gen3.ai.\nDESIGN PROTECTION: Do NOT modify sidebar.tsx, navbar.tsx, layout.tsx, globals.css.\n\nTask 1: Create src/app/api/ideas/[id]/generate-tasks/route.ts:\n- POST sends to OpenClaw: \"\ud83d\udccb TASK GENERATION for project: {title}\n  Architecture: {architecture summary}\n  Features: {features list}\n  \n  Generate ALL tasks needed to build this project. Be extremely thorough \u2014 generate as many tasks as needed for professional quality. For EACH task provide:\n  {\n    name: 'task name',\n    description: 'detailed description of what to do',\n    department: 'Frontend/Backend/Security/QA/Research/Planning',\n    estimatedMinutes: number,\n    priority: 'high/medium/low',\n    phase: 'MVP/Phase2/Phase3',\n    dependencies: ['task names this depends on']\n  }\n  \n  Generate minimum 50 tasks for a thorough project. Cover: setup, frontend pages, API routes, database, auth, testing, security, deployment, documentation.\"\n\nTask 2: When tasks come back, create them all via POST /api/tasks (loop):\n- Each task gets: projectId from the new project, status='backlog', sprint assignment based on phase\n- Show progress: \"Creating task 1/73... 15/73... 73/73 \u2705\"\n- All tasks appear in the Kanban board\n\nTask 3: Auto-assign tasks to departments using src/lib/task-router.ts:\n- Frontend keywords \u2192 \ud83d\udcbb Frontend Dev\n- API/database keywords \u2192 \u2699\ufe0f Backend Dev\n- Test/review keywords \u2192 \ud83d\udd0d QA\n- Security keywords \u2192 \ud83d\udee1\ufe0f Security\n- Show assignment summary: \"Frontend: 25 tasks | Backend: 20 | QA: 15 | Security: 8 | Other: 5\"\n\nTask 4: Create the project automatically:\n- POST /api/projects with idea's data (name, description, tech stack from analysis)\n- Set previewUrl to \"{slug}.gen3.ai\"\n- Link all generated tasks to this project\n- Navigate to the new project detail page\n\nTask 5: Show the task distribution as a visual:\n- Pie chart or horizontal bar showing tasks per department\n- Priority breakdown: high/medium/low counts\n- Phase breakdown: MVP/Phase2/Phase3 counts\n- \"Start Development\" button \u2192 changes first batch of tasks to \"planned\"\n\nAfter ALL: npm run build && pm2 restart genplatform-app && git add -A && git commit -m \"Idea pipeline: task generation + auto-assignment\" && git push\n\n\ud83d\udd17 Preview: https://app.gen3.ai/ideas\nDo all 5 tasks NOW.",
       "tasks": [
         {
           "taskId": "task_1774013732864_PRIORITY-5-PIPELINE-INFRASTRUCTURE.md-msg7-task1",
           "taskNumber": 1,
           "originalDescription": "Create src/app/api/ideas/[id]/generate-tasks/route.ts:",
-          "status": "approved",
+          "status": "done",
           "approved": true,
           "rewritten": true,
           "microTasks": [
@@ -371,7 +381,7 @@
               "id": "task_1774013732864_PRIORITY-5-PIPELINE-INFRASTRUCTURE.md-msg7-task1-micro3",
               "filePath": "src/app/api/ideas/[id]/generate-tasks/route.ts",
               "change": "Build the comprehensive task generation prompt string",
-              "description": "Create the OpenClaw prompt as a const called 'taskGenerationPrompt'. Use template literals to build the exact prompt: '📋 TASK GENERATION for project: ${idea.title}\\nArchitecture: ${idea.analysis?.architecture || 'Not specified'}\\nFeatures: ${idea.analysis?.features?.join(', ') || 'Not specified'}\\n\\nGenerate ALL tasks needed to build this project...' Include the complete JSON structure specification with name, description, department, estimatedMinutes, priority, phase, and dependencies fields. Specify minimum 50 tasks covering setup, frontend, API, database, auth, testing, security, deployment, documentation.",
+              "description": "Create the OpenClaw prompt as a const called 'taskGenerationPrompt'. Use template literals to build the exact prompt: '\ud83d\udccb TASK GENERATION for project: ${idea.title}\\nArchitecture: ${idea.analysis?.architecture || 'Not specified'}\\nFeatures: ${idea.analysis?.features?.join(', ') || 'Not specified'}\\n\\nGenerate ALL tasks needed to build this project...' Include the complete JSON structure specification with name, description, department, estimatedMinutes, priority, phase, and dependencies fields. Specify minimum 50 tasks covering setup, frontend, API, database, auth, testing, security, deployment, documentation.",
               "status": "pending"
             },
             {
@@ -388,13 +398,14 @@
               "description": "Add response validation and transformation. Create a function validateTask(task: any): boolean that checks if task has required fields (name, description, department). Filter the parsed tasks array using this validator. Map each valid task to include default values: estimatedMinutes: task.estimatedMinutes || 30, priority: task.priority || 'medium', phase: task.phase || 'MVP', dependencies: task.dependencies || []. Return NextResponse.json({ tasks: validatedTasks, count: validatedTasks.length, ideaId: params.id }).",
               "status": "pending"
             }
-          ]
+          ],
+          "completedAt": "2026-03-20T20:25:00.000Z"
         },
         {
           "taskId": "task_1774013732864_PRIORITY-5-PIPELINE-INFRASTRUCTURE.md-msg7-task2",
           "taskNumber": 2,
           "originalDescription": "When tasks come back, create them all via POST /api/tasks (loop):",
-          "status": "approved",
+          "status": "done",
           "approved": true,
           "rewritten": true,
           "microTasks": [
@@ -423,7 +434,7 @@
               "id": "task_1774013732864_PRIORITY-5-PIPELINE-INFRASTRUCTURE.md-msg7-task2-micro4",
               "filePath": "src/app/api/ideas/[id]/generate-tasks/route.ts",
               "change": "Enhance response with comprehensive progress data",
-              "description": "Modify the final response to include detailed progress information. Return NextResponse.json({ success: true, message: `Created ${createdTasks.length}/${validatedTasks.length} tasks`, tasks: createdTasks, progress: { total: validatedTasks.length, created: createdTasks.length, failed: validatedTasks.length - createdTasks.length }, ideaId: params.id }). This provides the frontend with all necessary data to show the '1/73... 15/73... 73/73 ✅' progress updates.",
+              "description": "Modify the final response to include detailed progress information. Return NextResponse.json({ success: true, message: `Created ${createdTasks.length}/${validatedTasks.length} tasks`, tasks: createdTasks, progress: { total: validatedTasks.length, created: createdTasks.length, failed: validatedTasks.length - createdTasks.length }, ideaId: params.id }). This provides the frontend with all necessary data to show the '1/73... 15/73... 73/73 \u2705' progress updates.",
               "status": "pending"
             },
             {
@@ -437,16 +448,17 @@
               "id": "task_1774013732864_PRIORITY-5-PIPELINE-INFRASTRUCTURE.md-msg7-task2-micro6",
               "filePath": "src/components/ideas/task-generation-progress.tsx",
               "change": "Implement API call with real-time progress updates and completion callback",
-              "description": "Inside TaskGenerationProgress, add useEffect that calls the generate-tasks API. Use fetch(`/api/ideas/${ideaId}/generate-tasks`, { method: 'POST' }). On response, update states: setTotal(data.progress.total), setCurrent(data.progress.created), setProgress((data.progress.created / data.progress.total) * 100). When complete (progress === 100), setStatus('complete') and call onComplete(data.tasks). Render a Card with Progress bar showing '{current}/{total}' and status text like 'Creating task 15/73...' or '73/73 ✅'.",
+              "description": "Inside TaskGenerationProgress, add useEffect that calls the generate-tasks API. Use fetch(`/api/ideas/${ideaId}/generate-tasks`, { method: 'POST' }). On response, update states: setTotal(data.progress.total), setCurrent(data.progress.created), setProgress((data.progress.created / data.progress.total) * 100). When complete (progress === 100), setStatus('complete') and call onComplete(data.tasks). Render a Card with Progress bar showing '{current}/{total}' and status text like 'Creating task 15/73...' or '73/73 \u2705'.",
               "status": "pending"
             }
-          ]
+          ],
+          "completedAt": "2026-03-20T20:25:00.000Z"
         },
         {
           "taskId": "task_1774013732864_PRIORITY-5-PIPELINE-INFRASTRUCTURE.md-msg7-task3",
           "taskNumber": 3,
           "originalDescription": "Auto-assign tasks to departments using src/lib/task-router.ts:",
-          "status": "approved",
+          "status": "done",
           "approved": true,
           "rewritten": true,
           "microTasks": [
@@ -454,7 +466,7 @@
               "id": "task_1774013732864_PRIORITY-5-PIPELINE-INFRASTRUCTURE.md-msg7-task3-micro1",
               "filePath": "src/lib/task-router.ts",
               "change": "Create task router file with department constants and types",
-              "description": "Create the new task router utility file. Define the department types as a const DEPARTMENTS = { FRONTEND: '💻 Frontend Dev', BACKEND: '⚙️ Backend Dev', QA: '🔍 QA', SECURITY: '🛡️ Security', RESEARCH: '📚 Research', PLANNING: '📋 Planning' } as const. Create type Department = typeof DEPARTMENTS[keyof typeof DEPARTMENTS]. Export these types for use in other files.",
+              "description": "Create the new task router utility file. Define the department types as a const DEPARTMENTS = { FRONTEND: '\ud83d\udcbb Frontend Dev', BACKEND: '\u2699\ufe0f Backend Dev', QA: '\ud83d\udd0d QA', SECURITY: '\ud83d\udee1\ufe0f Security', RESEARCH: '\ud83d\udcda Research', PLANNING: '\ud83d\udccb Planning' } as const. Create type Department = typeof DEPARTMENTS[keyof typeof DEPARTMENTS]. Export these types for use in other files.",
               "status": "pending"
             },
             {
@@ -492,13 +504,14 @@
               "description": "Import the task router at the top of the file: import { routeAllTasks, formatDepartmentSummary } from '@/lib/task-router'. After validating tasks but before creating them in the database, call const { tasks: routedTasks, summary } = routeAllTasks(validatedTasks). Use routedTasks instead of validatedTasks in the creation loop. Include the summary and formatted summary string in the API response for the frontend to display.",
               "status": "pending"
             }
-          ]
+          ],
+          "completedAt": "2026-03-20T20:25:00.000Z"
         },
         {
           "taskId": "task_1774013732864_PRIORITY-5-PIPELINE-INFRASTRUCTURE.md-msg7-task4",
           "taskNumber": 4,
           "originalDescription": "Create the project automatically:",
-          "status": "approved",
+          "status": "done",
           "approved": true,
           "rewritten": true,
           "microTasks": [
@@ -537,13 +550,14 @@
               "description": "Add navigation handling after completion. Import { useRouter } from 'next/navigation' at the top. Inside the component, add const router = useRouter(). Modify the onComplete callback in useEffect to also trigger navigation: if (data.redirectUrl) { setTimeout(() => router.push(data.redirectUrl), 1500); }. Add a state for showingRedirect and display 'Redirecting to project...' message after tasks complete. Show the project preview URL in the completion message.",
               "status": "pending"
             }
-          ]
+          ],
+          "completedAt": "2026-03-20T20:25:00.000Z"
         },
         {
           "taskId": "task_1774013732864_PRIORITY-5-PIPELINE-INFRASTRUCTURE.md-msg7-task5",
           "taskNumber": 5,
           "originalDescription": "Show the task distribution as a visual:",
-          "status": "approved",
+          "status": "done",
           "approved": true,
           "rewritten": true,
           "microTasks": [
@@ -558,7 +572,7 @@
               "id": "task_1774013732864_PRIORITY-5-PIPELINE-INFRASTRUCTURE.md-msg7-task5-micro2",
               "filePath": "src/components/ideas/task-distribution-chart.tsx",
               "change": "Add color constants for all chart categories",
-              "description": "Define color constants for the charts: const DEPARTMENT_COLORS = { '💻 Frontend Dev': '#3b82f6', '⚙️ Backend Dev': '#10b981', '🔍 QA': '#f59e0b', '🛡️ Security': '#ef4444', '📚 Research': '#8b5cf6', '📋 Planning': '#6b7280' }. const PRIORITY_COLORS = { high: '#ef4444', medium: '#f59e0b', low: '#10b981' }. const PHASE_COLORS = { MVP: '#3b82f6', Phase2: '#8b5cf6', Phase3: '#10b981' }. These provide consistent visual styling.",
+              "description": "Define color constants for the charts: const DEPARTMENT_COLORS = { '\ud83d\udcbb Frontend Dev': '#3b82f6', '\u2699\ufe0f Backend Dev': '#10b981', '\ud83d\udd0d QA': '#f59e0b', '\ud83d\udee1\ufe0f Security': '#ef4444', '\ud83d\udcda Research': '#8b5cf6', '\ud83d\udccb Planning': '#6b7280' }. const PRIORITY_COLORS = { high: '#ef4444', medium: '#f59e0b', low: '#10b981' }. const PHASE_COLORS = { MVP: '#3b82f6', Phase2: '#8b5cf6', Phase3: '#10b981' }. These provide consistent visual styling.",
               "status": "pending"
             },
             {
@@ -603,26 +617,27 @@
               "description": "Create a new API route for starting development. Import NextRequest, NextResponse from 'next/server' and prisma from '@/lib/prisma'. Export async function POST that updates tasks: await prisma.task.updateMany({ where: { projectId: params.id, phase: 'MVP', status: 'backlog' }, data: { status: 'planned' } }). Return the count of updated tasks. This powers the 'Start Development' button functionality.",
               "status": "pending"
             }
-          ]
+          ],
+          "completedAt": "2026-03-20T20:25:00.000Z"
         }
       ]
     },
     {
       "messageNumber": 8,
-      "summary": "الرسالة 35: مسار الفكرة — المرحلة 4: التنفيذ المتوازي",
-      "originalContent": "# الرسالة 35: مسار الفكرة — المرحلة 4: التنفيذ المتوازي",
+      "summary": "\u0627\u0644\u0631\u0633\u0627\u0644\u0629 35: \u0645\u0633\u0627\u0631 \u0627\u0644\u0641\u0643\u0631\u0629 \u2014 \u0627\u0644\u0645\u0631\u062d\u0644\u0629 4: \u0627\u0644\u062a\u0646\u0641\u064a\u0630 \u0627\u0644\u0645\u062a\u0648\u0627\u0632\u064a",
+      "originalContent": "# \u0627\u0644\u0631\u0633\u0627\u0644\u0629 35: \u0645\u0633\u0627\u0631 \u0627\u0644\u0641\u0643\u0631\u0629 \u2014 \u0627\u0644\u0645\u0631\u062d\u0644\u0629 4: \u0627\u0644\u062a\u0646\u0641\u064a\u0630 \u0627\u0644\u0645\u062a\u0648\u0627\u0632\u064a",
       "tasks": []
     },
     {
       "messageNumber": 9,
       "summary": "Build Phase 4: Parallel Execution and Live Monitoring.",
-      "originalContent": "Build Phase 4: Parallel Execution and Live Monitoring.\n\nProject: /root/genplatform. Site: https://app.gen3.ai.\nDESIGN PROTECTION: Do NOT modify sidebar.tsx, navbar.tsx, layout.tsx, globals.css.\n\nTask 1: Create src/app/api/projects/[id]/execute/route.ts:\n- POST starts execution of planned tasks\n- Takes the first batch of \"planned\" tasks (e.g. 5 at a time)\n- For each task: sends to OpenClaw via Telegram with the format:\n  \"🎯 EXECUTE TASK: [{department}] {taskName}\n  Project: {projectName} at {projectPath}\n  Description: {description}\n  Dependencies: {list or 'none'}\n  \n  Complete this task. Follow all WORK-RULES. Send notification when done.\"\n- Marks tasks as \"in_progress\"\n- Returns {startedTasks: N, totalPlanned: M}\n\nTask 2: In the project detail page, add \"Execution Control\" panel:\n- \"▶️ Start Batch\" button → executes next 5 planned tasks\n- \"⏸️ Pause\" button → stops sending new tasks (current ones finish)\n- \"⏭️ Auto Mode\" toggle → automatically starts next batch when current finishes\n- Batch size selector: 1, 3, 5, 10 tasks at a time\n\nTask 3: Live monitoring in the project detail:\n- Real-time task status panel showing:\n  * Tasks in queue (planned): X\n  * Currently executing: Y (with names and assigned departments)\n  * Completed today: Z\n  * Failed (needs attention): N\n- Each executing task shows: name, department icon, elapsed time, progress indicator (spinner)\n\nTask 4: Activity feed for the project:\n- Show messages from OpenClaw about this project\n- \"✅ Task T-15 done — Created login page\"\n- \"🔨 Working on T-16 — API routes...\"\n- \"❌ T-17 failed — fixing import error\"\n- Auto-scroll, new items at top\n\nTask 5: Create a \"Daily Schedule\" option in project settings:\n- \"Auto-execute from [time] to [time]\" (e.g. 8 AM to 11 PM)\n- Uses cron job: at start time, begins executing tasks. At end time, pauses.\n- Toggle: ON/OFF\n- This creates an OpenClaw cron job for the project\n\nAfter ALL: npm run build && pm2 restart genplatform-app && git add -A && git commit -m \"Project execution: parallel tasks, live monitoring, auto mode\" && git push\n\n🔗 Preview: https://app.gen3.ai/projects/1\nDo all 5 tasks NOW.",
+      "originalContent": "Build Phase 4: Parallel Execution and Live Monitoring.\n\nProject: /root/genplatform. Site: https://app.gen3.ai.\nDESIGN PROTECTION: Do NOT modify sidebar.tsx, navbar.tsx, layout.tsx, globals.css.\n\nTask 1: Create src/app/api/projects/[id]/execute/route.ts:\n- POST starts execution of planned tasks\n- Takes the first batch of \"planned\" tasks (e.g. 5 at a time)\n- For each task: sends to OpenClaw via Telegram with the format:\n  \"\ud83c\udfaf EXECUTE TASK: [{department}] {taskName}\n  Project: {projectName} at {projectPath}\n  Description: {description}\n  Dependencies: {list or 'none'}\n  \n  Complete this task. Follow all WORK-RULES. Send notification when done.\"\n- Marks tasks as \"in_progress\"\n- Returns {startedTasks: N, totalPlanned: M}\n\nTask 2: In the project detail page, add \"Execution Control\" panel:\n- \"\u25b6\ufe0f Start Batch\" button \u2192 executes next 5 planned tasks\n- \"\u23f8\ufe0f Pause\" button \u2192 stops sending new tasks (current ones finish)\n- \"\u23ed\ufe0f Auto Mode\" toggle \u2192 automatically starts next batch when current finishes\n- Batch size selector: 1, 3, 5, 10 tasks at a time\n\nTask 3: Live monitoring in the project detail:\n- Real-time task status panel showing:\n  * Tasks in queue (planned): X\n  * Currently executing: Y (with names and assigned departments)\n  * Completed today: Z\n  * Failed (needs attention): N\n- Each executing task shows: name, department icon, elapsed time, progress indicator (spinner)\n\nTask 4: Activity feed for the project:\n- Show messages from OpenClaw about this project\n- \"\u2705 Task T-15 done \u2014 Created login page\"\n- \"\ud83d\udd28 Working on T-16 \u2014 API routes...\"\n- \"\u274c T-17 failed \u2014 fixing import error\"\n- Auto-scroll, new items at top\n\nTask 5: Create a \"Daily Schedule\" option in project settings:\n- \"Auto-execute from [time] to [time]\" (e.g. 8 AM to 11 PM)\n- Uses cron job: at start time, begins executing tasks. At end time, pauses.\n- Toggle: ON/OFF\n- This creates an OpenClaw cron job for the project\n\nAfter ALL: npm run build && pm2 restart genplatform-app && git add -A && git commit -m \"Project execution: parallel tasks, live monitoring, auto mode\" && git push\n\n\ud83d\udd17 Preview: https://app.gen3.ai/projects/1\nDo all 5 tasks NOW.",
       "tasks": [
         {
           "taskId": "task_1774013732864_PRIORITY-5-PIPELINE-INFRASTRUCTURE.md-msg9-task1",
           "taskNumber": 1,
           "originalDescription": "Create src/app/api/projects/[id]/execute/route.ts:",
-          "status": "approved",
+          "status": "done",
           "approved": true,
           "rewritten": true,
           "microTasks": [
@@ -651,7 +666,7 @@
               "id": "task_1774013732864_PRIORITY-5-PIPELINE-INFRASTRUCTURE.md-msg9-task1-micro4",
               "filePath": "src/app/api/projects/[id]/execute/route.ts",
               "change": "Create helper function to format task messages for Telegram",
-              "description": "Create a helper function called formatTaskForTelegram that takes task object and project object as parameters. Build a template literal string with the exact format: '🎯 EXECUTE TASK: [{task.department}] {task.name}\\nProject: {project.name} at {project.path}\\nDescription: {task.description}\\nDependencies: {task.dependencies || 'none'}\\n\\nComplete this task. Follow all WORK-RULES. Send notification when done.' Return this formatted string.",
+              "description": "Create a helper function called formatTaskForTelegram that takes task object and project object as parameters. Build a template literal string with the exact format: '\ud83c\udfaf EXECUTE TASK: [{task.department}] {task.name}\\nProject: {project.name} at {project.path}\\nDescription: {task.description}\\nDependencies: {task.dependencies || 'none'}\\n\\nComplete this task. Follow all WORK-RULES. Send notification when done.' Return this formatted string.",
               "status": "pending"
             },
             {
@@ -675,13 +690,14 @@
               "description": "After processing all tasks, count remaining planned tasks using prisma.task.count with where projectId and status 'planned'. Return NextResponse.json containing: startedTasks as the length of successfully started tasks array, totalPlanned as the count of remaining planned tasks, taskIds as array of started task IDs. Add appropriate error handling for the entire operation.",
               "status": "pending"
             }
-          ]
+          ],
+          "completedAt": "2026-03-20T20:25:00.000Z"
         },
         {
           "taskId": "task_1774013732864_PRIORITY-5-PIPELINE-INFRASTRUCTURE.md-msg9-task2",
           "taskNumber": 2,
           "originalDescription": "In the project detail page, add \"Execution Control\" panel:",
-          "status": "approved",
+          "status": "done",
           "approved": true,
           "rewritten": true,
           "microTasks": [
@@ -734,13 +750,14 @@
               "description": "After the auto mode toggle in the same flex container, add a div with flex items-center gap-2 containing: Label with text 'Batch Size:', Select component with value={batchSize} onValueChange={setBatchSize}. Inside Select add SelectTrigger with className w-20 containing SelectValue, then SelectContent with SelectItem components for values '1', '3', '5', '10' with corresponding display text '1 task', '3 tasks', '5 tasks', '10 tasks'.",
               "status": "pending"
             }
-          ]
+          ],
+          "completedAt": "2026-03-20T20:25:00.000Z"
         },
         {
           "taskId": "task_1774013732864_PRIORITY-5-PIPELINE-INFRASTRUCTURE.md-msg9-task3",
           "taskNumber": 3,
           "originalDescription": "Live monitoring in the project detail:",
-          "status": "approved",
+          "status": "done",
           "approved": true,
           "rewritten": true,
           "microTasks": [
@@ -800,13 +817,14 @@
               "description": "Create a new utility file. Export a function getDepartmentIcon that takes department: string as parameter. Use a switch statement to return appropriate Lucide icons: 'frontend' returns Layout icon, 'backend' returns Server icon, 'database' returns Database icon, 'devops' returns Cloud icon, 'testing' returns TestTube icon, default returns Code icon. Also export getDepartmentColor function returning tailwind color classes for each department.",
               "status": "pending"
             }
-          ]
+          ],
+          "completedAt": "2026-03-20T20:25:00.000Z"
         },
         {
           "taskId": "task_1774013732864_PRIORITY-5-PIPELINE-INFRASTRUCTURE.md-msg9-task4",
           "taskNumber": 4,
           "originalDescription": "Activity feed for the project:",
-          "status": "approved",
+          "status": "done",
           "approved": true,
           "rewritten": true,
           "microTasks": [
@@ -859,13 +877,14 @@
               "description": "Add useEffect for auto-scroll behavior. Create ref const feedRef = useRef<HTMLDivElement>(null). In useEffect with dependency on activities.length, check if feedRef.current exists, then set feedRef.current.scrollTop = 0 to scroll to top (newest items). Add smooth scroll behavior. Attach feedRef to the CardContent div. New activities appear at top and view scrolls automatically.",
               "status": "pending"
             }
-          ]
+          ],
+          "completedAt": "2026-03-20T20:25:00.000Z"
         },
         {
           "taskId": "task_1774013732864_PRIORITY-5-PIPELINE-INFRASTRUCTURE.md-msg9-task5",
           "taskNumber": 5,
           "originalDescription": "Create a \"Daily Schedule\" option in project settings:",
-          "status": "approved",
+          "status": "done",
           "approved": true,
           "rewritten": true,
           "microTasks": [
@@ -932,26 +951,27 @@
               "description": "In the project detail page header area near the title, add a Link to `/projects/${id}/settings` with Button variant='ghost' size='sm' containing Settings icon. This provides easy navigation to the settings page. Also add a small indicator next to project title if schedule is enabled: Badge variant='outline' with Clock icon and 'Scheduled' text, fetched from project data.",
               "status": "pending"
             }
-          ]
+          ],
+          "completedAt": "2026-03-20T20:25:00.000Z"
         }
       ]
     },
     {
       "messageNumber": 10,
-      "summary": "الرسالة 36: نظام المراقبة والجودة المستمرة",
-      "originalContent": "# الرسالة 36: نظام المراقبة والجودة المستمرة",
+      "summary": "\u0627\u0644\u0631\u0633\u0627\u0644\u0629 36: \u0646\u0638\u0627\u0645 \u0627\u0644\u0645\u0631\u0627\u0642\u0628\u0629 \u0648\u0627\u0644\u062c\u0648\u062f\u0629 \u0627\u0644\u0645\u0633\u062a\u0645\u0631\u0629",
+      "originalContent": "# \u0627\u0644\u0631\u0633\u0627\u0644\u0629 36: \u0646\u0638\u0627\u0645 \u0627\u0644\u0645\u0631\u0627\u0642\u0628\u0629 \u0648\u0627\u0644\u062c\u0648\u062f\u0629 \u0627\u0644\u0645\u0633\u062a\u0645\u0631\u0629",
       "tasks": []
     },
     {
       "messageNumber": 11,
       "summary": "Build the continuous quality monitoring system.",
-      "originalContent": "Build the continuous quality monitoring system.\n\nProject: /root/genplatform. Site: https://app.gen3.ai.\nDESIGN PROTECTION: Do NOT modify sidebar.tsx, navbar.tsx, layout.tsx, globals.css.\n\nTask 1: Create src/app/api/projects/[id]/review/route.ts:\n- POST triggers code review for the project\n- Sends to OpenClaw: \"🔍 CODE REVIEW for {projectName} at {projectPath}\n  Review the latest changes. Check for:\n  1. Code quality and best practices\n  2. Security vulnerabilities\n  3. Performance issues\n  4. Missing error handling\n  5. TypeScript type errors\n  6. Unused imports and dead code\n  \n  Report findings as JSON: {issues: [{file, line, severity, description, suggestion}], score: 1-10}\"\n- Returns {reviewId, status: \"reviewing\"}\n\nTask 2: Create src/app/api/projects/[id]/security-scan/route.ts:\n- POST triggers security scan\n- Sends to OpenClaw: \"🛡️ SECURITY SCAN for {projectName}\n  Check all files for:\n  1. Exposed API keys or secrets\n  2. SQL injection risks\n  3. XSS vulnerabilities\n  4. Prompt injection risks\n  5. Insecure file operations\n  6. Missing authentication checks\n  \n  Report as JSON: {vulnerabilities: [{type, severity, file, description, fix}], riskLevel: low/medium/high}\"\n\nTask 3: In project detail, add \"Quality\" tab:\n- Last review: date, score (X/10), issues count\n- Last security scan: date, risk level, vulnerabilities count\n- \"Run Code Review\" button\n- \"Run Security Scan\" button\n- History of past reviews and scans\n\nTask 4: Create src/app/api/projects/[id]/suggest-improvements/route.ts:\n- POST sends to OpenClaw: \"📈 IMPROVEMENT SUGGESTIONS for {projectName}\n  Analyze the project and suggest:\n  1. UI/UX improvements\n  2. Performance optimizations\n  3. New features users would want\n  4. Code architecture improvements\n  5. Better error handling\n  \n  For each suggestion: title, description, impact, effort\"\n- Results shown in Quality tab as improvement cards\n\nTask 5: Auto-quality checks:\n- After every task is marked \"done\", automatically trigger a mini code review\n- If review finds critical issues, create a new task in Kanban: \"Fix: {issue description}\"\n- This creates a quality feedback loop\n\nAfter ALL: npm run build && pm2 restart genplatform-app && git add -A && git commit -m \"Quality system: code review, security scan, improvement suggestions\" && git push\n\n🔗 Preview: https://app.gen3.ai/projects/1 (Quality tab)\nDo all 5 tasks NOW.",
+      "originalContent": "Build the continuous quality monitoring system.\n\nProject: /root/genplatform. Site: https://app.gen3.ai.\nDESIGN PROTECTION: Do NOT modify sidebar.tsx, navbar.tsx, layout.tsx, globals.css.\n\nTask 1: Create src/app/api/projects/[id]/review/route.ts:\n- POST triggers code review for the project\n- Sends to OpenClaw: \"\ud83d\udd0d CODE REVIEW for {projectName} at {projectPath}\n  Review the latest changes. Check for:\n  1. Code quality and best practices\n  2. Security vulnerabilities\n  3. Performance issues\n  4. Missing error handling\n  5. TypeScript type errors\n  6. Unused imports and dead code\n  \n  Report findings as JSON: {issues: [{file, line, severity, description, suggestion}], score: 1-10}\"\n- Returns {reviewId, status: \"reviewing\"}\n\nTask 2: Create src/app/api/projects/[id]/security-scan/route.ts:\n- POST triggers security scan\n- Sends to OpenClaw: \"\ud83d\udee1\ufe0f SECURITY SCAN for {projectName}\n  Check all files for:\n  1. Exposed API keys or secrets\n  2. SQL injection risks\n  3. XSS vulnerabilities\n  4. Prompt injection risks\n  5. Insecure file operations\n  6. Missing authentication checks\n  \n  Report as JSON: {vulnerabilities: [{type, severity, file, description, fix}], riskLevel: low/medium/high}\"\n\nTask 3: In project detail, add \"Quality\" tab:\n- Last review: date, score (X/10), issues count\n- Last security scan: date, risk level, vulnerabilities count\n- \"Run Code Review\" button\n- \"Run Security Scan\" button\n- History of past reviews and scans\n\nTask 4: Create src/app/api/projects/[id]/suggest-improvements/route.ts:\n- POST sends to OpenClaw: \"\ud83d\udcc8 IMPROVEMENT SUGGESTIONS for {projectName}\n  Analyze the project and suggest:\n  1. UI/UX improvements\n  2. Performance optimizations\n  3. New features users would want\n  4. Code architecture improvements\n  5. Better error handling\n  \n  For each suggestion: title, description, impact, effort\"\n- Results shown in Quality tab as improvement cards\n\nTask 5: Auto-quality checks:\n- After every task is marked \"done\", automatically trigger a mini code review\n- If review finds critical issues, create a new task in Kanban: \"Fix: {issue description}\"\n- This creates a quality feedback loop\n\nAfter ALL: npm run build && pm2 restart genplatform-app && git add -A && git commit -m \"Quality system: code review, security scan, improvement suggestions\" && git push\n\n\ud83d\udd17 Preview: https://app.gen3.ai/projects/1 (Quality tab)\nDo all 5 tasks NOW.",
       "tasks": [
         {
           "taskId": "task_1774013732864_PRIORITY-5-PIPELINE-INFRASTRUCTURE.md-msg11-task1",
           "taskNumber": 1,
           "originalDescription": "Create src/app/api/projects/[id]/review/route.ts:",
-          "status": "approved",
+          "status": "done",
           "approved": true,
           "rewritten": true,
           "microTasks": [
@@ -962,13 +982,14 @@
               "description": "In src/app/api/projects/route.ts, implement the requested API functionality: Create src/app/api/projects/[id]/review/route.ts:. Use Next.js 13+ app router conventions with proper request/response handling.",
               "status": "pending"
             }
-          ]
+          ],
+          "completedAt": "2026-03-20T20:25:00.000Z"
         },
         {
           "taskId": "task_1774013732864_PRIORITY-5-PIPELINE-INFRASTRUCTURE.md-msg11-task2",
           "taskNumber": 2,
           "originalDescription": "Create src/app/api/projects/[id]/security-scan/route.ts:",
-          "status": "approved",
+          "status": "done",
           "approved": true,
           "rewritten": true,
           "microTasks": [
@@ -979,13 +1000,14 @@
               "description": "In src/app/api/projects/route.ts, implement the requested API functionality: Create src/app/api/projects/[id]/security-scan/route.ts:. Use Next.js 13+ app router conventions with proper request/response handling.",
               "status": "pending"
             }
-          ]
+          ],
+          "completedAt": "2026-03-20T20:25:00.000Z"
         },
         {
           "taskId": "task_1774013732864_PRIORITY-5-PIPELINE-INFRASTRUCTURE.md-msg11-task3",
           "taskNumber": 3,
           "originalDescription": "In project detail, add \"Quality\" tab:",
-          "status": "approved",
+          "status": "done",
           "approved": true,
           "rewritten": true,
           "microTasks": [
@@ -996,13 +1018,14 @@
               "description": "Implement the following task with precision: In project detail, add \"Quality\" tab:. First identify the correct file and component, then make the necessary changes following the project's coding standards.",
               "status": "pending"
             }
-          ]
+          ],
+          "completedAt": "2026-03-20T20:25:00.000Z"
         },
         {
           "taskId": "task_1774013732864_PRIORITY-5-PIPELINE-INFRASTRUCTURE.md-msg11-task4",
           "taskNumber": 4,
           "originalDescription": "Create src/app/api/projects/[id]/suggest-improvements/route.ts:",
-          "status": "approved",
+          "status": "done",
           "approved": true,
           "rewritten": true,
           "microTasks": [
@@ -1013,13 +1036,14 @@
               "description": "In src/app/api/projects/route.ts, implement the requested API functionality: Create src/app/api/projects/[id]/suggest-improvements/route.ts:. Use Next.js 13+ app router conventions with proper request/response handling.",
               "status": "pending"
             }
-          ]
+          ],
+          "completedAt": "2026-03-20T20:25:00.000Z"
         },
         {
           "taskId": "task_1774013732864_PRIORITY-5-PIPELINE-INFRASTRUCTURE.md-msg11-task5",
           "taskNumber": 5,
           "originalDescription": "Auto-quality checks:",
-          "status": "approved",
+          "status": "done",
           "approved": true,
           "rewritten": true,
           "microTasks": [
@@ -1030,26 +1054,27 @@
               "description": "Implement the following task with precision: Auto-quality checks:. First identify the correct file and component, then make the necessary changes following the project's coding standards.",
               "status": "pending"
             }
-          ]
+          ],
+          "completedAt": "2026-03-20T20:25:00.000Z"
         }
       ]
     },
     {
       "messageNumber": 12,
-      "summary": "الرسالة 37: إدارة البنية التحتية والذاكرة",
-      "originalContent": "# الرسالة 37: إدارة البنية التحتية والذاكرة",
+      "summary": "\u0627\u0644\u0631\u0633\u0627\u0644\u0629 37: \u0625\u062f\u0627\u0631\u0629 \u0627\u0644\u0628\u0646\u064a\u0629 \u0627\u0644\u062a\u062d\u062a\u064a\u0629 \u0648\u0627\u0644\u0630\u0627\u0643\u0631\u0629",
+      "originalContent": "# \u0627\u0644\u0631\u0633\u0627\u0644\u0629 37: \u0625\u062f\u0627\u0631\u0629 \u0627\u0644\u0628\u0646\u064a\u0629 \u0627\u0644\u062a\u062d\u062a\u064a\u0629 \u0648\u0627\u0644\u0630\u0627\u0643\u0631\u0629",
       "tasks": []
     },
     {
       "messageNumber": 13,
       "summary": "Build infrastructure management for context windows and memory.",
-      "originalContent": "Build infrastructure management for context windows and memory.\n\nProject: /root/genplatform. Site: https://app.gen3.ai.\nDESIGN PROTECTION: Do NOT modify sidebar.tsx, navbar.tsx, layout.tsx, globals.css.\n\nTask 1: In the Models page (/dashboard/models), add \"Infrastructure\" section:\n- Server Status: CPU, RAM, Disk from /api/bridge/metrics\n- PM2 Processes: list all running services with CPU/memory usage\n- Caddy Domains: list all configured subdomains\n- Disk breakdown: how much space each project uses\n\nTask 2: Context Window Management panel:\n- Show all active OpenClaw sessions from /api/bridge/sessions\n- Each session: model, context usage %, last message time\n- Visual gauge for each: green (<50%), amber (50-80%), red (>80%)\n- \"Reset Session\" button → sends /reset to that session\n- \"Auto-reset at 80%\" toggle — adds a rule to WORK-RULES.md\n\nTask 3: Memory Optimization section:\n- Show total memory files size\n- \"Consolidate Memory\" button → triggers openclaw memory consolidate\n- \"Archive Old Files\" button → moves files older than 30 days to archive\n- Memory usage chart\n\nTask 4: Smart Session Management rules — create/update in WORK-RULES.md:\n- Rule: \"When context reaches 75%, summarize current work and reset\"\n- Rule: \"Before each task group, check session usage\"\n- Rule: \"Use separate sessions for different projects\"\n- Rule: \"Keep memory files under 10KB each for fast loading\"\n\nTask 5: Cost Dashboard:\n- Estimated daily cost based on session usage\n- \"Today: ~$X | This week: ~$X | This month: ~$X\"\n- Cost per project breakdown\n- Recommendations: \"Switch task X to Sonnet to save $Y\"\n\nAfter ALL: npm run build && pm2 restart genplatform-app && git add -A && git commit -m \"Infrastructure: context management, memory optimization, cost tracking\" && git push\n\n🔗 Preview: https://app.gen3.ai/dashboard/models\nDo all 5 tasks NOW.",
+      "originalContent": "Build infrastructure management for context windows and memory.\n\nProject: /root/genplatform. Site: https://app.gen3.ai.\nDESIGN PROTECTION: Do NOT modify sidebar.tsx, navbar.tsx, layout.tsx, globals.css.\n\nTask 1: In the Models page (/dashboard/models), add \"Infrastructure\" section:\n- Server Status: CPU, RAM, Disk from /api/bridge/metrics\n- PM2 Processes: list all running services with CPU/memory usage\n- Caddy Domains: list all configured subdomains\n- Disk breakdown: how much space each project uses\n\nTask 2: Context Window Management panel:\n- Show all active OpenClaw sessions from /api/bridge/sessions\n- Each session: model, context usage %, last message time\n- Visual gauge for each: green (<50%), amber (50-80%), red (>80%)\n- \"Reset Session\" button \u2192 sends /reset to that session\n- \"Auto-reset at 80%\" toggle \u2014 adds a rule to WORK-RULES.md\n\nTask 3: Memory Optimization section:\n- Show total memory files size\n- \"Consolidate Memory\" button \u2192 triggers openclaw memory consolidate\n- \"Archive Old Files\" button \u2192 moves files older than 30 days to archive\n- Memory usage chart\n\nTask 4: Smart Session Management rules \u2014 create/update in WORK-RULES.md:\n- Rule: \"When context reaches 75%, summarize current work and reset\"\n- Rule: \"Before each task group, check session usage\"\n- Rule: \"Use separate sessions for different projects\"\n- Rule: \"Keep memory files under 10KB each for fast loading\"\n\nTask 5: Cost Dashboard:\n- Estimated daily cost based on session usage\n- \"Today: ~$X | This week: ~$X | This month: ~$X\"\n- Cost per project breakdown\n- Recommendations: \"Switch task X to Sonnet to save $Y\"\n\nAfter ALL: npm run build && pm2 restart genplatform-app && git add -A && git commit -m \"Infrastructure: context management, memory optimization, cost tracking\" && git push\n\n\ud83d\udd17 Preview: https://app.gen3.ai/dashboard/models\nDo all 5 tasks NOW.",
       "tasks": [
         {
           "taskId": "task_1774013732864_PRIORITY-5-PIPELINE-INFRASTRUCTURE.md-msg13-task1",
           "taskNumber": 1,
           "originalDescription": "In the Models page (/dashboard/models), add \"Infrastructure\" section:",
-          "status": "approved",
+          "status": "done",
           "approved": true,
           "rewritten": true,
           "microTasks": [
@@ -1067,13 +1092,14 @@
               "description": "Make the specific change requested in the original task. This involves modifying the identified component to In the Models page (/dashboard/models), add \"Infrastructure\" section:. Ensure proper TypeScript types and React best practices are followed.",
               "status": "pending"
             }
-          ]
+          ],
+          "completedAt": "2026-03-20T20:25:00.000Z"
         },
         {
           "taskId": "task_1774013732864_PRIORITY-5-PIPELINE-INFRASTRUCTURE.md-msg13-task2",
           "taskNumber": 2,
           "originalDescription": "Context Window Management panel:",
-          "status": "approved",
+          "status": "done",
           "approved": true,
           "rewritten": true,
           "microTasks": [
@@ -1084,13 +1110,14 @@
               "description": "Implement the following task with precision: Context Window Management panel:. First identify the correct file and component, then make the necessary changes following the project's coding standards.",
               "status": "pending"
             }
-          ]
+          ],
+          "completedAt": "2026-03-20T20:25:00.000Z"
         },
         {
           "taskId": "task_1774013732864_PRIORITY-5-PIPELINE-INFRASTRUCTURE.md-msg13-task3",
           "taskNumber": 3,
           "originalDescription": "Memory Optimization section:",
-          "status": "approved",
+          "status": "done",
           "approved": true,
           "rewritten": true,
           "microTasks": [
@@ -1101,13 +1128,14 @@
               "description": "Implement the following task with precision: Memory Optimization section:. First identify the correct file and component, then make the necessary changes following the project's coding standards.",
               "status": "pending"
             }
-          ]
+          ],
+          "completedAt": "2026-03-20T20:25:00.000Z"
         },
         {
           "taskId": "task_1774013732864_PRIORITY-5-PIPELINE-INFRASTRUCTURE.md-msg13-task4",
           "taskNumber": 4,
-          "originalDescription": "Smart Session Management rules — create/update in WORK-RULES.md:",
-          "status": "approved",
+          "originalDescription": "Smart Session Management rules \u2014 create/update in WORK-RULES.md:",
+          "status": "done",
           "approved": true,
           "rewritten": true,
           "microTasks": [
@@ -1115,16 +1143,17 @@
               "id": "task_1774013732864_PRIORITY-5-PIPELINE-INFRASTRUCTURE.md-msg13-task4-micro1",
               "filePath": "src/app/dashboard/page.tsx",
               "change": "Analyze and implement the requested feature",
-              "description": "Implement the following task with precision: Smart Session Management rules — create/update in WORK-RULES.md:. First identify the correct file and component, then make the necessary changes following the project's coding standards.",
+              "description": "Implement the following task with precision: Smart Session Management rules \u2014 create/update in WORK-RULES.md:. First identify the correct file and component, then make the necessary changes following the project's coding standards.",
               "status": "pending"
             }
-          ]
+          ],
+          "completedAt": "2026-03-20T20:25:00.000Z"
         },
         {
           "taskId": "task_1774013732864_PRIORITY-5-PIPELINE-INFRASTRUCTURE.md-msg13-task5",
           "taskNumber": 5,
           "originalDescription": "Cost Dashboard:",
-          "status": "approved",
+          "status": "done",
           "approved": true,
           "rewritten": true,
           "microTasks": [
@@ -1142,26 +1171,27 @@
               "description": "Make the specific change requested in the original task. This involves modifying the identified component to Cost Dashboard:. Ensure proper TypeScript types and React best practices are followed.",
               "status": "pending"
             }
-          ]
+          ],
+          "completedAt": "2026-03-20T20:25:00.000Z"
         }
       ]
     },
     {
       "messageNumber": 14,
-      "summary": "الرسالة 38: Chat + Telegram Integration الكامل",
-      "originalContent": "# الرسالة 38: Chat + Telegram Integration الكامل",
+      "summary": "\u0627\u0644\u0631\u0633\u0627\u0644\u0629 38: Chat + Telegram Integration \u0627\u0644\u0643\u0627\u0645\u0644",
+      "originalContent": "# \u0627\u0644\u0631\u0633\u0627\u0644\u0629 38: Chat + Telegram Integration \u0627\u0644\u0643\u0627\u0645\u0644",
       "tasks": []
     },
     {
       "messageNumber": 15,
       "summary": "Complete the Chat-Telegram integration so conversations flow both ways.",
-      "originalContent": "Complete the Chat-Telegram integration so conversations flow both ways.\n\nProject: /root/genplatform. Site: https://app.gen3.ai.\nDESIGN PROTECTION: Do NOT modify sidebar.tsx, navbar.tsx, layout.tsx, globals.css.\n\nTask 1: Create a Telegram webhook receiver in Bridge API:\nIn /root/genplatform-api, create/update routes/webhook.js:\n- POST /api/webhook/telegram receives Telegram updates\n- Parses message: from user, text, chat_id\n- Stores message in a simple JSON file: /root/genplatform-api/data/messages.json\n- Each message: {id, from, text, timestamp, projectId (extracted from context prefix)}\n- Returns 200 always (Telegram requires this)\n\nTask 2: Register the route in Bridge API server.js. Restart bridge-api.\n\nTask 3: Set up Telegram webhook:\n- The webhook URL should be: https://app.gen3.ai/api/webhook/telegram\n- Create src/app/api/webhook/telegram/route.ts in Next.js:\n  * Receives POST from Telegram\n  * Forwards to Bridge API: POST http://localhost:3001/api/webhook/telegram\n  * Returns 200\n- Register webhook: curl \"https://api.telegram.org/bot{TOKEN}/setWebhook\" -d '{\"url\":\"https://app.gen3.ai/api/webhook/telegram\"}'\n\nTask 4: Create src/app/api/chat/messages/route.ts:\n- GET /api/chat/messages?projectId=X\n- Reads from Bridge API: GET http://localhost:3001/api/messages?projectId=X\n- Returns messages array for the chat UI\n\nTask 5: In the Chat page, poll for new messages:\n- Every 3 seconds: fetch /api/chat/messages?projectId=currentProject\n- Add new messages to the chat (messages from OpenClaw appear as AI messages)\n- This creates a real-time conversation flow:\n  User sends message in chat → goes to Telegram → OpenClaw responds → webhook receives → appears in chat\n\nTask 6: Project context in messages:\n- When user sends from project \"GenPlatform.ai\", message prefix: \"[Project: GenPlatform.ai | Path: /root/genplatform]\"\n- When OpenClaw responds, if response contains project context, extract it and tag the message to that project\n- Messages without project context go to \"General\" channel\n\nAfter ALL: npm run build && pm2 restart genplatform-app && pm2 restart bridge-api && git add -A && git commit -m \"Chat-Telegram: full bidirectional integration\" && git push\n\n🔗 Preview: https://app.gen3.ai/dashboard/chat\nDo all 6 tasks NOW.",
+      "originalContent": "Complete the Chat-Telegram integration so conversations flow both ways.\n\nProject: /root/genplatform. Site: https://app.gen3.ai.\nDESIGN PROTECTION: Do NOT modify sidebar.tsx, navbar.tsx, layout.tsx, globals.css.\n\nTask 1: Create a Telegram webhook receiver in Bridge API:\nIn /root/genplatform-api, create/update routes/webhook.js:\n- POST /api/webhook/telegram receives Telegram updates\n- Parses message: from user, text, chat_id\n- Stores message in a simple JSON file: /root/genplatform-api/data/messages.json\n- Each message: {id, from, text, timestamp, projectId (extracted from context prefix)}\n- Returns 200 always (Telegram requires this)\n\nTask 2: Register the route in Bridge API server.js. Restart bridge-api.\n\nTask 3: Set up Telegram webhook:\n- The webhook URL should be: https://app.gen3.ai/api/webhook/telegram\n- Create src/app/api/webhook/telegram/route.ts in Next.js:\n  * Receives POST from Telegram\n  * Forwards to Bridge API: POST http://localhost:3001/api/webhook/telegram\n  * Returns 200\n- Register webhook: curl \"https://api.telegram.org/bot{TOKEN}/setWebhook\" -d '{\"url\":\"https://app.gen3.ai/api/webhook/telegram\"}'\n\nTask 4: Create src/app/api/chat/messages/route.ts:\n- GET /api/chat/messages?projectId=X\n- Reads from Bridge API: GET http://localhost:3001/api/messages?projectId=X\n- Returns messages array for the chat UI\n\nTask 5: In the Chat page, poll for new messages:\n- Every 3 seconds: fetch /api/chat/messages?projectId=currentProject\n- Add new messages to the chat (messages from OpenClaw appear as AI messages)\n- This creates a real-time conversation flow:\n  User sends message in chat \u2192 goes to Telegram \u2192 OpenClaw responds \u2192 webhook receives \u2192 appears in chat\n\nTask 6: Project context in messages:\n- When user sends from project \"GenPlatform.ai\", message prefix: \"[Project: GenPlatform.ai | Path: /root/genplatform]\"\n- When OpenClaw responds, if response contains project context, extract it and tag the message to that project\n- Messages without project context go to \"General\" channel\n\nAfter ALL: npm run build && pm2 restart genplatform-app && pm2 restart bridge-api && git add -A && git commit -m \"Chat-Telegram: full bidirectional integration\" && git push\n\n\ud83d\udd17 Preview: https://app.gen3.ai/dashboard/chat\nDo all 6 tasks NOW.",
       "tasks": [
         {
           "taskId": "task_1774013732864_PRIORITY-5-PIPELINE-INFRASTRUCTURE.md-msg15-task1",
           "taskNumber": 1,
           "originalDescription": "Create a Telegram webhook receiver in Bridge API:",
-          "status": "approved",
+          "status": "done",
           "approved": true,
           "rewritten": true,
           "microTasks": [
@@ -1207,13 +1237,14 @@
               "description": "Add GET endpoint for retrieving messages: router.get('/messages', (req, res) => {...}). Extract projectId from query: const { projectId } = req.query. Read all messages: const messages = readMessages(). If projectId is provided, filter: const filtered = projectId ? messages.filter(m => m.projectId === projectId || m.projectId === 'general') : messages. Sort by timestamp descending: filtered.sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp)). Return res.json({ messages: filtered.slice(0, 100) }) to limit to last 100 messages.",
               "status": "pending"
             }
-          ]
+          ],
+          "completedAt": "2026-03-20T20:25:00.000Z"
         },
         {
           "taskId": "task_1774013732864_PRIORITY-5-PIPELINE-INFRASTRUCTURE.md-msg15-task2",
           "taskNumber": 2,
           "originalDescription": "Register the route in Bridge API server.js. Restart bridge-api.",
-          "status": "approved",
+          "status": "done",
           "approved": true,
           "rewritten": true,
           "microTasks": [
@@ -1252,13 +1283,14 @@
               "description": "Verify the package.json has a start script configured. If not present, add to scripts section: \"start\": \"node server.js\". Also ensure \"main\": \"server.js\" is set. This ensures pm2 can properly restart the service. After making changes, run: cd /root/genplatform-api && pm2 restart bridge-api --update-env. If bridge-api doesn't exist in pm2, run: pm2 start server.js --name bridge-api.",
               "status": "pending"
             }
-          ]
+          ],
+          "completedAt": "2026-03-20T20:25:00.000Z"
         },
         {
           "taskId": "task_1774013732864_PRIORITY-5-PIPELINE-INFRASTRUCTURE.md-msg15-task3",
           "taskNumber": 3,
           "originalDescription": "Set up Telegram webhook:",
-          "status": "approved",
+          "status": "done",
           "approved": true,
           "rewritten": true,
           "microTasks": [
@@ -1304,13 +1336,14 @@
               "description": "Create a setup script for registering the webhook with Telegram. Content: #!/bin/bash followed by TELEGRAM_BOT_TOKEN=\"${TELEGRAM_BOT_TOKEN:-your_token_here}\" and WEBHOOK_URL=\"https://app.gen3.ai/api/webhook/telegram\". Add the curl command: curl -X POST \"https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/setWebhook\" -H \"Content-Type: application/json\" -d \"{\\\"url\\\": \\\"${WEBHOOK_URL}\\\", \\\"allowed_updates\\\": [\\\"message\\\"]}\" followed by echo to print the response. Make executable with chmod +x.",
               "status": "pending"
             }
-          ]
+          ],
+          "completedAt": "2026-03-20T20:25:00.000Z"
         },
         {
           "taskId": "task_1774013732864_PRIORITY-5-PIPELINE-INFRASTRUCTURE.md-msg15-task4",
           "taskNumber": 4,
           "originalDescription": "Create src/app/api/chat/messages/route.ts:",
-          "status": "approved",
+          "status": "done",
           "approved": true,
           "rewritten": true,
           "microTasks": [
@@ -1356,13 +1389,14 @@
               "description": "Add POST handler for sending messages from chat to be stored: export async function POST(request: NextRequest) { const body = await request.json(); const { text, projectId, userId } = body; const message = { id: Date.now().toString(), from: { id: userId || 'web-user', username: 'User', name: 'Web User' }, text, timestamp: new Date().toISOString(), projectId: projectId || 'general', source: 'web' }; }. This allows the chat UI to persist outgoing messages.",
               "status": "pending"
             }
-          ]
+          ],
+          "completedAt": "2026-03-20T20:25:00.000Z"
         },
         {
           "taskId": "task_1774013732864_PRIORITY-5-PIPELINE-INFRASTRUCTURE.md-msg15-task5",
           "taskNumber": 5,
           "originalDescription": "In the Chat page, poll for new messages:",
-          "status": "approved",
+          "status": "done",
           "approved": true,
           "rewritten": true,
           "microTasks": [
@@ -1408,13 +1442,14 @@
               "description": "Combine and sort all messages for display. Create a merged messages array: const allMessages = useMemo(() => { const combined = [...messages.map(m => ({...m, source: 'web'})), ...telegramMessages]; return combined.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()); }, [messages, telegramMessages]). Update the JSX to use allMessages.map() instead of separate message arrays. Style messages differently based on m.source === 'telegram'.",
               "status": "pending"
             }
-          ]
+          ],
+          "completedAt": "2026-03-20T20:25:00.000Z"
         },
         {
           "taskId": "task_1774013732864_PRIORITY-5-PIPELINE-INFRASTRUCTURE.md-msg15-task6",
           "taskNumber": 6,
           "originalDescription": "Project context in messages:",
-          "status": "approved",
+          "status": "done",
           "approved": true,
           "rewritten": true,
           "microTasks": [
@@ -1457,29 +1492,30 @@
               "id": "task_1774013732864_PRIORITY-5-PIPELINE-INFRASTRUCTURE.md-msg15-task6-micro6",
               "filePath": "/root/genplatform/src/components/chat/channel-selector.tsx",
               "change": "Add General channel and message counts",
-              "description": "Create or update channel selector component. Add 'General' as a default channel option: const channels = [{ id: 'general', name: 'General', icon: '💬' }, ...projects.map(p => ({ id: p.id, name: p.name, icon: '📁' }))]. When 'General' is selected, set currentProject to null. Update the channel display to show unread message counts per channel by counting messages where projectName matches the channel.",
+              "description": "Create or update channel selector component. Add 'General' as a default channel option: const channels = [{ id: 'general', name: 'General', icon: '\ud83d\udcac' }, ...projects.map(p => ({ id: p.id, name: p.name, icon: '\ud83d\udcc1' }))]. When 'General' is selected, set currentProject to null. Update the channel display to show unread message counts per channel by counting messages where projectName matches the channel.",
               "status": "pending"
             }
-          ]
+          ],
+          "completedAt": "2026-03-20T20:25:00.000Z"
         }
       ]
     },
     {
       "messageNumber": 16,
-      "summary": "الرسالة 39: Final Polish + مراجعة شاملة",
-      "originalContent": "# الرسالة 39: Final Polish + مراجعة شاملة",
+      "summary": "\u0627\u0644\u0631\u0633\u0627\u0644\u0629 39: Final Polish + \u0645\u0631\u0627\u062c\u0639\u0629 \u0634\u0627\u0645\u0644\u0629",
+      "originalContent": "# \u0627\u0644\u0631\u0633\u0627\u0644\u0629 39: Final Polish + \u0645\u0631\u0627\u062c\u0639\u0629 \u0634\u0627\u0645\u0644\u0629",
       "tasks": []
     },
     {
       "messageNumber": 17,
       "summary": "Final comprehensive review and polish.",
-      "originalContent": "Final comprehensive review and polish.\n\nProject: /root/genplatform. Site: https://app.gen3.ai.\nDESIGN PROTECTION: Do NOT modify sidebar.tsx, navbar.tsx, layout.tsx, globals.css.\n\nTask 1: Test EVERY page loads without errors:\nPages to test: dashboard, dashboard/skills, dashboard/memory, dashboard/cron, dashboard/monitoring, dashboard/analytics, dashboard/reports, dashboard/settings, dashboard/users, dashboard/chat, dashboard/command-center, dashboard/tasks, dashboard/integrations, dashboard/models, projects, projects/1, automations, ideas, agents, help, login, dashboard/security\nFor each: curl and verify 200. Fix any 500 errors.\n\nTask 2: Test all API routes return valid responses:\nRoutes: health, skills, memory, cron, metrics, status, logs, sessions, live-status, config, agents\nAlso: /api/projects, /api/tasks, /api/ideas, /api/workflows, /api/chat/messages\nFix any failing routes.\n\nTask 3: Verify sidebar has ALL page links and they all work. Missing links = add them. Broken links = fix paths.\n\nTask 4: Check all \"action\" buttons work:\n- New Project, New Task, Submit Idea, New Job, Generate Report\n- Each should either open a modal or navigate somewhere\n- Buttons that do nothing = connect to proper API or show \"Coming soon\" toast\n\nTask 5: Final production deploy:\n- npm run build (must succeed)\n- pm2 restart genplatform-app\n- pm2 save && pm2 startup\n- git add -A && git commit -m \"GenPlatform.ai v2.0 — Full platform with pipeline, chat, agents, models\" && git push\n- git tag -a \"v2.0\" -m \"Complete platform\" && git push --tags\n\nTask 6: Update PROGRESS.md to mark everything complete. Send Telegram message:\n\"🚀 GenPlatform.ai v2.0 COMPLETE\n✅ 27+ pages operational\n✅ Full idea-to-project pipeline\n✅ Chat with Telegram integration\n✅ 7 AI departments\n✅ Token tracking and cost management\n✅ Security hardening\n✅ Arabic/RTL support\n🔗 https://app.gen3.ai\"\n\nDo all 6 tasks NOW.",
+      "originalContent": "Final comprehensive review and polish.\n\nProject: /root/genplatform. Site: https://app.gen3.ai.\nDESIGN PROTECTION: Do NOT modify sidebar.tsx, navbar.tsx, layout.tsx, globals.css.\n\nTask 1: Test EVERY page loads without errors:\nPages to test: dashboard, dashboard/skills, dashboard/memory, dashboard/cron, dashboard/monitoring, dashboard/analytics, dashboard/reports, dashboard/settings, dashboard/users, dashboard/chat, dashboard/command-center, dashboard/tasks, dashboard/integrations, dashboard/models, projects, projects/1, automations, ideas, agents, help, login, dashboard/security\nFor each: curl and verify 200. Fix any 500 errors.\n\nTask 2: Test all API routes return valid responses:\nRoutes: health, skills, memory, cron, metrics, status, logs, sessions, live-status, config, agents\nAlso: /api/projects, /api/tasks, /api/ideas, /api/workflows, /api/chat/messages\nFix any failing routes.\n\nTask 3: Verify sidebar has ALL page links and they all work. Missing links = add them. Broken links = fix paths.\n\nTask 4: Check all \"action\" buttons work:\n- New Project, New Task, Submit Idea, New Job, Generate Report\n- Each should either open a modal or navigate somewhere\n- Buttons that do nothing = connect to proper API or show \"Coming soon\" toast\n\nTask 5: Final production deploy:\n- npm run build (must succeed)\n- pm2 restart genplatform-app\n- pm2 save && pm2 startup\n- git add -A && git commit -m \"GenPlatform.ai v2.0 \u2014 Full platform with pipeline, chat, agents, models\" && git push\n- git tag -a \"v2.0\" -m \"Complete platform\" && git push --tags\n\nTask 6: Update PROGRESS.md to mark everything complete. Send Telegram message:\n\"\ud83d\ude80 GenPlatform.ai v2.0 COMPLETE\n\u2705 27+ pages operational\n\u2705 Full idea-to-project pipeline\n\u2705 Chat with Telegram integration\n\u2705 7 AI departments\n\u2705 Token tracking and cost management\n\u2705 Security hardening\n\u2705 Arabic/RTL support\n\ud83d\udd17 https://app.gen3.ai\"\n\nDo all 6 tasks NOW.",
       "tasks": [
         {
           "taskId": "task_1774013732864_PRIORITY-5-PIPELINE-INFRASTRUCTURE.md-msg17-task1",
           "taskNumber": 1,
           "originalDescription": "Test EVERY page loads without errors:",
-          "status": "approved",
+          "status": "done",
           "approved": true,
           "rewritten": true,
           "microTasks": [
@@ -1490,13 +1526,14 @@
               "description": "Implement the following task with precision: Test EVERY page loads without errors:. First identify the correct file and component, then make the necessary changes following the project's coding standards.",
               "status": "pending"
             }
-          ]
+          ],
+          "completedAt": "2026-03-20T20:25:00.000Z"
         },
         {
           "taskId": "task_1774013732864_PRIORITY-5-PIPELINE-INFRASTRUCTURE.md-msg17-task2",
           "taskNumber": 2,
           "originalDescription": "Test all API routes return valid responses:",
-          "status": "approved",
+          "status": "done",
           "approved": true,
           "rewritten": true,
           "microTasks": [
@@ -1507,13 +1544,14 @@
               "description": "In src/app/api/routes/route.ts, implement the requested API functionality: Test all API routes return valid responses:. Use Next.js 13+ app router conventions with proper request/response handling.",
               "status": "pending"
             }
-          ]
+          ],
+          "completedAt": "2026-03-20T20:25:00.000Z"
         },
         {
           "taskId": "task_1774013732864_PRIORITY-5-PIPELINE-INFRASTRUCTURE.md-msg17-task3",
           "taskNumber": 3,
           "originalDescription": "Verify sidebar has ALL page links and they all work. Missing links = add them. Broken links = fix paths.",
-          "status": "approved",
+          "status": "done",
           "approved": true,
           "rewritten": true,
           "microTasks": [
@@ -1524,13 +1562,14 @@
               "description": "Implement the following task with precision: Verify sidebar has ALL page links and they all work. Missing links = add them. Broken links = fix paths.. First identify the correct file and component, then make the necessary changes following the project's coding standards.",
               "status": "pending"
             }
-          ]
+          ],
+          "completedAt": "2026-03-20T20:25:00.000Z"
         },
         {
           "taskId": "task_1774013732864_PRIORITY-5-PIPELINE-INFRASTRUCTURE.md-msg17-task4",
           "taskNumber": 4,
           "originalDescription": "Check all \"action\" buttons work:",
-          "status": "approved",
+          "status": "done",
           "approved": true,
           "rewritten": true,
           "microTasks": [
@@ -1541,13 +1580,14 @@
               "description": "Implement the following task with precision: Check all \"action\" buttons work:. First identify the correct file and component, then make the necessary changes following the project's coding standards.",
               "status": "pending"
             }
-          ]
+          ],
+          "completedAt": "2026-03-20T20:25:00.000Z"
         },
         {
           "taskId": "task_1774013732864_PRIORITY-5-PIPELINE-INFRASTRUCTURE.md-msg17-task5",
           "taskNumber": 5,
           "originalDescription": "Final production deploy:",
-          "status": "approved",
+          "status": "done",
           "approved": true,
           "rewritten": true,
           "microTasks": [
@@ -1558,13 +1598,14 @@
               "description": "Implement the following task with precision: Final production deploy:. First identify the correct file and component, then make the necessary changes following the project's coding standards.",
               "status": "pending"
             }
-          ]
+          ],
+          "completedAt": "2026-03-20T20:25:00.000Z"
         },
         {
           "taskId": "task_1774013732864_PRIORITY-5-PIPELINE-INFRASTRUCTURE.md-msg17-task6",
           "taskNumber": 6,
           "originalDescription": "Update PROGRESS.md to mark everything complete. Send Telegram message:",
-          "status": "approved",
+          "status": "done",
           "approved": true,
           "rewritten": true,
           "microTasks": [
@@ -1575,7 +1616,8 @@
               "description": "Implement the following task with precision: Update PROGRESS.md to mark everything complete. Send Telegram message:. First identify the correct file and component, then make the necessary changes following the project's coding standards.",
               "status": "pending"
             }
-          ]
+          ],
+          "completedAt": "2026-03-20T20:25:00.000Z"
         }
       ]
     }
