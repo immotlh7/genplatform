@@ -1,3 +1,8 @@
-export { NotificationSystem } from "./notification-system"
-export { NotificationBell } from "./NotificationBell"
-export type { Notification, NotificationBellProps } from "./NotificationBell"
+export { 
+  NotificationProvider, 
+  NotificationBell, 
+  GatewayStatusBanner,
+  useNotifications,
+  type Notification,
+  type NotificationType 
+} from './notification-system';
