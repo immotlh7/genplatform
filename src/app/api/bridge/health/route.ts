@@ -4,9 +4,9 @@ import { NextRequest, NextResponse } from 'next/server'
 export async function GET(request: NextRequest) {
   try {
     // Try to fetch the Bridge API status
-    const bridgeUrl = process.env.BRIDGE_API_URL || 'http://localhost:3002'
+    const bridgeUrl = process.env.BRIDGE_API_URL || 'http://localhost:3001'
     
-    const response = await fetch(`${bridgeUrl}/api/bridge/status`, {
+    const response = await fetch(`${bridgeUrl}/api/health`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
