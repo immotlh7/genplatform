@@ -11,9 +11,17 @@ interface Props {
   isBuilding?: boolean;
 }
 
+function safeUrl(url?: string): string | null {
+  if (!url) return null;
+  if (url.startsWith('http://') || url.startsWith('https://')) return url;
+  return `https://${url}`;
+}
+
 export function LivePreviewPanel({ projectUrl, mode = 'preview', terminalOutput = '', isBuilding = false }: Props) {
   const [device, setDevice] = useState<'desktop' | 'tablet' | 'mobile'>('desktop');
   const [key, setKey] = useState(0);
+  const [iframeError, setIframeError] = useState(false);
+  const resolvedUrl = safeUrl(projectUrl);
 
   return (
     <div className="h-full flex flex-col bg-gray-900 border-l">
@@ -58,9 +66,19 @@ export function LivePreviewPanel({ projectUrl, mode = 'preview', terminalOutput 
           <div className={`h-full flex items-center justify-center transition-all ${
             device === 'tablet' ? 'px-8' : device === 'mobile' ? 'px-16' : ''
           }`}>
-            <div className="w-full h-full bg-white rounded overflow-hidden">
-              <iframe key={key} src={projectUrl} className="w-full h-full" title="Preview" />
-            </div>
+            {iframeError || !resolvedUrl ? (
+              <div className="flex flex-col items-center justify-center h-full text-sm text-muted-foreground gap-3">
+                <div className="text-4xl">🌐</div>
+                <p>{resolvedUrl ? 'Preview unavailable in iframe' : 'Select a project to see live preview'}</p>
+                {resolvedUrl && <a href={resolvedUrl} target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline text-xs">{resolvedUrl} ↗</a>}
+              </div>
+            ) : (
+              <div className="w-full h-full bg-white rounded overflow-hidden">
+                <iframe key={key} src={resolvedUrl} className="w-full h-full" title="Preview"
+                  onError={() => setIframeError(true)}
+                  onLoad={() => setIframeError(false)} />
+              </div>
+            )}
           </div>
         ) : (
           <div className="h-full flex items-center justify-center text-center px-6">

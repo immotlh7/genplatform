@@ -52,6 +52,23 @@ async function clearLock() {
   await fs.writeFile(EXECUTION_LOCK_FILE, JSON.stringify({ locked: false, taskId: null, lockedAt: null, attempts: 0 }, null, 2));
 }
 
+async function snapshotFiles(filePaths: string[]): Promise<Map<string, string>> {
+  const snapshots = new Map<string, string>();
+  for (const fp of filePaths) {
+    try {
+      const content = await fs.readFile(fp, 'utf-8');
+      snapshots.set(fp, content);
+    } catch {} // file may not exist yet
+  }
+  return snapshots;
+}
+
+async function restoreFiles(snapshots: Map<string, string>): Promise<void> {
+  for (const [fp, content] of snapshots) {
+    try { await fs.writeFile(fp, content); } catch {}
+  }
+}
+
 async function executeTaskWithClaude(task: any, message: any): Promise<{ success: boolean; result: string }> {
   const systemPrompt = `You are a senior developer working on GenPlatform.ai at /root/genplatform.
 Tech stack: Next.js 16, TypeScript, Tailwind CSS, shadcn/ui.
