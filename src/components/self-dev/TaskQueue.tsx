@@ -9,6 +9,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { QueueManager } from './QueueManager';
 
 interface MicroTask {
   id: string;
@@ -49,94 +50,23 @@ interface TaskQueue {
   totalTasks?: number;
   totalMicroTasks: number;
   messages?: Message[];
-  analyzedAt?: string;
+  createdAt: string;
   status?: string;
-  hasApprovedTasks?: boolean;
-}
-
-const StatusIcon = ({ status }: { status: string }) => {
-  switch (status) {
-    case 'pending':
-      return <Clock className="h-3 w-3 text-gray-400" />;
-    case 'rewriting':
-      return <Loader2 className="h-3 w-3 text-amber-500 animate-spin" />;
-    case 'review':
-      return <Edit3 className="h-3 w-3 text-yellow-500" />;
-    case 'approved':
-      return <CheckCircle className="h-3 w-3 text-green-500" />;
-    case 'executing':
-      return <PlayCircle className="h-3 w-3 text-blue-500 animate-pulse" />;
-    case 'done':
-      return <CheckCircle className="h-3 w-3 text-green-600" />;
-    case 'failed':
-      return <XCircle className="h-3 w-3 text-red-500" />;
-    default:
-      return <Clock className="h-3 w-3 text-gray-400" />;
-  }
-};
-
-const StatusBadge = ({ status }: { status: string }) => {
-  const variants: Record<string, string> = {
-    pending: 'bg-gray-600 text-gray-200',
-    rewriting: 'bg-amber-600 text-amber-100',
-    review: 'bg-yellow-600 text-yellow-100',
-    approved: 'bg-green-600 text-green-100',
-    executing: 'bg-blue-600 text-blue-100 animate-pulse',
-    done: 'bg-green-700 text-green-100',
-    failed: 'bg-red-600 text-red-100',
-  };
-
-  return (
-    <span className={cn(
-      'inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium',
-      variants[status] || variants.pending
-    )}>
-      <StatusIcon status={status} />
-      {status}
-    </span>
-  );
-};
-
-// Helper function to normalize message structure
-function normalizeMessage(message: any): Message {
-  // Handle old format where microTasks are at message level
-  if (message.microTasks && !message.tasks) {
-    // Convert old format to new format
-    return {
-      messageNumber: message.messageNumber || 1,
-      summary: message.summary || 'Task batch',
-      originalContent: message.originalContent,
-      tasks: [{
-        taskId: `task_${message.messageNumber}_1`,
-        taskNumber: 1,
-        originalDescription: message.summary || 'Legacy tasks',
-        status: 'pending',
-        approved: false,
-        rewritten: false,
-        microTasks: message.microTasks
-      }]
-    };
-  }
-  
-  return {
-    messageNumber: message.messageNumber || 1,
-    summary: message.summary || '',
-    originalContent: message.originalContent,
-    tasks: message.tasks || []
-  };
 }
 
 export function TaskQueue() {
   const [queues, setQueues] = useState<TaskQueue[]>([]);
   const [expandedFiles, setExpandedFiles] = useState<Set<string>>(new Set());
   const [expandedMessages, setExpandedMessages] = useState<Set<string>>(new Set());
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [rewritingMessage, setRewritingMessage] = useState<string | null>(null);
+  const [approvingMessage, setApprovingMessage] = useState<string | null>(null);
   const [selectedMessage, setSelectedMessage] = useState<{fileId: string, messageNumber: number} | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [processingActions, setProcessingActions] = useState<Set<string>>(new Set());
-
+  
   useEffect(() => {
     loadQueues();
-    const interval = setInterval(loadQueues, 2000);
+    const interval = setInterval(loadQueues, 5000);
     return () => clearInterval(interval);
   }, []);
 
@@ -144,84 +74,55 @@ export function TaskQueue() {
     try {
       const response = await fetch('/api/self-dev/queues');
       if (response.ok) {
-        const queuesData = await response.json();
-        if (Array.isArray(queuesData)) {
-          // Normalize queue data
-          const normalizedQueues = queuesData.map((queue: any) => ({
-            ...queue,
-            messages: (queue.messages || []).map(normalizeMessage)
-          }));
-          setQueues(normalizedQueues);
-          // Auto-expand first file if only one exists
-          if (normalizedQueues.length === 1 && expandedFiles.size === 0) {
-            setExpandedFiles(new Set([normalizedQueues[0].fileId]));
-          }
+        const data = await response.json();
+        if (Array.isArray(data)) {
+          setQueues(data);
+          setError(null);
+        } else {
+          setQueues([]);
+          setError('Invalid data format received');
         }
+      } else {
+        setError('Failed to load task queues');
       }
-      setLoading(false);
     } catch (error) {
       console.error('Failed to load queues:', error);
-      setLoading(false);
+      setError('Failed to load task queues');
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const handleRewrite = async (fileId: string, messageNumber: number, forceRewrite: boolean = false) => {
-    const actionKey = `rewrite-${fileId}-${messageNumber}`;
-    setProcessingActions(prev => new Set(prev).add(actionKey));
-    
+  const toggleFile = (fileId: string) => {
+    setExpandedFiles(prev => {
+      const next = new Set(prev);
+      if (next.has(fileId)) {
+        next.delete(fileId);
+      } else {
+        next.add(fileId);
+      }
+      return next;
+    });
+  };
+
+  const toggleMessage = (fileId: string, messageNumber: number) => {
+    const key = `${fileId}-${messageNumber}`;
+    setExpandedMessages(prev => {
+      const next = new Set(prev);
+      if (next.has(key)) {
+        next.delete(key);
+      } else {
+        next.add(key);
+      }
+      return next;
+    });
+  };
+
+  const handleRewrite = async (fileId: string, messageNumber: number) => {
+    const key = `${fileId}-${messageNumber}`;
+    setRewritingMessage(key);
     try {
       const response = await fetch('/api/self-dev/rewrite', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ fileId, messageNumber, forceRewrite })
-      });
-      
-      if (response.ok) {
-        await loadQueues();
-      }
-    } catch (error) {
-      console.error('Rewrite error:', error);
-    } finally {
-      setProcessingActions(prev => {
-        const newSet = new Set(prev);
-        newSet.delete(actionKey);
-        return newSet;
-      });
-    }
-  };
-
-  const handleApprove = async (fileId: string, messageNumber: number, approved: boolean, scope: 'message' | 'all' = 'message') => {
-    const actionKey = `approve-${fileId}-${messageNumber}`;
-    setProcessingActions(prev => new Set(prev).add(actionKey));
-    
-    try {
-      const response = await fetch('/api/self-dev/approve', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ fileId, messageNumber, approved, scope })
-      });
-      
-      if (response.ok) {
-        await loadQueues();
-      }
-    } catch (error) {
-      console.error('Approval error:', error);
-    } finally {
-      setProcessingActions(prev => {
-        const newSet = new Set(prev);
-        newSet.delete(actionKey);
-        return newSet;
-      });
-    }
-  };
-
-  const handleReject = async (fileId: string, messageNumber: number) => {
-    // Reject means reset to pending state for re-rewriting
-    const actionKey = `reject-${fileId}-${messageNumber}`;
-    setProcessingActions(prev => new Set(prev).add(actionKey));
-    
-    try {
-      const response = await fetch('/api/self-dev/reject', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ fileId, messageNumber })
@@ -229,23 +130,56 @@ export function TaskQueue() {
       
       if (response.ok) {
         await loadQueues();
-        // Auto-trigger rewrite after rejection
-        setTimeout(() => handleRewrite(fileId, messageNumber, true), 500);
+      } else {
+        console.error('Failed to rewrite message');
       }
     } catch (error) {
-      console.error('Reject error:', error);
+      console.error('Failed to rewrite:', error);
     } finally {
-      setProcessingActions(prev => {
-        const newSet = new Set(prev);
-        newSet.delete(actionKey);
-        return newSet;
-      });
+      setRewritingMessage(null);
     }
   };
 
-  const handleDeleteMessage = async (fileId: string, messageNumber: number) => {
-    const actionKey = `delete-${fileId}-${messageNumber}`;
-    setProcessingActions(prev => new Set(prev).add(actionKey));
+  const handleApprove = async (fileId: string, messageNumber: number, approved: boolean, taskId: string | 'all') => {
+    const key = `${fileId}-${messageNumber}`;
+    setApprovingMessage(key);
+    try {
+      const response = await fetch('/api/self-dev/approve', {
+        method: 'POST', 
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fileId, messageNumber, approved, taskId })
+      });
+      
+      if (response.ok) {
+        await loadQueues();
+      }
+    } catch (error) {
+      console.error('Failed to approve:', error);
+    } finally {
+      setApprovingMessage(null);
+    }
+  };
+
+  const handleReject = async (fileId: string, messageNumber: number, taskId: string | 'all') => {
+    try {
+      const response = await fetch('/api/self-dev/reject', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fileId, messageNumber, taskId })
+      });
+      
+      if (response.ok) {
+        await loadQueues();
+      }
+    } catch (error) {
+      console.error('Failed to reject:', error);
+    }
+  };
+
+  const handleDelete = async (fileId: string, messageNumber: number) => {
+    if (!confirm('Are you sure you want to delete this message and all its tasks?')) {
+      return;
+    }
     
     try {
       const response = await fetch('/api/self-dev/delete-message', {
@@ -258,71 +192,96 @@ export function TaskQueue() {
         await loadQueues();
       }
     } catch (error) {
-      console.error('Delete error:', error);
-    } finally {
-      setProcessingActions(prev => {
-        const newSet = new Set(prev);
-        newSet.delete(actionKey);
-        return newSet;
-      });
+      console.error('Failed to delete:', error);
     }
   };
 
-  const toggleFile = (fileId: string) => {
-    const newExpanded = new Set(expandedFiles);
-    if (newExpanded.has(fileId)) {
-      newExpanded.delete(fileId);
-    } else {
-      newExpanded.add(fileId);
-    }
-    setExpandedFiles(newExpanded);
-  };
-
-  const toggleMessage = (messageId: string) => {
-    const newExpanded = new Set(expandedMessages);
-    if (newExpanded.has(messageId)) {
-      newExpanded.delete(messageId);
-    } else {
-      newExpanded.add(messageId);
-    }
-    setExpandedMessages(newExpanded);
-  };
-
-  const navigateMessage = (direction: 'prev' | 'next') => {
-    if (!selectedMessage || queues.length === 0) return;
-    
-    const currentQueue = queues.find(q => q.fileId === selectedMessage.fileId);
-    if (!currentQueue || !currentQueue.messages) return;
-    
-    const currentIndex = currentQueue.messages.findIndex(m => m.messageNumber === selectedMessage.messageNumber);
-    let newIndex = direction === 'next' ? currentIndex + 1 : currentIndex - 1;
-    
-    if (newIndex >= 0 && newIndex < currentQueue.messages.length) {
-      setSelectedMessage({
-        fileId: selectedMessage.fileId,
-        messageNumber: currentQueue.messages[newIndex].messageNumber
-      });
-    }
+  const getTaskStatus = (task: Task): string => {
+    if (task.status === 'done') return 'done';
+    if (task.status === 'failed' || task.status === 'skipped') return 'failed';
+    if (task.status === 'executing') return 'executing';
+    if (task.approved) return 'approved';
+    if (task.rewritten) return 'review';
+    return 'pending';
   };
 
   const getMessageStatus = (message: Message): string => {
     if (!message.tasks || message.tasks.length === 0) return 'empty';
     
-    const hasRewritten = message.tasks.some(t => t.rewritten);
-    const allRewritten = message.tasks.every(t => t.rewritten);
-    const hasApproved = message.tasks.some(t => t.approved);
-    const allApproved = message.tasks.every(t => t.approved);
-    const isExecuting = message.tasks.some(t => t.status === 'executing');
     const allDone = message.tasks.every(t => t.status === 'done');
-    const hasFailed = message.tasks.some(t => t.status === 'failed');
-    
     if (allDone) return 'done';
-    if (hasFailed) return 'failed';
-    if (isExecuting) return 'executing';
+    
+    const anyFailed = message.tasks.some(t => t.status === 'failed' || t.status === 'skipped');
+    if (anyFailed) return 'failed';
+    
+    const anyExecuting = message.tasks.some(t => t.status === 'executing');
+    if (anyExecuting) return 'executing';
+    
+    const allApproved = message.tasks.every(t => t.approved);
     if (allApproved) return 'approved';
-    if (allRewritten && !hasApproved) return 'review';
-    if (hasRewritten) return 'rewriting';
+    
+    const allRewritten = message.tasks.every(t => t.rewritten);
+    if (allRewritten) return 'review';
+    
     return 'pending';
+  };
+
+  const StatusIcon = ({ status }: { status: string }) => {
+    switch (status) {
+      case 'done':
+        return <CheckCircle className="h-4 w-4 text-green-500" />;
+      case 'failed':
+        return <XCircle className="h-4 w-4 text-red-500" />;
+      case 'executing':
+        return <Loader2 className="h-4 w-4 text-blue-500 animate-spin" />;
+      case 'approved':
+        return <PlayCircle className="h-4 w-4 text-blue-500" />;
+      case 'review':
+        return <Edit3 className="h-4 w-4 text-yellow-500" />;
+      default:
+        return <Clock className="h-4 w-4 text-gray-500" />;
+    }
+  };
+
+  const StatusBadge = ({ status }: { status: string }) => {
+    const variants: Record<string, string> = {
+      done: 'bg-green-700 text-green-100',
+      failed: 'bg-red-600 text-red-100',
+      executing: 'bg-blue-600 text-blue-100',
+      approved: 'bg-blue-700 text-blue-100',
+      review: 'bg-yellow-700 text-yellow-100',
+      pending: 'bg-gray-700 text-gray-300'
+    };
+    
+    return (
+      <Badge className={cn("text-xs", variants[status] || variants.pending)}>
+        {status}
+      </Badge>
+    );
+  };
+
+  const navigateMessage = (direction: 'prev' | 'next') => {
+    if (!selectedMessage) return;
+    
+    const queue = queues.find(q => q.fileId === selectedMessage.fileId);
+    if (!queue || !queue.messages) return;
+    
+    const currentIndex = queue.messages.findIndex(m => m.messageNumber === selectedMessage.messageNumber);
+    if (currentIndex === -1) return;
+    
+    const newIndex = direction === 'prev' 
+      ? Math.max(0, currentIndex - 1)
+      : Math.min(queue.messages.length - 1, currentIndex + 1);
+    
+    if (newIndex !== currentIndex) {
+      const newMessage = queue.messages[newIndex];
+      setSelectedMessage({ fileId: selectedMessage.fileId, messageNumber: newMessage.messageNumber });
+      
+      const key = `${selectedMessage.fileId}-${newMessage.messageNumber}`;
+      if (!expandedMessages.has(key)) {
+        toggleMessage(selectedMessage.fileId, newMessage.messageNumber);
+      }
+    }
   };
 
   const getMicroTaskStatus = (queue: TaskQueue) => {
@@ -330,41 +289,65 @@ export function TaskQueue() {
     let executing = 0;
     let done = 0;
     let failed = 0;
-
-    (queue.messages || []).forEach(msg => {
-      (msg.tasks || []).forEach(task => {
-        (task.microTasks || []).forEach(micro => {
-          total++;
-          if (micro.status === 'executing') executing++;
-          if (micro.status === 'done') done++;
-          if (micro.status === 'failed') failed++;
-        });
+    
+    queue.messages?.forEach(msg => {
+      msg.tasks?.forEach(task => {
+        if (task.microTasks) {
+          task.microTasks.forEach(micro => {
+            total++;
+            if (micro.status === 'executing') executing++;
+            else if (micro.status === 'done') done++;
+            else if (micro.status === 'failed') failed++;
+          });
+        }
       });
     });
-
+    
     return { total, executing, done, failed };
   };
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center h-32">
-        <Loader2 className="h-6 w-6 text-gray-400 animate-spin" />
+        <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center h-32 text-red-400">
+        <XCircle className="h-6 w-6 mb-2" />
+        <p className="text-sm">{error}</p>
+        <Button 
+          variant="outline" 
+          size="sm" 
+          className="mt-2"
+          onClick={loadQueues}
+        >
+          <RefreshCw className="h-3 w-3 mr-1" />
+          Retry
+        </Button>
       </div>
     );
   }
 
   if (queues.length === 0) {
     return (
-      <div className="text-center py-8">
-        <FileText className="h-10 w-10 mx-auto mb-2 text-gray-500" />
-        <p className="text-sm text-gray-400">No files uploaded yet</p>
-        <p className="text-xs text-gray-500 mt-1">Drop a .md file above to begin</p>
+      <div className="flex flex-col items-center justify-center h-32 text-gray-400">
+        <FileText className="h-6 w-6 mb-2" />
+        <p className="text-sm">No task files uploaded yet</p>
       </div>
     );
   }
 
   return (
     <div className="space-y-3">
+      {/* Queue Manager Button */}
+      <div className="flex justify-end mb-2">
+        <QueueManager />
+      </div>
+
       {/* Navigation Controls */}
       {selectedMessage && (
         <div className="bg-blue-900/20 p-2 rounded-lg border border-blue-700/50 flex items-center justify-between">
@@ -391,12 +374,13 @@ export function TaskQueue() {
           </div>
         </div>
       )}
-      
-      {queues.map(queue => {
+
+      {/* Queue Files */}
+      {queues.map((queue) => {
         const isExpanded = expandedFiles.has(queue.fileId);
         const messages = queue.messages || [];
         const approvedMessages = messages.filter(m => 
-          m.tasks && m.tasks.length > 0 && m.tasks.every(t => t.approved)
+          m.tasks && m.tasks.every(t => t.approved)
         );
         const reviewMessages = messages.filter(m => 
           getMessageStatus(m) === 'review'
@@ -451,251 +435,205 @@ export function TaskQueue() {
                   </Badge>
                 )}
                 {reviewMessages.length > 0 && (
-                  <Badge className="text-xs bg-yellow-600 text-yellow-100">
+                  <Badge className="text-xs bg-yellow-700 text-yellow-100">
                     {reviewMessages.length} review
                   </Badge>
                 )}
-                {approvedMessages.length > 0 && approvedMessages.length !== doneMessages.length && (
-                  <Badge className="text-xs bg-green-600 text-green-100">
-                    {approvedMessages.length} approved
+                {approvedMessages.length > 0 && (
+                  <Badge className="text-xs bg-blue-700 text-blue-100">
+                    {approvedMessages.length} ready
                   </Badge>
                 )}
-                <Badge variant="secondary" className="text-xs">
+                <span className="text-xs text-gray-400">
                   {messages.length} msgs
-                </Badge>
+                </span>
               </div>
             </div>
 
-            {/* Messages List */}
-            {isExpanded && messages.length > 0 && (
+            {/* File Content */}
+            {isExpanded && (
               <div className="border-t border-gray-600/50">
-                {/* Micro-task Progress */}
-                {microTaskStatus.total > 0 && (
-                  <div className="p-3 bg-gray-900/30 border-b border-gray-600/50">
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="text-gray-400">Micro-tasks Progress</span>
-                      <span className="text-gray-300">
-                        {microTaskStatus.done} / {microTaskStatus.total} ({Math.round((microTaskStatus.done / microTaskStatus.total) * 100)}%)
-                      </span>
-                    </div>
-                    <div className="mt-1 h-1 bg-gray-700 rounded overflow-hidden">
-                      <div 
-                        className="h-full bg-green-600 transition-all"
-                        style={{ width: `${(microTaskStatus.done / microTaskStatus.total) * 100}%` }}
-                      />
-                    </div>
-                  </div>
-                )}
-                
-                {/* Approved Messages Summary */}
-                {approvedMessages.length > 0 && (
-                  <div className="p-3 bg-green-900/20 border-b border-gray-600/50">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-green-400 font-medium">
-                        ✅ {approvedMessages.length} Approved Messages
-                      </span>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="h-6 text-xs"
-                        onClick={() => setExpandedMessages(new Set(approvedMessages.map(m => `${queue.fileId}-${m.messageNumber}`)))}
-                      >
-                        Show All
-                      </Button>
-                    </div>
-                    <div className="mt-2 max-h-32 overflow-y-auto">
-                      {approvedMessages.map(msg => (
-                        <div 
-                          key={msg.messageNumber} 
-                          className="text-xs text-green-300 py-1 cursor-pointer hover:text-green-200"
-                          onClick={() => {
-                            setSelectedMessage({ fileId: queue.fileId, messageNumber: msg.messageNumber });
-                            toggleMessage(`${queue.fileId}-${msg.messageNumber}`);
-                          }}
-                        >
-                          Message {msg.messageNumber}: {msg.summary}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-                
+                {/* File Stats */}
+                <div className="p-3 bg-gray-800/30 text-xs text-gray-400 grid grid-cols-3 gap-2 border-b border-gray-600/50">
+                  <div>Messages: {queue.totalMessages || messages.length}</div>
+                  <div>Tasks: {queue.totalTasks || messages.reduce((sum, m) => sum + (m.tasks?.length || 0), 0)}</div>
+                  <div>Micro-tasks: {queue.totalMicroTasks || microTaskStatus.total}</div>
+                </div>
+
+                {/* Messages */}
                 {messages.map((message, msgIndex) => {
-                  const messageId = `${queue.fileId}-${message.messageNumber}`;
+                  const isMessageExpanded = expandedMessages.has(`${queue.fileId}-${message.messageNumber}`);
                   const messageStatus = getMessageStatus(message);
-                  const isMessageExpanded = expandedMessages.has(messageId);
-                  const isProcessing = processingActions.has(`rewrite-${queue.fileId}-${message.messageNumber}`) ||
-                                     processingActions.has(`approve-${queue.fileId}-${message.messageNumber}`) ||
-                                     processingActions.has(`reject-${queue.fileId}-${message.messageNumber}`);
-                  const isSelected = selectedMessage?.fileId === queue.fileId && selectedMessage?.messageNumber === message.messageNumber;
-                  const isEmpty = !message.tasks || message.tasks.length === 0;
-
-                  // Hide empty messages unless expanded
-                  if (isEmpty && !isMessageExpanded) {
-                    return null;
-                  }
-
+                  const isSelected = selectedMessage?.fileId === queue.fileId && 
+                                   selectedMessage?.messageNumber === message.messageNumber;
+                  
                   return (
                     <div 
                       key={message.messageNumber} 
                       className={cn(
-                        "border-b border-gray-600/30 last:border-b-0 transition-colors",
-                        isSelected ? "bg-blue-900/20" : msgIndex % 2 === 0 ? "bg-gray-800/30" : "bg-gray-800/50",
-                        messageStatus === 'approved' && "bg-green-900/10",
-                        messageStatus === 'done' && "bg-green-900/20",
-                        messageStatus === 'failed' && "bg-red-900/20",
-                        messageStatus === 'executing' && "bg-blue-900/20"
+                        "border-b border-gray-600/30 last:border-b-0",
+                        isSelected && "bg-blue-900/10"
                       )}
                     >
                       {/* Message Header */}
-                      <div className="p-3">
+                      <div
+                        className="p-3 cursor-pointer hover:bg-gray-700/30 transition-colors"
+                        onClick={() => {
+                          toggleMessage(queue.fileId, message.messageNumber);
+                          setSelectedMessage({ fileId: queue.fileId, messageNumber: message.messageNumber });
+                        }}
+                      >
                         <div className="flex items-center justify-between">
-                          <div 
-                            className="flex items-center gap-2 flex-1 min-w-0 cursor-pointer"
-                            onClick={() => {
-                              toggleMessage(messageId);
-                              setSelectedMessage({ fileId: queue.fileId, messageNumber: message.messageNumber });
-                            }}
-                          >
-                            <span className="text-sm font-medium text-gray-300">
-                              Message {message.messageNumber}
-                            </span>
-                            <StatusBadge status={messageStatus} />
-                            {isEmpty && (
-                              <Badge variant="outline" className="text-xs text-gray-500">
-                                Empty - Skip
-                              </Badge>
+                          <div className="flex items-center gap-2">
+                            {isMessageExpanded ? (
+                              <ChevronDown className="h-3 w-3 text-gray-500" />
+                            ) : (
+                              <ChevronRight className="h-3 w-3 text-gray-500" />
                             )}
-                            <span className="text-xs text-gray-400 truncate">
-                              {message.summary}
+                            <StatusIcon status={messageStatus} />
+                            <span className="text-sm font-medium text-gray-100">
+                              Message {message.messageNumber}
+                              {message.summary && (
+                                <span className="ml-2 text-gray-400 font-normal">
+                                  {message.summary}
+                                </span>
+                              )}
                             </span>
                           </div>
-                          
-                          {/* Action Buttons */}
-                          <div className="flex items-center gap-2 flex-shrink-0">
-                            {!isEmpty && (
-                              <Badge variant="secondary" className="text-xs">
-                                {message.tasks.length} {message.tasks.length === 1 ? 'task' : 'tasks'}
-                              </Badge>
+                          <div className="flex items-center gap-2">
+                            <StatusBadge status={messageStatus} />
+                            {message.tasks && (
+                              <span className="text-xs text-gray-500">
+                                {message.tasks.length} tasks
+                              </span>
                             )}
-                            
-                            {isEmpty && (
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                className="h-7 text-xs gap-1 text-gray-400"
-                                onClick={() => handleDeleteMessage(queue.fileId, message.messageNumber)}
-                                disabled={isProcessing}
-                              >
-                                <Trash2 className="h-3 w-3" />
-                                Delete
-                              </Button>
-                            )}
-                            
-                            {messageStatus === 'pending' && !isEmpty && (
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Message Actions and Tasks */}
+                      {isMessageExpanded && (
+                        <div className="bg-gray-800/20 px-3 pb-3">
+                          {/* Message Actions */}
+                          <div className="flex items-center gap-2 mb-3 pt-2">
+                            {messageStatus === 'pending' && (
                               <Button
                                 size="sm"
                                 variant="outline"
-                                className="h-7 text-xs gap-1"
-                                onClick={() => handleRewrite(queue.fileId, message.messageNumber)}
-                                disabled={isProcessing}
+                                className="text-xs"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleRewrite(queue.fileId, message.messageNumber);
+                                }}
+                                disabled={rewritingMessage === `${queue.fileId}-${message.messageNumber}`}
                               >
-                                {isProcessing ? (
+                                {rewritingMessage === `${queue.fileId}-${message.messageNumber}` ? (
                                   <>
-                                    <Loader2 className="h-3 w-3 animate-spin" />
-                                    Processing...
+                                    <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                                    Rewriting...
                                   </>
                                 ) : (
                                   <>
-                                    <Zap className="h-3 w-3" />
-                                    Rewrite
+                                    <Zap className="h-3 w-3 mr-1" />
+                                    Rewrite to Micro-tasks
                                   </>
                                 )}
                               </Button>
                             )}
                             
                             {messageStatus === 'review' && (
-                              <div className="flex items-center gap-1">
+                              <>
                                 <Button
                                   size="sm"
                                   variant="default"
-                                  className="h-7 text-xs gap-1"
-                                  onClick={() => handleApprove(queue.fileId, message.messageNumber, true)}
-                                  disabled={isProcessing}
+                                  className="text-xs"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleApprove(queue.fileId, message.messageNumber, true, 'all');
+                                  }}
+                                  disabled={approvingMessage === `${queue.fileId}-${message.messageNumber}`}
                                 >
-                                  <Check className="h-3 w-3" />
-                                  Approve
+                                  <Check className="h-3 w-3 mr-1" />
+                                  Approve All
                                 </Button>
                                 <Button
                                   size="sm"
                                   variant="outline"
-                                  className="h-7 text-xs gap-1"
-                                  onClick={() => handleReject(queue.fileId, message.messageNumber)}
-                                  disabled={isProcessing}
-                                  title="Reject and re-rewrite"
+                                  className="text-xs text-red-400 border-red-400 hover:bg-red-400 hover:text-white"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleReject(queue.fileId, message.messageNumber, 'all');
+                                  }}
                                 >
-                                  <RotateCcw className="h-3 w-3" />
-                                  Reject
+                                  <X className="h-3 w-3 mr-1" />
+                                  Reject All
                                 </Button>
-                              </div>
+                              </>
                             )}
                             
-                            {(messageStatus === 'done' || messageStatus === 'failed') && (
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                className="h-7 text-xs gap-1"
-                                onClick={() => handleRewrite(queue.fileId, message.messageNumber, true)}
-                                disabled={isProcessing}
-                                title="Re-rewrite tasks"
-                              >
-                                <RotateCcw className="h-3 w-3" />
-                                Re-rewrite
-                              </Button>
-                            )}
-                            
-                            {messageStatus === 'approved' && (
-                              <Badge className="text-xs bg-green-600 text-green-100">
-                                <CheckCircle className="h-3 w-3 mr-1" />
-                                Approved
-                              </Badge>
-                            )}
-                            
-                            {messageStatus === 'executing' && (
-                              <Badge className="text-xs bg-blue-600 text-blue-100 animate-pulse">
-                                <Loader2 className="h-3 w-3 mr-1 animate-spin" />
-                                Executing
-                              </Badge>
-                            )}
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="text-xs text-red-400 hover:bg-red-900/20 ml-auto"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDelete(queue.fileId, message.messageNumber);
+                              }}
+                            >
+                              <Trash2 className="h-3 w-3 mr-1" />
+                              Delete Message
+                            </Button>
                           </div>
-                        </div>
 
-                        {/* Tasks Preview (when expanded) */}
-                        {isMessageExpanded && message.tasks && message.tasks.length > 0 && (
-                          <div className="mt-3 space-y-2">
-                            {message.tasks.map(task => (
-                              <div 
-                                key={task.taskId} 
-                                className={cn(
-                                  "ml-4 p-2 rounded border",
-                                  task.status === 'done' ? "bg-green-900/30 border-green-700/50" :
-                                  task.status === 'failed' ? "bg-red-900/30 border-red-700/50" :
-                                  task.status === 'executing' ? "bg-blue-900/30 border-blue-700/50" :
-                                  "bg-gray-900/50 border-gray-700/50"
-                                )}
-                              >
-                                <div className="flex items-start gap-2">
-                                  <StatusIcon status={task.rewritten && !task.approved ? 'review' : task.status} />
-                                  <div className="flex-1 min-w-0">
-                                    <p className="text-xs text-gray-300">
-                                      <span className="font-medium">Task {task.taskNumber}:</span> {task.originalDescription}
-                                    </p>
+                          {/* Tasks */}
+                          <div className="space-y-2">
+                            {message.tasks?.map((task) => (
+                              <div key={task.taskId} className="bg-gray-700/30 rounded p-2 text-xs">
+                                <div className="flex items-start justify-between">
+                                  <div className="flex-1">
+                                    <div className="flex items-center gap-2 mb-1">
+                                      <StatusIcon status={getTaskStatus(task)} />
+                                      <span className="font-medium text-gray-100">
+                                        Task {task.taskNumber}
+                                      </span>
+                                      <StatusBadge status={getTaskStatus(task)} />
+                                      {task.approved && !task.status && (
+                                        <Badge className="text-xs bg-green-700 text-green-100">
+                                          Approved
+                                        </Badge>
+                                      )}
+                                    </div>
+                                    <p className="text-gray-300 mb-1">{task.originalDescription}</p>
+                                    
+                                    {/* Task Actions */}
+                                    {getTaskStatus(task) === 'review' && !task.approved && (
+                                      <div className="flex gap-2 mt-2">
+                                        <Button
+                                          size="sm"
+                                          variant="outline"
+                                          className="h-6 text-xs"
+                                          onClick={() => handleApprove(queue.fileId, message.messageNumber, true, task.taskId)}
+                                        >
+                                          <Check className="h-3 w-3 mr-1" />
+                                          Approve
+                                        </Button>
+                                        <Button
+                                          size="sm"
+                                          variant="ghost"
+                                          className="h-6 text-xs text-red-400"
+                                          onClick={() => handleReject(queue.fileId, message.messageNumber, task.taskId)}
+                                        >
+                                          <X className="h-3 w-3 mr-1" />
+                                          Reject
+                                        </Button>
+                                      </div>
+                                    )}
                                     
                                     {/* Execution Result */}
                                     {task.executionResult && (
                                       <div className={cn(
-                                        "mt-1 p-1 rounded text-xs",
-                                        task.executionResult.success ? "bg-green-800/20 text-green-300" : "bg-red-800/20 text-red-300"
+                                        "mt-2 p-2 rounded text-xs",
+                                        task.executionResult.success ? "bg-green-900/20 text-green-400" : "bg-red-900/20 text-red-400"
                                       )}>
                                         {task.executionResult.message || (task.executionResult.success ? 'Completed successfully' : 'Failed')}
                                         {task.executionResult.completedAt && (
@@ -733,8 +671,8 @@ export function TaskQueue() {
                               </div>
                             ))}
                           </div>
-                        )}
-                      </div>
+                        </div>
+                      )}
                     </div>
                   );
                 })}
@@ -749,7 +687,7 @@ export function TaskQueue() {
                       onClick={() => handleApprove(queue.fileId, 1, true, 'all')}
                     >
                       <Check className="h-4 w-4 mr-2" />
-                      Approve All {reviewMessages.length} Rewritten Messages
+                      Approve All Messages ({reviewMessages.length})
                     </Button>
                   </div>
                 )}
