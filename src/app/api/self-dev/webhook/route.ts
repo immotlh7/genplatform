@@ -10,9 +10,23 @@ interface ExecutionLog {
   raw?: string;
 }
 
+interface SelfDevConfig {
+  autoMode: boolean;
+  lastUpdated: string;
+}
+
 const TASK_QUEUE_FILE = '/root/genplatform/data/task-queue/task-queue.json';
 const EXECUTION_LOG_FILE = '/root/genplatform/data/execution-log.json';
-const SESSION_TRACKER_FILE = '/root/genplatform/data/session-tracker.json';
+const CONFIG_FILE = '/root/genplatform/data/self-dev-config.json';
+
+async function getConfig(): Promise<SelfDevConfig> {
+  try {
+    const data = await fs.readFile(CONFIG_FILE, 'utf-8');
+    return JSON.parse(data);
+  } catch {
+    return { autoMode: false, lastUpdated: new Date().toISOString() };
+  }
+}
 
 async function addLog(log: ExecutionLog) {
   try {
@@ -116,9 +130,9 @@ export async function POST(request: NextRequest) {
         taskId: task.id
       });
 
-      // Check if auto-mode is on
-      const tracker = JSON.parse(await fs.readFile(SESSION_TRACKER_FILE, 'utf-8').catch(() => '{}'));
-      if (queue.autoMode) {
+      // Check if auto-mode is on from config file
+      const config = await getConfig();
+      if (config.autoMode) {
         await addLog({
           timestamp: new Date().toISOString(),
           type: 'info',
@@ -145,17 +159,21 @@ export async function POST(request: NextRequest) {
           taskId: task.id
         });
         
-        // Retry after 15 seconds
-        setTimeout(async () => {
-          try {
-            await fetch('http://localhost:3000/api/self-dev/execute-next', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' }
-            });
-          } catch (error) {
-            console.error('Failed to retry task:', error);
-          }
-        }, 15000);
+        // Check auto-mode for retry
+        const config = await getConfig();
+        if (config.autoMode) {
+          // Retry after 15 seconds
+          setTimeout(async () => {
+            try {
+              await fetch('http://localhost:3000/api/self-dev/execute-next', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+              });
+            } catch (error) {
+              console.error('Failed to retry task:', error);
+            }
+          }, 15000);
+        }
       } else {
         // Skip after 3 failed attempts
         task.status = 'skipped';
@@ -172,7 +190,8 @@ export async function POST(request: NextRequest) {
         });
         
         // Continue to next task if auto-mode
-        if (queue.autoMode) {
+        const config = await getConfig();
+        if (config.autoMode) {
           triggerNextTask();
         }
       }
@@ -199,7 +218,8 @@ export async function POST(request: NextRequest) {
           taskId: task.id
         });
         
-        if (queue.autoMode) {
+        const config = await getConfig();
+        if (config.autoMode) {
           triggerNextTask();
         }
       }

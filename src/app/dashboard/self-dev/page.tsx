@@ -23,6 +23,7 @@ interface Status {
   elapsedTime: number;
   contextEstimate: number;
   error?: string;
+  autoMode?: boolean;
 }
 
 const initialStatus: Status = {
@@ -33,7 +34,8 @@ const initialStatus: Status = {
     percentage: 0
   },
   elapsedTime: 0,
-  contextEstimate: 0
+  contextEstimate: 0,
+  autoMode: false
 };
 
 export default function SelfDevPage() {
@@ -55,10 +57,16 @@ export default function SelfDevPage() {
       if (response.ok) {
         const data = await response.json();
         
+        // Update status with auto-mode
+        setStatus(prev => ({
+          ...prev,
+          autoMode: data.autoMode || false
+        }));
+        
         // Check queue for approved tasks
         if (data.queue?.batches) {
           const hasApproved = data.queue.batches.some((batch: any) =>
-            batch.tasks.some((task: any) => task.approved && task.status !== 'done')
+            batch.tasks.some((task: any) => task.approved && task.status !== 'done' && task.status !== 'skipped')
           );
           setHasApprovedTasks(hasApproved);
           
@@ -68,11 +76,53 @@ export default function SelfDevPage() {
           );
           setIsExecuting(hasExecuting);
           
+          // Calculate progress
+          let totalTasks = 0;
+          let doneTasks = 0;
+          
+          data.queue.batches.forEach((batch: any) => {
+            batch.tasks.forEach((task: any) => {
+              if (task.approved) {
+                totalTasks++;
+                if (task.status === 'done') {
+                  doneTasks++;
+                }
+              }
+            });
+          });
+          
           // Set status based on execution state
           if (hasExecuting) {
-            setStatus(prev => ({ ...prev, status: 'executing' }));
-          } else if (hasApproved && !hasExecuting) {
-            setStatus(prev => ({ ...prev, status: 'idle' }));
+            setStatus(prev => ({ 
+              ...prev, 
+              status: 'executing',
+              overallProgress: {
+                tasksTotal: totalTasks,
+                tasksDone: doneTasks,
+                percentage: totalTasks > 0 ? Math.round((doneTasks / totalTasks) * 100) : 0
+              }
+            }));
+          } else if (data.autoMode && hasApproved) {
+            // Auto-mode is on but nothing executing, set paused
+            setStatus(prev => ({ 
+              ...prev, 
+              status: 'paused',
+              overallProgress: {
+                tasksTotal: totalTasks,
+                tasksDone: doneTasks,
+                percentage: totalTasks > 0 ? Math.round((doneTasks / totalTasks) * 100) : 0
+              }
+            }));
+          } else {
+            setStatus(prev => ({ 
+              ...prev, 
+              status: 'idle',
+              overallProgress: {
+                tasksTotal: totalTasks,
+                tasksDone: doneTasks,
+                percentage: totalTasks > 0 ? Math.round((doneTasks / totalTasks) * 100) : 0
+              }
+            }));
           }
         } else {
           setHasApprovedTasks(false);
@@ -92,51 +142,38 @@ export default function SelfDevPage() {
   const handleControl = async (action: string) => {
     setError(null);
     
-    if (action === 'start') {
-      // Start execution by calling execute-next
-      try {
-        const response = await fetch('/api/self-dev/execute-next', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' }
-        });
+    try {
+      const response = await fetch('/api/self-dev/control', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action })
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        setError(errorData.error || `Failed to ${action}`);
+      } else {
+        const result = await response.json();
         
-        if (!response.ok) {
-          const errorData = await response.json();
-          setError(errorData.error || 'Failed to start execution');
-        } else {
-          setStatus(prev => ({ ...prev, status: 'executing' }));
-          await loadStatus();
+        // Update status immediately
+        if (action === 'start' || action === 'resume') {
+          setStatus(prev => ({ ...prev, status: 'executing', autoMode: true }));
+        } else if (action === 'pause') {
+          setStatus(prev => ({ ...prev, status: 'paused', autoMode: false }));
         }
-      } catch (err) {
-        setError('Failed to start execution');
-      }
-    } else if (action === 'pause') {
-      // TODO: Implement pause functionality
-      setStatus(prev => ({ ...prev, status: 'paused' }));
-    } else if (action === 'resume') {
-      // Resume by calling execute-next again
-      try {
-        const response = await fetch('/api/self-dev/execute-next', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' }
-        });
         
-        if (!response.ok) {
-          const errorData = await response.json();
-          setError(errorData.error || 'Failed to resume execution');
-        } else {
-          setStatus(prev => ({ ...prev, status: 'executing' }));
-          await loadStatus();
+        // Show success message for some actions
+        if (action === 'skip' && result.message) {
+          console.log(result.message);
+        } else if (action === 'retry' && result.message) {
+          console.log(result.message);
         }
-      } catch (err) {
-        setError('Failed to resume execution');
+        
+        await loadStatus();
       }
-    } else if (action === 'skip') {
-      // TODO: Implement skip functionality
-      console.log('Skip not implemented yet');
-    } else if (action === 'retry') {
-      // TODO: Implement retry functionality
-      console.log('Retry not implemented yet');
+    } catch (err) {
+      setError(`Failed to ${action}`);
+      console.error(`Failed to ${action}:`, err);
     }
   };
 
