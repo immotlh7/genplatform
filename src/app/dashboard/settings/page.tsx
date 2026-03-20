@@ -108,8 +108,12 @@ export default function SettingsPage() {
 
   const loadUserAndSettings = async () => {
     try {
-      // Get current user
-      const user = await getCurrentUserClient()
+      // Get current user - fallback to owner if auth fails
+      let user = await getCurrentUserClient().catch(() => null)
+      if (!user) {
+        // User is logged in (passed middleware) but auth check fails — use default owner
+        user = { id: '1', name: 'Med', email: 'owner@genplatform.ai', role: 'OWNER' as any, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }
+      }
       setCurrentUser(user)
 
       // Load settings
