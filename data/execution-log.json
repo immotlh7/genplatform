@@ -811,5 +811,17 @@
     "type": "task_sent",
     "message": "🚀 Executing Task 2: The notification \"CPU usage has been above 85%\" is fake/hard...",
     "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg3-task2"
+  },
+  {
+    "timestamp": "2026-03-20T14:42:09.907Z",
+    "type": "task_done",
+    "message": "✅ Task 2 completed",
+    "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg3-task2"
+  },
+  {
+    "timestamp": "2026-03-20T14:42:48.058Z",
+    "type": "task_sent",
+    "message": "🚀 Executing Task 3: The notification bell in the top bar shows a red badge with ...",
+    "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg3-task3"
   }
 ]
