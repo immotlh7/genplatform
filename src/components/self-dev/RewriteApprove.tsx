@@ -51,33 +51,37 @@ export function RewriteApprove({
   };
 
   return (
-    <div className="flex gap-2">
+    <div className="flex gap-1">
       <Button
         size="sm"
         variant="outline"
         onClick={handleRewrite}
         disabled={disabled || isRewriting || isApproving}
-        className="h-7 px-2 text-xs"
+        className="h-6 px-2 text-[11px] font-medium"
       >
         {isRewriting ? (
-          <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+          <Loader2 className="h-3 w-3 animate-spin" />
         ) : (
-          <RefreshCw className="h-3 w-3 mr-1" />
+          <>
+            <RefreshCw className="h-3 w-3 mr-0.5" />
+            Rewrite
+          </>
         )}
-        Rewrite
       </Button>
       <Button
         size="sm"
         onClick={handleApprove}
         disabled={disabled || isRewriting || isApproving}
-        className="h-7 px-2 text-xs bg-green-600 hover:bg-green-700 text-white"
+        className="h-6 px-2 text-[11px] bg-green-600 hover:bg-green-700 text-white font-medium"
       >
         {isApproving ? (
-          <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+          <Loader2 className="h-3 w-3 animate-spin" />
         ) : (
-          <Check className="h-3 w-3 mr-1" />
+          <>
+            <Check className="h-3 w-3 mr-0.5" />
+            OK
+          </>
         )}
-        OK
       </Button>
     </div>
   );

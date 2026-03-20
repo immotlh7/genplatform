@@ -292,7 +292,7 @@ export function TaskQueue({ className = '', hideActions = false }: TaskQueueProp
       done: '✅ done',
       failed: 'failed',
       executing: 'executing',
-      approved: 'ready',
+      approved: 'approved',
       review: 'review',
       pending: 'pending'
     };
@@ -428,7 +428,7 @@ export function TaskQueue({ className = '', hideActions = false }: TaskQueueProp
           <div key={queue.fileId} className="bg-gray-700/50 rounded-lg border border-gray-600 overflow-hidden">
             {/* File Header */}
             <div
-              className="p-2 cursor-pointer hover:bg-gray-700/70 transition-colors flex items-center justify-between"
+              className="p-3 cursor-pointer hover:bg-gray-700/70 transition-colors flex items-center justify-between"
               onClick={() => toggleFile(queue.fileId)}
             >
               <div className="flex items-center gap-2 flex-1 min-w-0">
@@ -481,7 +481,7 @@ export function TaskQueue({ className = '', hideActions = false }: TaskQueueProp
             {isExpanded && (
               <div className="border-t border-gray-600/50">
                 {/* File Stats */}
-                <div className="p-2 bg-gray-800/30 text-xs text-gray-400 grid grid-cols-3 gap-2 border-b border-gray-600/50">
+                <div className="p-3 bg-gray-800/30 text-xs text-gray-400 grid grid-cols-3 gap-2 border-b border-gray-600/50">
                   <div>Messages: {queue.totalMessages || messages.length}</div>
                   <div>Tasks: {queue.totalTasks || messages.reduce((sum, m) => sum + (m.tasks?.length || 0), 0)}</div>
                   <div>Micro-tasks: {queue.totalMicroTasks || microTaskStatus.total}</div>
@@ -501,13 +501,13 @@ export function TaskQueue({ className = '', hideActions = false }: TaskQueueProp
                     <div 
                       key={message.messageNumber} 
                       className={cn(
-                        "border-b border-gray-600/30 last:border-b-0 py-1",
+                        "border-b border-gray-600/30 last:border-b-0",
                         isSelected && "bg-blue-900/10"
                       )}
                     >
                       {/* Message Header */}
                       <div
-                        className="p-2 cursor-pointer hover:bg-gray-700/30 transition-colors"
+                        className="p-3 cursor-pointer hover:bg-gray-700/30 transition-colors"
                         onClick={() => {
                           toggleMessage(queue.fileId, message.messageNumber);
                           setSelectedMessage({ fileId: queue.fileId, messageNumber: message.messageNumber });
@@ -521,7 +521,7 @@ export function TaskQueue({ className = '', hideActions = false }: TaskQueueProp
                               <ChevronRight className="h-3 w-3 text-gray-500" />
                             )}
                             <StatusIcon status={messageStatus} />
-                            <span className="text-xs font-medium text-gray-100">
+                            <span className="text-sm font-medium text-gray-100">
                               Message {displayNumber}
                               {message.summary && (
                                 <span className="ml-2 text-gray-400 font-normal">
@@ -532,9 +532,6 @@ export function TaskQueue({ className = '', hideActions = false }: TaskQueueProp
                           </div>
                           <div className="flex items-center gap-2">
                             {/* Add Rewrite/Approve buttons for messages with tasks */}
-                            {messageStatus === "done" && (
-                              <Badge className="text-xs bg-green-700 text-green-100 font-medium">✅ Done</Badge>
-                            )}
                             {message.tasks && message.tasks.length > 0 && messageStatus !== 'done' && messageStatus !== 'executing' && !hideActions && (
                               <RewriteApprove
                                 fileId={queue.fileId}
@@ -585,7 +582,7 @@ export function TaskQueue({ className = '', hideActions = false }: TaskQueueProp
                                   <div 
                                     key={task.taskId || taskIndex}
                                     className={cn(
-                                      "p-1.5 bg-gray-800/30 rounded border text-[11px]",
+                                      "p-2 bg-gray-800/30 rounded border text-xs",
                                       taskStatus === 'done' && "border-green-700/50 bg-green-900/10",
                                       taskStatus === 'failed' && "border-red-700/50 bg-red-900/10",
                                       taskStatus === 'executing' && "border-blue-700/50 bg-blue-900/10",

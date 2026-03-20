@@ -8,11 +8,13 @@ interface SessionTracker {
   totalTasksSent: number;
   currentBatch: number;
   tasksInCurrentBatch: number;
+  lastApiError?: string;
+  retryAfter?: string;
 }
 
 interface ExecutionLog {
   timestamp: string;
-  type: 'task_sent' | 'task_done' | 'task_failed' | 'build' | 'reset' | 'error' | 'info';
+  type: 'task_sent' | 'task_done' | 'task_failed' | 'build' | 'reset' | 'error' | 'info' | 'api_limit';
   message: string;
   taskId?: string;
 }
@@ -83,6 +85,34 @@ async function sendToTelegram(text: string): Promise<boolean> {
     const result = await response.json();
     console.log('[EXECUTE-NEXT] Telegram response:', result);
     
+    // Check for rate limit errors
+    if (!response.ok && result.error_code === 429) {
+      const retryAfter = result.parameters?.retry_after || 900; // Default 15 minutes
+      await addLog({
+        timestamp: new Date().toISOString(),
+        type: 'api_limit',
+        message: `⚠️ Telegram API rate limit hit. Will retry in ${retryAfter} seconds (${Math.round(retryAfter / 60)} minutes)`
+      });
+      
+      // Update tracker with retry time
+      const tracker = await getSessionTracker();
+      tracker.lastApiError = new Date().toISOString();
+      tracker.retryAfter = new Date(Date.now() + retryAfter * 1000).toISOString();
+      await updateSessionTracker(tracker);
+      
+      // Schedule retry
+      setTimeout(async () => {
+        await addLog({
+          timestamp: new Date().toISOString(),
+          type: 'info',
+          message: '🔄 Retrying after API rate limit cooldown'
+        });
+        await executeNext();
+      }, retryAfter * 1000);
+      
+      return false;
+    }
+    
     return response.ok;
   } catch (error) {
     console.error('[EXECUTE-NEXT] Failed to send to Telegram:', error);
@@ -94,6 +124,26 @@ export async function executeNext() {
   console.log('[EXECUTE-NEXT] Starting executeNext function');
   
   try {
+    // Check if we're still in cooldown from API limit
+    const tracker = await getSessionTracker();
+    if (tracker.retryAfter) {
+      const retryTime = new Date(tracker.retryAfter);
+      if (retryTime > new Date()) {
+        const minutesLeft = Math.round((retryTime.getTime() - Date.now()) / 60000);
+        console.log(`[EXECUTE-NEXT] Still in API cooldown. ${minutesLeft} minutes remaining.`);
+        return {
+          error: 'API rate limit cooldown',
+          retryAfter: tracker.retryAfter,
+          minutesLeft
+        };
+      } else {
+        // Clear the retry flag
+        delete tracker.retryAfter;
+        delete tracker.lastApiError;
+        await updateSessionTracker(tracker);
+      }
+    }
+    
     // Load task queue
     let queue;
     try {
@@ -165,10 +215,6 @@ export async function executeNext() {
       };
     }
 
-    // Get session tracker
-    const tracker = await getSessionTracker();
-    console.log('[EXECUTE-NEXT] Session tracker:', tracker);
-    
     // Check if we need to reset context (every 40 tasks)
     if (tracker.tasksSentInSession >= 40) {
       console.log('[EXECUTE-NEXT] Context reset required');

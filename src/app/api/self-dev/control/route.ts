@@ -3,38 +3,46 @@ import fs from 'fs/promises';
 import path from 'path';
 import { executeNext } from '../execute-next/route';
 
+const CONFIG_FILE = '/root/genplatform/data/self-dev-config.json';
+const EXECUTION_LOG_FILE = '/root/genplatform/data/execution-log.json';
+const TASK_QUEUE_FILE = '/root/genplatform/data/task-queue/task-queue.json';
+
 interface SelfDevConfig {
   autoMode: boolean;
   lastUpdated: string;
+  retryEnabled?: boolean;
+  retryInterval?: number; // minutes
 }
 
-const CONFIG_FILE = '/root/genplatform/data/self-dev-config.json';
-const TASK_QUEUE_FILE = '/root/genplatform/data/task-queue/task-queue.json';
-const EXECUTION_LOG_FILE = '/root/genplatform/data/execution-log.json';
+interface ExecutionLog {
+  timestamp: string;
+  type: 'task_sent' | 'task_done' | 'task_failed' | 'build' | 'reset' | 'error' | 'info' | 'api_limit';
+  message: string;
+  taskId?: string;
+}
 
 async function getConfig(): Promise<SelfDevConfig> {
   try {
     const data = await fs.readFile(CONFIG_FILE, 'utf-8');
     return JSON.parse(data);
   } catch {
-    const defaultConfig: SelfDevConfig = {
-      autoMode: false,
-      lastUpdated: new Date().toISOString()
+    return { 
+      autoMode: false, 
+      lastUpdated: new Date().toISOString(),
+      retryEnabled: true,
+      retryInterval: 15 
     };
-    await fs.mkdir(path.dirname(CONFIG_FILE), { recursive: true });
-    await fs.writeFile(CONFIG_FILE, JSON.stringify(defaultConfig, null, 2));
-    return defaultConfig;
   }
 }
 
-async function setConfig(config: SelfDevConfig) {
-  config.lastUpdated = new Date().toISOString();
+async function saveConfig(config: SelfDevConfig) {
+  await fs.mkdir(path.dirname(CONFIG_FILE), { recursive: true });
   await fs.writeFile(CONFIG_FILE, JSON.stringify(config, null, 2));
 }
 
-async function addLog(log: any) {
+async function addLog(log: ExecutionLog) {
   try {
-    let logs = [];
+    let logs: ExecutionLog[] = [];
     try {
       const data = await fs.readFile(EXECUTION_LOG_FILE, 'utf-8');
       logs = JSON.parse(data);
@@ -51,250 +59,207 @@ async function addLog(log: any) {
   }
 }
 
+let retryTimer: NodeJS.Timeout | null = null;
+
+async function startRetryLoop(intervalMinutes: number = 15) {
+  // Clear existing timer
+  if (retryTimer) {
+    clearInterval(retryTimer);
+  }
+  
+  // Set up new retry loop
+  retryTimer = setInterval(async () => {
+    const config = await getConfig();
+    if (!config.autoMode) {
+      console.log('[CONTROL] Auto-mode disabled, stopping retry loop');
+      if (retryTimer) clearInterval(retryTimer);
+      return;
+    }
+    
+    try {
+      console.log('[CONTROL] Attempting auto-retry...');
+      await addLog({
+        timestamp: new Date().toISOString(),
+        type: 'info',
+        message: `🔄 Auto-retry attempt (every ${intervalMinutes} minutes)`
+      });
+      
+      const result = await executeNext();
+      
+      if (result.error && result.error.includes('API rate limit')) {
+        console.log('[CONTROL] Still in API cooldown, will retry later');
+      } else if (result.sent) {
+        console.log('[CONTROL] Successfully sent task via retry');
+      }
+    } catch (error) {
+      console.error('[CONTROL] Retry error:', error);
+    }
+  }, intervalMinutes * 60 * 1000);
+  
+  await addLog({
+    timestamp: new Date().toISOString(),
+    type: 'info',
+    message: `⏰ Auto-retry enabled: will check every ${intervalMinutes} minutes for pending tasks`
+  });
+}
+
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
-    const { action } = body;
+    const { action, autoMode } = await request.json();
+    const config = await getConfig();
     
-    console.log('[CONTROL] Received action:', action);
+    let result: any = { action };
     
     switch (action) {
-      case 'start': {
-        console.log('[CONTROL] Starting execution...');
-        
-        // Set auto-mode ON and start execution
-        const config = await getConfig();
+      case 'start':
+      case 'resume':
+        // Enable auto mode
         config.autoMode = true;
-        await setConfig(config);
-        
-        // Also update queue's autoMode flag
-        try {
-          const queueData = await fs.readFile(TASK_QUEUE_FILE, 'utf-8');
-          const queue = JSON.parse(queueData);
-          queue.autoMode = true;
-          await fs.writeFile(TASK_QUEUE_FILE, JSON.stringify(queue, null, 2));
-        } catch (error) {
-          console.error('[CONTROL] Failed to update queue autoMode:', error);
-        }
+        config.lastUpdated = new Date().toISOString();
+        config.retryEnabled = true;
+        config.retryInterval = 15;
+        await saveConfig(config);
         
         await addLog({
           timestamp: new Date().toISOString(),
           type: 'info',
-          message: '▶️ Execution started - Auto-mode enabled'
+          message: action === 'start' ? '▶️ Execution started - Auto-mode enabled' : '▶️ Execution resumed - Auto-mode enabled'
         });
         
-        // Directly call executeNext instead of making HTTP request
-        console.log('[CONTROL] Calling executeNext directly...');
-        const result = await executeNext();
-        console.log('[CONTROL] executeNext result:', result);
+        // Start retry loop
+        await startRetryLoop(config.retryInterval || 15);
         
-        return NextResponse.json({ 
-          action: 'start',
-          autoMode: true,
-          success: !result.error,
-          message: result.error ? result.error : 'Execution started',
-          result
-        });
-      }
-      
-      case 'pause': {
-        console.log('[CONTROL] Pausing execution...');
+        // Try to execute next task
+        const executeResult = await executeNext();
+        result.autoMode = true;
+        result.success = !executeResult.error;
+        result.message = executeResult.error ? 'No approved tasks found' : 'Execution started';
+        result.result = executeResult;
+        break;
         
-        // Set auto-mode OFF (current task will finish)
-        const config = await getConfig();
+      case 'pause':
+      case 'stop':
+        // Disable auto mode
         config.autoMode = false;
-        await setConfig(config);
+        config.lastUpdated = new Date().toISOString();
+        await saveConfig(config);
         
-        // Also update queue's autoMode flag
-        try {
-          const queueData = await fs.readFile(TASK_QUEUE_FILE, 'utf-8');
-          const queue = JSON.parse(queueData);
-          queue.autoMode = false;
-          await fs.writeFile(TASK_QUEUE_FILE, JSON.stringify(queue, null, 2));
-        } catch (error) {
-          console.error('[CONTROL] Failed to update queue autoMode:', error);
+        // Stop retry timer
+        if (retryTimer) {
+          clearInterval(retryTimer);
+          retryTimer = null;
         }
         
         await addLog({
           timestamp: new Date().toISOString(),
           type: 'info',
-          message: '⏸️ Execution paused - Current task will complete'
+          message: '⏸️ Execution paused - Auto-mode disabled'
         });
         
-        return NextResponse.json({ 
-          action: 'pause',
-          autoMode: false,
-          message: 'Execution paused'
-        });
-      }
-      
-      case 'resume': {
-        console.log('[CONTROL] Resuming execution...');
+        result.autoMode = false;
+        result.success = true;
+        result.message = 'Execution paused';
+        break;
         
-        // Set auto-mode ON and continue
-        const config = await getConfig();
-        config.autoMode = true;
-        await setConfig(config);
-        
-        // Also update queue's autoMode flag
-        try {
-          const queueData = await fs.readFile(TASK_QUEUE_FILE, 'utf-8');
-          const queue = JSON.parse(queueData);
-          queue.autoMode = true;
-          await fs.writeFile(TASK_QUEUE_FILE, JSON.stringify(queue, null, 2));
-        } catch (error) {
-          console.error('[CONTROL] Failed to update queue autoMode:', error);
-        }
-        
-        await addLog({
-          timestamp: new Date().toISOString(),
-          type: 'info',
-          message: '▶️ Execution resumed - Auto-mode enabled'
-        });
-        
-        // Directly call executeNext
-        console.log('[CONTROL] Calling executeNext directly...');
-        const result = await executeNext();
-        console.log('[CONTROL] executeNext result:', result);
-        
-        return NextResponse.json({ 
-          action: 'resume',
-          autoMode: true,
-          success: !result.error,
-          message: result.error ? result.error : 'Execution resumed',
-          result
-        });
-      }
-      
-      case 'skip': {
-        console.log('[CONTROL] Skipping current task...');
-        
+      case 'skip':
         // Mark current executing task as skipped
         try {
           const queueData = await fs.readFile(TASK_QUEUE_FILE, 'utf-8');
           const queue = JSON.parse(queueData);
+          let skipped = false;
           
-          let skippedTask = null;
-          for (const batch of queue.batches || []) {
-            for (const task of batch.tasks || []) {
+          for (const msg of queue.messages || []) {
+            for (const task of msg.tasks || []) {
               if (task.status === 'executing') {
                 task.status = 'skipped';
-                task.skipReason = 'Manual skip';
                 task.skippedAt = new Date().toISOString();
-                skippedTask = task;
+                skipped = true;
+                
+                await addLog({
+                  timestamp: new Date().toISOString(),
+                  type: 'info',
+                  message: `⏭️ Task skipped: ${task.taskId}`,
+                  taskId: task.taskId
+                });
                 break;
               }
             }
-            if (skippedTask) break;
+            if (skipped) break;
           }
           
-          if (skippedTask) {
+          if (skipped) {
             await fs.writeFile(TASK_QUEUE_FILE, JSON.stringify(queue, null, 2));
             
-            await addLog({
-              timestamp: new Date().toISOString(),
-              type: 'info',
-              message: `⏭️ Skipped task: ${skippedTask.id} - ${skippedTask.description}`,
-              taskId: skippedTask.id
-            });
-            
-            // If auto-mode is on, trigger next task
-            const config = await getConfig();
+            // Execute next if in auto mode
             if (config.autoMode) {
-              const result = await executeNext();
-              console.log('[CONTROL] After skip, executeNext result:', result);
+              const executeResult = await executeNext();
+              result.result = executeResult;
             }
-            
-            return NextResponse.json({ 
-              action: 'skip',
-              taskId: skippedTask.id,
-              message: 'Task skipped successfully'
-            });
-          } else {
-            return NextResponse.json({ 
-              action: 'skip',
-              error: 'No executing task found to skip'
-            }, { status: 404 });
           }
+          
+          result.success = skipped;
+          result.message = skipped ? 'Task skipped' : 'No executing task found';
         } catch (error) {
-          console.error('[CONTROL] Failed to skip task:', error);
-          return NextResponse.json({ 
-            action: 'skip',
-            error: 'Failed to skip task'
-          }, { status: 500 });
+          result.success = false;
+          result.message = 'Failed to skip task';
         }
-      }
-      
-      case 'retry': {
-        console.log('[CONTROL] Retrying failed task...');
+        break;
         
-        // Find the last failed task and retry it
+      case 'retry':
+        // Retry failed task
         try {
           const queueData = await fs.readFile(TASK_QUEUE_FILE, 'utf-8');
           const queue = JSON.parse(queueData);
+          let retried = false;
           
-          let failedTask = null;
-          // Find the most recent failed task
-          for (const batch of queue.batches || []) {
-            for (const task of batch.tasks || []) {
-              if (task.status === 'failed' || (task.status === 'skipped' && task.retryCount >= 3)) {
-                failedTask = task;
+          for (const msg of queue.messages || []) {
+            for (const task of msg.tasks || []) {
+              if (task.status === 'failed') {
+                task.status = 'approved';
+                task.retryCount = (task.retryCount || 0) + 1;
+                delete task.failedAt;
+                delete task.failureReason;
+                retried = true;
+                
+                await addLog({
+                  timestamp: new Date().toISOString(),
+                  type: 'info',
+                  message: `🔄 Task queued for retry: ${task.taskId} (attempt ${task.retryCount})`,
+                  taskId: task.taskId
+                });
+                break;
               }
+            }
+            if (retried) break;
+          }
+          
+          if (retried) {
+            await fs.writeFile(TASK_QUEUE_FILE, JSON.stringify(queue, null, 2));
+            
+            // Execute if in auto mode
+            if (config.autoMode) {
+              const executeResult = await executeNext();
+              result.result = executeResult;
             }
           }
           
-          if (failedTask) {
-            // Reset task for retry
-            failedTask.status = 'approved';
-            failedTask.retryCount = (failedTask.retryCount || 0) + 1;
-            delete failedTask.startedAt;
-            delete failedTask.completedAt;
-            delete failedTask.skippedAt;
-            
-            await fs.writeFile(TASK_QUEUE_FILE, JSON.stringify(queue, null, 2));
-            
-            await addLog({
-              timestamp: new Date().toISOString(),
-              type: 'info',
-              message: `🔄 Retrying task: ${failedTask.id} - ${failedTask.description} (Attempt ${failedTask.retryCount})`,
-              taskId: failedTask.id
-            });
-            
-            // Trigger execution
-            const result = await executeNext();
-            console.log('[CONTROL] After retry, executeNext result:', result);
-            
-            return NextResponse.json({ 
-              action: 'retry',
-              taskId: failedTask.id,
-              retryCount: failedTask.retryCount,
-              success: !result.error,
-              message: result.error ? result.error : 'Task queued for retry'
-            });
-          } else {
-            return NextResponse.json({ 
-              action: 'retry',
-              error: 'No failed task found to retry'
-            }, { status: 404 });
-          }
+          result.success = retried;
+          result.message = retried ? 'Task queued for retry' : 'No failed task found';
         } catch (error) {
-          console.error('[CONTROL] Failed to retry task:', error);
-          return NextResponse.json({ 
-            action: 'retry',
-            error: 'Failed to retry task'
-          }, { status: 500 });
+          result.success = false;
+          result.message = 'Failed to retry task';
         }
-      }
-      
+        break;
+        
       default:
-        return NextResponse.json({ 
-          error: 'Invalid action',
-          validActions: ['start', 'pause', 'resume', 'skip', 'retry']
-        }, { status: 400 });
+        result.success = false;
+        result.message = 'Invalid action';
     }
     
+    return NextResponse.json(result);
+    
   } catch (error) {
-    console.error('[CONTROL] Control error:', error);
+    console.error('Control error:', error);
     return NextResponse.json(
       { error: 'Failed to process control action', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
