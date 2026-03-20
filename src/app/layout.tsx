@@ -9,8 +9,18 @@ import { ProjectProvider } from '@/contexts/project-context'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'GenPlatform.ai - Mission Control Dashboard',
-  description: 'AI Agent Management Platform',
+  title: 'GenPlatform.ai — Mission Control',
+  description: 'AI-powered platform for managing projects, agents, and automation',
+  openGraph: {
+    title: 'GenPlatform.ai — Mission Control',
+    description: 'AI-powered platform for managing projects, agents, and automation',
+    images: ['/og-image.png'],
+  },
+  icons: {
+    icon: '/favicon.svg',
+    shortcut: '/favicon.ico',
+  },
+  manifest: '/manifest.json',
 }
 
 export default function RootLayout({
