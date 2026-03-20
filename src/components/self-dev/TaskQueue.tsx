@@ -25,7 +25,7 @@ interface Task {
   status: 'pending' | 'rewriting' | 'review' | 'approved' | 'executing' | 'done' | 'failed' | 'skipped';
   approved: boolean;
   rewritten: boolean;
-  microTasks: MicroTask[];
+  microTasks?: MicroTask[];
   executionResult?: {
     success: boolean;
     message?: string;
@@ -36,17 +36,21 @@ interface Task {
 interface Message {
   messageNumber: number;
   summary: string;
-  originalContent: string;
-  tasks: Task[];
+  originalContent?: string;
+  tasks?: Task[];
+  microTasks?: any[]; // Old format compatibility
+  commitMessage?: string;
 }
 
 interface TaskQueue {
   fileId: string;
   fileName: string;
   totalMessages: number;
-  totalTasks: number;
+  totalTasks?: number;
   totalMicroTasks: number;
-  messages: Message[];
+  messages?: Message[];
+  analyzedAt?: string;
+  status?: string;
   hasApprovedTasks?: boolean;
 }
 
@@ -93,6 +97,35 @@ const StatusBadge = ({ status }: { status: string }) => {
   );
 };
 
+// Helper function to normalize message structure
+function normalizeMessage(message: any): Message {
+  // Handle old format where microTasks are at message level
+  if (message.microTasks && !message.tasks) {
+    // Convert old format to new format
+    return {
+      messageNumber: message.messageNumber || 1,
+      summary: message.summary || 'Task batch',
+      originalContent: message.originalContent,
+      tasks: [{
+        taskId: `task_${message.messageNumber}_1`,
+        taskNumber: 1,
+        originalDescription: message.summary || 'Legacy tasks',
+        status: 'pending',
+        approved: false,
+        rewritten: false,
+        microTasks: message.microTasks
+      }]
+    };
+  }
+  
+  return {
+    messageNumber: message.messageNumber || 1,
+    summary: message.summary || '',
+    originalContent: message.originalContent,
+    tasks: message.tasks || []
+  };
+}
+
 export function TaskQueue() {
   const [queues, setQueues] = useState<TaskQueue[]>([]);
   const [expandedFiles, setExpandedFiles] = useState<Set<string>>(new Set());
@@ -113,10 +146,15 @@ export function TaskQueue() {
       if (response.ok) {
         const queuesData = await response.json();
         if (Array.isArray(queuesData)) {
-          setQueues(queuesData);
+          // Normalize queue data
+          const normalizedQueues = queuesData.map((queue: any) => ({
+            ...queue,
+            messages: (queue.messages || []).map(normalizeMessage)
+          }));
+          setQueues(normalizedQueues);
           // Auto-expand first file if only one exists
-          if (queuesData.length === 1 && expandedFiles.size === 0) {
-            setExpandedFiles(new Set([queuesData[0].fileId]));
+          if (normalizedQueues.length === 1 && expandedFiles.size === 0) {
+            setExpandedFiles(new Set([normalizedQueues[0].fileId]));
           }
         }
       }
@@ -293,9 +331,9 @@ export function TaskQueue() {
     let done = 0;
     let failed = 0;
 
-    queue.messages.forEach(msg => {
-      msg.tasks.forEach(task => {
-        task.microTasks?.forEach(micro => {
+    (queue.messages || []).forEach(msg => {
+      (msg.tasks || []).forEach(task => {
+        (task.microTasks || []).forEach(micro => {
           total++;
           if (micro.status === 'executing') executing++;
           if (micro.status === 'done') done++;
@@ -356,21 +394,22 @@ export function TaskQueue() {
       
       {queues.map(queue => {
         const isExpanded = expandedFiles.has(queue.fileId);
-        const approvedMessages = queue.messages ? queue.messages.filter(m => 
+        const messages = queue.messages || [];
+        const approvedMessages = messages.filter(m => 
           m.tasks && m.tasks.length > 0 && m.tasks.every(t => t.approved)
-        ) : [];
-        const reviewMessages = queue.messages ? queue.messages.filter(m => 
+        );
+        const reviewMessages = messages.filter(m => 
           getMessageStatus(m) === 'review'
-        ) : [];
-        const executingMessages = queue.messages ? queue.messages.filter(m => 
+        );
+        const executingMessages = messages.filter(m => 
           m.tasks && m.tasks.some(t => t.status === 'executing')
-        ) : [];
-        const doneMessages = queue.messages ? queue.messages.filter(m => 
+        );
+        const doneMessages = messages.filter(m => 
           m.tasks && m.tasks.length > 0 && m.tasks.every(t => t.status === 'done')
-        ) : [];
-        const failedMessages = queue.messages ? queue.messages.filter(m => 
+        );
+        const failedMessages = messages.filter(m => 
           m.tasks && m.tasks.some(t => t.status === 'failed')
-        ) : [];
+        );
 
         const microTaskStatus = getMicroTaskStatus(queue);
 
@@ -422,13 +461,13 @@ export function TaskQueue() {
                   </Badge>
                 )}
                 <Badge variant="secondary" className="text-xs">
-                  {queue.totalMessages} msgs
+                  {messages.length} msgs
                 </Badge>
               </div>
             </div>
 
             {/* Messages List */}
-            {isExpanded && queue.messages && queue.messages.length > 0 && (
+            {isExpanded && messages.length > 0 && (
               <div className="border-t border-gray-600/50">
                 {/* Micro-task Progress */}
                 {microTaskStatus.total > 0 && (
@@ -481,7 +520,7 @@ export function TaskQueue() {
                   </div>
                 )}
                 
-                {queue.messages.map((message, msgIndex) => {
+                {messages.map((message, msgIndex) => {
                   const messageId = `${queue.fileId}-${message.messageNumber}`;
                   const messageStatus = getMessageStatus(message);
                   const isMessageExpanded = expandedMessages.has(messageId);
@@ -673,7 +712,7 @@ export function TaskQueue() {
                                         <p className="text-xs font-medium text-green-400">
                                           Rewritten as {task.microTasks.length} micro-tasks:
                                         </p>
-                                        {task.microTasks.map((micro, idx) => (
+                                        {task.microTasks.map((micro: any, idx: number) => (
                                           <div key={micro.id} className="text-xs text-gray-400 pl-4">
                                             <div className="mb-1 flex items-center gap-2">
                                               <span className="text-gray-500">{idx + 1}.</span> 
