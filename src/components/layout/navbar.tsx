@@ -27,6 +27,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sh
 import { Badge } from '@/components/ui/badge'
 import { ProjectSwitcher } from './ProjectSwitcher'
 import { NotificationBell } from './NotificationBell'
+import { LanguageToggle } from './LanguageToggle'
 
 export function Navbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
@@ -95,6 +96,7 @@ export function Navbar() {
           <div className="flex items-center gap-2">
             {/* Real notification bell */}
             <NotificationBell />
+            <LanguageToggle />
 
             {/* Settings */}
             <Link href="/dashboard/settings">
