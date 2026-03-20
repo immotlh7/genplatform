@@ -211,7 +211,17 @@ export default function SettingsPage() {
   const saveSettings = async () => {
     setIsSaving(true)
     try {
-      // Save to localStorage
+      // Save to API + localStorage
+      await fetch('/api/settings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          fullName: settings.profile?.fullName,
+          timezone: settings.profile?.timezone,
+          email: settings.profile?.email,
+          notifications: settings.notifications,
+        })
+      })
       localStorage.setItem('genplatform-settings', JSON.stringify(settings))
       localStorage.setItem('genplatform-theme', settings.appearance.theme)
       

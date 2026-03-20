@@ -155,7 +155,7 @@
           "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg5-task2",
           "taskNumber": 2,
           "originalDescription": "Stat Cards row (All Projects, Tasks, Team, Automations, Reports, Security). Fix each:",
-          "status": "approved",
+          "status": "failed",
           "approved": true,
           "rewritten": true,
           "microTasks": [
@@ -166,13 +166,19 @@
               "description": "Implement the following task with precision: Stat Cards row (All Projects, Tasks, Team, Automations, Reports, Security). Fix each:. First identify the correct file and component, then make the necessary changes following the project's coding standards.",
               "status": "pending"
             }
-          ]
+          ],
+          "startedAt": "2026-03-20T19:42:44.807Z",
+          "completedAt": "2026-03-20T19:43:59.720Z",
+          "executionResult": {
+            "success": false,
+            "result": "No bash script found in response"
+          }
         },
         {
           "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg5-task3",
           "taskNumber": 3,
           "originalDescription": "System Performance section at bottom. Must show REAL data:",
-          "status": "approved",
+          "status": "executing",
           "approved": true,
           "rewritten": true,
           "microTasks": [
@@ -183,7 +189,8 @@
               "description": "Implement the following task with precision: System Performance section at bottom. Must show REAL data:. First identify the correct file and component, then make the necessary changes following the project's coding standards.",
               "status": "pending"
             }
-          ]
+          ],
+          "startedAt": "2026-03-20T19:44:01.725Z"
         },
         {
           "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg5-task4",
