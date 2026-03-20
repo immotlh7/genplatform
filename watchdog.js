@@ -119,7 +119,7 @@ function findNextPendingMessage() {
         const q = JSON.parse(fs.readFileSync(`${QUEUE_DIR}/${f}`, 'utf-8'));
         for (const msg of (q.messages || [])) {
           if (!msg.tasks?.length) continue;
-          const allDone = msg.tasks.every(t => t.status === 'done' || t.status === 'skipped');
+          const allDone = msg.tasks.every(t => ['done','skipped','failed'].includes(t.status));
           if (!allDone) {
             const hasApproved = msg.tasks.some(t => t.approved && t.status === 'approved');
             const needsRewrite = msg.tasks.some(t => !t.rewritten && t.status !== 'done' && t.status !== 'skipped');
@@ -301,9 +301,7 @@ async function main() {
       }
     } else {
       log('🎉 All tasks complete!');
-      await notify('🎉 ALL TASKS COMPLETE!
-
-Check: https://app.gen3.ai');
+      await notify('All tasks complete! Check: https://app.gen3.ai');
     }
   } else {
     log('✅ System idle - no work pending');
@@ -360,7 +358,7 @@ Check: https://app.gen3.ai');
     }
 
     if (qStats.done === qStats.total && qStats.total > 0) {
-      msg += `\n🎉 ALL TASKS COMPLETE!`;
+      msg += `\nAll tasks complete!`;
     }
 
     await notify(msg);
