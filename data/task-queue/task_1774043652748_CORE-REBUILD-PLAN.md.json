@@ -1,0 +1,246 @@
+{
+  "fileId": "task_1774043652748_CORE-REBUILD-PLAN.md",
+  "fileName": "task_1774043652748_CORE-REBUILD-PLAN.md",
+  "uploadedAt": "2026-03-20T21:54:13.041Z",
+  "totalMessages": 39,
+  "totalTasks": 0,
+  "totalMicroTasks": 0,
+  "messages": [
+    {
+      "messageNumber": 1,
+      "summary": "GenPlatform.ai — خطة إعادة البناء الجوهرية",
+      "originalContent": "# GenPlatform.ai — خطة إعادة البناء الجوهرية\n# ═══════════════════════════════════════════════════════════════\n# الميزات الثلاث الأساسية: Ideas + Projects + Chat\n# تاريخ: 20 مارس 2026\n# ═══════════════════════════════════════════════════════════════\n\n## ⚠️ PROTECTED FILES — لا تُعدَّل أبداً\n- src/app/layout.tsx\n- src/components/layout/sidebar.tsx\n- src/components/layout/navbar.tsx\n- globals.css\n- src/app/dashboard/self-dev/**\n- src/app/api/self-dev/**\n- src/components/self-dev/**\n\n---\n\n# ═══════════════════════════════════════════════════════════════\n# FEATURE 1: نظام الأفكار الذكي (Ideas Intelligence System)\n# ═══════════════════════════════════════════════════════════════\n\n## الرؤية\nصفحة الأفكار يجب أن تكون بالضبط مثل Claude أو ChatGPT — واجهة محادثة تتكلم فيها مع\nوكيل متخصص في تحليل الأفكار. الوكيل يسمعك، يحلل، يقترح، وعند الموافقة يرسل\nللفريق كاملاً. مو مجرد نموذج إدخال.\n\n## الهيكل الجديد لـ /dashboard/ideas\n\n### Layout\n```",
+      "tasks": []
+    },
+    {
+      "messageNumber": 2,
+      "summary": "│  💡 Ideas Intelligence Center                    [+ New]    │",
+      "originalContent": "│  💡 Ideas Intelligence Center                    [+ New]    │",
+      "tasks": []
+    },
+    {
+      "messageNumber": 3,
+      "summary": "│                                                             │",
+      "originalContent": "│                                                             │\n│  [Sidebar: قائمة الأفكار السابقة]  [Main: محادثة نشطة]     │",
+      "tasks": []
+    },
+    {
+      "messageNumber": 4,
+      "summary": "│  │ 📋 My Ideas (4)  │  │                                  │ │",
+      "originalContent": "│  │ 📋 My Ideas (4)  │  │                                  │ │",
+      "tasks": []
+    },
+    {
+      "messageNumber": 5,
+      "summary": "│  │ • AI Code Review │  │                                  │ │",
+      "originalContent": "│  │ • AI Code Review │  │                                  │ │\n│  │   ✅ Approved    │  │                                  │ │\n│  │ • Mobile Dash    │  │                                  │ │\n│  │   🔬 Analyzing   │  │                                  │ │\n│  │ • Collab Canvas  │  │                                  │ │\n│  │   💬 Discussing  │  │                                  │ │",
+      "tasks": []
+    },
+    {
+      "messageNumber": 6,
+      "summary": "│  │ [+ New Idea]     │  │                                  │ │",
+      "originalContent": "│  │ [+ New Idea]     │  │                                  │ │",
+      "tasks": []
+    },
+    {
+      "messageNumber": 7,
+      "summary": "│                                                             │",
+      "originalContent": "│                                                             │",
+      "tasks": []
+    },
+    {
+      "messageNumber": 8,
+      "summary": "```",
+      "originalContent": "```\n\n### واجهة المحادثة (مثل Claude تماماً)\n\nعندما يضغط المستخدم \"+ New Idea\" تفتح محادثة جديدة والوكيل يرحب:\n\n```\n🤖 Idea Analyst:\nمرحباً! أنا مستعد لتحليل فكرتك بعمق.\nأخبرني عن فكرتك — يمكنك الكتابة بحرية،\nكلما أعطيتني تفاصيل أكثر، كان تحليلي أدق.\n\n[اكتب فكرتك هنا...]\n```\n\nبعد إرسال الفكرة، الوكيل يعطي ردًا شاملاً منظماً:\n\n### هيكل رد الوكيل (يُعرض كـ Markdown داخل الشات)\n\n```markdown\n## 🔍 تحليل الفكرة: [اسم الفكرة]\n\n### فهم الفكرة\n[ملخص ما فهمه الوكيل من الفكرة]\n\n### 💎 القيمة المقترحة\n[ما الذي يجعل هذه الفكرة مميزة؟]\n\n### 📊 تحليل السوق\n| المنافس | نقاط القوة | نقاط الضعف | ميزتنا |\n|---------|-----------|-----------|--------|\n| X       | ...       | ...       | ...    |\n\n### ✨ المميزات الأساسية المقترحة\n1. [ميزة 1] — [وصف + سبب أهميتها]\n2. [ميزة 2] — [وصف]\n3. [ميزة 3] — [وصف]\n\n### 💡 إضافات يمكن أن ترفع المشروع\n- [إضافة 1]: [وصف + تأثير على القيمة]\n- [إضافة 2]: [وصف]\n\n### 🛠️ Stack التقني الموصى به\n| الطبقة | الأداة | السبب |\n|--------|--------|-------|\n| Frontend | Next.js + React | ... |\n| Backend | Node.js + Express | ... |\n| AI | [نموذج مناسب] | ... |\n| Database | PostgreSQL | ... |\n\n### 🤖 نماذج AI المقترحة\n- [نموذج 1]: للـ [وظيفة محددة]\n- [نموذج 2]: للـ [وظيفة أخرى]\n\n### 💰 تقدير التكاليف\n| البند | التكلفة الشهرية |\n|------|----------------|\n| Hosting | $X |\n| AI APIs | $X |\n| Services | $X |\n| **الإجمالي** | **$X/month** |\n\n### 🗺️ خريطة هيكل المشروع\n[مخطط ASCII يوضح الهيكل والارتباطات]\n\n### ⏱️ تقدير الوقت\n- MVP: X أسابيع\n- النسخة الكاملة: X أشهر\n\n---\nهل تريد مناقشة أي جانب؟ أو نبدأ في التخطيط التقني؟\n```\n\n### مراحل المحادثة (State Machine)\n\n```\nINITIAL → USER_SUBMITTED → AI_ANALYZING → AI_RESPONDED →\nDISCUSSION_MODE → IMPROVEMENT_REVIEW → APPROVED/REJECTED\n```\n\n#### حالات الواجهة:\n- **INITIAL**: شاشة ترحيب + input\n- **AI_ANALYZING**: typing indicator + \"جاري التحليل العميق...\" (3-5 ثوانٍ)\n- **AI_RESPONDED**: يُعرض التحليل كامل + أزرار (✅ موافق | 💬 ناقش | 🔄 عدّل | ❌ رفض)\n- **DISCUSSION_MODE**: محادثة حرة للنقاش والتعديل\n- **IMPROVEMENT_REVIEW**: الوكيل يقترح تحسينات إضافية (مرحلة ثانية)\n- **APPROVED**: يُفتح modal تأكيد → إرسال لباقي الفريق\n\n### زر الموافقة النهائية\n\nعند الموافقة يظهر modal:\n```\n✅ تأكيد إطلاق المشروع\n\nالفكرة: [اسم]\nالخطوات التالية:\n→ إرسال للتخطيط التقني (Technical Planning)\n→ توليد المهام التفصيلية\n→ إنشاء subdomain: [slug].gen3.ai\n→ إضافة المشروع لقائمة Projects\n\n[إطلاق المشروع] [إلغاء]\n```\n\n## API المطلوب\n\n### POST /api/ideas/chat\n```typescript\nbody: {\n  ideaId: string,\n  message: string,\n  stage: 'initial' | 'discussion' | 'improvement',\n  context?: string // السياق السابق\n}\nresponse: {\n  reply: string, // markdown\n  stage: string,\n  actions: string[] // الأزرار التي تظهر\n}\n```\n\n### POST /api/ideas/approve\n```typescript\nbody: { ideaId: string }\n// يفعل:\n// 1. ينقل الفكرة لحالة \"approved\"\n// 2. يولد slug للمشروع\n// 3. يُنشئ مشروع جديد في قاعدة البيانات\n// 4. يُرسل للتخطيط التقني\n// 5. يُضيف subdomain عبر Caddy API\n```\n\n### ملفات يجب إنشاؤها:\n- `src/app/dashboard/ideas/page.tsx` — الصفحة الرئيسية (قائمة + شات)\n- `src/app/dashboard/ideas/[id]/page.tsx` — صفحة فكرة محددة\n- `src/components/ideas/IdeaChatInterface.tsx` — واجهة المحادثة\n- `src/components/ideas/IdeaAnalysisCard.tsx` — عرض التحليل المنسق\n- `src/components/ideas/IdeaSidebar.tsx` — قائمة الأفكار\n- `src/app/api/ideas/chat/route.ts` — API الشات\n- `src/app/api/ideas/approve/route.ts` — API الموافقة\n- `src/app/api/ideas/[id]/route.ts` — CRUD\n\n---\n\n# ═══════════════════════════════════════════════════════════════\n# FEATURE 2: صفحة إدارة المشاريع الاحترافية\n# ═══════════════════════════════════════════════════════════════\n\n## الرؤية\nكل مشروع له صفحة كاملة تعرض حالته بشكل تفاعلي — Pipeline مرئي، وكلاء نشطون،\nمهام مقسمة، لوق حي. المهام تُدار من داخل صفحة المشروع لا من صفحة Tasks المنفصلة.\n\n## /dashboard/projects — صفحة القائمة\n\n```",
+      "tasks": []
+    },
+    {
+      "messageNumber": 9,
+      "summary": "│  Projects                              [+ New Project]      │",
+      "originalContent": "│  Projects                              [+ New Project]      │\n│                                                             │\n│  [Active (3)] [Planning (2)] [Completed (1)] [All]         │\n│                                                             │",
+      "tasks": []
+    },
+    {
+      "messageNumber": 10,
+      "summary": "│  │ GP  GenPlatform.ai        Active  75%  nuxim.gen3.ai │   │",
+      "originalContent": "│  │ GP  GenPlatform.ai        Active  75%  nuxim.gen3.ai │   │\n│  │     Next.js · 127 tasks · 3 agents active            │   │\n│  │     [Pipeline ████████░░░░] Dev phase                │   │\n│  │                                    [Open] [Settings] │   │",
+      "tasks": []
+    },
+    {
+      "messageNumber": 11,
+      "summary": "│                                                             │",
+      "originalContent": "│                                                             │",
+      "tasks": []
+    },
+    {
+      "messageNumber": 12,
+      "summary": "│  │ AI  AI Code Review        Planning  10%              │   │",
+      "originalContent": "│  │ AI  AI Code Review        Planning  10%              │   │\n│  │     Node.js · 48 tasks · Generating...               │   │\n│  │     [Pipeline ██░░░░░░░░] Analysis phase             │   │",
+      "tasks": []
+    },
+    {
+      "messageNumber": 13,
+      "summary": "```",
+      "originalContent": "```\n\n## /dashboard/projects/[id] — صفحة المشروع\n\n### Layout الكامل\n```",
+      "tasks": []
+    },
+    {
+      "messageNumber": 14,
+      "summary": "│ HEADER                                                      │",
+      "originalContent": "│ HEADER                                                      │\n│ [GP] GenPlatform.ai  Active — 75% — nuxim.gen3.ai  [Chat]  │\n│ Pipeline | Tasks | Preview | Quality | Settings             │",
+      "tasks": []
+    },
+    {
+      "messageNumber": 15,
+      "summary": "│ TAB: Pipeline (الافتراضي)                                   │",
+      "originalContent": "│ TAB: Pipeline (الافتراضي)                                   │\n│                                                             │",
+      "tasks": []
+    },
+    {
+      "messageNumber": 16,
+      "summary": "│ │ Idea  Analysis Planning Dev  Review Security Deploy     │ │",
+      "originalContent": "│ │ Idea  Analysis Planning Dev  Review Security Deploy     │ │\n│ │ Done   Done    Done   23/48  0      0      —           │ │",
+      "tasks": []
+    },
+    {
+      "messageNumber": 17,
+      "summary": "│                                                             │",
+      "originalContent": "│                                                             │",
+      "tasks": []
+    },
+    {
+      "messageNumber": 18,
+      "summary": "│ │  127  │  48     │  │  5          │  3                  │  │",
+      "originalContent": "│ │  127  │  48     │  │  5          │  3                  │  │\n│ │ Total │Completed│  │ In Progress │ Active Agents       │  │",
+      "tasks": []
+    },
+    {
+      "messageNumber": 19,
+      "summary": "│                                                             │",
+      "originalContent": "│                                                             │",
+      "tasks": []
+    },
+    {
+      "messageNumber": 20,
+      "summary": "│ │ Active Agents       │  │ Live Execution Log             │ │",
+      "originalContent": "│ │ Active Agents       │  │ Live Execution Log             │ │",
+      "tasks": []
+    },
+    {
+      "messageNumber": 21,
+      "summary": "│ │ ● Frontend Dev      │  │ 12:04 T-46 done: Memory page  │ │",
+      "originalContent": "│ │ ● Frontend Dev      │  │ 12:04 T-46 done: Memory page  │ │\n│ │   T-47: Fix cards   │  │ 12:05 T-47 started            │ │\n│ │   [building]        │  │ 12:05 Editing: dashboard/page │ │\n│ │                     │  │ 12:06 Building: npm run build │ │\n│ │ ● Backend Dev       │  │ 12:07 Build OK — pm2 restart  │ │\n│ │   T-48: API fix     │  │ 12:07 T-48 started            │ │\n│ │   [coding]          │  │ 12:08 Editing: api/bridge/... │ │\n│ │                     │  │ 12:08 Context: 34K/200K (17%) │ │",
+      "tasks": []
+    },
+    {
+      "messageNumber": 22,
+      "summary": "│ │   T-45: Login flow  │                                     │",
+      "originalContent": "│ │   T-45: Login flow  │                                     │\n│ │   [reviewing]       │                                     │\n│ │                     │                                     │\n│ │ ○ Security          │                                     │\n│ │   idle              │                                     │",
+      "tasks": []
+    },
+    {
+      "messageNumber": 23,
+      "summary": "│                                                             │",
+      "originalContent": "│                                                             │",
+      "tasks": []
+    },
+    {
+      "messageNumber": 24,
+      "summary": "│ [████████░░░░░░░░░░░] 48/127 tasks (38%) · 34K/200K · 4h   │",
+      "originalContent": "│ [████████░░░░░░░░░░░] 48/127 tasks (38%) · 34K/200K · 4h   │\n│                                          [View all tasks]  │",
+      "tasks": []
+    },
+    {
+      "messageNumber": 25,
+      "summary": "```",
+      "originalContent": "```\n\n### TAB: Tasks (مراقبة المهام داخل المشروع)\n\nلا صفحة Tasks منفصلة. المهام تُعرض كـ tab داخل كل مشروع:\n\n```",
+      "tasks": []
+    },
+    {
+      "messageNumber": 26,
+      "summary": "│ Tasks for GenPlatform.ai          [+ Add Task] [Auto-assign]│",
+      "originalContent": "│ Tasks for GenPlatform.ai          [+ Add Task] [Auto-assign]│\n│                                                             │\n│ [All] [Frontend (3)] [Backend (5)] [QA (2)] [Security (1)] │\n│                                                             │\n│ Kanban Board:                                               │",
+      "tasks": []
+    },
+    {
+      "messageNumber": 27,
+      "summary": "│ │ Backlog  │ │ Planned  │ │In Progress│ │    Done          ││",
+      "originalContent": "│ │ Backlog  │ │ Planned  │ │In Progress│ │    Done          ││\n│ │    5     │ │    3     │ │    2     │ │      3           ││",
+      "tasks": []
+    },
+    {
+      "messageNumber": 28,
+      "summary": "│ │ T-11     │ │ T-08     │ │ T-04     │ │ T-01             ││",
+      "originalContent": "│ │ T-11     │ │ T-08     │ │ T-04     │ │ T-01             ││\n│ │ Perf mon │ │ Onboard  │ │ Build UI │ │ Set up repo      ││",
+      "tasks": []
+    },
+    {
+      "messageNumber": 29,
+      "summary": "```",
+      "originalContent": "```\n\n### TAB: Preview (iframe مباشر)\n```",
+      "tasks": []
+    },
+    {
+      "messageNumber": 30,
+      "summary": "│ Live Preview — nuxim.gen3.ai    [📱Mobile] [💻Tablet] [🖥️] │",
+      "originalContent": "│ Live Preview — nuxim.gen3.ai    [📱Mobile] [💻Tablet] [🖥️] │",
+      "tasks": []
+    },
+    {
+      "messageNumber": 31,
+      "summary": "│                                                             │",
+      "originalContent": "│                                                             │\n│  [iframe: https://nuxim.gen3.ai]                           │\n│                                                             │",
+      "tasks": []
+    },
+    {
+      "messageNumber": 32,
+      "summary": "```",
+      "originalContent": "```\n\n## نظام الـ Subdomains التلقائي\n\nعند إنشاء مشروع جديد (من Ideas أو يدوياً):\n\n### الخطوات التقنية:\n```bash\n# 1. توليد slug من اسم المشروع\nslug = generateSlug(projectName) // \"my-project\" → \"my-project\"\n\n# 2. إضافة Caddy config\ncat >> /etc/caddy/Caddyfile << EOF\n{slug}.gen3.ai {\n  reverse_proxy localhost:{newPort}\n}\nEOF\ncaddy reload\n\n# 3. إنشاء project directory\nmkdir -p /root/projects/{slug}\n\n# 4. تشغيل المشروع على port جديد\npm2 start /root/projects/{slug}/index.js --name \"{slug}-app\" -- --port {newPort}\n```\n\n### API: POST /api/projects/create\n```typescript\nbody: {\n  name: string,\n  ideaId?: string,\n  techStack: string[],\n  description: string\n}\nresponse: {\n  projectId: string,\n  subdomain: string, // \"my-project.gen3.ai\"\n  port: number,\n  status: 'created'\n}\n```\n\n## خريطة الارتباطات البصرية (Dependency Map)\n\nداخل كل صفحة مشروع، يوجد view \"Dependency Map\" يُظهر:\n- الملفات والمكونات وكيف ترتبط ببعض\n- APIs والروابط\n- قواعد البيانات والجداول\n- الخدمات الخارجية\n\n```\nمثال مرئي:\npages/          components/          api/",
+      "tasks": []
+    },
+    {
+      "messageNumber": 33,
+      "summary": "```",
+      "originalContent": "```\n\nيُعرض كـ interactive SVG قابل للنقر.\n\n## الملفات المطلوبة:\n\n- `src/app/dashboard/projects/page.tsx` — قائمة المشاريع\n- `src/app/dashboard/projects/[id]/page.tsx` — صفحة المشروع\n- `src/app/dashboard/projects/[id]/tasks/page.tsx` — Tasks tab\n- `src/app/dashboard/projects/[id]/preview/page.tsx` — Preview tab\n- `src/components/projects/ProjectPipeline.tsx` — Pipeline التفاعلي\n- `src/components/projects/ActiveAgents.tsx` — قائمة الوكلاء\n- `src/components/projects/ExecutionLog.tsx` — Live log\n- `src/components/projects/DependencyMap.tsx` — خريطة الارتباطات SVG\n- `src/components/projects/ProjectControlBar.tsx` — شريط التحكم\n- `src/app/api/projects/create/route.ts` — إنشاء مشروع + subdomain\n- `src/app/api/projects/[id]/tasks/route.ts` — CRUD للمهام\n\n---\n\n# ═══════════════════════════════════════════════════════════════\n# FEATURE 3: Chat — Claude Code Experience\n# ═══════════════════════════════════════════════════════════════\n\n## الرؤية\nصفحة Chat يجب أن تكون مثل Claude Code تماماً:\n- تختار مشروع → الـ AI يعرف كل شيء عنه\n- تخبره بمشكلة (نص/صوت/صورة) → يفهم\n- يكتب الأوامر اللازمة → يسألك تأكيد (اختياري)\n- ينفذ مباشرة على السيرفر\n- يعرض النتائج live (ملفات تغيّرت، build نجح/فشل، preview)\n\n## Layout الجديد\n\n```",
+      "tasks": []
+    },
+    {
+      "messageNumber": 34,
+      "summary": "│ [🔧 Project: GenPlatform.ai ▾]  [👁️ Live Preview] [⚙️]      │",
+      "originalContent": "│ [🔧 Project: GenPlatform.ai ▾]  [👁️ Live Preview] [⚙️]      │",
+      "tasks": []
+    },
+    {
+      "messageNumber": 35,
+      "summary": "│                          │                                  │",
+      "originalContent": "│                          │                                  │\n│  CHAT (40%)              │  LIVE PREVIEW (60%)              │\n│                          │                                  │",
+      "tasks": []
+    },
+    {
+      "messageNumber": 36,
+      "summary": "│  │                    │  │  │                            │  │",
+      "originalContent": "│  │                    │  │  │                            │  │\n│  │  [رسائل المحادثة]  │  │  │  [iframe: المشروع الحي]   │  │\n│  │                    │  │  │   أو                       │  │\n│  │                    │  │  │  [Terminal output]         │  │\n│  │                    │  │  │   أو                       │  │\n│  │                    │  │  │  [File diff viewer]        │  │\n│  │                    │  │  │                            │  │",
+      "tasks": []
+    },
+    {
+      "messageNumber": 37,
+      "summary": "│                          │                                  │",
+      "originalContent": "│                          │                                  │",
+      "tasks": []
+    },
+    {
+      "messageNumber": 38,
+      "summary": "│  │ [🎤] [📎] Type your message... (Ctrl+Enter to send)    │  │",
+      "originalContent": "│  │ [🎤] [📎] Type your message... (Ctrl+Enter to send)    │  │",
+      "tasks": []
+    },
+    {
+      "messageNumber": 39,
+      "summary": "```",
+      "originalContent": "```\n\n## أنواع رسائل الـ AI في الشات\n\n### 1. رسالة تحليل المشكلة\n```\n🤖 AI Engineer\n\nفهمت المشكلة. الخطأ في src/app/dashboard/page.tsx\nالسطر 47 — يحاول الوصول لـ data.stats قبل التحقق من وجودها.\n\nالحل:\n```tsx\n// قبل\nconst count = data.stats.total;\n\n// بعد\nconst count = data?.stats?.total ?? 0;\n```\n\nهل أبدأ الإصلاح؟ [✅ نعم] [👁️ عرض الملف أولاً] [❌ لا]\n```\n\n### 2. رسالة التنفيذ (مع live output)\n```\n🤖 AI Engineer — executing...\n\n[▶] Opening file: src/app/dashboard/page.tsx\n[✓] Fix applied at line 47\n[▶] Running: npm run build\n    ● Compiling...\n    ● Compiled successfully\n[✓] Build OK\n[▶] PM2 restart: genplatform-app\n[✓] App restarted — live at nuxim.gen3.ai\n\n[👁️ View Changes] [🔄 Preview]\n```\n\n### 3. رسالة خطأ (مع اقتراح بديل)\n```\n🤖 AI Engineer — error\n\n[✗] Build failed:\n    Type error: Property 'x' does not exist on type 'Y'\n    at src/components/card.tsx:23\n\nجاري إصلاح الخطأ...\n[▶] Analyzing error...\n[✓] Found fix: add type assertion\n```\n\n## قدرات الـ Chat\n\n### 1. إدخال نصي\nالمستخدم يكتب بالعربية أو الإنجليزية:\n- \"في صفحة Dashboard عندي خطأ في الأرقام\"\n- \"add a dark mode toggle to the navbar\" (محظور لأنه PROTECTED)\n- \"create a new API endpoint for /api/metrics\"\n\n### 2. إدخال صوتي (Whisper)\n- زر 🎤 → تسجيل → Whisper API → تحويل لنص → إرسال\n\n### 3. إدخال صورة/Screenshot\n- زر 📎 → رفع صورة → الـ AI يحللها (vision)\n- \"اللي شايفه في الصورة هو خطأ في layout السطر الثالث...\"\n\n### 4. تنفيذ مباشر على السيرفر\nعبر Bridge API (port 3001):\n```typescript\n// POST /api/bridge/execute\n{\n  command: string,  // الأمر للتنفيذ\n  cwd: string,      // المجلد\n  projectId: string\n}\n// Response: stream of output lines\n```\n\n## الـ Live Preview Panel\n\nيُغيّر محتواه حسب ما يحدث:\n\n| الحالة | ما يُعرض |\n|--------|---------|\n| idle | iframe للمشروع الحي |\n| executing | Terminal output (streaming) |\n| build_complete | iframe يُحدَّث تلقائياً |\n| error | Error details + suggested fix |\n| file_changed | File diff (قبل/بعد) |\n\n## Project Context System\n\nعند اختيار مشروع من dropdown:\n```typescript\n// يُحمَّل في الـ system prompt للـ AI\n{\n  projectName: string,\n  techStack: string[],\n  repoPath: string,        // /root/genplatform\n  liveUrl: string,         // nuxim.gen3.ai\n  currentPhase: string,    // Development\n  recentTasks: Task[],     // آخر 10 مهام\n  activeAgents: Agent[],\n  protectedFiles: string[] // NEVER touch these\n}\n```\n\n## الملفات المطلوبة:\n\n- `src/app/dashboard/chat/page.tsx` — إعادة كتابة كاملة\n- `src/components/chat/ChatInterface.tsx` — واجهة المحادثة الجديدة\n- `src/components/chat/LivePreviewPanel.tsx` — Panel اليمين\n- `src/components/chat/ProjectSelector.tsx` — dropdown اختيار المشروع\n- `src/components/chat/MessageRenderer.tsx` — عرض رسائل AI المنسقة\n- `src/components/chat/VoiceInput.tsx` — تسجيل صوتي\n- `src/components/chat/TerminalOutput.tsx` — عرض output التنفيذ\n- `src/components/chat/FileDiffViewer.tsx` — عرض التغييرات\n- `src/app/api/chat/send/route.ts` — إرسال رسالة + AI response\n- `src/app/api/chat/execute/route.ts` — تنفيذ أمر على السيرفر\n- `src/app/api/chat/stream/route.ts` — SSE للـ live output\n\n---\n\n# ═══════════════════════════════════════════════════════════════\n# ترتيب التنفيذ\n# ═══════════════════════════════════════════════════════════════\n\n## المرحلة الأولى (الأهم) — Ideas System\n1. إعادة بناء /dashboard/ideas بالكامل\n2. واجهة محادثة تفاعلية (مثل Claude)\n3. API لتحليل الأفكار بـ AI\n4. نظام الموافقة والإرسال للفريق\n5. ربط مع Projects عند الموافقة\n\n## المرحلة الثانية — Projects Enhancement\n1. صفحة قائمة المشاريع المحسّنة\n2. صفحة المشروع مع التبويبات\n3. نقل Tasks داخل صفحة المشروع\n4. إضافة DependencyMap\n5. نظام subdomain تلقائي\n\n## المرحلة الثالثة — Chat Rebuild\n1. إعادة بناء Chat page بـ split view\n2. إضافة Project Context\n3. ربط التنفيذ المباشر عبر Bridge API\n4. إضافة Voice input\n5. إضافة Live Preview updates\n\n---\n\n# ═══════════════════════════════════════════════════════════════\n# تعليمات للتنفيذ (لـ OpenClaw)\n# ═══════════════════════════════════════════════════════════════\n\n## قواعد إلزامية\n1. PROTECTED FILES لا تُلمس: sidebar.tsx, navbar.tsx, layout.tsx, globals.css, self-dev/**\n2. استخدم CSS variables الموجودة (var(--color-*))\n3. لا gradients أو shadows أو تأثيرات مبالغة\n4. حدود 0.5px فقط\n5. border-radius: 8px للعناصر، 12px للبطاقات\n6. font-weight: 400 أو 500 فقط (بدون 600/700)\n7. كل API جديد يمر عبر Bridge API (port 3001) إذا احتاج لتنفيذ أوامر على السيرفر\n8. الـ AI calls تستخدم OpenClaw عبر Telegram أو Claude API المحلي\n\n## بنية المجلدات\n```\nsrc/\n  app/\n    dashboard/\n      ideas/\n        page.tsx ← REBUILD\n        [id]/\n          page.tsx ← NEW\n      projects/\n        page.tsx ← REBUILD\n        [id]/\n          page.tsx ← REBUILD\n          tasks/ ← MOVE from /tasks\n          preview/\n      chat/\n        page.tsx ← FULL REBUILD\n  components/\n    ideas/ ← NEW\n    projects/ ← NEW\n    chat/ ← REBUILD\n  app/api/\n    ideas/ ← NEW\n    projects/ ← REBUILD\n    chat/ ← REBUILD\n```",
+      "tasks": []
+    }
+  ],
+  "status": "analyzed",
+  "hasApprovedTasks": false
+}
