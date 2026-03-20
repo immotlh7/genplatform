@@ -229,7 +229,7 @@ async function main() {
   const lastActivityAge = (Date.now() - state.lastActivity) / 60000;
   const hasWork = qStats.approved > 0 || qStats.pending > 0;
 
-  if (hasWork && qStats.executing === 0 && lastActivityAge > 6) {
+  if (hasWork && qStats.executing === 0 && lastActivityAge > 1) {
     // Pipeline stalled — find next message and trigger
     issues.push(`Pipeline idle for ${lastActivityAge.toFixed(0)} min`);
     log('⚠️ Pipeline stalled — finding next message...');
@@ -267,12 +267,20 @@ async function main() {
         // Trigger execution
         const ex = await apiCall('/api/self-dev/execute-next', 'POST');
         if (ex.sent || ex.success) {
-          fixes.push(`Triggered execution Msg ${next.messageNumber}`);
+          fixes.push(`Triggered: Msg${next.messageNumber}-T${ex.taskNumber}`);
           state.lastActivity = Date.now();
           state.consecutiveIdle = 0;
-          log(`✅ Triggered execution`);
+          log(`✅ Triggered: Task ${ex.taskNumber} executing`);
         } else {
           log(`❌ Execute failed: ${JSON.stringify(ex).substring(0, 100)}`);
+          // Try once more after clearing lock
+          fs.writeFileSync('/root/genplatform/data/execution-lock.json', JSON.stringify({locked:false,taskId:null,lockedAt:null,attempts:0},null,2));
+          const ex2 = await apiCall('/api/self-dev/execute-next', 'POST');
+          if (ex2.sent || ex2.success) {
+            fixes.push(`Retry triggered: Msg${next.messageNumber}-T${ex2.taskNumber}`);
+            state.lastActivity = Date.now();
+            log(`✅ Retry triggered: Task ${ex2.taskNumber}`);
+          }
         }
       }
     } else {
@@ -321,7 +329,7 @@ async function main() {
   const now = Date.now();
   const timeSinceNotify = (now - (state.lastNotify || 0)) / 60000;
 
-  if (issues.length > 0 || timeSinceNotify >= 5) {
+  if (issues.length > 0 || timeSinceNotify >= 5 || fixes.length > 0) {
     const elapsed = Math.round((now - (state.startTime || now)) / 60000);
     let msg = `🤖 Watchdog Report\n\n`;
     msg += `📊 Progress: ${qStats.done}/${qStats.total} tasks done\n`;
