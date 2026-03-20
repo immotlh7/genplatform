@@ -1,12 +1,12 @@
 {
-  "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg3-task3",
+  "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg3-task1",
   "messageNumber": 3,
-  "messageTitle": "Fix Gateway Offline notification",
+  "messageTitle": "URGENT FIX: The \"Gateway Offline\" notification appears on EVERY page even when gateway is running. F",
   "totalTasks": 68,
-  "completedTasks": 2,
+  "completedTasks": 0,
   "task": {
-    "taskNumber": 3,
-    "description": "The notification bell in the top bar shows a red badge with count. Make sure the count matches REAL unread notifications only. If no real alerts, badge should be hidden.",
+    "taskNumber": 1,
+    "description": "Open src/components/notifications/notification-system.tsx (or wherever the Gateway Offline banner is). Find where it checks gateway status. It currently checks incorrectly. Fix the logic:",
     "status": "executing"
   }
 }

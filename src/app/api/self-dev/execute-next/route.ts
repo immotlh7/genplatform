@@ -22,13 +22,87 @@ interface CurrentTask {
   };
 }
 
+interface ExecutionLock {
+  locked: boolean;
+  lockedAt: string | null;
+  taskId: string | null;
+}
+
 const TASK_QUEUE_FILE = '/root/genplatform/data/task-queue/task-queue.json';
 const CURRENT_TASK_FILE = '/root/genplatform/data/current-task.json';
 const SESSION_TRACKER_FILE = '/root/genplatform/data/session-tracker.json';
 const EXECUTION_LOG_FILE = '/root/genplatform/data/execution-log.json';
+const EXECUTION_LOCK_FILE = '/root/genplatform/data/execution-lock.json';
 
 const TELEGRAM_BOT_TOKEN = '8635233052:AAGsuMzqhTHwQsFg4qGYPfUEyZPiLsAceA4';
 const TELEGRAM_CHAT_ID = '8630551989';
+
+async function getExecutionLock(): Promise<ExecutionLock> {
+  try {
+    const data = await fs.readFile(EXECUTION_LOCK_FILE, 'utf-8');
+    return JSON.parse(data);
+  } catch {
+    const defaultLock: ExecutionLock = {
+      locked: false,
+      lockedAt: null,
+      taskId: null
+    };
+    await fs.writeFile(EXECUTION_LOCK_FILE, JSON.stringify(defaultLock, null, 2));
+    return defaultLock;
+  }
+}
+
+async function setExecutionLock(taskId: string): Promise<boolean> {
+  const lock = await getExecutionLock();
+  if (lock.locked) {
+    console.log('[EXECUTE-NEXT] Already locked by:', lock.taskId);
+    return false;
+  }
+  
+  lock.locked = true;
+  lock.lockedAt = new Date().toISOString();
+  lock.taskId = taskId;
+  await fs.writeFile(EXECUTION_LOCK_FILE, JSON.stringify(lock, null, 2));
+  return true;
+}
+
+async function releaseExecutionLock() {
+  const lock: ExecutionLock = {
+    locked: false,
+    lockedAt: null,
+    taskId: null
+  };
+  await fs.writeFile(EXECUTION_LOCK_FILE, JSON.stringify(lock, null, 2));
+}
+
+async function checkDuplicate(taskDescription: string): Promise<boolean> {
+  try {
+    const logsData = await fs.readFile(EXECUTION_LOG_FILE, 'utf-8');
+    const logs = JSON.parse(logsData);
+    
+    // Check last 50 sent tasks
+    const recentTasks = logs.filter((l: any) => l.type === 'task_sent').slice(-50);
+    
+    for (const log of recentTasks) {
+      if (log.message && log.message.includes(' sent - ')) {
+        const sentDesc = log.message.split(' sent - ')[1];
+        if (sentDesc && calculateSimilarity(taskDescription, sentDesc) > 0.8) {
+          console.log('[EXECUTE-NEXT] Duplicate task detected, skipping');
+          return true;
+        }
+      }
+    }
+  } catch {}
+  
+  return false;
+}
+
+function calculateSimilarity(str1: string, str2: string): number {
+  const words1 = str1.toLowerCase().split(/\s+/);
+  const words2 = str2.toLowerCase().split(/\s+/);
+  const intersection = words1.filter(w => words2.includes(w));
+  return intersection.length / Math.max(words1.length, words2.length);
+}
 
 async function getSessionTracker(): Promise<SessionTracker> {
   try {
@@ -89,6 +163,17 @@ async function sendToTelegram(text: string): Promise<boolean> {
 
 export async function executeNext() {
   try {
+    // Check execution lock first
+    const lock = await getExecutionLock();
+    if (lock.locked) {
+      console.log('[EXECUTE-NEXT] Execution locked, skipping');
+      return {
+        error: 'Execution locked',
+        lockedBy: lock.taskId,
+        message: 'Another task is currently executing'
+      };
+    }
+    
     // Load task queue ONCE to find next task
     const queueData = await fs.readFile(TASK_QUEUE_FILE, 'utf-8');
     const queue = JSON.parse(queueData);
@@ -107,6 +192,14 @@ export async function executeNext() {
         if (task.status === 'done') completedTasks++;
         
         if (!task.approved) continue;
+        if (task.status === 'executing') {
+          // Task already executing, lock should be set
+          await setExecutionLock(task.taskId);
+          return {
+            message: 'Task already executing',
+            taskId: task.taskId
+          };
+        }
         if (!foundTask && (!task.status || task.status === 'pending' || task.status === 'approved')) {
           foundTask = task;
           foundMessage = message;
@@ -124,6 +217,32 @@ export async function executeNext() {
       return { 
         message: 'No approved tasks found',
         completed: true 
+      };
+    }
+
+    // Check for duplicate
+    const isDuplicate = await checkDuplicate(foundTask.originalDescription);
+    if (isDuplicate) {
+      foundTask.status = 'skipped';
+      foundTask.skippedReason = 'Duplicate task';
+      await fs.writeFile(TASK_QUEUE_FILE, JSON.stringify(queue, null, 2));
+      
+      await addLog({
+        timestamp: new Date().toISOString(),
+        type: 'info',
+        message: `⏭️ Skipped duplicate task: ${foundTask.taskId}`
+      });
+      
+      // Try next task
+      return executeNext();
+    }
+
+    // Set lock before proceeding
+    const lockAcquired = await setExecutionLock(foundTask.taskId);
+    if (!lockAcquired) {
+      return {
+        error: 'Failed to acquire lock',
+        message: 'Another task is being executed'
       };
     }
 
@@ -159,20 +278,14 @@ export async function executeNext() {
         message: '🧠 Context reset required after 30 tasks'
       });
 
-      // Send /reset command
       await sendToTelegram('/reset');
-      
-      // Wait 5 seconds
       await new Promise(resolve => setTimeout(resolve, 5000));
       
-      // Send context refresh
       const contextRefresh = `Read ~/.openclaw/workspace/memory/WORK-RULES.md. You are developing GenPlatform.ai at /root/genplatform. Site: https://app.gen3.ai. Continue executing tasks from Self-Dev system.`;
       await sendToTelegram(contextRefresh);
       
-      // Wait another 5 seconds
       await new Promise(resolve => setTimeout(resolve, 5000));
       
-      // Reset counter
       tracker.tasksSinceReset = 0;
       tracker.totalResets++;
       tracker.lastResetTime = new Date().toISOString();
@@ -217,7 +330,8 @@ export async function executeNext() {
         totalTasks: tracker.totalTasksSent
       };
     } else {
-      // Failed to send - revert status
+      // Failed to send - release lock and revert status
+      await releaseExecutionLock();
       foundTask.status = 'approved';
       delete foundTask.startedAt;
       await fs.writeFile(TASK_QUEUE_FILE, JSON.stringify(queue, null, 2));

@@ -38,7 +38,8 @@
               "description": "Implement the following task with precision: Open src/components/notifications/notification-system.tsx (or wherever the Gateway Offline banner is). Find where it checks gateway status. It currently checks incorrectly. Fix the logic:. First identify the correct file and component, then make the necessary changes following the project's coding standards.",
               "status": "pending"
             }
-          ]
+          ],
+          "startedAt": "2026-03-20T10:51:31.090Z"
         },
         {
           "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg3-task2",
@@ -55,7 +56,8 @@
               "description": "Implement the following task with precision: The notification \"CPU usage has been above 85%\" is fake/hardcoded. Remove it. Only show REAL notifications:. First identify the correct file and component, then make the necessary changes following the project's coding standards.",
               "status": "pending"
             }
-          ]
+          ],
+          "startedAt": "2026-03-20T10:51:51.400Z"
         },
         {
           "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg3-task3",
@@ -72,7 +74,8 @@
               "description": "Implement the following task with precision: The notification bell in the top bar shows a red badge with count. Make sure the count matches REAL unread notifications only. If no real alerts, badge should be hidden.. First identify the correct file and component, then make the necessary changes following the project's coding standards.",
               "status": "pending"
             }
-          ]
+          ],
+          "startedAt": "2026-03-20T10:52:09.498Z"
         },
         {
           "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg3-task4",
@@ -223,8 +226,8 @@
           "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg7-task1",
           "taskNumber": 1,
           "originalDescription": "The user avatar area shows \"U User Member\". Fix:",
-          "status": "review",
-          "approved": false,
+          "status": "approved",
+          "approved": true,
           "rewritten": true,
           "microTasks": [
             {
@@ -240,8 +243,8 @@
           "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg7-task2",
           "taskNumber": 2,
           "originalDescription": "Sign Out button must work:",
-          "status": "review",
-          "approved": false,
+          "status": "approved",
+          "approved": true,
           "rewritten": true,
           "microTasks": [
             {
@@ -257,8 +260,8 @@
           "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg7-task3",
           "taskNumber": 3,
           "originalDescription": "The \"Select Project\" dropdown in the top bar. Make it functional:",
-          "status": "review",
-          "approved": false,
+          "status": "approved",
+          "approved": true,
           "rewritten": true,
           "microTasks": [
             {
@@ -274,8 +277,8 @@
           "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg7-task4",
           "taskNumber": 4,
           "originalDescription": "Navigation links (Dashboard, Projects, Automations, Reports) — verify all navigate correctly:",
-          "status": "review",
-          "approved": false,
+          "status": "approved",
+          "approved": true,
           "rewritten": true,
           "microTasks": [
             {

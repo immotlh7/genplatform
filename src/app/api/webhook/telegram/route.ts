@@ -7,6 +7,7 @@ const TASK_QUEUE_DIR = '/root/genplatform/data/task-queue';
 const EXECUTION_LOG_FILE = '/root/genplatform/data/execution-log.json';
 const CONFIG_FILE = '/root/genplatform/data/self-dev-config.json';
 const CURRENT_TASK_FILE = '/root/genplatform/data/current-task.json';
+const EXECUTION_LOCK_FILE = '/root/genplatform/data/execution-lock.json';
 
 interface ExecutionLog {
   timestamp: string;
@@ -30,6 +31,15 @@ async function getConfig(): Promise<SelfDevConfig> {
   }
 }
 
+async function releaseExecutionLock() {
+  const lock = {
+    locked: false,
+    lockedAt: null,
+    taskId: null
+  };
+  await fs.writeFile(EXECUTION_LOCK_FILE, JSON.stringify(lock, null, 2));
+}
+
 async function addLog(log: ExecutionLog) {
   try {
     let logs: ExecutionLog[] = [];
@@ -51,6 +61,9 @@ async function addLog(log: ExecutionLog) {
 
 async function executeNextTask() {
   try {
+    // Wait 10 seconds before executing next task
+    await new Promise(resolve => setTimeout(resolve, 10000));
+    
     // Call execute-next API directly
     const response = await fetch('http://localhost:3000/api/self-dev/execute-next', {
       method: 'POST',
@@ -115,7 +128,7 @@ async function updateTaskStatus(taskId: string, status: string, additionalData: 
       try {
         const currentData = await fs.readFile(CURRENT_TASK_FILE, 'utf-8');
         const currentTask = JSON.parse(currentData);
-        if (currentTask.taskId === taskId) {
+        if (currentTask.taskId === taskId || currentTask.task.status === 'executing') {
           currentTask.task.status = status;
           if (status === 'done') {
             currentTask.completedTasks++;
@@ -176,13 +189,14 @@ export async function POST(request: NextRequest) {
           message: `✅ Task completed`
         });
         
+        // Release execution lock
+        await releaseExecutionLock();
+        
         // Check if auto-mode is on
         const config = await getConfig();
         if (config.autoMode) {
-          // Wait 2 seconds then execute next task
-          setTimeout(() => {
-            executeNextTask();
-          }, 2000);
+          // Execute next task after delay
+          executeNextTask();
         }
       }
     } else if (text.includes('❌') || text.includes('fail') || text.includes('error')) {
@@ -200,13 +214,14 @@ export async function POST(request: NextRequest) {
           message: `❌ Task failed: ${message.text}`
         });
         
+        // Release execution lock
+        await releaseExecutionLock();
+        
         // Check if auto-mode is on (might want to pause on failures)
         const config = await getConfig();
         if (config.autoMode && !text.includes('stop')) {
           // Execute next task even after failure
-          setTimeout(() => {
-            executeNextTask();
-          }, 2000);
+          executeNextTask();
         }
       }
     }

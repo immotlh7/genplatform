@@ -24,6 +24,21 @@ async function addLog(log: any) {
   }
 }
 
+async function triggerExecution() {
+  try {
+    const response = await fetch('http://localhost:3000/api/self-dev/execute-next', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' }
+    });
+    
+    const result = await response.json();
+    console.log('[APPROVE] Triggered execution:', result);
+    return result;
+  } catch (error) {
+    console.error('[APPROVE] Failed to trigger execution:', error);
+  }
+}
+
 export async function POST(request: NextRequest) {
   try {
     const { fileId, messageNumber, approved, scope = 'message' } = await request.json();
@@ -71,7 +86,6 @@ export async function POST(request: NextRequest) {
         await fs.writeFile(individualPath, JSON.stringify(queue, null, 2));
       }
     } catch (error) {
-      // File doesn't exist, don't create it
       console.log('Individual queue file not found, using main queue only');
     }
     
@@ -82,35 +96,34 @@ export async function POST(request: NextRequest) {
       message: `✅ Approved ${approvedTaskCount} tasks in message ${messageNumber}`
     });
     
-    // Auto-start execution if auto-mode is on
+    // Check if auto-mode is enabled
+    let autoMode = true; // Default to true
     try {
       const configData = await fs.readFile(CONFIG_FILE, 'utf-8');
       const config = JSON.parse(configData);
-      
-      if (config.autoMode && approvedTaskCount > 0) {
-        // Trigger execution
-        const executeResponse = await fetch('http://localhost:3000/api/self-dev/execute-next', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' }
-        });
-        
-        if (executeResponse.ok) {
-          const executeResult = await executeResponse.json();
+      autoMode = config.autoMode !== false;
+    } catch {}
+    
+    // If tasks were approved and auto-mode is on, start execution
+    if (approvedTaskCount > 0 && autoMode) {
+      // Trigger execution immediately
+      setTimeout(async () => {
+        const result = await triggerExecution();
+        if (result && !result.error) {
           await addLog({
             timestamp: new Date().toISOString(),
             type: 'info',
-            message: `🚀 Started execution after approval - Task ${executeResult.taskNumber} sent`
+            message: `🚀 Auto-execution started after approval`
           });
         }
-      }
-    } catch (error) {
-      console.error('Failed to trigger execution:', error);
+      }, 1000); // Small delay to ensure save is complete
     }
     
     return NextResponse.json({ 
       success: true,
       approvedTasks: approvedTaskCount,
-      message: `Approved ${approvedTaskCount} tasks`
+      autoExecute: autoMode && approvedTaskCount > 0,
+      message: `Approved ${approvedTaskCount} tasks${autoMode ? ' - execution will start automatically' : ''}`
     });
     
   } catch (error) {
