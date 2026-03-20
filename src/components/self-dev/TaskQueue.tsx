@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { QueueManager } from './QueueManager';
+import { RewriteApprove } from './RewriteApprove';
 
 interface MicroTask {
   id: string;
@@ -94,6 +95,30 @@ export function TaskQueue({ className = '', hideActions = false }: TaskQueueProp
     } finally {
       setLoading(false);
       setRefreshing(false);
+    }
+  };
+
+  const handleRewrite = async (fileId: string, messageNumber: number) => {
+    const response = await fetch('/api/self-dev/rewrite', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ fileId, messageNumber })
+    });
+    
+    if (!response.ok) {
+      throw new Error('Failed to rewrite tasks');
+    }
+  };
+
+  const handleApprove = async (fileId: string, messageNumber: number) => {
+    const response = await fetch('/api/self-dev/approve', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ fileId, messageNumber })
+    });
+    
+    if (!response.ok) {
+      throw new Error('Failed to approve tasks');
     }
   };
 
@@ -469,6 +494,9 @@ export function TaskQueue({ className = '', hideActions = false }: TaskQueueProp
                   const isSelected = selectedMessage?.fileId === queue.fileId && 
                                    selectedMessage?.messageNumber === message.messageNumber;
                   
+                  // Calculate sequential display number (skip empty messages)
+                  const displayNumber = msgIndex + 1;
+                  
                   return (
                     <div 
                       key={message.messageNumber} 
@@ -494,7 +522,7 @@ export function TaskQueue({ className = '', hideActions = false }: TaskQueueProp
                             )}
                             <StatusIcon status={messageStatus} />
                             <span className="text-sm font-medium text-gray-100">
-                              Message {message.messageNumber}
+                              Message {displayNumber}
                               {message.summary && (
                                 <span className="ml-2 text-gray-400 font-normal">
                                   {message.summary}
@@ -503,6 +531,17 @@ export function TaskQueue({ className = '', hideActions = false }: TaskQueueProp
                             </span>
                           </div>
                           <div className="flex items-center gap-2">
+                            {/* Add Rewrite/Approve buttons for messages with tasks */}
+                            {message.tasks && message.tasks.length > 0 && messageStatus !== 'done' && messageStatus !== 'executing' && !hideActions && (
+                              <RewriteApprove
+                                fileId={queue.fileId}
+                                messageNumber={message.messageNumber}
+                                onRewrite={() => handleRewrite(queue.fileId, message.messageNumber)}
+                                onApprove={() => handleApprove(queue.fileId, message.messageNumber)}
+                                onRefresh={fetchQueues}
+                                disabled={messageStatus === 'executing'}
+                              />
+                            )}
                             <StatusBadge status={messageStatus} />
                             {!hideActions && (
                               <Button
