@@ -176,7 +176,9 @@ export function ReportsNotifications({ className = "" }: ReportsNotificationsPro
       
       setNotifications(mockNotifications)
     } catch (error) {
-      console.error('Error loading notifications:', error)
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error loading notifications:', error);
+      }
     } finally {
       setLoading(false)
     }
@@ -208,7 +210,9 @@ export function ReportsNotifications({ className = "" }: ReportsNotificationsPro
         }
       }
     } catch (error) {
-      console.error('Error checking for new notifications:', error)
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error checking for new notifications:', error);
+      }
     }
   }
 

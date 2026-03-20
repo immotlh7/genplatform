@@ -49,7 +49,9 @@ export function ProjectActions({ project, onActionComplete, trigger }: ProjectAc
       await archiveProject(project.id)
       onActionComplete?.()
     } catch (error) {
-      console.error('Error archiving project:', error)
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error archiving project:', error);
+      }
     } finally {
       setLoading(false)
       setArchiveDialogOpen(false)
@@ -62,7 +64,9 @@ export function ProjectActions({ project, onActionComplete, trigger }: ProjectAc
       await updateProject(project.id, { status: 'active' })
       onActionComplete?.()
     } catch (error) {
-      console.error('Error restoring project:', error)
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error restoring project:', error);
+      }
     } finally {
       setLoading(false)
       setRestoreDialogOpen(false)
@@ -75,7 +79,9 @@ export function ProjectActions({ project, onActionComplete, trigger }: ProjectAc
       await deleteProject(project.id)
       onActionComplete?.()
     } catch (error) {
-      console.error('Error deleting project:', error)
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error deleting project:', error);
+      }
     } finally {
       setLoading(false)
       setDeleteDialogOpen(false)
@@ -254,7 +260,9 @@ export function QuickArchiveButton({ project, onActionComplete }: QuickArchiveBu
       }
       onActionComplete?.()
     } catch (error) {
-      console.error('Error toggling archive:', error)
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error toggling archive:', error);
+      }
     } finally {
       setLoading(false)
     }

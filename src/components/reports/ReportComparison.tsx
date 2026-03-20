@@ -181,7 +181,9 @@ export function ReportComparison({
 
       setComparisonData(metricsWithTrends)
     } catch (error) {
-      console.error('Error generating comparison data:', error)
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error generating comparison data:', error);
+      }
     } finally {
       setLoading(false)
     }

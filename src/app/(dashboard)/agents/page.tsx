@@ -88,7 +88,9 @@ export default function AgentsPage() {
           setTotalActive(data.activeDepartments)
         }
       } catch (error) {
-        console.error('Failed to fetch agent status:', error)
+        if (process.env.NODE_ENV === 'development') {
+          console.error('Failed to fetch agent status:', error);
+        }
       } finally {
         setLoading(false)
       }

@@ -75,7 +75,9 @@ export function TaskTracker({ bridgeApiUrl = '', projectFilter }: TaskTrackerPro
       const data = await response.json()
       setLiveStatus(data)
     } catch (err) {
-      console.error('Failed to fetch live status:', err)
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Failed to fetch live status:', err);
+      }
       setError(err instanceof Error ? err.message : 'Unknown error')
       
       setLiveStatus({

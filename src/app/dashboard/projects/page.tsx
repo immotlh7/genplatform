@@ -106,7 +106,9 @@ export default function ProjectsPage() {
           commits: 0 // Will be populated from GitHub API later
         })) || []
       } catch (supabaseError) {
-        console.warn('Failed to load projects from Supabase, using demo data:', supabaseError)
+        if (process.env.NODE_ENV === 'development') {
+          console.warn('Failed to load projects from Supabase, using demo data:', supabaseError);
+        }
         
         // Fallback to demo data
         allProjects = [
@@ -179,7 +181,9 @@ export default function ProjectsPage() {
 
       setProjects(accessibleProjects)
     } catch (error) {
-      console.error('Error loading projects:', error)
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error loading projects:', error);
+      }
     } finally {
       setLoading(false)
     }

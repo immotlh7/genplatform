@@ -98,7 +98,9 @@ export function CreateProjectDialog({ children, onSuccess }: CreateProjectDialog
 )
       handleClose()
     } catch (error) {
-      console.error('Error creating project:', error)
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error creating project:', error);
+      }
       setError('Failed to create project. Please try again.')
     } finally {
       setCreating(false)

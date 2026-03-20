@@ -145,7 +145,9 @@ export default function WorkflowConfigModal({ workflow, isOpen, onClose, onSave 
       toast.success('Workflow configuration saved successfully')
       onClose()
     } catch (error) {
-      console.error('Error saving workflow config:', error)
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error saving workflow config:', error);
+      }
       toast.error('Failed to save workflow configuration')
     } finally {
       setIsSaving(false)

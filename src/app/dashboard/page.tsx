@@ -146,7 +146,9 @@ export default function DashboardPage() {
       })
 
     } catch (err) {
-      console.error('Failed to load dashboard data:', err)
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Failed to load dashboard data:', err);
+      }
       setError(err instanceof Error ? err.message : 'Unknown error')
       
       setStats({

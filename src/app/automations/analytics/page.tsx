@@ -42,7 +42,9 @@ export default function WorkflowAnalyticsPage() {
         setWorkflows([])
       }
     } catch (error) {
-      console.error('Failed to load workflow metrics:', error)
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Failed to load workflow metrics:', error);
+      }
       setWorkflows([])
     } finally {
       setLoading(false)

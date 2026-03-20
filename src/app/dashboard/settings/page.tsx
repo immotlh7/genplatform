@@ -120,7 +120,9 @@ export default function SettingsPage() {
         loadSystemInfo()
       }
     } catch (error) {
-      console.error('Error loading user and settings:', error)
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error loading user and settings:', error);
+      }
       setIsLoading(false)
     }
   }
@@ -166,7 +168,9 @@ export default function SettingsPage() {
         }))
       }
     } catch (error) {
-      console.error('Failed to load settings:', error)
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Failed to load settings:', error);
+      }
     } finally {
       setIsLoading(false)
     }
@@ -198,7 +202,9 @@ export default function SettingsPage() {
         }
       })
     } catch (error) {
-      console.error('Failed to load system info:', error)
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Failed to load system info:', error);
+      }
     }
   }
 
@@ -221,7 +227,9 @@ export default function SettingsPage() {
         description: "Your preferences have been updated successfully.",
       })
     } catch (error) {
-      console.error('Failed to save settings:', error)
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Failed to save settings:', error);
+      }
       toast({
         title: "Error",
         description: "Failed to save settings. Please try again.",

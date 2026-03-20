@@ -122,7 +122,9 @@ export default function CommandCenterPage() {
         activeTasks: statusData.activeSessions || 8
       })
     } catch (error) {
-      console.error('Failed to load system status:', error)
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Failed to load system status:', error);
+      }
       toast({
         title: "Error",
         description: "Failed to load system status",
@@ -313,7 +315,9 @@ export default function CommandCenterPage() {
       }
 
     } catch (error) {
-      console.error('Action execution failed:', error)
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Action execution failed:', error);
+      }
       setCommandOutput(prev => [...prev, `✗ ${action.title} failed: ${error}`])
       
       setQuickActions(prev => prev.map(a => 

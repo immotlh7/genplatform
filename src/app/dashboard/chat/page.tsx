@@ -169,7 +169,9 @@ export default function ChatPage() {
         }
       }
     } catch (error) {
-      console.error('Error checking user access:', error)
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error checking user access:', error);
+      }
       toast({
         title: "Authentication Error",
         description: "Failed to verify access permissions.",
@@ -198,7 +200,9 @@ export default function ChatPage() {
         showError("Access Denied", "You don't have permission to view chat history.")
       }
     } catch (error) {
-      console.error('Failed to load chat history:', error)
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Failed to load chat history:', error);
+      }
       showWarning("Chat History", "Could not load previous messages, but you can still chat.")
     }
   }
@@ -303,7 +307,9 @@ export default function ChatPage() {
       }
 
     } catch (error) {
-      console.error('Failed to send message:', error)
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Failed to send message:', error);
+      }
       const errorMessage = error instanceof Error ? error.message : "Failed to send message. Please try again."
       
       showError("Message Failed", errorMessage)

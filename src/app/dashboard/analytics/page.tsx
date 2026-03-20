@@ -142,7 +142,9 @@ export default function AnalyticsPage() {
         timeData: generateTimeSeriesData(filters.period, filters.granularity)
       })
     } catch (error) {
-      console.error('Failed to load analytics:', error)
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Failed to load analytics:', error);
+      }
       // Set fallback data with clean defaults
       setMetrics({
         sessions: {

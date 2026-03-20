@@ -127,7 +127,9 @@ export function SendToProjectModal({
       }
 
     } catch (err) {
-      console.error('Error loading projects:', err)
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error loading projects:', err);
+      }
       setError(err instanceof Error ? err.message : 'Failed to load projects')
       
       // Show demo projects for development
@@ -258,7 +260,9 @@ export function SendToProjectModal({
       }
 
     } catch (err) {
-      console.error('Error sending to project:', err)
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error sending to project:', err);
+      }
       const errorMessage = err instanceof Error ? err.message : 'Failed to send to project'
       setError(errorMessage)
       

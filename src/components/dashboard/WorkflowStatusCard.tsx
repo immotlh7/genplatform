@@ -174,7 +174,9 @@ export function WorkflowStatusCard() {
       }
 
     } catch (err) {
-      console.error('Error loading workflow data:', err)
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error loading workflow data:', err);
+      }
       setError('Failed to load workflow data')
     } finally {
       setLoading(false)

@@ -325,7 +325,9 @@ export function GenerateReportDialog({
       onReportGenerated?.(newReport)
       handleOpenChange(false)
     } catch (error) {
-      console.error('Error generating report:', error)
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error generating report:', error);
+      }
       setErrors({ submit: 'Failed to generate report. Please try again.' })
     } finally {
       setLoading(false)

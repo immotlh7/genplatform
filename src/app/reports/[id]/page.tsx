@@ -71,7 +71,9 @@ export default function ReportDetailPage() {
 
     } catch (err) {
       setError('Failed to load report')
-      console.error('Error loading report:', err)
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error loading report:', err);
+      }
     } finally {
       setLoading(false)
     }

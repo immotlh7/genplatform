@@ -84,7 +84,9 @@ export default function TeamManagementPage() {
         }
       }
     } catch (error) {
-      console.error('Failed to load team data:', error)
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Failed to load team data:', error);
+      }
     } finally {
       setLoading(false)
     }
@@ -105,7 +107,9 @@ export default function TeamManagementPage() {
         setEditingProfile(false)
       }
     } catch (error) {
-      console.error('Failed to update profile:', error)
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Failed to update profile:', error);
+      }
     }
   }
 

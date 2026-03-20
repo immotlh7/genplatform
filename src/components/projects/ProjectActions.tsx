@@ -118,7 +118,9 @@ export function ProjectActions({
         setArchiveReason('')
       }
     } catch (error) {
-      console.error('Error archiving project:', error)
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error archiving project:', error);
+      }
     } finally {
       setLoading('')
     }
@@ -132,7 +134,9 @@ export function ProjectActions({
         onProjectUpdated?.(updatedProject)
       }
     } catch (error) {
-      console.error('Error restoring project:', error)
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error restoring project:', error);
+      }
     } finally {
       setLoading('')
     }
@@ -153,7 +157,9 @@ export function ProjectActions({
         setShowDeleteDialog(false)
       }
     } catch (error) {
-      console.error('Error deleting project:', error)
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error deleting project:', error);
+      }
     } finally {
       setLoading('')
     }
@@ -166,7 +172,9 @@ export function ProjectActions({
       const updatedProject = { ...project, isStarred: !project.isStarred }
       onProjectUpdated?.(updatedProject)
     } catch (error) {
-      console.error('Error toggling star:', error)
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error toggling star:', error);
+      }
     } finally {
       setLoading('')
     }
@@ -181,7 +189,9 @@ export function ProjectActions({
         onProjectUpdated?.(updatedProject)
       }
     } catch (error) {
-      console.error('Error updating status:', error)
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error updating status:', error);
+      }
     } finally {
       setLoading('')
     }

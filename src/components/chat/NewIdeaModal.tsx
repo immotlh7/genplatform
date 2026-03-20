@@ -185,7 +185,9 @@ export function NewIdeaModal({
 
     } catch (err) {
       setError('Failed to save idea. Please try again.')
-      console.error('Error creating idea:', err)
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error creating idea:', err);
+      }
     } finally {
       setSubmitting(false)
     }

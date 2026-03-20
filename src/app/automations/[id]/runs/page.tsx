@@ -97,7 +97,9 @@ export default function WorkflowRunDetailPage() {
         })
       }
     } catch (error) {
-      console.error('Error checking user access:', error)
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error checking user access:', error);
+      }
       setError('Failed to verify permissions')
     } finally {
       setLoading(false)
@@ -167,7 +169,9 @@ export default function WorkflowRunDetailPage() {
         generateWorkflowSteps(demoRuns[0])
       }
     } catch (err) {
-      console.error('Error loading workflow runs:', err)
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error loading workflow runs:', err);
+      }
       setError('Failed to load workflow runs')
     }
   }
@@ -257,7 +261,9 @@ export default function WorkflowRunDetailPage() {
         setError('Failed to approve workflow')
       }
     } catch (err) {
-      console.error('Error approving workflow:', err)
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error approving workflow:', err);
+      }
       setError('Failed to approve workflow')
     }
   }
@@ -279,7 +285,9 @@ export default function WorkflowRunDetailPage() {
         setError('Failed to reject workflow')
       }
     } catch (err) {
-      console.error('Error rejecting workflow:', err)
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error rejecting workflow:', err);
+      }
       setError('Failed to reject workflow')
     }
   }

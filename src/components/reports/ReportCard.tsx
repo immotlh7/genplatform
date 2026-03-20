@@ -191,7 +191,9 @@ export function ReportCard({
     try {
       await callback(report)
     } catch (error) {
-      console.error(`Error performing ${action}:`, error)
+      if (process.env.NODE_ENV === 'development') {
+        console.error(`Error performing ${action}:`, error);
+      }
     } finally {
       setLoading('')
     }

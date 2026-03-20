@@ -163,7 +163,9 @@ export function ImprovementsWidget({ className = "", compact = false }: Improvem
       
       setData(mockData)
     } catch (error) {
-      console.error('Error loading improvements data:', error)
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error loading improvements data:', error);
+      }
     } finally {
       setLoading(false)
     }

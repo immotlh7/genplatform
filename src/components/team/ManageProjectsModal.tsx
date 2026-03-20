@@ -96,7 +96,9 @@ export function ManageProjectsModal({ isOpen, onClose, member, onSuccess }: Mana
 
     } catch (err) {
       setError('Failed to load project data')
-      console.error('Error loading project data:', err)
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error loading project data:', err);
+      }
     } finally {
       setLoading(false)
     }
@@ -164,7 +166,9 @@ export function ManageProjectsModal({ isOpen, onClose, member, onSuccess }: Mana
       }
     } catch (err) {
       setError('Failed to save changes')
-      console.error('Error saving project assignments:', err)
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error saving project assignments:', err);
+      }
     } finally {
       setSaving(false)
     }

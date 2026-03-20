@@ -166,7 +166,9 @@ export default function ABTesting({
         setTests(generateMockTests())
       }
     } catch (error) {
-      console.error('Error fetching A/B tests:', error)
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error fetching A/B tests:', error);
+      }
       setTests(generateMockTests())
     }
     setLoading(false)
@@ -302,7 +304,9 @@ export default function ABTesting({
         })
       }
     } catch (error) {
-      console.error('Error creating A/B test:', error)
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error creating A/B test:', error);
+      }
     }
   }
 
@@ -320,7 +324,9 @@ export default function ABTesting({
         ))
       }
     } catch (error) {
-      console.error('Error updating test status:', error)
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error updating test status:', error);
+      }
     }
   }
 

@@ -188,7 +188,9 @@ export default function ReportsPage() {
       
       setReports(mockReports)
     } catch (error) {
-      console.error('Error loading reports:', error)
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error loading reports:', error);
+      }
     } finally {
       setLoading(false)
     }
@@ -208,7 +210,9 @@ export default function ReportsPage() {
         topReportType: 'Daily'
       })
     } catch (error) {
-      console.error('Error loading stats:', error)
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error loading stats:', error);
+      }
     }
   }
 

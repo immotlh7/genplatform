@@ -54,7 +54,9 @@ export function Header() {
         })
       }
     } catch (error) {
-      console.error('Error loading user:', error)
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error loading user:', error);
+      }
       // Fallback for development
       setCurrentUser({
         id: '1',
@@ -83,7 +85,9 @@ export function Header() {
       // Redirect to login
       window.location.href = '/login'
     } catch (error) {
-      console.error('Logout error:', error)
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Logout error:', error);
+      }
       // Fallback: force navigation to login
       window.location.href = '/login'
     }

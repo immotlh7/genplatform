@@ -154,7 +154,9 @@ export default function MonitoringPage() {
       }
       
     } catch (error) {
-      console.error('Failed to load system data:', error)
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Failed to load system data:', error);
+      }
     } finally {
       setLoading(false)
     }
@@ -186,7 +188,9 @@ export default function MonitoringPage() {
       // Reload data after restart
       setTimeout(loadSystemData, 1000)
     } catch (error) {
-      console.error(`Failed to restart ${serviceName}:`, error)
+      if (process.env.NODE_ENV === 'development') {
+        console.error(`Failed to restart ${serviceName}:`, error);
+      }
     }
   }
 

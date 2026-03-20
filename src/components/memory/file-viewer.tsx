@@ -63,7 +63,9 @@ export function FileViewer({ filePath, fileName, onEdit, canEdit = false }: File
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
     } catch (err) {
-      console.error('Failed to copy content:', err)
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Failed to copy content:', err);
+      }
     }
   }
 

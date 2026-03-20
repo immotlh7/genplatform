@@ -140,7 +140,9 @@ export function ImprovementCard({
     try {
       await onApprove?.(improvement.id, approvalNotes)
     } catch (error) {
-      console.error('Error approving improvement:', error)
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error approving improvement:', error);
+      }
     } finally {
       setApproving(false)
       setApprovalNotes('')
@@ -152,7 +154,9 @@ export function ImprovementCard({
     try {
       await onReject?.(improvement.id, rejectionReason)
     } catch (error) {
-      console.error('Error rejecting improvement:', error)
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error rejecting improvement:', error);
+      }
     } finally {
       setRejecting(false)
       setRejectionReason('')

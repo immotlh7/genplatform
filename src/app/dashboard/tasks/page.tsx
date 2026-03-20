@@ -141,7 +141,9 @@ export default function TasksPage({ projectId, embedded = false }: TasksPageProp
         setTasks(data.tasks || [])
       }
     } catch (error) {
-      console.error('Error fetching tasks:', error)
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error fetching tasks:', error);
+      }
     } finally {
       setLoading(false)
     }
@@ -195,7 +197,9 @@ export default function TasksPage({ projectId, embedded = false }: TasksPageProp
         description: `Intelligently assigned ${assignments.length} tasks to departments`,
       })
     } catch (error) {
-      console.error('Error in auto-assign:', error)
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error in auto-assign:', error);
+      }
       toast({
         title: 'Auto-assignment failed',
         description: 'Please try again',
@@ -220,7 +224,9 @@ export default function TasksPage({ projectId, embedded = false }: TasksPageProp
         ))
       }
     } catch (error) {
-      console.error('Error updating task assignment:', error)
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error updating task assignment:', error);
+      }
     }
   }
   
@@ -253,7 +259,9 @@ export default function TasksPage({ projectId, embedded = false }: TasksPageProp
         })
       }
     } catch (error) {
-      console.error('Error sending task to agent:', error)
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error sending task to agent:', error);
+      }
       toast({
         title: 'Failed to send task',
         description: 'Please try again',
@@ -338,7 +346,9 @@ export default function TasksPage({ projectId, embedded = false }: TasksPageProp
         description: `${plannedTasks.length} tasks sent to agent departments`,
       })
     } catch (error) {
-      console.error('Error sending tasks:', error)
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error sending tasks:', error);
+      }
       toast({
         title: 'Failed to send some tasks',
         description: 'Please try again',
@@ -406,7 +416,9 @@ export default function TasksPage({ projectId, embedded = false }: TasksPageProp
         ))
       }
     } catch (error) {
-      console.error('Error updating task:', error)
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error updating task:', error);
+      }
       // Revert on error
       fetchTasks()
     } finally {
@@ -434,7 +446,9 @@ export default function TasksPage({ projectId, embedded = false }: TasksPageProp
           ))
         }
       } catch (error) {
-        console.error('Error moving task:', error)
+        if (process.env.NODE_ENV === 'development') {
+          console.error('Error moving task:', error);
+        }
       } finally {
         setSaving(false)
       }
@@ -474,7 +488,9 @@ export default function TasksPage({ projectId, embedded = false }: TasksPageProp
         ))
       }
     } catch (error) {
-      console.error('Error updating task:', error)
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error updating task:', error);
+      }
     } finally {
       setSaving(false)
       setIsModalOpen(false)
@@ -510,7 +526,9 @@ export default function TasksPage({ projectId, embedded = false }: TasksPageProp
         alert(error.error || 'Failed to create task')
       }
     } catch (error) {
-      console.error('Error creating task:', error)
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error creating task:', error);
+      }
       alert('Failed to create task')
     } finally {
       setSaving(false)

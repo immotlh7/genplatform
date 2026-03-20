@@ -57,7 +57,9 @@ export function FileTree({
         setTree(data.tree)
       }
     } catch (error) {
-      console.error('Failed to load file tree:', error)
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Failed to load file tree:', error);
+      }
       // Demo fallback
       setTree([
         {
@@ -114,7 +116,9 @@ export function FileTree({
             updateNodeChildren(node.id, data.children)
           }
         } catch (error) {
-          console.error('Failed to load folder contents:', error)
+          if (process.env.NODE_ENV === 'development') {
+            console.error('Failed to load folder contents:', error);
+          }
         }
       }
     } else {

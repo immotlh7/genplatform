@@ -253,7 +253,9 @@ export function CreateProjectDialog({
       onProjectCreated?.(newProject)
       handleOpenChange(false)
     } catch (error) {
-      console.error('Error creating project:', error)
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error creating project:', error);
+      }
       setErrors({ submit: 'Failed to create project. Please try again.' })
     } finally {
       setLoading(false)

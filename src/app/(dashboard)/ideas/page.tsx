@@ -119,7 +119,9 @@ export default function IdeasPage() {
         setNewIdea(prev => ({ ...prev, submittedBy: user.displayName || user.email || 'Anonymous' }))
       }
     } catch (error) {
-      console.error('Error checking user access:', error)
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error checking user access:', error);
+      }
     } finally {
       setAuthLoading(false)
     }
@@ -139,7 +141,9 @@ export default function IdeasPage() {
         setStats(data.stats || null)
       }
     } catch (error) {
-      console.error('Error loading ideas:', error)
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error loading ideas:', error);
+      }
       toast({
         title: 'Error loading ideas',
         description: 'Please try again later',
@@ -185,7 +189,9 @@ export default function IdeasPage() {
         })
       }
     } catch (error) {
-      console.error('Error creating idea:', error)
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error creating idea:', error);
+      }
       toast({
         title: 'Error creating idea',
         description: 'Please try again',
@@ -214,7 +220,9 @@ export default function IdeasPage() {
         })
       }
     } catch (error) {
-      console.error('Error voting:', error)
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error voting:', error);
+      }
     } finally {
       setActionLoading(null)
     }
@@ -236,7 +244,9 @@ export default function IdeasPage() {
         })
       }
     } catch (error) {
-      console.error('Error initiating research:', error)
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error initiating research:', error);
+      }
       toast({
         title: 'Error initiating research',
         description: 'Please try again',
@@ -265,7 +275,9 @@ export default function IdeasPage() {
         })
       }
     } catch (error) {
-      console.error('Error updating status:', error)
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error updating status:', error);
+      }
       toast({
         title: 'Error updating status',
         description: 'Please try again',
@@ -292,7 +304,9 @@ export default function IdeasPage() {
         })
       }
     } catch (error) {
-      console.error('Error creating tasks:', error)
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error creating tasks:', error);
+      }
       toast({
         title: 'Error creating tasks',
         description: 'Please try again',

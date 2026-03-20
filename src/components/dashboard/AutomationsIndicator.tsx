@@ -41,7 +41,9 @@ export function AutomationsIndicator() {
         waitingApproval: 1
       })
     } catch (error) {
-      console.error('Failed to load automation stats:', error)
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Failed to load automation stats:', error);
+      }
     }
   }
 

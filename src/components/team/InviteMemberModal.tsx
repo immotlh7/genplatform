@@ -86,7 +86,9 @@ export function InviteMemberModal({ isOpen, onClose, onInviteSuccess }: InviteMe
         setProjects(data.projects || [])
       }
     } catch (error) {
-      console.error('Failed to load projects:', error)
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Failed to load projects:', error);
+      }
     }
   }
 

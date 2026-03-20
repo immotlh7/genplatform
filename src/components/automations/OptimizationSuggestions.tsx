@@ -239,7 +239,9 @@ export default function OptimizationSuggestions({
       
       setSuggestions(mockSuggestions);
     } catch (error) {
-      console.error('Failed to generate optimization suggestions:', error);
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Failed to generate optimization suggestions:', error);
+      }
     } finally {
       setLoading(false);
     }

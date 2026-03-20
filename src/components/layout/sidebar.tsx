@@ -50,7 +50,9 @@ export function Sidebar() {
           })
         }
       } catch (error) {
-        console.error('Error fetching automation status:', error)
+        if (process.env.NODE_ENV === 'development') {
+          console.error('Error fetching automation status:', error);
+        }
       }
     }
 

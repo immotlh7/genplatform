@@ -118,7 +118,9 @@ export default function SecurityPage() {
       ])
       
     } catch (error) {
-      console.error('Failed to load security data:', error)
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Failed to load security data:', error);
+      }
     } finally {
       setIsLoading(false)
     }

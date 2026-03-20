@@ -129,7 +129,9 @@ export default function MemoryPage() {
 
       setIsLoading(false)
     } catch (error) {
-      console.error('Error loading user and memory data:', error)
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error loading user and memory data:', error);
+      }
       toast({
         title: "Error",
         description: "Failed to load memory data",
@@ -148,7 +150,9 @@ export default function MemoryPage() {
         setSelectedFile(prev => prev ? { ...prev, content: data.content } : null)
       }
     } catch (error) {
-      console.error('Error loading file content:', error)
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error loading file content:', error);
+      }
       toast({
         title: "Error",
         description: "Failed to load file content",
@@ -184,7 +188,9 @@ export default function MemoryPage() {
         throw new Error('Failed to save file')
       }
     } catch (error) {
-      console.error('Error saving file:', error)
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error saving file:', error);
+      }
       toast({
         title: "Error",
         description: "Failed to save file",
@@ -225,7 +231,9 @@ export default function MemoryPage() {
         throw new Error('Failed to create file')
       }
     } catch (error) {
-      console.error('Error creating file:', error)
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error creating file:', error);
+      }
       toast({
         title: "Error",
         description: "Failed to create file",

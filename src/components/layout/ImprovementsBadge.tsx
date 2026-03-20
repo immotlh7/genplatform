@@ -24,7 +24,9 @@ export function SidebarImprovementIndicator({ className }: SidebarImprovementInd
           setPendingCount(2) // Mock pending improvements
         }
       } catch (error) {
-        console.error('Error fetching improvements:', error)
+        if (process.env.NODE_ENV === 'development') {
+          console.error('Error fetching improvements:', error);
+        }
         // Fallback to mock data
         setPendingCount(2)
       } finally {

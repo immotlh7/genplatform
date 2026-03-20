@@ -145,7 +145,9 @@ export function EditCommandModal({
       }
 
     } catch (error) {
-      console.error('Retranslation error:', error)
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Retranslation error:', error);
+      }
       toast({
         title: "Translation Error",
         description: error instanceof Error ? error.message : 'Failed to retranslate text',

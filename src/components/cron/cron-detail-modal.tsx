@@ -74,7 +74,9 @@ export function CronDetailModal({
       
       setJobHistory(history)
     } catch (error) {
-      console.error('Failed to load job history:', error)
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Failed to load job history:', error);
+      }
       // Demo data if API fails
       setJobHistory([
         {

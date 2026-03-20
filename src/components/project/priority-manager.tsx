@@ -40,7 +40,9 @@ export function PriorityManager({ project, onSave, compact = false }: PriorityMa
       await updateProject(project.id, { priority: selectedPriority })
       onSave?.()
     } catch (error) {
-      console.error('Error updating priority:', error)
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error updating priority:', error);
+      }
     } finally {
       setSaving(false)
     }

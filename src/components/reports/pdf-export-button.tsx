@@ -65,7 +65,9 @@ export function PDFExportButton({
     try {
       await exportReportToPDF(report)
     } catch (error) {
-      console.error('Export failed:', error)
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Export failed:', error);
+      }
       // TODO: Show error notification
     } finally {
       setIsExporting(false)
@@ -80,7 +82,9 @@ export function PDFExportButton({
       await exportReportToPDF(report, exportOptions)
       setShowAdvancedDialog(false)
     } catch (error) {
-      console.error('Export failed:', error)
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Export failed:', error);
+      }
       // TODO: Show error notification
     } finally {
       setIsExporting(false)

@@ -93,7 +93,9 @@ export default function TeamPage() {
       
       setTeamMembers(enhancedMembers)
     } catch (error) {
-      console.error('Error loading team members:', error)
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error loading team members:', error);
+      }
     } finally {
       setLoading(false)
     }

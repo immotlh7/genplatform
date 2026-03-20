@@ -60,7 +60,9 @@ export default function ProjectsPage() {
         setProjects(data.projects)
       }
     } catch (error) {
-      console.error('Failed to fetch projects:', error)
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Failed to fetch projects:', error);
+      }
     } finally {
       setLoading(false)
     }
@@ -77,7 +79,9 @@ export default function ProjectsPage() {
         fetchProjects() // Refresh the list
       }
     } catch (error) {
-      console.error('Failed to update project:', error)
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Failed to update project:', error);
+      }
     }
   }
 

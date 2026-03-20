@@ -182,7 +182,9 @@ export function ProjectSwitcher({
         }
       }
     } catch (error) {
-      console.error('Error loading projects:', error)
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error loading projects:', error);
+      }
     } finally {
       setLoading(false)
     }

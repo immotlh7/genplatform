@@ -193,7 +193,9 @@ export function WorkflowRunDetail({ runId, isOpen, onClose, onApprove, onReject 
       setSteps(processedSteps)
 
     } catch (error) {
-      console.error('Failed to load workflow run:', error)
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Failed to load workflow run:', error);
+      }
     } finally {
       setLoading(false)
     }
@@ -269,7 +271,9 @@ export function WorkflowRunDetail({ runId, isOpen, onClose, onApprove, onReject 
       // Refresh data
       await loadWorkflowRun()
     } catch (error) {
-      console.error(`Failed to ${action} workflow:`, error)
+      if (process.env.NODE_ENV === 'development') {
+        console.error(`Failed to ${action} workflow:`, error);
+      }
     } finally {
       setApprovalAction(null)
     }

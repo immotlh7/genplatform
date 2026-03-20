@@ -130,7 +130,9 @@ For issues and questions, refer to the OpenClaw documentation or community forum
 
       setSkillContent(demoContent)
     } catch (error) {
-      console.error('Failed to load skill content:', error)
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Failed to load skill content:', error);
+      }
       setSkillContent('Failed to load skill documentation.')
     } finally {
       setLoading(false)

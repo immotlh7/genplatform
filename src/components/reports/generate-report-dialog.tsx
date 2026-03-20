@@ -176,7 +176,9 @@ export function GenerateReportDialog({ children, onSuccess }: GenerateReportDial
       }, 2000)
 
     } catch (error) {
-      console.error('Error generating report:', error)
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error generating report:', error);
+      }
       setError('Failed to generate report. Please try again.')
     } finally {
       setGenerating(false)

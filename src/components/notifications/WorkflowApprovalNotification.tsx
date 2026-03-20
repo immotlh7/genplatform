@@ -50,7 +50,9 @@ export function WorkflowApprovalNotification({
       await onApprove(notification.run_id)
       onDismiss?.(notification.id)
     } catch (error) {
-      console.error('Approval failed:', error)
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Approval failed:', error);
+      }
     } finally {
       setProcessing(false)
     }
@@ -64,7 +66,9 @@ export function WorkflowApprovalNotification({
       await onReject(notification.run_id)
       onDismiss?.(notification.id)
     } catch (error) {
-      console.error('Rejection failed:', error)
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Rejection failed:', error);
+      }
     } finally {
       setProcessing(false)
     }

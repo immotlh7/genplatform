@@ -141,7 +141,9 @@ export default function ProjectDetailPage() {
         timestamp: new Date()
       }])
     } catch (error) {
-      console.error('Error fetching project:', error)
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error fetching project:', error);
+      }
     } finally {
       setLoading(false)
     }
@@ -190,7 +192,9 @@ export default function ProjectDetailPage() {
       }, 2000)
       
     } catch (error) {
-      console.error('Error sending message:', error)
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error sending message:', error);
+      }
       const errorMessage: Message = {
         id: `error-${Date.now()}`,
         content: 'Failed to send message. Please try again.',
@@ -217,7 +221,9 @@ export default function ProjectDetailPage() {
       setProject(updated)
       alert('Project updated successfully')
     } catch (error) {
-      console.error('Error saving project:', error)
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error saving project:', error);
+      }
       alert('Failed to save changes')
     } finally {
       setSaving(false)
@@ -233,7 +239,9 @@ export default function ProjectDetailPage() {
       if (!response.ok) throw new Error('Failed to archive')
       router.push('/projects')
     } catch (error) {
-      console.error('Error archiving project:', error)
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error archiving project:', error);
+      }
       alert('Failed to archive project')
     }
   }

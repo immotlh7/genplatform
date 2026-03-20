@@ -94,7 +94,9 @@ export default function SkillsPage() {
         setLastRefresh(new Date())
       }
     } catch (error) {
-      console.error('Failed to load skills:', error)
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Failed to load skills:', error);
+      }
       // Fall back to demo data
       setSkills(skillsData)
     } finally {
@@ -114,7 +116,9 @@ export default function SkillsPage() {
         throw new Error('No content found')
       }
     } catch (error) {
-      console.error('Failed to load skill detail:', error)
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Failed to load skill detail:', error);
+      }
       setSelectedSkill({
         name: skillName,
         description: 'Failed to load skill details',

@@ -80,7 +80,9 @@ export default function AutomationsCard() {
 
       setLoading(false)
     } catch (error) {
-      console.error('Error fetching workflow status:', error)
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error fetching workflow status:', error);
+      }
       // Use fallback mock data
       setStatus({
         total_workflows: 5,

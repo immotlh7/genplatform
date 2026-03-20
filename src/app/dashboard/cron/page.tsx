@@ -97,7 +97,9 @@ export default function CronPage() {
       setJobs(data.jobs || [])
       setStats(data.stats || { total: 0, enabled: 0, running: 0, failed: 0 })
     } catch (error) {
-      console.error('Failed to load cron jobs:', error)
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Failed to load cron jobs:', error);
+      }
       // Demo data if API fails - with system-critical flags
       const demoJobs: CronJob[] = [
         {
@@ -298,7 +300,9 @@ export default function CronPage() {
         })
       }
     } catch (error) {
-      console.error('Failed to toggle job:', error)
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Failed to toggle job:', error);
+      }
     }
   }
 
@@ -333,7 +337,9 @@ export default function CronPage() {
         }, 3000)
       }
     } catch (error) {
-      console.error('Failed to run job:', error)
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Failed to run job:', error);
+      }
     }
   }
 

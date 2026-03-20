@@ -265,7 +265,9 @@ export function ImprovementsTab({ className = "" }: ImprovementsTabProps) {
       
       setImprovements(mockImprovements)
     } catch (error) {
-      console.error('Error loading improvements:', error)
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error loading improvements:', error);
+      }
     } finally {
       setLoading(false)
     }

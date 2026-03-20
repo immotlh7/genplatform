@@ -56,7 +56,9 @@ export default function ReportsPage() {
         loadMockReports()
       }
     } catch (error) {
-      console.error('Error loading reports:', error)
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error loading reports:', error);
+      }
       loadMockReports()
     } finally {
       setLoading(false)

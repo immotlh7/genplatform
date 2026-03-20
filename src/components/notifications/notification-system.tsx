@@ -97,7 +97,9 @@ export function NotificationProvider({ children }: NotificationProviderProps) {
         setLastFetchTime(new Date())
       }
     } catch (error) {
-      console.error('Failed to fetch notifications:', error)
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Failed to fetch notifications:', error);
+      }
     }
   }, [])
 
@@ -208,7 +210,9 @@ export function NotificationBell() {
       await fetch('/api/notifications', { cache: 'no-store' })
       window.location.reload() // Simple way to trigger context refresh
     } catch (error) {
-      console.error('Failed to refresh:', error)
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Failed to refresh:', error);
+      }
     } finally {
       setTimeout(() => setIsRefreshing(false), 500)
     }

@@ -43,7 +43,9 @@ export function Navbar() {
           setUser(data.user)
         }
       } catch (error) {
-        console.error('Failed to fetch user data:', error)
+        if (process.env.NODE_ENV === 'development') {
+          console.error('Failed to fetch user data:', error);
+        }
       }
     }
 

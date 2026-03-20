@@ -69,7 +69,9 @@ export function ActivityStream({
       setEvents(mockEvents)
       
     } catch (err) {
-      console.error('Failed to fetch activity events:', err)
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Failed to fetch activity events:', err);
+      }
       setError(err instanceof Error ? err.message : 'Unknown error')
     } finally {
       setLoading(false)

@@ -72,7 +72,9 @@ export default function AutomationsPage() {
             }
           }
         } catch (bridgeError) {
-          console.error('Error fetching from Bridge API:', bridgeError)
+          if (process.env.NODE_ENV === 'development') {
+            console.error('Error fetching from Bridge API:', bridgeError);
+          }
         }
         
         // Try the workflows API
@@ -87,7 +89,9 @@ export default function AutomationsPage() {
             }
           }
         } catch (error) {
-          console.error('Error fetching workflows:', error)
+          if (process.env.NODE_ENV === 'development') {
+            console.error('Error fetching workflows:', error);
+          }
         }
         
         // If all APIs fail, set empty state
@@ -95,7 +99,9 @@ export default function AutomationsPage() {
         calculateStats([])
         
       } catch (error) {
-        console.error('Error loading workflows:', error)
+        if (process.env.NODE_ENV === 'development') {
+          console.error('Error loading workflows:', error);
+        }
         setWorkflows([])
         calculateStats([])
       } finally {

@@ -99,7 +99,9 @@ export function WorkflowApprovalNotification({
       
       setPendingApprovals(mockApprovals)
     } catch (error) {
-      console.error('Failed to load pending approvals:', error)
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Failed to load pending approvals:', error);
+      }
     }
   }
 
@@ -113,7 +115,9 @@ export function WorkflowApprovalNotification({
       setSelectedApproval(null)
       setIsOpen(false)
     } catch (error) {
-      console.error('Failed to approve workflow:', error)
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Failed to approve workflow:', error);
+      }
     } finally {
       setActionLoading(null)
     }
@@ -129,7 +133,9 @@ export function WorkflowApprovalNotification({
       setSelectedApproval(null)
       setIsOpen(false)
     } catch (error) {
-      console.error('Failed to reject workflow:', error)
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Failed to reject workflow:', error);
+      }
     } finally {
       setActionLoading(null)
     }

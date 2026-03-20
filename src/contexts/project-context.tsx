@@ -39,12 +39,16 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
           }
         }
       } catch (error) {
-        console.error('Error fetching from Bridge API:', error)
+        if (process.env.NODE_ENV === 'development') {
+          console.error('Error fetching from Bridge API:', error);
+        }
       }
       
       setProjects([])
     } catch (error) {
-      console.error('Error loading projects:', error)
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error loading projects:', error);
+      }
       setProjects([])
     } finally {
       setIsLoading(false)
