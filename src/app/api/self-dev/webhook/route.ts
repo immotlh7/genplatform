@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import fs from 'fs/promises';
 import path from 'path';
 import { executionState } from '../status/route';
+import { resolvePendingAnalysis } from '../analyze/route';
 
 const TASK_QUEUE_DIR = '/root/genplatform/data/task-queue';
 const EXECUTION_LOG_FILE = '/root/genplatform/data/self-dev-execution.log';
@@ -87,6 +88,30 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ ok: true });
     }
     
+    // Check if this is an orchestrator response
+    if (text.includes('[ORCHESTRATOR]') || text.includes('totalMessages') || text.includes('microTasks')) {
+      await appendLog('🧠 Received Orchestrator analysis response');
+      
+      // Extract the file ID from pending analysis
+      const pendingFiles = await fs.readdir(TASK_QUEUE_DIR).catch(() => []);
+      const latestFileId = pendingFiles
+        .filter(f => f.endsWith('.json'))
+        .sort()
+        .pop()
+        ?.replace('.json', '');
+      
+      if (latestFileId) {
+        // Try to resolve pending analysis
+        const resolved = resolvePendingAnalysis(latestFileId, text);
+        if (resolved) {
+          await appendLog('✅ Orchestrator analysis complete');
+        }
+      }
+      
+      return NextResponse.json({ ok: true });
+    }
+    
+    // Otherwise handle as Developer response
     await appendLog(`📝 Developer response: ${text.substring(0, 100)}...`);
     
     // Detect response type

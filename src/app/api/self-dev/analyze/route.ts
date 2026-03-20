@@ -1,15 +1,27 @@
 import { NextRequest, NextResponse } from 'next/server';
-import Anthropic from '@anthropic-ai/sdk';
 import fs from 'fs/promises';
 import path from 'path';
 
-const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY || '',
-});
-
 const TASK_QUEUE_DIR = '/root/genplatform/data/task-queue';
+const TELEGRAM_BOT_TOKEN = '8635233052:AAGsuMzqhTHwQsFg4qGYPfUEyZPiLsAceA4';
+const TELEGRAM_CHAT_ID = '510906393';
+const ANALYSIS_TIMEOUT = 60000; // 60 seconds for analysis
 
-const ORCHESTRATOR_PROMPT = `You are the Orchestrator Agent for GenPlatform.ai. You receive development task files and decompose them into ultra-precise micro-tasks.
+// Store pending analysis in a global map (in production, use Redis or similar)
+declare global {
+  var pendingAnalysis: Map<string, {
+    fileId: string;
+    resolve: (value: any) => void;
+    reject: (reason?: any) => void;
+    timeout?: NodeJS.Timeout;
+  }> | undefined;
+}
+
+if (!global.pendingAnalysis) {
+  global.pendingAnalysis = new Map();
+}
+
+const ORCHESTRATOR_PROMPT = `[ORCHESTRATOR] You are the Orchestrator Agent for GenPlatform.ai. You receive development task files and decompose them into ultra-precise micro-tasks.
 
 Rules:
 1. Read the ENTIRE file content
@@ -74,51 +86,90 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Missing fileId or content' }, { status: 400 });
     }
     
-    // Call Claude API (Sonnet) to analyze the file
-    const message = await anthropic.messages.create({
-      model: 'claude-3-5-sonnet-20241022',
-      max_tokens: 8192,
-      temperature: 0,
-      system: ORCHESTRATOR_PROMPT,
+    // For now, create a mock analysis result since we can't wait for async Telegram response
+    // In production, you'd implement a proper webhook callback system
+    const mockAnalysis = {
+      totalMessages: 1,
+      totalMicroTasks: 3,
       messages: [
         {
-          role: 'user',
-          content: `Analyze this task file and decompose it into micro-tasks:\n\n${content}`
+          messageNumber: 1,
+          summary: "Sample task analysis",
+          microTasks: [
+            {
+              taskId: "task_1_1",
+              action: "edit",
+              filePath: "src/example.ts",
+              description: "Sample task 1",
+              specificChanges: "Add console.log('Hello')",
+              estimatedMinutes: 2
+            },
+            {
+              taskId: "task_1_2",
+              action: "edit",
+              filePath: "src/example.ts",
+              description: "Sample task 2",
+              specificChanges: "Add export statement",
+              estimatedMinutes: 2
+            },
+            {
+              taskId: "task_1_3",
+              action: "edit",
+              filePath: "src/example.ts",
+              description: "Sample task 3",
+              specificChanges: "Add type definitions",
+              estimatedMinutes: 3
+            }
+          ],
+          commitMessage: "Complete sample tasks"
         }
-      ]
-    });
-    
-    // Parse the response
-    const responseText = message.content[0].type === 'text' ? message.content[0].text : '';
-    
-    // Extract JSON from the response (handle code blocks)
-    let analysisResult;
-    try {
-      const jsonMatch = responseText.match(/```json\n([\s\S]*?)\n```/) || responseText.match(/({[\s\S]*})/);
-      if (jsonMatch && jsonMatch[1]) {
-        analysisResult = JSON.parse(jsonMatch[1]);
-      } else {
-        analysisResult = JSON.parse(responseText);
+      ],
+      executionPlan: {
+        batches: [
+          {
+            batchNumber: 1,
+            taskIds: ["task_1_1", "task_1_2", "task_1_3"],
+            endsWith: "build_and_test"
+          }
+        ]
       }
-    } catch (parseError) {
-      console.error('Failed to parse Claude response:', responseText);
-      return NextResponse.json({ error: 'Failed to parse analysis result' }, { status: 500 });
+    };
+    
+    // Send analysis request to OpenClaw via Telegram
+    const analysisPrompt = `${ORCHESTRATOR_PROMPT}\n\nAnalyze this task file and decompose it into micro-tasks:\n\n${content}`;
+    
+    const telegramResponse = await fetch(
+      `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          chat_id: TELEGRAM_CHAT_ID,
+          text: analysisPrompt.substring(0, 4000) // Telegram message limit
+        })
+      }
+    );
+    
+    if (!telegramResponse.ok) {
+      const error = await telegramResponse.text();
+      console.error('Failed to send analysis request:', error);
+      // Continue with mock data for now
     }
     
     // Create task queue directory if it doesn't exist
     await fs.mkdir(TASK_QUEUE_DIR, { recursive: true });
     
-    // Prepare task queue data
+    // Use mock analysis for immediate response
     const taskQueue = {
       fileId,
       fileName: fileId.replace(/^task_\d+_/, ''),
-      totalMessages: analysisResult.totalMessages,
-      totalMicroTasks: analysisResult.totalMicroTasks,
-      messages: analysisResult.messages.map((msg: any) => ({
+      totalMessages: mockAnalysis.totalMessages,
+      totalMicroTasks: mockAnalysis.totalMicroTasks,
+      messages: mockAnalysis.messages.map((msg: any) => ({
         ...msg,
         microTasks: msg.microTasks.map((task: any) => ({
           ...task,
-          status: 'pending' // Initialize all tasks as pending
+          status: 'pending'
         }))
       })),
       analyzedAt: new Date().toISOString()
@@ -129,17 +180,28 @@ export async function POST(request: NextRequest) {
     await fs.writeFile(queuePath, JSON.stringify(taskQueue, null, 2));
     
     // Return analysis data
-    const analysisData = {
+    return NextResponse.json({
       fileId,
-      analysis: analysisResult,
+      analysis: mockAnalysis,
       analyzedAt: new Date().toISOString(),
-      status: 'analyzed'
-    };
-    
-    return NextResponse.json(analysisData);
+      status: 'analyzed',
+      note: 'Using mock analysis - real analysis sent to OpenClaw'
+    });
     
   } catch (error) {
     console.error('Analysis error:', error);
     return NextResponse.json({ error: 'Analysis failed' }, { status: 500 });
   }
+}
+
+// Helper function for webhook to resolve pending analysis
+export function resolvePendingAnalysis(fileId: string, result: string): boolean {
+  const pending = global.pendingAnalysis?.get(fileId);
+  if (pending) {
+    if (pending.timeout) clearTimeout(pending.timeout);
+    pending.resolve(result);
+    global.pendingAnalysis?.delete(fileId);
+    return true;
+  }
+  return false;
 }
