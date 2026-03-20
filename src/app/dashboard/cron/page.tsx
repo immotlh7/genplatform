@@ -66,6 +66,9 @@ export default function CronPage() {
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedJob, setSelectedJob] = useState<CronJob | null>(null)
   const [detailModalOpen, setDetailModalOpen] = useState(false)
+  const [showNewJobModal, setShowNewJobModal] = useState(false)
+  const [newJobDescription, setNewJobDescription] = useState('')
+  const [isCreatingJob, setIsCreatingJob] = useState(false)
 
   useEffect(() => {
     loadUserAndCronJobs()
@@ -706,6 +709,38 @@ export default function CronPage() {
         onToggle={toggleJob}
         onRun={runJob}
       />
+
+      {showNewJobModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-background border rounded-xl p-6 w-full max-w-lg mx-4 shadow-xl">
+            <h2 className="text-lg font-semibold mb-2">Create New Cron Job</h2>
+            <p className="text-sm text-muted-foreground mb-3">Describe in plain language what you want to schedule:</p>
+            <textarea
+              className="w-full border rounded-lg p-3 text-sm bg-background min-h-[100px] resize-none focus:outline-none focus:ring-2 focus:ring-primary"
+              placeholder='e.g. "Check system health every hour" or "Send daily report at 8 AM"'
+              value={newJobDescription}
+              onChange={e => setNewJobDescription(e.target.value)}
+            />
+            <p className="text-xs text-muted-foreground mt-1 mb-4">Examples: "Every 5 minutes", "Daily at 9 PM", "Weekly on Sunday at 10 AM"</p>
+            <div className="flex gap-3 justify-end">
+              <button className="px-4 py-2 text-sm border rounded-lg hover:bg-accent" onClick={() => { setShowNewJobModal(false); setNewJobDescription(''); }}>Cancel</button>
+              <button
+                className="px-4 py-2 text-sm bg-primary text-primary-foreground rounded-lg disabled:opacity-50"
+                disabled={!newJobDescription.trim() || isCreatingJob}
+                onClick={async () => {
+                  setIsCreatingJob(true);
+                  try {
+                    await fetch('/api/bridge/cron', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: newJobDescription.substring(0, 50), description: newJobDescription, schedule: '0 * * * *', command: newJobDescription, enabled: true }) });
+                    setShowNewJobModal(false);
+                    setNewJobDescription('');
+                    loadCronJobs();
+                  } catch {} finally { setIsCreatingJob(false); }
+                }}
+              >{isCreatingJob ? 'Creating...' : 'Create Job'}</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

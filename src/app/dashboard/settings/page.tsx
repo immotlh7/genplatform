@@ -400,6 +400,13 @@ export default function SettingsPage() {
             <Save className="h-4 w-4 mr-2" />
             {isSaving ? 'Saving...' : 'Save Changes'}
           </Button>
+          <Button variant="destructive" onClick={async () => {
+            await fetch('/api/auth/logout', { method: 'POST' }).catch(() => {})
+            document.cookie = 'auth-token=; Path=/; Max-Age=0'
+            window.location.href = '/login'
+          }}>
+            Sign Out
+          </Button>
           {currentUser.role === 'VIEWER' && (
             <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
               <Eye className="h-3 w-3 mr-1" />
