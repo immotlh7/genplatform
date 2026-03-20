@@ -3,8 +3,10 @@ import fs from 'fs/promises';
 import path from 'path';
 
 const TASK_QUEUE_FILE = '/root/genplatform/data/task-queue/task-queue.json';
+const TASK_QUEUE_DIR = '/root/genplatform/data/task-queue';
 const EXECUTION_LOG_FILE = '/root/genplatform/data/execution-log.json';
 const CONFIG_FILE = '/root/genplatform/data/self-dev-config.json';
+const CURRENT_TASK_FILE = '/root/genplatform/data/current-task.json';
 
 interface ExecutionLog {
   timestamp: string;
@@ -63,10 +65,79 @@ async function executeNextTask() {
   }
 }
 
+async function updateTaskStatus(taskId: string, status: string, additionalData: any = {}) {
+  try {
+    // Update main task-queue.json
+    const queueData = await fs.readFile(TASK_QUEUE_FILE, 'utf-8');
+    const queue = JSON.parse(queueData);
+    let foundTask = false;
+    let fileId = '';
+    
+    for (const msg of queue.messages || []) {
+      for (const task of msg.tasks || []) {
+        if (task.taskId === taskId || task.status === 'executing') {
+          task.status = status;
+          Object.assign(task, additionalData);
+          foundTask = true;
+          fileId = task.taskId.split('-msg')[0];
+          break;
+        }
+      }
+      if (foundTask) break;
+    }
+    
+    if (foundTask) {
+      await fs.writeFile(TASK_QUEUE_FILE, JSON.stringify(queue, null, 2));
+      
+      // Also update individual queue file
+      if (fileId) {
+        try {
+          const individualPath = path.join(TASK_QUEUE_DIR, fileId + '.json');
+          const individualData = await fs.readFile(individualPath, 'utf-8');
+          const individualQueue = JSON.parse(individualData);
+          
+          for (const msg of individualQueue.messages || []) {
+            for (const task of msg.tasks || []) {
+              if (task.taskId === taskId || task.status === 'executing') {
+                task.status = status;
+                Object.assign(task, additionalData);
+              }
+            }
+          }
+          
+          await fs.writeFile(individualPath, JSON.stringify(individualQueue, null, 2));
+        } catch (e) {
+          console.error('[WEBHOOK] Failed to update individual queue file:', e);
+        }
+      }
+      
+      // Update current-task.json status
+      try {
+        const currentData = await fs.readFile(CURRENT_TASK_FILE, 'utf-8');
+        const currentTask = JSON.parse(currentData);
+        if (currentTask.taskId === taskId) {
+          currentTask.task.status = status;
+          if (status === 'done') {
+            currentTask.completedTasks++;
+          }
+          await fs.writeFile(CURRENT_TASK_FILE, JSON.stringify(currentTask, null, 2));
+        }
+      } catch {}
+      
+      return true;
+    }
+    
+    return false;
+  } catch (error) {
+    console.error('[WEBHOOK] Failed to update task status:', error);
+    return false;
+  }
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    console.log('[WEBHOOK] Received telegram webhook:', JSON.stringify(body, null, 2));
+    console.log('[WEBHOOK] Received telegram webhook');
     
     // Check if this is a message from our bot chat
     if (!body.message || !body.message.text) {
@@ -93,133 +164,50 @@ export async function POST(request: NextRequest) {
     if (text.includes('✅') || text.includes('done') || text.includes('complete')) {
       console.log('[WEBHOOK] Task marked as done');
       
-      // Find and update the executing task
-      try {
-        const queueData = await fs.readFile(TASK_QUEUE_FILE, 'utf-8');
-        const queue = JSON.parse(queueData);
-        let foundTask = false;
+      const updated = await updateTaskStatus('', 'done', {
+        completedAt: new Date().toISOString(),
+        completedIcon: '✅'
+      });
+      
+      if (updated) {
+        await addLog({
+          timestamp: new Date().toISOString(),
+          type: 'task_done',
+          message: `✅ Task completed`
+        });
         
-        for (const msg of queue.messages || []) {
-          for (const task of msg.tasks || []) {
-            // Check main task
-            if (task.status === 'executing') {
-              task.status = 'done';
-              task.completedAt = new Date().toISOString();
-              task.completedIcon = '✅';
-              foundTask = true;
-              
-              await addLog({
-                timestamp: new Date().toISOString(),
-                type: 'task_done',
-                message: `✅ Task completed: ${task.taskId}`,
-                taskId: task.taskId
-              });
-              break;
-            }
-            
-            // Check micro-tasks
-            if (task.microTasks) {
-              for (const micro of task.microTasks) {
-                if (micro.status === 'executing') {
-                  micro.status = 'done';
-                  micro.completedAt = new Date().toISOString();
-                  foundTask = true;
-                  
-                  await addLog({
-                    timestamp: new Date().toISOString(),
-                    type: 'task_done',
-                    message: `✅ Micro-task completed: ${micro.id}`,
-                    taskId: micro.id
-                  });
-                  break;
-                }
-              }
-            }
-            if (foundTask) break;
-          }
-          if (foundTask) break;
+        // Check if auto-mode is on
+        const config = await getConfig();
+        if (config.autoMode) {
+          // Wait 2 seconds then execute next task
+          setTimeout(() => {
+            executeNextTask();
+          }, 2000);
         }
-        
-        if (foundTask) {
-          await fs.writeFile(TASK_QUEUE_FILE, JSON.stringify(queue, null, 2));
-          
-          // Check if auto-mode is on
-          const config = await getConfig();
-          if (config.autoMode) {
-            // Wait 2 seconds then execute next task
-            setTimeout(() => {
-              executeNextTask();
-            }, 2000);
-          }
-        }
-      } catch (error) {
-        console.error('[WEBHOOK] Failed to update task status:', error);
       }
     } else if (text.includes('❌') || text.includes('fail') || text.includes('error')) {
       console.log('[WEBHOOK] Task marked as failed');
       
-      // Find and update the executing task
-      try {
-        const queueData = await fs.readFile(TASK_QUEUE_FILE, 'utf-8');
-        const queue = JSON.parse(queueData);
-        let foundTask = false;
+      const updated = await updateTaskStatus('', 'failed', {
+        failedAt: new Date().toISOString(),
+        failureReason: message.text
+      });
+      
+      if (updated) {
+        await addLog({
+          timestamp: new Date().toISOString(),
+          type: 'task_failed',
+          message: `❌ Task failed: ${message.text}`
+        });
         
-        for (const msg of queue.messages || []) {
-          for (const task of msg.tasks || []) {
-            // Check main task
-            if (task.status === 'executing') {
-              task.status = 'failed';
-              task.failedAt = new Date().toISOString();
-              task.failureReason = message.text;
-              foundTask = true;
-              
-              await addLog({
-                timestamp: new Date().toISOString(),
-                type: 'task_failed',
-                message: `❌ Task failed: ${task.taskId} - ${message.text}`,
-                taskId: task.taskId
-              });
-              break;
-            }
-            
-            // Check micro-tasks
-            if (task.microTasks) {
-              for (const micro of task.microTasks) {
-                if (micro.status === 'executing') {
-                  micro.status = 'failed';
-                  micro.failedAt = new Date().toISOString();
-                  micro.failureReason = message.text;
-                  foundTask = true;
-                  
-                  await addLog({
-                    timestamp: new Date().toISOString(),
-                    type: 'task_failed',
-                    message: `❌ Micro-task failed: ${micro.id} - ${message.text}`,
-                    taskId: micro.id
-                  });
-                  break;
-                }
-              }
-            }
-            if (foundTask) break;
-          }
-          if (foundTask) break;
+        // Check if auto-mode is on (might want to pause on failures)
+        const config = await getConfig();
+        if (config.autoMode && !text.includes('stop')) {
+          // Execute next task even after failure
+          setTimeout(() => {
+            executeNextTask();
+          }, 2000);
         }
-        
-        if (foundTask) {
-          await fs.writeFile(TASK_QUEUE_FILE, JSON.stringify(queue, null, 2));
-          
-          // Check if auto-mode is on (might want to pause on failures)
-          const config = await getConfig();
-          if (config.autoMode && !text.includes('stop')) {
-            // Execute next task even after failure
-            setTimeout(() => {
-              executeNextTask();
-            }, 2000);
-          }
-        }
-      } catch (error) {
-        console.error('[WEBHOOK] Failed to update task status:', error);
       }
     }
     
