@@ -17,26 +17,9 @@ interface ExecutionLog {
   taskId?: string;
 }
 
-interface TaskQueue {
-  fileName: string;
-  fileId?: string;
-  autoMode: boolean;
-  messages?: {
-    messageNumber: number;
-    tasks: {
-      taskId: string;
-      originalDescription: string;
-      status?: string;
-      approved?: boolean;
-      retryCount?: number;
-    }[];
-  }[];
-  batches?: any[]; // For old format compatibility
-}
-
 export function ExecutionMonitor({ onRefresh }: ExecutionMonitorProps) {
   const [logs, setLogs] = useState<ExecutionLog[]>([]);
-  const [queue, setQueue] = useState<TaskQueue | null>(null);
+  const [status, setStatus] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
@@ -60,11 +43,11 @@ export function ExecutionMonitor({ onRefresh }: ExecutionMonitorProps) {
 
   const loadData = async () => {
     try {
-      // Load main queue file
-      const queueResponse = await fetch('/api/self-dev/queue');
-      if (queueResponse.ok) {
-        const queueData = await queueResponse.json();
-        setQueue(queueData);
+      // Load status including current task
+      const statusResponse = await fetch('/api/self-dev/status');
+      if (statusResponse.ok) {
+        const statusData = await statusResponse.json();
+        setStatus(statusData);
         setError(null);
         setIsLoading(false);
         if (onRefresh) onRefresh();
@@ -84,37 +67,6 @@ export function ExecutionMonitor({ onRefresh }: ExecutionMonitorProps) {
       setIsLoading(false);
     }
   };
-
-  const calculateStats = () => {
-    let totalTasks = 0;
-    let approvedTasks = 0;
-    let executingTasks = 0;
-    let doneTasks = 0;
-    let failedTasks = 0;
-    let currentExecutingTask = null;
-
-    if (queue?.messages) {
-      queue.messages.forEach(message => {
-        if (message.tasks) {
-          message.tasks.forEach(task => {
-            totalTasks++;
-            if (task.approved) approvedTasks++;
-            if (task.status === 'executing') {
-              executingTasks++;
-              currentExecutingTask = task;
-            }
-            if (task.status === 'done') doneTasks++;
-            if (task.status === 'failed' || task.status === 'skipped') failedTasks++;
-          });
-        }
-      });
-    }
-
-    return { totalTasks, approvedTasks, executingTasks, doneTasks, failedTasks, currentExecutingTask };
-  };
-
-  const stats = calculateStats();
-  const isExecuting = stats.executingTasks > 0;
 
   const formatTime = (timestamp: string) => {
     return new Date(timestamp).toLocaleTimeString();
@@ -167,17 +119,14 @@ export function ExecutionMonitor({ onRefresh }: ExecutionMonitorProps) {
     );
   }
 
-  if (!queue) {
-    return (
-      <div className="h-full flex items-center justify-center">
-        <div className="text-center">
-          <FileText className="h-16 w-16 text-gray-600 mx-auto mb-4" />
-          <p className="text-gray-400 text-lg mb-2">No Execution Queue</p>
-          <p className="text-sm text-gray-500">Upload and analyze a task file to begin</p>
-        </div>
-      </div>
-    );
-  }
+  const stats = status?.stats || {
+    totalTasks: 0,
+    completedTasks: 0,
+    executingTasks: 0
+  };
+  
+  const currentTask = status?.currentTask;
+  const isExecuting = stats.executingTasks > 0;
 
   // Empty queue state
   if (stats.totalTasks === 0) {
@@ -206,7 +155,7 @@ export function ExecutionMonitor({ onRefresh }: ExecutionMonitorProps) {
               Executing
             </Badge>
           )}
-          {queue.autoMode && (
+          {status?.config?.autoMode && (
             <Badge variant="outline" className="text-xs">Auto-mode</Badge>
           )}
         </div>
@@ -220,35 +169,30 @@ export function ExecutionMonitor({ onRefresh }: ExecutionMonitorProps) {
         </div>
         <div className="bg-gray-900/50 p-2 rounded-lg border border-gray-700">
           <div className="text-xs text-gray-400">Done</div>
-          <div className="text-lg font-bold text-green-400">{stats.doneTasks}</div>
+          <div className="text-lg font-bold text-green-400">{stats.completedTasks}</div>
         </div>
         <div className="bg-gray-900/50 p-2 rounded-lg border border-gray-700">
           <div className="text-xs text-gray-400">Running</div>
           <div className="text-lg font-bold text-blue-400">{stats.executingTasks}</div>
         </div>
         <div className="bg-gray-900/50 p-2 rounded-lg border border-gray-700">
-          <div className="text-xs text-gray-400">Failed</div>
-          <div className="text-lg font-bold text-red-400">{stats.failedTasks}</div>
+          <div className="text-xs text-gray-400">Pending</div>
+          <div className="text-lg font-bold text-gray-400">{stats.totalTasks - stats.completedTasks - stats.executingTasks}</div>
         </div>
       </div>
 
       {/* Current Task */}
-      {stats.currentExecutingTask && (
+      {currentTask && currentTask.task?.status === 'executing' && (
         <div className="mb-4">
           <div className="bg-blue-900/20 p-3 rounded-lg border border-blue-700/50">
             <div className="flex items-start gap-2">
               <Zap className="h-4 w-4 text-blue-400 flex-shrink-0 mt-0.5 animate-pulse" />
               <div className="flex-1">
                 <p className="text-sm font-medium text-blue-300">
-                  Executing: {stats.currentExecutingTask.originalDescription}
+                  Task {currentTask.task.taskNumber}: {currentTask.task.description}
                 </p>
                 <p className="text-xs text-gray-400 mt-1">
-                  Task ID: {stats.currentExecutingTask.taskId}
-                  {stats.currentExecutingTask.retryCount && stats.currentExecutingTask.retryCount > 0 && (
-                    <span className="ml-2 text-yellow-400">
-                      (Retry {stats.currentExecutingTask.retryCount}/3)
-                    </span>
-                  )}
+                  Message: {currentTask.messageTitle}
                 </p>
               </div>
             </div>
@@ -273,7 +217,7 @@ export function ExecutionMonitor({ onRefresh }: ExecutionMonitorProps) {
           <div className="space-y-1 pr-4">
             {logs.length === 0 ? (
               <p className="text-gray-500 text-sm text-center py-8">
-                No execution logs yet. Start execution to see activity.
+                No execution logs yet. Approve tasks to begin.
               </p>
             ) : (
               logs.map((log, index) => (
@@ -301,12 +245,12 @@ export function ExecutionMonitor({ onRefresh }: ExecutionMonitorProps) {
           <div className="flex justify-between text-sm mb-1">
             <span className="text-gray-400">Overall Progress</span>
             <span className="text-gray-300">
-              {stats.doneTasks} / {stats.totalTasks} tasks 
-              ({stats.totalTasks > 0 ? Math.round((stats.doneTasks / stats.totalTasks) * 100) : 0}%)
+              {stats.completedTasks} / {stats.totalTasks} tasks 
+              ({Math.round((stats.completedTasks / stats.totalTasks) * 100)}%)
             </span>
           </div>
           <Progress 
-            value={stats.totalTasks > 0 ? (stats.doneTasks / stats.totalTasks) * 100 : 0} 
+            value={(stats.completedTasks / stats.totalTasks) * 100} 
             className="h-2" 
           />
         </div>

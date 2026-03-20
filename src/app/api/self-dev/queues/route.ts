@@ -9,14 +9,21 @@ export async function GET(request: NextRequest) {
     await fs.mkdir(TASK_QUEUE_DIR, { recursive: true });
     const files = await fs.readdir(TASK_QUEUE_DIR).catch(() => []);
     const queues = [];
+    const seenFileIds = new Set<string>();
     
+    // Only process individual queue files, NOT task-queue.json
     for (const file of files) {
-      if (!file.endsWith('.json')) continue;
+      if (!file.endsWith('.json') || file === 'task-queue.json') continue;
       
       try {
         const queuePath = path.join(TASK_QUEUE_DIR, file);
         const queueData = JSON.parse(await fs.readFile(queuePath, 'utf-8'));
-        queues.push(queueData);
+        
+        // Prevent duplicates based on fileId
+        if (queueData.fileId && !seenFileIds.has(queueData.fileId)) {
+          seenFileIds.add(queueData.fileId);
+          queues.push(queueData);
+        }
       } catch (error) {
         console.error(`Failed to read queue file ${file}:`, error);
       }

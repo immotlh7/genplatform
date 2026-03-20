@@ -65,5 +65,10 @@
     "type": "task_sent",
     "message": "📤 Task task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg3-task3 sent - The notification bell in the top bar shows a red badge with count. Make sure the count matches REAL unread notifications only. If no real alerts, badge should be hidden.",
     "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg3-task3"
+  },
+  {
+    "timestamp": "2026-03-20T10:38:46.155Z",
+    "type": "info",
+    "message": "Deleted queue: task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md.json"
   }
 ]
