@@ -286,6 +286,7 @@ export default function ProjectDetailPage() {
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList>
           <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="pipeline">Pipeline</TabsTrigger>
           <TabsTrigger value="tasks">Tasks</TabsTrigger>
           <TabsTrigger value="chat">Chat</TabsTrigger>
           <TabsTrigger value="preview">Preview</TabsTrigger>
@@ -388,6 +389,47 @@ export default function ProjectDetailPage() {
               <Github className="w-4 h-4" />
               Open GitHub
             </Button>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="pipeline">
+          <div className="space-y-4">
+            <div className="grid grid-cols-4 gap-3">
+              {[
+                { label: 'Total Tasks', value: project.totalTasks || 15 },
+                { label: 'Completed', value: project.tasksCompleted || 5 },
+                { label: 'In Progress', value: 3 },
+                { label: 'Active Agents', value: 2 }
+              ].map(stat => (
+                <div key={stat.label} className="bg-card border rounded-lg p-3 text-center">
+                  <div className="text-2xl font-bold">{stat.value}</div>
+                  <div className="text-xs text-muted-foreground">{stat.label}</div>
+                </div>
+              ))}
+            </div>
+            <div className="bg-card border rounded-xl p-6 overflow-x-auto">
+              <div className="flex items-center justify-between min-w-[700px] relative">
+                {['💡 Idea','🔬 Analysis','📋 Planning','💻 Dev','🔍 Review','🛡️ Security','✅ Deploy'].map((stage, idx) => (
+                  <div key={stage} className="flex items-center">
+                    <div className={`flex flex-col items-center z-10 relative`}>
+                      <div className={`w-14 h-14 rounded-full flex items-center justify-center text-xl border-2 ${
+                        idx < 2 ? 'bg-green-100 border-green-500 dark:bg-green-900/30' :
+                        idx === 2 ? 'bg-amber-100 border-amber-500 dark:bg-amber-900/30 animate-pulse' :
+                        'bg-muted border-muted-foreground/30'
+                      }`}>
+                        {stage.split(' ')[0]}
+                      </div>
+                      <span className="text-xs mt-2 text-center w-16 text-muted-foreground">{stage.split(' ').slice(1).join(' ')}</span>
+                    </div>
+                    {idx < 6 && (
+                      <div className="flex-1 h-0.5 bg-muted-foreground/20 mx-2 relative overflow-hidden">
+                        <div className={`absolute inset-y-0 left-0 bg-green-500 transition-all duration-1000 ${idx < 2 ? 'w-full' : idx === 2 ? 'w-1/2' : 'w-0'}`} />
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         </TabsContent>
 

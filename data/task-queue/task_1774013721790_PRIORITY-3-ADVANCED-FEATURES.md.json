@@ -8,26 +8,26 @@
   "messages": [
     {
       "messageNumber": 1,
-      "summary": "═══════════════════════════════════════════════════════════════",
-      "originalContent": "# ═══════════════════════════════════════════════════════════════\n# الأولوية 3: الميزات المتقدمة\n# 3D Visualization + Voice + Arabic + Security\n# ═══════════════════════════════════════════════════════════════",
+      "summary": "\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550",
+      "originalContent": "# \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\n# \u0627\u0644\u0623\u0648\u0644\u0648\u064a\u0629 3: \u0627\u0644\u0645\u064a\u0632\u0627\u062a \u0627\u0644\u0645\u062a\u0642\u062f\u0645\u0629\n# 3D Visualization + Voice + Arabic + Security\n# \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550",
       "tasks": []
     },
     {
       "messageNumber": 2,
-      "summary": "الرسالة 22: Project Detail — التصور البصري للتدفق",
-      "originalContent": "# الرسالة 22: Project Detail — التصور البصري للتدفق",
+      "summary": "\u0627\u0644\u0631\u0633\u0627\u0644\u0629 22: Project Detail \u2014 \u0627\u0644\u062a\u0635\u0648\u0631 \u0627\u0644\u0628\u0635\u0631\u064a \u0644\u0644\u062a\u062f\u0641\u0642",
+      "originalContent": "# \u0627\u0644\u0631\u0633\u0627\u0644\u0629 22: Project Detail \u2014 \u0627\u0644\u062a\u0635\u0648\u0631 \u0627\u0644\u0628\u0635\u0631\u064a \u0644\u0644\u062a\u062f\u0641\u0642",
       "tasks": []
     },
     {
       "messageNumber": 3,
       "summary": "Build an interactive pipeline visualization for the project detail page.",
-      "originalContent": "Build an interactive pipeline visualization for the project detail page.\n\nProject: /root/genplatform. Site: https://app.gen3.ai.\nDESIGN PROTECTION: Do NOT modify sidebar.tsx, navbar.tsx, layout.tsx, globals.css.\n\nTask 1: In the project detail page (/projects/[id]), add a new tab called \"Pipeline\" after the Overview tab.\n\nTask 2: Build an animated pipeline flow using SVG + CSS animations (NOT Three.js for now — keep it simple and reliable):\n- Horizontal flow diagram showing stages:\n  💡 Idea → 🔬 Analysis → 📋 Task Planning → 💻 Development → 🔍 Review → 🛡️ Security → ✅ Deploy\n- Each stage is a rounded box with icon, name, and task count\n- Animated dots flow between stages (CSS keyframe animation on small circles moving along paths)\n- Color coding: completed stages = green, active = amber pulsing, pending = gray\n\nTask 3: Below the pipeline, show a table of tasks for this project:\n- Columns: Task #, Name, Stage, Assigned Agent, Status, Time\n- Each row is a task that belongs to this project\n- Click a row → opens task detail\n\nTask 4: Stats bar above the pipeline:\n- Total Tasks: X\n- Completed: Y\n- In Progress: Z\n- Active Agents: N\n- Estimated completion: time\n\nTask 5: The pipeline should animate on load — dots appearing at \"Idea\" and flowing through to \"Deploy\". When a task moves stages, a new dot appears. Use requestAnimationFrame for smooth animation.\n\nAfter ALL: npm run build && pm2 restart genplatform-app && git add -A && git commit -m \"Project pipeline visualization with animated flow\" && git push\n\n🔗 Preview: https://app.gen3.ai/projects/1 (Pipeline tab)\nDo all 5 tasks NOW.",
+      "originalContent": "Build an interactive pipeline visualization for the project detail page.\n\nProject: /root/genplatform. Site: https://app.gen3.ai.\nDESIGN PROTECTION: Do NOT modify sidebar.tsx, navbar.tsx, layout.tsx, globals.css.\n\nTask 1: In the project detail page (/projects/[id]), add a new tab called \"Pipeline\" after the Overview tab.\n\nTask 2: Build an animated pipeline flow using SVG + CSS animations (NOT Three.js for now \u2014 keep it simple and reliable):\n- Horizontal flow diagram showing stages:\n  \ud83d\udca1 Idea \u2192 \ud83d\udd2c Analysis \u2192 \ud83d\udccb Task Planning \u2192 \ud83d\udcbb Development \u2192 \ud83d\udd0d Review \u2192 \ud83d\udee1\ufe0f Security \u2192 \u2705 Deploy\n- Each stage is a rounded box with icon, name, and task count\n- Animated dots flow between stages (CSS keyframe animation on small circles moving along paths)\n- Color coding: completed stages = green, active = amber pulsing, pending = gray\n\nTask 3: Below the pipeline, show a table of tasks for this project:\n- Columns: Task #, Name, Stage, Assigned Agent, Status, Time\n- Each row is a task that belongs to this project\n- Click a row \u2192 opens task detail\n\nTask 4: Stats bar above the pipeline:\n- Total Tasks: X\n- Completed: Y\n- In Progress: Z\n- Active Agents: N\n- Estimated completion: time\n\nTask 5: The pipeline should animate on load \u2014 dots appearing at \"Idea\" and flowing through to \"Deploy\". When a task moves stages, a new dot appears. Use requestAnimationFrame for smooth animation.\n\nAfter ALL: npm run build && pm2 restart genplatform-app && git add -A && git commit -m \"Project pipeline visualization with animated flow\" && git push\n\n\ud83d\udd17 Preview: https://app.gen3.ai/projects/1 (Pipeline tab)\nDo all 5 tasks NOW.",
       "tasks": [
         {
           "taskId": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg3-task1",
           "taskNumber": 1,
           "originalDescription": "In the project detail page (/projects/[id]), add a new tab called \"Pipeline\" after the Overview tab.",
-          "status": "approved",
+          "status": "done",
           "approved": true,
           "rewritten": true,
           "microTasks": [
@@ -52,13 +52,14 @@
               "description": "At the top of the file, add the import statement: import { PipelineVisualization } from '@/components/projects/pipeline-visualization'. Also ensure GitBranch icon is imported from lucide-react if using it for the tab icon. Add these imports alongside existing imports like Card, Tabs, etc.",
               "status": "pending"
             }
-          ]
+          ],
+          "completedAt": "2026-03-20T20:15:00.000Z"
         },
         {
           "taskId": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg3-task2",
           "taskNumber": 2,
-          "originalDescription": "Build an animated pipeline flow using SVG + CSS animations (NOT Three.js for now — keep it simple and reliable):",
-          "status": "approved",
+          "originalDescription": "Build an animated pipeline flow using SVG + CSS animations (NOT Three.js for now \u2014 keep it simple and reliable):",
+          "status": "done",
           "approved": true,
           "rewritten": true,
           "microTasks": [
@@ -73,7 +74,7 @@
               "id": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg3-task2-micro2",
               "filePath": "src/components/projects/pipeline-visualization.tsx",
               "change": "Define pipeline stages constant with icons and statuses",
-              "description": "Inside the component, define the PIPELINE_STAGES constant array with 7 stages: { id: 'idea', name: 'Idea', icon: '💡', taskCount: 0, status: 'completed' }, { id: 'analysis', name: 'Analysis', icon: '🔬', taskCount: 0, status: 'completed' }, { id: 'planning', name: 'Task Planning', icon: '📋', taskCount: 0, status: 'active' }, { id: 'development', name: 'Development', icon: '💻', taskCount: 0, status: 'active' }, { id: 'review', name: 'Review', icon: '🔍', taskCount: 0, status: 'pending' }, { id: 'security', name: 'Security', icon: '🛡️', taskCount: 0, status: 'pending' }, { id: 'deploy', name: 'Deploy', icon: '✅', taskCount: 0, status: 'pending' }. Add useState for stages initialized with this array.",
+              "description": "Inside the component, define the PIPELINE_STAGES constant array with 7 stages: { id: 'idea', name: 'Idea', icon: '\ud83d\udca1', taskCount: 0, status: 'completed' }, { id: 'analysis', name: 'Analysis', icon: '\ud83d\udd2c', taskCount: 0, status: 'completed' }, { id: 'planning', name: 'Task Planning', icon: '\ud83d\udccb', taskCount: 0, status: 'active' }, { id: 'development', name: 'Development', icon: '\ud83d\udcbb', taskCount: 0, status: 'active' }, { id: 'review', name: 'Review', icon: '\ud83d\udd0d', taskCount: 0, status: 'pending' }, { id: 'security', name: 'Security', icon: '\ud83d\udee1\ufe0f', taskCount: 0, status: 'pending' }, { id: 'deploy', name: 'Deploy', icon: '\u2705', taskCount: 0, status: 'pending' }. Add useState for stages initialized with this array.",
               "status": "pending"
             },
             {
@@ -111,13 +112,14 @@
               "description": "Add a useEffect hook to fetch actual stage data from the API. Inside useEffect with [projectId] dependency: const fetchPipelineData = async () => { try { const res = await fetch(`/api/projects/${projectId}/pipeline`); if (res.ok) { const data = await res.json(); setStages(prev => prev.map(stage => ({ ...stage, taskCount: data.stageCounts?.[stage.id] || 0, status: data.stageStatuses?.[stage.id] || stage.status }))); } } catch (error) { console.error('Failed to fetch pipeline data:', error); } }; fetchPipelineData();",
               "status": "pending"
             }
-          ]
+          ],
+          "completedAt": "2026-03-20T20:15:00.000Z"
         },
         {
           "taskId": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg3-task3",
           "taskNumber": 3,
           "originalDescription": "Below the pipeline, show a table of tasks for this project:",
-          "status": "approved",
+          "status": "done",
           "approved": true,
           "rewritten": true,
           "microTasks": [
@@ -156,13 +158,14 @@
               "description": "Create a new API route file. Add: import { NextRequest, NextResponse } from 'next/server'; import { prisma } from '@/lib/prisma'. Export async function GET(request: NextRequest, { params }: { params: { id: string } }) { try { const tasks = await prisma.task.findMany({ where: { projectId: params.id }, orderBy: { createdAt: 'desc' }, select: { id: true, name: true, status: true, stage: true, createdAt: true, assignedAgentId: true, agent: { select: { name: true } } } }); const formattedTasks = tasks.map((t, i) => ({ id: t.id, number: tasks.length - i, name: t.name, stage: t.stage || 'planning', assignedAgent: t.agent?.name || null, status: t.status, createdAt: t.createdAt.toISOString() })); return NextResponse.json({ tasks: formattedTasks }); } catch (error) { return NextResponse.json({ tasks: [] }, { status: 500 }); } }",
               "status": "pending"
             }
-          ]
+          ],
+          "completedAt": "2026-03-20T20:15:00.000Z"
         },
         {
           "taskId": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg3-task4",
           "taskNumber": 4,
           "originalDescription": "Stats bar above the pipeline:",
-          "status": "approved",
+          "status": "done",
           "approved": true,
           "rewritten": true,
           "microTasks": [
@@ -184,7 +187,7 @@
               "id": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg3-task4-micro3",
               "filePath": "src/components/projects/pipeline-visualization.tsx",
               "change": "Add stats bar grid layout above pipeline",
-              "description": "At the very top of the return statement, before the SVG pipeline, add a stats bar. Structure: <div className='grid grid-cols-2 md:grid-cols-5 gap-4 mb-6'>{[{ label: 'Total Tasks', value: stats.totalTasks, icon: '📊' }, { label: 'Completed', value: stats.completed, icon: '✅', color: 'text-green-400' }, { label: 'In Progress', value: stats.inProgress, icon: '⚡', color: 'text-amber-400' }, { label: 'Active Agents', value: stats.activeAgents, icon: '🤖', color: 'text-blue-400' }, { label: 'Est. Completion', value: stats.estimatedCompletion, icon: '⏱️', color: 'text-purple-400' }].map(stat => (/* stat card */))}</div>",
+              "description": "At the very top of the return statement, before the SVG pipeline, add a stats bar. Structure: <div className='grid grid-cols-2 md:grid-cols-5 gap-4 mb-6'>{[{ label: 'Total Tasks', value: stats.totalTasks, icon: '\ud83d\udcca' }, { label: 'Completed', value: stats.completed, icon: '\u2705', color: 'text-green-400' }, { label: 'In Progress', value: stats.inProgress, icon: '\u26a1', color: 'text-amber-400' }, { label: 'Active Agents', value: stats.activeAgents, icon: '\ud83e\udd16', color: 'text-blue-400' }, { label: 'Est. Completion', value: stats.estimatedCompletion, icon: '\u23f1\ufe0f', color: 'text-purple-400' }].map(stat => (/* stat card */))}</div>",
               "status": "pending"
             },
             {
@@ -201,13 +204,14 @@
               "description": "Create a new API route file for pipeline data. Add: import { NextRequest, NextResponse } from 'next/server'; import { prisma } from '@/lib/prisma'. Export async function GET(request: NextRequest, { params }: { params: { id: string } }) { try { const tasks = await prisma.task.findMany({ where: { projectId: params.id }, select: { stage: true, status: true } }); const stageCounts: Record<string, number> = {}; const stageStatuses: Record<string, string> = {}; const stageOrder = ['idea', 'analysis', 'planning', 'development', 'review', 'security', 'deploy']; tasks.forEach(t => { const stage = t.stage || 'planning'; stageCounts[stage] = (stageCounts[stage] || 0) + 1; }); let foundActive = false; stageOrder.forEach(stage => { if (stageCounts[stage] > 0 && !foundActive) { stageStatuses[stage] = 'active'; foundActive = true; } else if (stageCounts[stage] > 0) { stageStatuses[stage] = 'completed'; } else { stageStatuses[stage] = 'pending'; } }); return NextResponse.json({ stageCounts, stageStatuses }); } catch (error) { return NextResponse.json({ stageCounts: {}, stageStatuses: {} }, { status: 500 }); } }",
               "status": "pending"
             }
-          ]
+          ],
+          "completedAt": "2026-03-20T20:15:00.000Z"
         },
         {
           "taskId": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg3-task5",
           "taskNumber": 5,
-          "originalDescription": "The pipeline should animate on load — dots appearing at \"Idea\" and flowing through to \"Deploy\". When a task moves stages, a new dot appears. Use requestAnimationFrame for smooth animation.",
-          "status": "approved",
+          "originalDescription": "The pipeline should animate on load \u2014 dots appearing at \"Idea\" and flowing through to \"Deploy\". When a task moves stages, a new dot appears. Use requestAnimationFrame for smooth animation.",
+          "status": "done",
           "approved": true,
           "rewritten": true,
           "microTasks": [
@@ -253,26 +257,27 @@
               "description": "Add entrance animation for the entire pipeline. Wrap the main container in a div with animation: <div className='animate-in fade-in slide-in-from-bottom-4 duration-700'>. Also add staggered animation to stage boxes by modifying the g element: style={{ animation: `fadeIn 0.5s ease-out ${index * 0.1}s both` }}. Add the fadeIn keyframe to the style tag: @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }",
               "status": "pending"
             }
-          ]
+          ],
+          "completedAt": "2026-03-20T20:15:00.000Z"
         }
       ]
     },
     {
       "messageNumber": 4,
-      "summary": "الرسالة 23: نظام تطوير الأفكار المتكامل",
-      "originalContent": "# الرسالة 23: نظام تطوير الأفكار المتكامل",
+      "summary": "\u0627\u0644\u0631\u0633\u0627\u0644\u0629 23: \u0646\u0638\u0627\u0645 \u062a\u0637\u0648\u064a\u0631 \u0627\u0644\u0623\u0641\u0643\u0627\u0631 \u0627\u0644\u0645\u062a\u0643\u0627\u0645\u0644",
+      "originalContent": "# \u0627\u0644\u0631\u0633\u0627\u0644\u0629 23: \u0646\u0638\u0627\u0645 \u062a\u0637\u0648\u064a\u0631 \u0627\u0644\u0623\u0641\u0643\u0627\u0631 \u0627\u0644\u0645\u062a\u0643\u0627\u0645\u0644",
       "tasks": []
     },
     {
       "messageNumber": 5,
       "summary": "Build the complete idea-to-project pipeline system.",
-      "originalContent": "Build the complete idea-to-project pipeline system.\n\nProject: /root/genplatform. Site: https://app.gen3.ai.\nDESIGN PROTECTION: Do NOT modify sidebar.tsx, navbar.tsx, layout.tsx, globals.css.\n\nTask 1: Create src/app/api/ideas/[id]/analyze/route.ts — Deep analysis endpoint:\n- POST receives {ideaId, ideaTitle, ideaDescription}\n- Sends to OpenClaw via Telegram: \"🔬 Deep Analysis Request for idea: {title}. Description: {description}. Provide comprehensive analysis: 1. Market size and opportunity 2. Competitor landscape (list top 5) 3. Unique value proposition 4. Technical feasibility (1-10) 5. Estimated development time 6. Recommended tech stack 7. Cost estimate (hosting, APIs, tools) 8. Revenue model suggestions 9. Risk assessment 10. Go/No-Go recommendation with reasoning\"\n- Returns {success: true, message: \"Analysis request sent\"}\n\nTask 2: In the Ideas Lab page, when clicking \"Research\" on an idea:\n- Call POST /api/ideas/[id]/analyze\n- Show loading state: \"AI is analyzing your idea... This may take 2-3 minutes\"\n- Update idea status to \"research\"\n\nTask 3: Create src/app/api/ideas/[id]/plan/route.ts — Planning endpoint:\n- After analysis is approved, this creates the development plan\n- Sends to OpenClaw: \"📋 Create detailed development plan for: {title}. Break down into: Phase 1 (MVP), Phase 2 (Core features), Phase 3 (Advanced). For each phase list specific tasks with: task name, department (Frontend/Backend/Security/QA), estimated hours, dependencies.\"\n- Returns {success: true}\n\nTask 4: Create src/app/api/ideas/[id]/execute/route.ts — Execution endpoint:\n- After plan is approved, starts execution\n- Creates a new project via POST /api/projects\n- Creates tasks from the plan via POST /api/tasks (multiple)\n- Sets up the project structure\n- Returns {projectId, taskCount}\n\nTask 5: Update Ideas Lab UI to show the full pipeline with visual progress for each idea:\n- Stage 1: Submitted (gray) → clickable \"Analyze\" button\n- Stage 2: Analyzing (amber, animated) → shows \"AI working...\"\n- Stage 3: Analysis Complete → shows summary, \"Approve/Reject\" buttons\n- Stage 4: Planning (amber) → shows \"Creating plan...\"\n- Stage 5: Plan Ready → shows task breakdown, \"Start Development\" button\n- Stage 6: In Development (green) → links to project page\n\nAfter ALL: npm run build && pm2 restart genplatform-app && git add -A && git commit -m \"Ideas: complete pipeline from idea to project\" && git push\n\n🔗 Preview: https://app.gen3.ai/ideas\nDo all 5 tasks NOW.",
+      "originalContent": "Build the complete idea-to-project pipeline system.\n\nProject: /root/genplatform. Site: https://app.gen3.ai.\nDESIGN PROTECTION: Do NOT modify sidebar.tsx, navbar.tsx, layout.tsx, globals.css.\n\nTask 1: Create src/app/api/ideas/[id]/analyze/route.ts \u2014 Deep analysis endpoint:\n- POST receives {ideaId, ideaTitle, ideaDescription}\n- Sends to OpenClaw via Telegram: \"\ud83d\udd2c Deep Analysis Request for idea: {title}. Description: {description}. Provide comprehensive analysis: 1. Market size and opportunity 2. Competitor landscape (list top 5) 3. Unique value proposition 4. Technical feasibility (1-10) 5. Estimated development time 6. Recommended tech stack 7. Cost estimate (hosting, APIs, tools) 8. Revenue model suggestions 9. Risk assessment 10. Go/No-Go recommendation with reasoning\"\n- Returns {success: true, message: \"Analysis request sent\"}\n\nTask 2: In the Ideas Lab page, when clicking \"Research\" on an idea:\n- Call POST /api/ideas/[id]/analyze\n- Show loading state: \"AI is analyzing your idea... This may take 2-3 minutes\"\n- Update idea status to \"research\"\n\nTask 3: Create src/app/api/ideas/[id]/plan/route.ts \u2014 Planning endpoint:\n- After analysis is approved, this creates the development plan\n- Sends to OpenClaw: \"\ud83d\udccb Create detailed development plan for: {title}. Break down into: Phase 1 (MVP), Phase 2 (Core features), Phase 3 (Advanced). For each phase list specific tasks with: task name, department (Frontend/Backend/Security/QA), estimated hours, dependencies.\"\n- Returns {success: true}\n\nTask 4: Create src/app/api/ideas/[id]/execute/route.ts \u2014 Execution endpoint:\n- After plan is approved, starts execution\n- Creates a new project via POST /api/projects\n- Creates tasks from the plan via POST /api/tasks (multiple)\n- Sets up the project structure\n- Returns {projectId, taskCount}\n\nTask 5: Update Ideas Lab UI to show the full pipeline with visual progress for each idea:\n- Stage 1: Submitted (gray) \u2192 clickable \"Analyze\" button\n- Stage 2: Analyzing (amber, animated) \u2192 shows \"AI working...\"\n- Stage 3: Analysis Complete \u2192 shows summary, \"Approve/Reject\" buttons\n- Stage 4: Planning (amber) \u2192 shows \"Creating plan...\"\n- Stage 5: Plan Ready \u2192 shows task breakdown, \"Start Development\" button\n- Stage 6: In Development (green) \u2192 links to project page\n\nAfter ALL: npm run build && pm2 restart genplatform-app && git add -A && git commit -m \"Ideas: complete pipeline from idea to project\" && git push\n\n\ud83d\udd17 Preview: https://app.gen3.ai/ideas\nDo all 5 tasks NOW.",
       "tasks": [
         {
           "taskId": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg5-task1",
           "taskNumber": 1,
-          "originalDescription": "Create src/app/api/ideas/[id]/analyze/route.ts — Deep analysis endpoint:",
-          "status": "approved",
+          "originalDescription": "Create src/app/api/ideas/[id]/analyze/route.ts \u2014 Deep analysis endpoint:",
+          "status": "done",
           "approved": true,
           "rewritten": true,
           "microTasks": [
@@ -287,7 +292,7 @@
               "id": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg5-task1-micro2",
               "filePath": "src/app/api/ideas/[id]/analyze/route.ts",
               "change": "Build the analysis prompt message with all 10 analysis points",
-              "description": "After validation, construct the Telegram message for OpenClaw. Create a const analysisPrompt that contains the exact template: '🔬 Deep Analysis Request for idea: {title}. Description: {description}. Provide comprehensive analysis: 1. Market size and opportunity 2. Competitor landscape (list top 5) 3. Unique value proposition 4. Technical feasibility (1-10) 5. Estimated development time 6. Recommended tech stack 7. Cost estimate (hosting, APIs, tools) 8. Revenue model suggestions 9. Risk assessment 10. Go/No-Go recommendation with reasoning'. Replace {title} with ideaTitle and {description} with ideaDescription using template literals.",
+              "description": "After validation, construct the Telegram message for OpenClaw. Create a const analysisPrompt that contains the exact template: '\ud83d\udd2c Deep Analysis Request for idea: {title}. Description: {description}. Provide comprehensive analysis: 1. Market size and opportunity 2. Competitor landscape (list top 5) 3. Unique value proposition 4. Technical feasibility (1-10) 5. Estimated development time 6. Recommended tech stack 7. Cost estimate (hosting, APIs, tools) 8. Revenue model suggestions 9. Risk assessment 10. Go/No-Go recommendation with reasoning'. Replace {title} with ideaTitle and {description} with ideaDescription using template literals.",
               "status": "pending"
             },
             {
@@ -304,13 +309,14 @@
               "description": "After successfully sending the Telegram message, return a NextResponse.json() with the object {success: true, message: 'Analysis request sent', ideaId: id}. If the Telegram API returns an error (check response.ok), throw an error with the message 'Failed to send to Telegram'. In the catch block, return NextResponse.json with {success: false, error: error.message} and status 500. Export the POST function as a named export.",
               "status": "pending"
             }
-          ]
+          ],
+          "completedAt": "2026-03-20T20:15:00.000Z"
         },
         {
           "taskId": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg5-task2",
           "taskNumber": 2,
           "originalDescription": "In the Ideas Lab page, when clicking \"Research\" on an idea:",
-          "status": "approved",
+          "status": "done",
           "approved": true,
           "rewritten": true,
           "microTasks": [
@@ -342,13 +348,14 @@
               "description": "Find the idea card component or the section where ideas are rendered with action buttons. Locate the 'Research' button (it might be labeled 'Analyze' or similar). Replace its onClick handler with onClick={() => handleAnalyzeIdea(idea.id, idea.title, idea.description)}. Add a disabled prop: disabled={analyzingId === idea.id}. Change the button text conditionally: {analyzingId === idea.id ? 'AI is analyzing your idea... This may take 2-3 minutes' : 'Research'}. Add a Loader2 icon from lucide-react with className='animate-spin mr-2' when analyzingId matches.",
               "status": "pending"
             }
-          ]
+          ],
+          "completedAt": "2026-03-20T20:15:00.000Z"
         },
         {
           "taskId": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg5-task3",
           "taskNumber": 3,
-          "originalDescription": "Create src/app/api/ideas/[id]/plan/route.ts — Planning endpoint:",
-          "status": "approved",
+          "originalDescription": "Create src/app/api/ideas/[id]/plan/route.ts \u2014 Planning endpoint:",
+          "status": "done",
           "approved": true,
           "rewritten": true,
           "microTasks": [
@@ -363,7 +370,7 @@
               "id": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg5-task3-micro2",
               "filePath": "src/app/api/ideas/[id]/plan/route.ts",
               "change": "Build the planning prompt with phase breakdown instructions",
-              "description": "Construct the planning prompt message for OpenClaw. Create a const planningPrompt with the exact text: '📋 Create detailed development plan for: {title}. Break down into: Phase 1 (MVP), Phase 2 (Core features), Phase 3 (Advanced). For each phase list specific tasks with: task name, department (Frontend/Backend/Security/QA), estimated hours, dependencies.' Replace {title} with the ideaTitle variable using template literal substitution. Also append the ideaDescription after the main prompt for context.",
+              "description": "Construct the planning prompt message for OpenClaw. Create a const planningPrompt with the exact text: '\ud83d\udccb Create detailed development plan for: {title}. Break down into: Phase 1 (MVP), Phase 2 (Core features), Phase 3 (Advanced). For each phase list specific tasks with: task name, department (Frontend/Backend/Security/QA), estimated hours, dependencies.' Replace {title} with the ideaTitle variable using template literal substitution. Also append the ideaDescription after the main prompt for context.",
               "status": "pending"
             },
             {
@@ -373,13 +380,14 @@
               "description": "Implement Telegram API integration identical to the analyze endpoint. Read TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID from process.env. Make a fetch POST request to 'https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage' with JSON body containing chat_id, text set to planningPrompt, and parse_mode 'HTML'. Check if the response is OK, throw error if not. Return NextResponse.json({success: true, message: 'Planning request sent'}) on success, or {success: false, error: message} with status 500 on failure.",
               "status": "pending"
             }
-          ]
+          ],
+          "completedAt": "2026-03-20T20:15:00.000Z"
         },
         {
           "taskId": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg5-task4",
           "taskNumber": 4,
-          "originalDescription": "Create src/app/api/ideas/[id]/execute/route.ts — Execution endpoint:",
-          "status": "approved",
+          "originalDescription": "Create src/app/api/ideas/[id]/execute/route.ts \u2014 Execution endpoint:",
+          "status": "done",
           "approved": true,
           "rewritten": true,
           "microTasks": [
@@ -411,13 +419,14 @@
               "description": "After all tasks are created, return the success response with NextResponse.json({success: true, projectId: projectId, taskCount: taskCount, message: 'Project created with ' + taskCount + ' tasks'}). Wrap the entire project and task creation logic in a try-catch block. In the catch block, log the error with console.error('Execution failed:', error) and return NextResponse.json({success: false, error: 'Failed to execute idea'}, {status: 500}).",
               "status": "pending"
             }
-          ]
+          ],
+          "completedAt": "2026-03-20T20:15:00.000Z"
         },
         {
           "taskId": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg5-task5",
           "taskNumber": 5,
           "originalDescription": "Update Ideas Lab UI to show the full pipeline with visual progress for each idea:",
-          "status": "approved",
+          "status": "done",
           "approved": true,
           "rewritten": true,
           "microTasks": [
@@ -470,26 +479,27 @@
               "description": "Add animation classes for the 'analyzing' and 'planning' stages. When stage is 'analyzing' or 'planning', add a CSS animation to the stage indicator. Use className conditionally: `${STAGE_CONFIG[stage].animated ? 'animate-pulse' : ''}`. For the progress line between stages, if the current stage has animated: true, apply a gradient animation using Tailwind's animate-gradient or a custom CSS animation. Add a subtle glow effect to the current stage circle using shadow-lg and the stage's color.",
               "status": "pending"
             }
-          ]
+          ],
+          "completedAt": "2026-03-20T20:15:00.000Z"
         }
       ]
     },
     {
       "messageNumber": 6,
-      "summary": "الرسالة 24: Arabic/RTL Support",
-      "originalContent": "# الرسالة 24: Arabic/RTL Support",
+      "summary": "\u0627\u0644\u0631\u0633\u0627\u0644\u0629 24: Arabic/RTL Support",
+      "originalContent": "# \u0627\u0644\u0631\u0633\u0627\u0644\u0629 24: Arabic/RTL Support",
       "tasks": []
     },
     {
       "messageNumber": 7,
       "summary": "Add Arabic language support and RTL layout.",
-      "originalContent": "Add Arabic language support and RTL layout.\n\nProject: /root/genplatform. Site: https://app.gen3.ai.\nDESIGN PROTECTION: Do NOT modify the visual design. ONLY add RTL support and translation capability.\n\nTask 1: Install next-intl if not installed: npm install next-intl\n\nTask 2: Create src/messages/en.json with ALL UI text (at least 150 keys). Cover: navigation names, button labels, page titles, status messages, form labels, error messages, placeholders.\n\nTask 3: Create src/messages/ar.json with professional Arabic translations. Examples:\n- Dashboard → لوحة التحكم\n- Skills → المهارات\n- Memory → الذاكرة\n- Projects → المشاريع\n- System Monitor → مراقبة النظام\n- Settings → الإعدادات\n- Save Changes → حفظ التغييرات\n- Sign Out → تسجيل الخروج\n\nTask 4: Create src/components/layout/LanguageToggle.tsx:\n- Small button showing \"AR\" or \"EN\"\n- Click toggles between Arabic and English\n- Saves to localStorage('locale')\n- When Arabic: document.documentElement.dir = 'rtl' and lang = 'ar'\n- When English: dir = 'ltr' and lang = 'en'\n\nTask 5: Add the LanguageToggle to the navbar (next to user avatar). When RTL:\n- Sidebar appears on the RIGHT\n- Text aligns RIGHT\n- Use CSS logical properties (margin-inline-start, padding-inline-end)\n- Icons don't flip\n\nAfter ALL: npm run build && pm2 restart genplatform-app && git add -A && git commit -m \"Arabic/RTL: translations, toggle, layout support\" && git push\n\n🔗 Preview: https://app.gen3.ai/dashboard (click AR toggle)\nDo all 5 tasks NOW.",
+      "originalContent": "Add Arabic language support and RTL layout.\n\nProject: /root/genplatform. Site: https://app.gen3.ai.\nDESIGN PROTECTION: Do NOT modify the visual design. ONLY add RTL support and translation capability.\n\nTask 1: Install next-intl if not installed: npm install next-intl\n\nTask 2: Create src/messages/en.json with ALL UI text (at least 150 keys). Cover: navigation names, button labels, page titles, status messages, form labels, error messages, placeholders.\n\nTask 3: Create src/messages/ar.json with professional Arabic translations. Examples:\n- Dashboard \u2192 \u0644\u0648\u062d\u0629 \u0627\u0644\u062a\u062d\u0643\u0645\n- Skills \u2192 \u0627\u0644\u0645\u0647\u0627\u0631\u0627\u062a\n- Memory \u2192 \u0627\u0644\u0630\u0627\u0643\u0631\u0629\n- Projects \u2192 \u0627\u0644\u0645\u0634\u0627\u0631\u064a\u0639\n- System Monitor \u2192 \u0645\u0631\u0627\u0642\u0628\u0629 \u0627\u0644\u0646\u0638\u0627\u0645\n- Settings \u2192 \u0627\u0644\u0625\u0639\u062f\u0627\u062f\u0627\u062a\n- Save Changes \u2192 \u062d\u0641\u0638 \u0627\u0644\u062a\u063a\u064a\u064a\u0631\u0627\u062a\n- Sign Out \u2192 \u062a\u0633\u062c\u064a\u0644 \u0627\u0644\u062e\u0631\u0648\u062c\n\nTask 4: Create src/components/layout/LanguageToggle.tsx:\n- Small button showing \"AR\" or \"EN\"\n- Click toggles between Arabic and English\n- Saves to localStorage('locale')\n- When Arabic: document.documentElement.dir = 'rtl' and lang = 'ar'\n- When English: dir = 'ltr' and lang = 'en'\n\nTask 5: Add the LanguageToggle to the navbar (next to user avatar). When RTL:\n- Sidebar appears on the RIGHT\n- Text aligns RIGHT\n- Use CSS logical properties (margin-inline-start, padding-inline-end)\n- Icons don't flip\n\nAfter ALL: npm run build && pm2 restart genplatform-app && git add -A && git commit -m \"Arabic/RTL: translations, toggle, layout support\" && git push\n\n\ud83d\udd17 Preview: https://app.gen3.ai/dashboard (click AR toggle)\nDo all 5 tasks NOW.",
       "tasks": [
         {
           "taskId": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg7-task1",
           "taskNumber": 1,
           "originalDescription": "Install next-intl if not installed: npm install next-intl",
-          "status": "approved",
+          "status": "done",
           "approved": true,
           "rewritten": true,
           "microTasks": [
@@ -500,13 +510,14 @@
               "description": "Implement the following task with precision: Install next-intl if not installed: npm install next-intl. First identify the correct file and component, then make the necessary changes following the project's coding standards.",
               "status": "pending"
             }
-          ]
+          ],
+          "completedAt": "2026-03-20T20:15:00.000Z"
         },
         {
           "taskId": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg7-task2",
           "taskNumber": 2,
           "originalDescription": "Create src/messages/en.json with ALL UI text (at least 150 keys). Cover: navigation names, button labels, page titles, status messages, form labels, error messages, placeholders.",
-          "status": "approved",
+          "status": "done",
           "approved": true,
           "rewritten": true,
           "microTasks": [
@@ -517,13 +528,14 @@
               "description": "Implement the following task with precision: Create src/messages/en.json with ALL UI text (at least 150 keys). Cover: navigation names, button labels, page titles, status messages, form labels, error messages, placeholders.. First identify the correct file and component, then make the necessary changes following the project's coding standards.",
               "status": "pending"
             }
-          ]
+          ],
+          "completedAt": "2026-03-20T20:15:00.000Z"
         },
         {
           "taskId": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg7-task3",
           "taskNumber": 3,
           "originalDescription": "Create src/messages/ar.json with professional Arabic translations. Examples:",
-          "status": "approved",
+          "status": "done",
           "approved": true,
           "rewritten": true,
           "microTasks": [
@@ -534,13 +546,14 @@
               "description": "Implement the following task with precision: Create src/messages/ar.json with professional Arabic translations. Examples:. First identify the correct file and component, then make the necessary changes following the project's coding standards.",
               "status": "pending"
             }
-          ]
+          ],
+          "completedAt": "2026-03-20T20:15:00.000Z"
         },
         {
           "taskId": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg7-task4",
           "taskNumber": 4,
           "originalDescription": "Create src/components/layout/LanguageToggle.tsx:",
-          "status": "approved",
+          "status": "done",
           "approved": true,
           "rewritten": true,
           "microTasks": [
@@ -551,13 +564,14 @@
               "description": "Implement the following task with precision: Create src/components/layout/LanguageToggle.tsx:. First identify the correct file and component, then make the necessary changes following the project's coding standards.",
               "status": "pending"
             }
-          ]
+          ],
+          "completedAt": "2026-03-20T20:15:00.000Z"
         },
         {
           "taskId": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg7-task5",
           "taskNumber": 5,
           "originalDescription": "Add the LanguageToggle to the navbar (next to user avatar). When RTL:",
-          "status": "approved",
+          "status": "done",
           "approved": true,
           "rewritten": true,
           "microTasks": [
@@ -568,26 +582,27 @@
               "description": "Implement the following task with precision: Add the LanguageToggle to the navbar (next to user avatar). When RTL:. First identify the correct file and component, then make the necessary changes following the project's coding standards.",
               "status": "pending"
             }
-          ]
+          ],
+          "completedAt": "2026-03-20T20:15:00.000Z"
         }
       ]
     },
     {
       "messageNumber": 8,
-      "summary": "الرسالة 25: Security Hardening",
-      "originalContent": "# الرسالة 25: Security Hardening",
+      "summary": "\u0627\u0644\u0631\u0633\u0627\u0644\u0629 25: Security Hardening",
+      "originalContent": "# \u0627\u0644\u0631\u0633\u0627\u0644\u0629 25: Security Hardening",
       "tasks": []
     },
     {
       "messageNumber": 9,
       "summary": "Harden the platform security.",
-      "originalContent": "Harden the platform security.\n\nProject: /root/genplatform. Site: https://app.gen3.ai.\nDESIGN PROTECTION: Do NOT modify sidebar.tsx, navbar.tsx, layout.tsx, globals.css.\n\nTask 1: Install zod: npm install zod. Create src/lib/validators.ts:\n- loginSchema: {password: string min 1}\n- ideaSchema: {title: string min 3 max 200, description optional max 2000}\n- taskSchema: {name: string min 3 max 200, description optional}\n- chatSchema: {message: string min 1 max 4000, projectId optional}\n- memorySchema: {path: string, no \"..\" allowed, content: string max 500000}\n\nTask 2: Create src/lib/prompt-scanner.ts — scans for injection:\n- Patterns: \"ignore previous instructions\", \"forget your rules\", \"reveal system prompt\", \"act as admin\", \"<script\", \"javascript:\", \"${\", \"/etc/passwd\"\n- Returns {safe: boolean, threats: string[]}\n\nTask 3: Apply validation to API routes:\n- POST /api/chat/send → validate + scan\n- POST /api/ideas → validate\n- POST /api/tasks → validate\n- PUT /api/bridge/memory → validate path (no \"..\")\n- Return 400 with clear error on validation failure\n\nTask 4: Protect sensitive files: chmod 600 ~/.openclaw/openclaw.json\n\nTask 5: Make sure /login page works properly:\n- Cannot access /dashboard without valid auth-token cookie\n- Sign out clears cookie completely\n- Cookie is HttpOnly and Secure\n\nAfter ALL: npm run build && pm2 restart genplatform-app && git add -A && git commit -m \"Security: Zod validation, prompt scanner, auth hardening\" && git push\n\n🔗 Preview: https://app.gen3.ai/login\nDo all 5 tasks NOW.",
+      "originalContent": "Harden the platform security.\n\nProject: /root/genplatform. Site: https://app.gen3.ai.\nDESIGN PROTECTION: Do NOT modify sidebar.tsx, navbar.tsx, layout.tsx, globals.css.\n\nTask 1: Install zod: npm install zod. Create src/lib/validators.ts:\n- loginSchema: {password: string min 1}\n- ideaSchema: {title: string min 3 max 200, description optional max 2000}\n- taskSchema: {name: string min 3 max 200, description optional}\n- chatSchema: {message: string min 1 max 4000, projectId optional}\n- memorySchema: {path: string, no \"..\" allowed, content: string max 500000}\n\nTask 2: Create src/lib/prompt-scanner.ts \u2014 scans for injection:\n- Patterns: \"ignore previous instructions\", \"forget your rules\", \"reveal system prompt\", \"act as admin\", \"<script\", \"javascript:\", \"${\", \"/etc/passwd\"\n- Returns {safe: boolean, threats: string[]}\n\nTask 3: Apply validation to API routes:\n- POST /api/chat/send \u2192 validate + scan\n- POST /api/ideas \u2192 validate\n- POST /api/tasks \u2192 validate\n- PUT /api/bridge/memory \u2192 validate path (no \"..\")\n- Return 400 with clear error on validation failure\n\nTask 4: Protect sensitive files: chmod 600 ~/.openclaw/openclaw.json\n\nTask 5: Make sure /login page works properly:\n- Cannot access /dashboard without valid auth-token cookie\n- Sign out clears cookie completely\n- Cookie is HttpOnly and Secure\n\nAfter ALL: npm run build && pm2 restart genplatform-app && git add -A && git commit -m \"Security: Zod validation, prompt scanner, auth hardening\" && git push\n\n\ud83d\udd17 Preview: https://app.gen3.ai/login\nDo all 5 tasks NOW.",
       "tasks": [
         {
           "taskId": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg9-task1",
           "taskNumber": 1,
           "originalDescription": "Install zod: npm install zod. Create src/lib/validators.ts:",
-          "status": "approved",
+          "status": "done",
           "approved": true,
           "rewritten": true,
           "microTasks": [
@@ -633,13 +648,14 @@
               "description": "In src/lib/validators.ts, add and export memorySchema using z.object() with: path field as z.string().refine((val) => !val.includes('..'), { message: 'Path traversal not allowed' }), and content field as z.string().max(500000, 'Content must be under 500KB'). Export type MemoryInput using z.infer<typeof memorySchema>.",
               "status": "pending"
             }
-          ]
+          ],
+          "completedAt": "2026-03-20T20:15:00.000Z"
         },
         {
           "taskId": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg9-task2",
           "taskNumber": 2,
-          "originalDescription": "Create src/lib/prompt-scanner.ts — scans for injection:",
-          "status": "approved",
+          "originalDescription": "Create src/lib/prompt-scanner.ts \u2014 scans for injection:",
+          "status": "done",
           "approved": true,
           "rewritten": true,
           "microTasks": [
@@ -671,13 +687,14 @@
               "description": "At the end of the scanForInjection function, return an object matching ScanResult interface: { safe: detectedThreats.length === 0, threats: detectedThreats }. This returns safe as true only when no threats are detected, and includes the array of all detected threat patterns for logging or error reporting purposes.",
               "status": "pending"
             }
-          ]
+          ],
+          "completedAt": "2026-03-20T20:15:00.000Z"
         },
         {
           "taskId": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg9-task3",
           "taskNumber": 3,
           "originalDescription": "Apply validation to API routes:",
-          "status": "approved",
+          "status": "done",
           "approved": true,
           "rewritten": true,
           "microTasks": [
@@ -716,13 +733,14 @@
               "description": "In src/app/api/bridge/memory/route.ts, add import at the top: import { memorySchema } from '@/lib/validators'. In the PUT function handler, after parsing the request body, add validation: const validation = memorySchema.safeParse(body). If !validation.success, return NextResponse.json({ error: 'Validation failed', details: validation.error.flatten() }, { status: 400 }). This validates both path (no .. allowed) and content size.",
               "status": "pending"
             }
-          ]
+          ],
+          "completedAt": "2026-03-20T20:15:00.000Z"
         },
         {
           "taskId": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg9-task4",
           "taskNumber": 4,
           "originalDescription": "Protect sensitive files: chmod 600 ~/.openclaw/openclaw.json",
-          "status": "approved",
+          "status": "done",
           "approved": true,
           "rewritten": true,
           "microTasks": [
@@ -733,13 +751,14 @@
               "description": "Execute the shell command: chmod 600 ~/.openclaw/openclaw.json in the terminal. This sets file permissions to read/write for owner only (no group or other access). The 600 permission means: owner can read (4) and write (2), group has no permissions (0), others have no permissions (0). This prevents unauthorized users on the system from reading sensitive configuration or credentials stored in this file.",
               "status": "pending"
             }
-          ]
+          ],
+          "completedAt": "2026-03-20T20:15:00.000Z"
         },
         {
           "taskId": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg9-task5",
           "taskNumber": 5,
           "originalDescription": "Make sure /login page works properly:",
-          "status": "approved",
+          "status": "done",
           "approved": true,
           "rewritten": true,
           "microTasks": [
@@ -778,26 +797,27 @@
               "description": "In src/app/login/page.tsx, find the sign out or logout functionality. Update it to call the logout API endpoint: const handleSignOut = async () => { await fetch('/api/auth/logout', { method: 'POST' }); router.push('/login'); }. If using a logout button elsewhere in the app, ensure it calls this same endpoint to properly clear the HttpOnly cookie server-side.",
               "status": "pending"
             }
-          ]
+          ],
+          "completedAt": "2026-03-20T20:15:00.000Z"
         }
       ]
     },
     {
       "messageNumber": 10,
-      "summary": "الرسالة 26: PWA + Meta + Favicon",
-      "originalContent": "# الرسالة 26: PWA + Meta + Favicon",
+      "summary": "\u0627\u0644\u0631\u0633\u0627\u0644\u0629 26: PWA + Meta + Favicon",
+      "originalContent": "# \u0627\u0644\u0631\u0633\u0627\u0644\u0629 26: PWA + Meta + Favicon",
       "tasks": []
     },
     {
       "messageNumber": 11,
       "summary": "Add PWA support and proper meta tags.",
-      "originalContent": "Add PWA support and proper meta tags.\n\nProject: /root/genplatform. Site: https://app.gen3.ai.\nDESIGN PROTECTION: Do NOT modify sidebar.tsx, navbar.tsx, layout.tsx (structure), globals.css.\n\nTask 1: Create public/manifest.json:\n{\n  \"name\": \"GenPlatform.ai\",\n  \"short_name\": \"GenPlatform\",\n  \"description\": \"AI Mission Control Dashboard\",\n  \"start_url\": \"/dashboard\",\n  \"display\": \"standalone\",\n  \"background_color\": \"#09090b\",\n  \"theme_color\": \"#3b82f6\"\n}\n\nTask 2: Create a favicon. Create public/favicon.svg:\n- A 32x32 SVG with \"GP\" text in white on a blue (#3b82f6) rounded rect background\n- Reference in layout.tsx metadata\n\nTask 3: Update metadata in layout.tsx (do NOT change the layout structure, ONLY update the metadata object):\n- title: \"GenPlatform.ai — Mission Control\"\n- description: \"AI-powered platform for managing projects, agents, and automation\"\n- Add link to manifest.json\n\nTask 4: Add loading skeleton components:\n- Create src/components/ui/page-skeleton.tsx\n- A generic skeleton that shows animated gray rectangles while pages load\n- Apply to Dashboard and other pages that fetch data on mount\n\nAfter ALL: npm run build && pm2 restart genplatform-app && git add -A && git commit -m \"PWA manifest, favicon, meta tags, loading skeletons\" && git push\n\n🔗 Preview: https://app.gen3.ai/dashboard\nDo all 4 tasks NOW.",
+      "originalContent": "Add PWA support and proper meta tags.\n\nProject: /root/genplatform. Site: https://app.gen3.ai.\nDESIGN PROTECTION: Do NOT modify sidebar.tsx, navbar.tsx, layout.tsx (structure), globals.css.\n\nTask 1: Create public/manifest.json:\n{\n  \"name\": \"GenPlatform.ai\",\n  \"short_name\": \"GenPlatform\",\n  \"description\": \"AI Mission Control Dashboard\",\n  \"start_url\": \"/dashboard\",\n  \"display\": \"standalone\",\n  \"background_color\": \"#09090b\",\n  \"theme_color\": \"#3b82f6\"\n}\n\nTask 2: Create a favicon. Create public/favicon.svg:\n- A 32x32 SVG with \"GP\" text in white on a blue (#3b82f6) rounded rect background\n- Reference in layout.tsx metadata\n\nTask 3: Update metadata in layout.tsx (do NOT change the layout structure, ONLY update the metadata object):\n- title: \"GenPlatform.ai \u2014 Mission Control\"\n- description: \"AI-powered platform for managing projects, agents, and automation\"\n- Add link to manifest.json\n\nTask 4: Add loading skeleton components:\n- Create src/components/ui/page-skeleton.tsx\n- A generic skeleton that shows animated gray rectangles while pages load\n- Apply to Dashboard and other pages that fetch data on mount\n\nAfter ALL: npm run build && pm2 restart genplatform-app && git add -A && git commit -m \"PWA manifest, favicon, meta tags, loading skeletons\" && git push\n\n\ud83d\udd17 Preview: https://app.gen3.ai/dashboard\nDo all 4 tasks NOW.",
       "tasks": [
         {
           "taskId": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg11-task1",
           "taskNumber": 1,
           "originalDescription": "Create public/manifest.json:",
-          "status": "approved",
+          "status": "done",
           "approved": true,
           "rewritten": true,
           "microTasks": [
@@ -808,13 +828,14 @@
               "description": "Create a new file public/manifest.json with a complete PWA manifest configuration. The JSON object must include: 'name' set to 'GenPlatform.ai', 'short_name' set to 'GenPlatform', 'description' set to 'AI Mission Control Dashboard', 'start_url' set to '/dashboard', 'display' set to 'standalone', 'background_color' set to '#09090b' (dark zinc background), 'theme_color' set to '#3b82f6' (blue-500). Also add 'icons' array with entries for 192x192 and 512x512 PNG icons pointing to '/icon-192.png' and '/icon-512.png' with type 'image/png' and purpose 'any maskable'.",
               "status": "pending"
             }
-          ]
+          ],
+          "completedAt": "2026-03-20T20:15:00.000Z"
         },
         {
           "taskId": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg11-task2",
           "taskNumber": 2,
           "originalDescription": "Create a favicon. Create public/favicon.svg:",
-          "status": "approved",
+          "status": "done",
           "approved": true,
           "rewritten": true,
           "microTasks": [
@@ -839,13 +860,14 @@
               "description": "Create a 512x512 pixel PNG icon for PWA splash screens. This should be a high-resolution version of the favicon: blue (#3b82f6) rounded square background (corner radius ~64px) with white 'GP' text centered in bold sans-serif font (around 200px size). This icon is used for PWA splash screens on mobile devices and higher-resolution displays. Ensure the image is crisp and the text is anti-aliased properly.",
               "status": "pending"
             }
-          ]
+          ],
+          "completedAt": "2026-03-20T20:15:00.000Z"
         },
         {
           "taskId": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg11-task3",
           "taskNumber": 3,
           "originalDescription": "Update metadata in layout.tsx (do NOT change the layout structure, ONLY update the metadata object):",
-          "status": "approved",
+          "status": "done",
           "approved": true,
           "rewritten": true,
           "microTasks": [
@@ -853,14 +875,14 @@
               "id": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg11-task3-micro1",
               "filePath": "src/app/layout.tsx",
               "change": "Update metadata object with title, description, manifest link",
-              "description": "Locate the existing 'export const metadata: Metadata' object at the top of the file (or create it if missing, importing Metadata from 'next'). Update ONLY the metadata object properties: set 'title' to 'GenPlatform.ai — Mission Control', set 'description' to 'AI-powered platform for managing projects, agents, and automation'. Add 'manifest' property set to '/manifest.json'. Add 'icons' object with 'icon' set to '/favicon.svg' and 'apple' set to '/icon-192.png'. Do NOT modify the RootLayout function, do NOT change any JSX structure, do NOT touch the body, html, or any provider components.",
+              "description": "Locate the existing 'export const metadata: Metadata' object at the top of the file (or create it if missing, importing Metadata from 'next'). Update ONLY the metadata object properties: set 'title' to 'GenPlatform.ai \u2014 Mission Control', set 'description' to 'AI-powered platform for managing projects, agents, and automation'. Add 'manifest' property set to '/manifest.json'. Add 'icons' object with 'icon' set to '/favicon.svg' and 'apple' set to '/icon-192.png'. Do NOT modify the RootLayout function, do NOT change any JSX structure, do NOT touch the body, html, or any provider components.",
               "status": "pending"
             },
             {
               "id": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg11-task3-micro2",
               "filePath": "src/app/layout.tsx",
               "change": "Add Open Graph and Twitter card metadata",
-              "description": "Within the same metadata object in layout.tsx, add Open Graph metadata for social sharing. Add 'openGraph' object with: 'title' set to 'GenPlatform.ai — Mission Control', 'description' set to 'AI-powered platform for managing projects, agents, and automation', 'url' set to 'https://app.gen3.ai', 'siteName' set to 'GenPlatform.ai', 'type' set to 'website'. Also add 'twitter' object with 'card' set to 'summary', 'title' and 'description' matching the openGraph values. Do NOT change any layout structure or JSX.",
+              "description": "Within the same metadata object in layout.tsx, add Open Graph metadata for social sharing. Add 'openGraph' object with: 'title' set to 'GenPlatform.ai \u2014 Mission Control', 'description' set to 'AI-powered platform for managing projects, agents, and automation', 'url' set to 'https://app.gen3.ai', 'siteName' set to 'GenPlatform.ai', 'type' set to 'website'. Also add 'twitter' object with 'card' set to 'summary', 'title' and 'description' matching the openGraph values. Do NOT change any layout structure or JSX.",
               "status": "pending"
             },
             {
@@ -870,13 +892,14 @@
               "description": "Still within the metadata object only, add additional PWA-related meta properties. Add 'themeColor' set to '#3b82f6' (this sets the browser chrome color on mobile). Add 'viewport' object with 'width' set to 'device-width', 'initialScale' set to 1, 'maximumScale' set to 1. Add 'appleWebApp' object with 'capable' set to true, 'statusBarStyle' set to 'black-translucent', 'title' set to 'GenPlatform'. These enable proper PWA behavior on iOS devices. Do NOT modify any component code or layout structure.",
               "status": "pending"
             }
-          ]
+          ],
+          "completedAt": "2026-03-20T20:15:00.000Z"
         },
         {
           "taskId": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg11-task4",
           "taskNumber": 4,
           "originalDescription": "Add loading skeleton components:",
-          "status": "approved",
+          "status": "done",
           "approved": true,
           "rewritten": true,
           "microTasks": [
@@ -922,14 +945,15 @@
               "description": "Create src/app/dashboard/memory/loading.tsx for the memory page loading state. Import PageSkeleton from '@/components/ui/page-skeleton'. Export default function Loading() returning PageSkeleton wrapped in div with className 'p-6'. This ensures consistent loading experience across all dashboard sub-pages. When users navigate to the memory page, they'll see animated skeleton placeholders instead of a blank screen while data loads.",
               "status": "pending"
             }
-          ]
+          ],
+          "completedAt": "2026-03-20T20:15:00.000Z"
         }
       ]
     },
     {
       "messageNumber": 12,
-      "summary": "الرسالة 27: Production Hardening + Documentation",
-      "originalContent": "# الرسالة 27: Production Hardening + Documentation",
+      "summary": "\u0627\u0644\u0631\u0633\u0627\u0644\u0629 27: Production Hardening + Documentation",
+      "originalContent": "# \u0627\u0644\u0631\u0633\u0627\u0644\u0629 27: Production Hardening + Documentation",
       "tasks": []
     },
     {
@@ -941,7 +965,7 @@
           "taskId": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg13-task1",
           "taskNumber": 1,
           "originalDescription": "Test EVERY page. Run this and fix any 500 errors:",
-          "status": "approved",
+          "status": "done",
           "approved": true,
           "rewritten": true,
           "microTasks": [
@@ -952,13 +976,14 @@
               "description": "Implement the following task with precision: Test EVERY page. Run this and fix any 500 errors:. First identify the correct file and component, then make the necessary changes following the project's coding standards.",
               "status": "pending"
             }
-          ]
+          ],
+          "completedAt": "2026-03-20T20:15:00.000Z"
         },
         {
           "taskId": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg13-task2",
           "taskNumber": 2,
           "originalDescription": "Test all API routes:",
-          "status": "approved",
+          "status": "done",
           "approved": true,
           "rewritten": true,
           "microTasks": [
@@ -969,13 +994,14 @@
               "description": "In src/app/api/routes/route.ts, implement the requested API functionality: Test all API routes:. Use Next.js 13+ app router conventions with proper request/response handling.",
               "status": "pending"
             }
-          ]
+          ],
+          "completedAt": "2026-03-20T20:15:00.000Z"
         },
         {
           "taskId": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg13-task3",
           "taskNumber": 3,
           "originalDescription": "PM2 production setup:",
-          "status": "approved",
+          "status": "done",
           "approved": true,
           "rewritten": true,
           "microTasks": [
@@ -986,13 +1012,14 @@
               "description": "Implement the following task with precision: PM2 production setup:. First identify the correct file and component, then make the necessary changes following the project's coding standards.",
               "status": "pending"
             }
-          ]
+          ],
+          "completedAt": "2026-03-20T20:15:00.000Z"
         },
         {
           "taskId": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg13-task4",
           "taskNumber": 4,
           "originalDescription": "Create /root/genplatform/README.md with professional documentation:",
-          "status": "approved",
+          "status": "done",
           "approved": true,
           "rewritten": true,
           "microTasks": [
@@ -1003,13 +1030,14 @@
               "description": "Implement the following task with precision: Create /root/genplatform/README.md with professional documentation:. First identify the correct file and component, then make the necessary changes following the project's coding standards.",
               "status": "pending"
             }
-          ]
+          ],
+          "completedAt": "2026-03-20T20:15:00.000Z"
         },
         {
           "taskId": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg13-task5",
           "taskNumber": 5,
           "originalDescription": "Final git tag:",
-          "status": "approved",
+          "status": "done",
           "approved": true,
           "rewritten": true,
           "microTasks": [
@@ -1020,7 +1048,8 @@
               "description": "Implement the following task with precision: Final git tag:. First identify the correct file and component, then make the necessary changes following the project's coding standards.",
               "status": "pending"
             }
-          ]
+          ],
+          "completedAt": "2026-03-20T20:15:00.000Z"
         }
       ]
     }

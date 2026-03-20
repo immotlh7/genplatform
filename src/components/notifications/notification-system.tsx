@@ -283,3 +283,8 @@ export function useNotificationSystem() {
     },
   }
 }
+
+// Re-export NotificationProvider for compatibility
+export function NotificationProvider({ children }: { children: React.ReactNode }) {
+  return <>{children}</>
+}
