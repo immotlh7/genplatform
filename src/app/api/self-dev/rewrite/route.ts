@@ -52,7 +52,9 @@ export async function POST(request: NextRequest) {
     }
 
     const queuePath = path.join(TASK_QUEUE_DIR, fileId + '.json');
-    const queue = JSON.parse(await fs.readFile(queuePath, 'utf-8'));
+    const mainQueuePath2 = '/root/genplatform/data/task-queue/task-queue.json';
+    // Always read from main queue (source of truth)
+    const queue = JSON.parse(await fs.readFile(mainQueuePath2, 'utf-8'));
     
     // Find the message
     const message = queue.messages.find((m: any) => m.messageNumber === messageNumber);
@@ -187,21 +189,12 @@ export async function POST(request: NextRequest) {
       ), 0
     );
     
-    await fs.writeFile(queuePath, JSON.stringify(queue, null, 2));
-    
-    // Also sync to main task-queue.json so approve can find rewritten=true
-    const mainQueuePath = '/root/genplatform/data/task-queue/task-queue.json';
+    // Save to main queue (source of truth)
+    await fs.writeFile(mainQueuePath2, JSON.stringify(queue, null, 2));
+    // Also save to individual file
     try {
-      const mainQueue = JSON.parse(await fs.readFile(mainQueuePath, 'utf-8'));
-      const mainMsg = mainQueue.messages.find((m: any) => m.messageNumber === messageNumber);
-      if (mainMsg) {
-        mainMsg.tasks = message.tasks;
-        mainQueue.totalMicroTasks = queue.totalMicroTasks;
-        await fs.writeFile(mainQueuePath, JSON.stringify(mainQueue, null, 2));
-      }
-    } catch (e) {
-      console.error('Failed to sync to main queue:', e);
-    }
+      await fs.writeFile(queuePath, JSON.stringify(queue, null, 2));
+    } catch (e) { /* individual file may not exist */ }
     
     // Send notification to Telegram about rewrite completion
     const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || '8635233052:AAGsuMzqhTHwQsFg4qGYPfUEyZPiLsAceA4';
