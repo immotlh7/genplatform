@@ -84,8 +84,8 @@ export default function SelfDevPage() {
       });
       
       if (!response.ok) {
-        const error = await response.json();
-        setError(error.error || 'Control action failed');
+        const errorData = await response.json();
+        setError(errorData.error || 'Control action failed');
       } else {
         await loadStatus();
       }
@@ -149,7 +149,7 @@ export default function SelfDevPage() {
         
         {/* Error Display */}
         {error && (
-          <div className="absolute bottom-20 left-1/2 transform -translate-x-1/2 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+          <div className="absolute bottom-20 left-1/2 transform -translate-x-1/2 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg z-50">
             <div className="flex items-center gap-2 text-red-600 dark:text-red-400">
               <AlertCircle className="h-5 w-5" />
               <span>{error}</span>
