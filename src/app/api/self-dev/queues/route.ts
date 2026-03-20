@@ -13,14 +13,25 @@ export async function GET(request: NextRequest) {
     for (const file of files) {
       if (!file.endsWith('.json')) continue;
       
-      const queuePath = path.join(TASK_QUEUE_DIR, file);
-      const queueData = JSON.parse(await fs.readFile(queuePath, 'utf-8'));
-      queues.push(queueData);
+      try {
+        const queuePath = path.join(TASK_QUEUE_DIR, file);
+        const queueData = JSON.parse(await fs.readFile(queuePath, 'utf-8'));
+        queues.push(queueData);
+      } catch (error) {
+        console.error(`Failed to read queue file ${file}:`, error);
+      }
     }
     
-    return NextResponse.json(queues);
+    // Sort by upload date (newest first)
+    queues.sort((a, b) => {
+      const dateA = new Date(a.uploadedAt || 0).getTime();
+      const dateB = new Date(b.uploadedAt || 0).getTime();
+      return dateB - dateA;
+    });
+    
+    return NextResponse.json({ queues });
   } catch (error) {
     console.error('Failed to load queues:', error);
-    return NextResponse.json([], { status: 500 });
+    return NextResponse.json({ queues: [] });
   }
 }
