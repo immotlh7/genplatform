@@ -88,14 +88,16 @@ export async function POST(request: NextRequest) {
         `Task ${t.taskNumber}: ${t.originalDescription}`
       ).join('\n');
       
+      // Include original full message content for context
+      const fullContext = message.originalContent || '';
+      
       const claudeResponse = await anthropic.messages.create({
-        model: 'claude-3-sonnet-20240229',
-        max_tokens: 4000,
-        temperature: 0.3,
+        model: 'claude-opus-4-5',
+        max_tokens: 6000,
         system: REWRITE_PROMPT,
         messages: [{
           role: 'user',
-          content: `Rewrite these tasks into ultra-precise micro-tasks:\n\n${tasksText}`
+          content: `Project: /root/genplatform (Next.js 16, TypeScript, Tailwind)\n\nFull message context:\n${fullContext}\n\nRewrite these ${tasksToRewrite.length} tasks into ultra-precise micro-tasks with exact file paths and specific code instructions:\n\n${tasksText}`
         }]
       });
       

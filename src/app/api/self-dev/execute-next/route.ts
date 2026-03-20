@@ -1,390 +1,252 @@
 import { NextRequest, NextResponse } from 'next/server';
 import fs from 'fs/promises';
 import path from 'path';
+import Anthropic from '@anthropic-ai/sdk';
+import { exec } from 'child_process';
+import { promisify } from 'util';
 
-interface SessionTracker {
-  tasksSinceReset: number;
-  totalResets: number;
-  lastResetTime: string | null;
-  totalTasksSent: number;
-}
-
-interface CurrentTask {
-  taskId: string;
-  messageNumber: number;
-  messageTitle: string;
-  totalTasks: number;
-  completedTasks: number;
-  task: {
-    taskNumber: number;
-    description: string;
-    status: string;
-  };
-}
-
-interface ExecutionLock {
-  locked: boolean;
-  lockedAt: string | null;
-  taskId: string | null;
-}
+const execAsync = promisify(exec);
 
 const TASK_QUEUE_FILE = '/root/genplatform/data/task-queue/task-queue.json';
+const EXECUTION_LOCK_FILE = '/root/genplatform/data/execution-lock.json';
+const EXECUTION_LOG_FILE = '/root/genplatform/data/execution-log.json';
 const CURRENT_TASK_FILE = '/root/genplatform/data/current-task.json';
 const SESSION_TRACKER_FILE = '/root/genplatform/data/session-tracker.json';
-const EXECUTION_LOG_FILE = '/root/genplatform/data/execution-log.json';
-const EXECUTION_LOCK_FILE = '/root/genplatform/data/execution-lock.json';
+const CONFIG_FILE = '/root/genplatform/data/self-dev-config.json';
 
-const TELEGRAM_BOT_TOKEN = '8635233052:AAGsuMzqhTHwQsFg4qGYPfUEyZPiLsAceA4';
-const TELEGRAM_CHAT_ID = '8630551989';
+const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || '8635233052:AAGsuMzqhTHwQsFg4qGYPfUEyZPiLsAceA4';
+const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID || '8630551989';
 
-async function getExecutionLock(): Promise<ExecutionLock> {
-  try {
-    const data = await fs.readFile(EXECUTION_LOCK_FILE, 'utf-8');
-    return JSON.parse(data);
-  } catch {
-    const defaultLock: ExecutionLock = {
-      locked: false,
-      lockedAt: null,
-      taskId: null
-    };
-    await fs.writeFile(EXECUTION_LOCK_FILE, JSON.stringify(defaultLock, null, 2));
-    return defaultLock;
-  }
-}
-
-async function setExecutionLock(taskId: string): Promise<boolean> {
-  const lock = await getExecutionLock();
-  if (lock.locked) {
-    console.log('[EXECUTE-NEXT] Already locked by:', lock.taskId);
-    return false;
-  }
-  
-  lock.locked = true;
-  lock.lockedAt = new Date().toISOString();
-  lock.taskId = taskId;
-  await fs.writeFile(EXECUTION_LOCK_FILE, JSON.stringify(lock, null, 2));
-  return true;
-}
-
-async function releaseExecutionLock() {
-  const lock: ExecutionLock = {
-    locked: false,
-    lockedAt: null,
-    taskId: null
-  };
-  await fs.writeFile(EXECUTION_LOCK_FILE, JSON.stringify(lock, null, 2));
-}
-
-async function checkDuplicate(taskDescription: string): Promise<boolean> {
-  try {
-    const logsData = await fs.readFile(EXECUTION_LOG_FILE, 'utf-8');
-    const logs = JSON.parse(logsData);
-    
-    // Check last 50 sent tasks
-    const recentTasks = logs.filter((l: any) => l.type === 'task_sent').slice(-50);
-    
-    for (const log of recentTasks) {
-      if (log.message && log.message.includes(' sent - ')) {
-        const sentDesc = log.message.split(' sent - ')[1];
-        if (sentDesc && calculateSimilarity(taskDescription, sentDesc) > 0.8) {
-          console.log('[EXECUTE-NEXT] Duplicate task detected, skipping');
-          return true;
-        }
-      }
-    }
-  } catch {}
-  
-  return false;
-}
-
-function calculateSimilarity(str1: string, str2: string): number {
-  const words1 = str1.toLowerCase().split(/\s+/);
-  const words2 = str2.toLowerCase().split(/\s+/);
-  const intersection = words1.filter(w => words2.includes(w));
-  return intersection.length / Math.max(words1.length, words2.length);
-}
-
-async function getSessionTracker(): Promise<SessionTracker> {
-  try {
-    const data = await fs.readFile(SESSION_TRACKER_FILE, 'utf-8');
-    return JSON.parse(data);
-  } catch {
-    const defaultTracker: SessionTracker = {
-      tasksSinceReset: 0,
-      totalResets: 0,
-      lastResetTime: null,
-      totalTasksSent: 0
-    };
-    await fs.mkdir(path.dirname(SESSION_TRACKER_FILE), { recursive: true });
-    await fs.writeFile(SESSION_TRACKER_FILE, JSON.stringify(defaultTracker, null, 2));
-    return defaultTracker;
-  }
-}
-
-async function updateSessionTracker(tracker: SessionTracker) {
-  await fs.writeFile(SESSION_TRACKER_FILE, JSON.stringify(tracker, null, 2));
-}
+const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY || '' });
 
 async function addLog(log: any) {
   try {
     let logs: any[] = [];
-    try {
-      const data = await fs.readFile(EXECUTION_LOG_FILE, 'utf-8');
-      logs = JSON.parse(data);
-    } catch {}
+    try { const d = await fs.readFile(EXECUTION_LOG_FILE, 'utf-8'); logs = JSON.parse(d); } catch {}
     logs.push(log);
-    if (logs.length > 1000) {
-      logs = logs.slice(-1000);
-    }
+    if (logs.length > 500) logs = logs.slice(-500);
     await fs.writeFile(EXECUTION_LOG_FILE, JSON.stringify(logs, null, 2));
-  } catch (error) {
-    console.error('Failed to write log:', error);
-  }
+  } catch {}
 }
 
-async function sendToTelegram(text: string): Promise<boolean> {
+async function notify(text: string) {
   try {
-    const response = await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
+    await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        chat_id: TELEGRAM_CHAT_ID,
-        text: text,
-        parse_mode: 'HTML'
-      })
+      body: JSON.stringify({ chat_id: TELEGRAM_CHAT_ID, text })
+    });
+  } catch {}
+}
+
+async function getLock() {
+  try { return JSON.parse(await fs.readFile(EXECUTION_LOCK_FILE, 'utf-8')); }
+  catch { return { locked: false, taskId: null, lockedAt: null }; }
+}
+
+async function setLock(taskId: string) {
+  await fs.writeFile(EXECUTION_LOCK_FILE, JSON.stringify({ locked: true, taskId, lockedAt: new Date().toISOString(), attempts: 0 }, null, 2));
+}
+
+async function clearLock() {
+  await fs.writeFile(EXECUTION_LOCK_FILE, JSON.stringify({ locked: false, taskId: null, lockedAt: null, attempts: 0 }, null, 2));
+}
+
+async function executeTaskWithClaude(task: any, message: any): Promise<{ success: boolean; result: string }> {
+  const systemPrompt = `You are a senior developer working on GenPlatform.ai at /root/genplatform.
+Tech stack: Next.js 16, TypeScript, Tailwind CSS, shadcn/ui.
+Site URL: https://app.gen3.ai
+
+RULES:
+- Write complete, working code
+- Use TypeScript with proper types  
+- Follow existing code patterns in the project
+- Only modify the files needed for the task
+- After making changes, run: npm run build && pm2 restart genplatform-app && git add -A && git commit -m "Task: [description]" && git push
+- If build fails, fix the errors before committing
+- Use real API calls, no hardcoded/fake data
+- PROTECT: Never modify sidebar.tsx, globals.css unless explicitly asked
+
+Respond with a shell script that implements the task. Format:
+\`\`\`bash
+# Your implementation commands here
+\`\`\``;
+
+  const userPrompt = `Implement this task completely:
+
+Message: ${message.summary || ''}
+Full context: ${(message.originalContent || '').substring(0, 2000)}
+
+Task ${task.taskNumber}: ${task.originalDescription}
+
+Micro-tasks to implement:
+${(task.microTasks || []).map((mt: any) => `- File: ${mt.filePath}\n  Change: ${mt.change}\n  Details: ${mt.description}`).join('\n')}
+
+Write and execute the implementation. After completion run: npm run build && pm2 restart genplatform-app && git add -A && git commit -m "Fix: ${task.originalDescription.substring(0, 50)}" && git push`;
+
+  const response = await anthropic.messages.create({
+    model: 'claude-opus-4-5',
+    max_tokens: 8000,
+    system: systemPrompt,
+    messages: [{ role: 'user', content: userPrompt }]
+  });
+
+  const responseText = response.content[0].type === 'text' ? response.content[0].text : '';
+  
+  // Extract bash script
+  const bashMatch = responseText.match(/```bash\n([\s\S]*?)```/);
+  if (!bashMatch) {
+    return { success: false, result: 'No bash script found in response' };
+  }
+
+  const script = bashMatch[1];
+  
+  try {
+    const { stdout, stderr } = await execAsync(script, { 
+      cwd: '/root/genplatform',
+      timeout: 120000, // 2 min timeout
+      env: { ...process.env, PATH: process.env.PATH || '/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin' }
     });
     
-    return response.ok;
-  } catch (error) {
-    console.error('[EXECUTE-NEXT] Failed to send to Telegram:', error);
-    return false;
+    const output = (stdout + stderr).substring(0, 500);
+    return { success: true, result: output };
+  } catch (execError: any) {
+    return { success: false, result: execError.message?.substring(0, 300) || 'Execution failed' };
   }
 }
 
 export async function executeNext() {
   try {
-    // Check execution lock first
-    const lock = await getExecutionLock();
+    // Check lock - auto-release if >10 minutes old
+    const lock = await getLock();
     if (lock.locked) {
-      // Auto-release lock if older than 10 minutes (task got stuck)
-      const lockAge = lock.lockedAt 
-        ? (Date.now() - new Date(lock.lockedAt).getTime()) / 1000 / 60 
-        : 999;
-      if (lockAge > 10) {
-        console.log('[EXECUTE-NEXT] Lock expired after', lockAge.toFixed(1), 'min - auto-releasing');
-        // Reset stuck task status
+      const ageMin = lock.lockedAt ? (Date.now() - new Date(lock.lockedAt).getTime()) / 60000 : 999;
+      if (ageMin > 10) {
+        await addLog({ timestamp: new Date().toISOString(), type: 'info', message: `🔓 Lock auto-released after ${ageMin.toFixed(1)}min` });
+        // Reset stuck task
         try {
-          const queueData = await fs.readFile(TASK_QUEUE_FILE, 'utf-8');
-          const q = JSON.parse(queueData);
+          const q = JSON.parse(await fs.readFile(TASK_QUEUE_FILE, 'utf-8'));
           q.messages?.forEach((m: any) => m.tasks?.forEach((t: any) => {
-            if (t.taskId === lock.taskId && t.status === 'executing') {
-              t.status = 'approved';
-              delete t.startedAt;
-            }
+            if (t.taskId === lock.taskId && t.status === 'executing') { t.status = 'approved'; delete t.startedAt; }
           }));
           await fs.writeFile(TASK_QUEUE_FILE, JSON.stringify(q, null, 2));
         } catch {}
         await fs.writeFile(EXECUTION_LOCK_FILE, JSON.stringify({ locked: false, taskId: null, lockedAt: null, attempts: 0 }, null, 2));
       } else {
-        console.log('[EXECUTE-NEXT] Execution locked, skipping');
-        return {
-          error: 'Execution locked',
-          lockedBy: lock.taskId,
-          message: 'Another task is currently executing'
-        };
+        return { error: 'Execution locked', lockedBy: lock.taskId, message: 'Another task is currently executing' };
       }
     }
+
+    // Load queue
+    const queue = JSON.parse(await fs.readFile(TASK_QUEUE_FILE, 'utf-8'));
     
-    // Load task queue ONCE to find next task
-    const queueData = await fs.readFile(TASK_QUEUE_FILE, 'utf-8');
-    const queue = JSON.parse(queueData);
-    
-    // Find next approved but unexecuted task
-    let foundTask = null;
-    let foundMessage = null;
+    // Find next approved task
+    let foundTask: any = null;
+    let foundMessage: any = null;
     let totalTasks = 0;
     let completedTasks = 0;
-    
-    const messages = queue.messages || [];
-    for (const message of messages) {
-      const tasks = message.tasks || [];
-      for (const task of tasks) {
+
+    for (const message of (queue.messages || [])) {
+      for (const task of (message.tasks || [])) {
         totalTasks++;
         if (task.status === 'done') completedTasks++;
-        
         if (!task.approved) continue;
         if (task.status === 'executing') {
-          // Task already executing, lock should be set
-          await setExecutionLock(task.taskId);
-          return {
-            message: 'Task already executing',
-            taskId: task.taskId
-          };
+          await setLock(task.taskId);
+          return { message: 'Task already executing', taskId: task.taskId };
         }
-        if (!foundTask && (!task.status || task.status === 'pending' || task.status === 'approved')) {
+        if (!foundTask && (task.status === 'approved' || task.status === 'pending')) {
           foundTask = task;
           foundMessage = message;
         }
       }
     }
 
-    if (!foundTask || !foundMessage) {
-      await addLog({
-        timestamp: new Date().toISOString(),
-        type: 'info',
-        message: 'No approved tasks found to execute'
-      });
-      
-      return { 
-        message: 'No approved tasks found',
-        completed: true 
-      };
+    if (!foundTask) {
+      await addLog({ timestamp: new Date().toISOString(), type: 'info', message: 'No approved tasks found to execute' });
+      return { message: 'No approved tasks found', completed: true };
     }
 
-    // Check for duplicate
-    const isDuplicate = await checkDuplicate(foundTask.originalDescription);
-    if (isDuplicate) {
-      foundTask.status = 'skipped';
-      foundTask.skippedReason = 'Duplicate task';
-      await fs.writeFile(TASK_QUEUE_FILE, JSON.stringify(queue, null, 2));
-      
-      await addLog({
-        timestamp: new Date().toISOString(),
-        type: 'info',
-        message: `⏭️ Skipped duplicate task: ${foundTask.taskId}`
-      });
-      
-      // Try next task
-      return executeNext();
-    }
-
-    // Set lock before proceeding
-    const lockAcquired = await setExecutionLock(foundTask.taskId);
-    if (!lockAcquired) {
-      return {
-        error: 'Failed to acquire lock',
-        message: 'Another task is being executed'
-      };
-    }
-
-    // Create current-task.json with ONLY the current task
-    const currentTask: CurrentTask = {
-      taskId: foundTask.taskId,
-      messageNumber: foundMessage.messageNumber,
-      messageTitle: foundMessage.summary || `Message ${foundMessage.messageNumber}`,
-      totalTasks,
-      completedTasks,
-      task: {
-        taskNumber: foundTask.taskNumber,
-        description: foundTask.originalDescription,
-        status: 'executing'
-      }
-    };
+    // Acquire lock
+    await setLock(foundTask.taskId);
     
-    await fs.writeFile(CURRENT_TASK_FILE, JSON.stringify(currentTask, null, 2));
-    
-    // Update task status in main queue
+    // Mark as executing
     foundTask.status = 'executing';
     foundTask.startedAt = new Date().toISOString();
     await fs.writeFile(TASK_QUEUE_FILE, JSON.stringify(queue, null, 2));
     
-    // Check session tracker
-    const tracker = await getSessionTracker();
-    
-    // Auto-reset after 30 tasks
-    if (tracker.tasksSinceReset >= 30) {
-      await addLog({
-        timestamp: new Date().toISOString(),
-        type: 'reset',
-        message: '🧠 Context reset required after 30 tasks'
-      });
+    // Update current task file
+    await fs.writeFile(CURRENT_TASK_FILE, JSON.stringify({
+      taskId: foundTask.taskId,
+      messageNumber: foundMessage.messageNumber,
+      messageTitle: foundMessage.summary || `Message ${foundMessage.messageNumber}`,
+      totalTasks, completedTasks,
+      task: { taskNumber: foundTask.taskNumber, description: foundTask.originalDescription, status: 'executing' }
+    }, null, 2));
 
-      await sendToTelegram('/reset');
-      await new Promise(resolve => setTimeout(resolve, 5000));
-      
-      const contextRefresh = `Read ~/.openclaw/workspace/memory/WORK-RULES.md. You are developing GenPlatform.ai at /root/genplatform. Site: https://app.gen3.ai. Continue executing tasks from Self-Dev system.`;
-      await sendToTelegram(contextRefresh);
-      
-      await new Promise(resolve => setTimeout(resolve, 5000));
-      
-      tracker.tasksSinceReset = 0;
-      tracker.totalResets++;
-      tracker.lastResetTime = new Date().toISOString();
-      await updateSessionTracker(tracker);
+    await addLog({ timestamp: new Date().toISOString(), type: 'task_sent', message: `🚀 Executing Task ${foundTask.taskNumber}: ${foundTask.originalDescription.substring(0, 60)}...`, taskId: foundTask.taskId });
 
-      await addLog({
-        timestamp: new Date().toISOString(),
-        type: 'reset',
-        message: '🧠 Auto context reset — session refreshed after 30 tasks'
-      });
-    }
+    // Notify start
+    await notify(`🔨 Starting Task ${foundTask.taskNumber}/${totalTasks}\n\n${foundTask.originalDescription.substring(0, 150)}\n\n⏳ Executing...`);
+
+    // Execute with Claude
+    const result = await executeTaskWithClaude(foundTask, foundMessage);
+
+    // Mark done or failed
+    foundTask.status = result.success ? 'done' : 'failed';
+    foundTask.completedAt = new Date().toISOString();
+    foundTask.executionResult = result;
     
-    // Format concise task message (under 300 tokens)
-    let taskMessage = `<b>📋 TASK ${foundTask.taskNumber}</b>\n\n`;
-    taskMessage += `<b>📁</b> /root/genplatform\n`;
-    taskMessage += `<b>🌐</b> https://app.gen3.ai\n\n`;
-    taskMessage += `${foundTask.originalDescription}\n\n`;
-    taskMessage += `Reply: ✅ Done or ❌ Failed`;
-    
-    // Send to Telegram
-    const sent = await sendToTelegram(taskMessage);
-    
-    if (sent) {
-      // Update tracker
-      tracker.tasksSinceReset++;
-      tracker.totalTasksSent++;
-      await updateSessionTracker(tracker);
-      
-      // Log the send
-      await addLog({
-        timestamp: new Date().toISOString(),
-        type: 'task_sent',
-        message: `📤 Task ${foundTask.taskNumber} sent - ${foundTask.originalDescription.substring(0, 50)}...`,
-        taskId: foundTask.taskId
-      });
-      
-      return {
-        taskId: foundTask.taskId,
-        sent: true,
-        taskNumber: foundTask.taskNumber,
-        sessionTasks: tracker.tasksSinceReset,
-        totalTasks: tracker.totalTasksSent
-      };
-    } else {
-      // Failed to send - release lock and revert status
-      await releaseExecutionLock();
-      foundTask.status = 'approved';
-      delete foundTask.startedAt;
-      await fs.writeFile(TASK_QUEUE_FILE, JSON.stringify(queue, null, 2));
-      
-      return { 
-        error: 'Failed to send task to Telegram',
-        taskId: foundTask.taskId 
-      };
-    }
-    
-  } catch (error) {
-    console.error('[EXECUTE-NEXT] Execute-next error:', error);
-    
+    // Sync both files
+    await fs.writeFile(TASK_QUEUE_FILE, JSON.stringify(queue, null, 2));
+    try {
+      const indPath = path.join('/root/genplatform/data/task-queue', foundTask.taskId.split('-msg')[0].replace('task_', 'task_') + '.json');
+      await fs.writeFile(indPath.replace(/task_\d+_/, 'task_1773996310129_').replace(/-msg.+$/, '') + '.json', JSON.stringify(queue, null, 2));
+    } catch {}
+
+    // Clear lock
+    await clearLock();
+
+    // Log result
     await addLog({
       timestamp: new Date().toISOString(),
-      type: 'error',
-      message: `Execute-next error: ${error instanceof Error ? error.message : 'Unknown error'}`
+      type: result.success ? 'task_done' : 'task_failed',
+      message: result.success ? `✅ Task ${foundTask.taskNumber} completed` : `❌ Task ${foundTask.taskNumber} failed: ${result.result.substring(0, 100)}`,
+      taskId: foundTask.taskId
     });
-    
-    return {
-      error: 'Failed to execute next task',
-      details: error instanceof Error ? error.message : 'Unknown error'
-    };
+
+    // Notify result
+    await notify(result.success
+      ? `✅ Task ${foundTask.taskNumber}/${totalTasks} DONE\n\n${foundTask.originalDescription.substring(0, 100)}\n\nProgress: ${completedTasks + 1}/${totalTasks}`
+      : `❌ Task ${foundTask.taskNumber} FAILED\n\n${result.result.substring(0, 200)}`
+    );
+
+    // Also sync individual file
+    try {
+      const indFile = '/root/genplatform/data/task-queue/task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md.json';
+      await fs.writeFile(indFile, JSON.stringify(queue, null, 2));
+    } catch {}
+
+    // Auto-execute next if auto-mode on
+    try {
+      const config = JSON.parse(await fs.readFile(CONFIG_FILE, 'utf-8'));
+      if (config.autoMode !== false && result.success) {
+        setTimeout(() => executeNext(), 3000);
+      }
+    } catch {
+      if (result.success) setTimeout(() => executeNext(), 3000);
+    }
+
+    return { taskId: foundTask.taskId, sent: true, success: result.success, taskNumber: foundTask.taskNumber, totalTasks, completedTasks: completedTasks + (result.success ? 1 : 0) };
+
+  } catch (error: any) {
+    await clearLock();
+    await addLog({ timestamp: new Date().toISOString(), type: 'error', message: `Execute-next error: ${error.message}` });
+    return { error: error.message };
   }
 }
 
 export async function POST(request: NextRequest) {
   const result = await executeNext();
-  
-  if (result.error) {
-    return NextResponse.json(result, { status: result.completed ? 404 : 500 });
-  }
-  
   return NextResponse.json(result);
 }
