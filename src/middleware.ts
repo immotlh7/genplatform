@@ -273,7 +273,8 @@ function shouldSkipCSRF(pathname: string): boolean {
     '/api/projects',     // Projects data
     '/api/tasks',        // Tasks data
     '/api/ideas',        // Ideas data
-    '/api/notifications' // Notifications data
+    '/api/notifications', // Notifications data
+    '/api/self-dev'      // Self-development system
   ]
   
   return skipPaths.some(path => pathname.startsWith(path))

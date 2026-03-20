@@ -25,7 +25,8 @@ import {
   Database,
   Shield,
   Users,
-  TrendingUp
+  TrendingUp,
+  Bot
 } from 'lucide-react'
 
 interface AutomationStatus {
@@ -50,12 +51,10 @@ export function Sidebar() {
           })
         }
       } catch (error) {
-        if (process.env.NODE_ENV === 'development') {
-          console.error('Error fetching automation status:', error);
-        }
+        console.error('Failed to fetch automation status:', error)
       }
     }
-
+    
     fetchAutomationStatus()
     
     // Refresh every 30 seconds
@@ -103,6 +102,13 @@ export function Sidebar() {
         { name: 'Memory', href: '/dashboard/memory', icon: Brain },
         { name: 'Cron Jobs', href: '/dashboard/cron', icon: Clock },
         { name: 'Projects', href: '/dashboard/projects', icon: Folder },
+        { 
+          name: 'Self-Dev', 
+          href: '/dashboard/self-dev', 
+          icon: Bot, 
+          badge: 'AI',
+          badgeVariant: 'default' as any
+        },
         { 
           name: 'Automations', 
           href: '/automations', // Correct path for automations
@@ -200,68 +206,58 @@ export function Sidebar() {
                               <ChevronLeft className="ml-auto h-4 w-4 flex-shrink-0 hidden rtl:block" />
                             </>
                           )}
-                          
-                          {/* Running indicator for automations */}
-                          {item.name === 'Automations' && automationStatus.running_workflows > 0 && !item.badge && (
-                            <div className="ml-auto w-2 h-2 bg-green-500 rounded-full animate-pulse rtl:ml-0 rtl:mr-auto"></div>
-                          )}
                         </Link>
                       )
                     })}
                   </div>
                 </div>
               ))}
+
+              {/* Additional Resources */}
+              <div>
+                <h3 className="mb-2 px-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                  Resources
+                </h3>
+                <div className="space-y-1">
+                  <Link
+                    href="/dashboard/chat"
+                    className="group flex items-center rounded-md px-2 py-2 text-sm font-medium text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                  >
+                    <Terminal className="mr-3 h-4 w-4 flex-shrink-0 rtl:mr-0 rtl:ml-3" />
+                    <span className="flex-1">AI Assistant</span>
+                  </Link>
+                  <Link
+                    href="/dashboard/docs"
+                    className="group flex items-center rounded-md px-2 py-2 text-sm font-medium text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                  >
+                    <FileText className="mr-3 h-4 w-4 flex-shrink-0 rtl:mr-0 rtl:ml-3" />
+                    <span className="flex-1">Documentation</span>
+                  </Link>
+                  <Link
+                    href="/dashboard/support"
+                    className="group flex items-center rounded-md px-2 py-2 text-sm font-medium text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                  >
+                    <HelpCircle className="mr-3 h-4 w-4 flex-shrink-0 rtl:mr-0 rtl:ml-3" />
+                    <span className="flex-1">Support</span>
+                  </Link>
+                </div>
+              </div>
             </div>
           </ScrollArea>
-
-          {/* Bottom section */}
-          <div className="mt-auto space-y-2 pt-4 border-t">
-            <Link
-              href="/help"
-              className="group flex w-full items-center rounded-md px-2 py-2 text-sm font-medium text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
-            >
-              <HelpCircle className="mr-3 h-4 w-4 flex-shrink-0 rtl:mr-0 rtl:ml-3" />
-              Help & Support
-            </Link>
-            
-            {/* System Status */}
-            <div className="px-2 py-2">
-              <div className="flex items-center justify-between text-xs text-muted-foreground">
-                <span>System Status</span>
-                <div className="flex items-center space-x-1 rtl:space-x-reverse">
-                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                  <span>Online</span>
-                </div>
-              </div>
-            </div>
-            
-            {/* Automation Quick Status */}
-            {(automationStatus.running_workflows > 0 || automationStatus.waiting_approval > 0) && (
-              <div className="px-2 py-2 border-t">
-                <div className="text-xs text-muted-foreground space-y-1">
-                  {automationStatus.running_workflows > 0 && (
-                    <div className="flex items-center justify-between">
-                      <span>Workflows Running</span>
-                      <div className="flex items-center space-x-1 rtl:space-x-reverse">
-                        <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
-                        <span>{automationStatus.running_workflows}</span>
-                      </div>
-                    </div>
-                  )}
-                  {automationStatus.waiting_approval > 0 && (
-                    <div className="flex items-center justify-between">
-                      <span>Need Approval</span>
-                      <div className="flex items-center space-x-1 rtl:space-x-reverse">
-                        <div className="w-2 h-2 bg-amber-500 rounded-full animate-pulse"></div>
-                        <span>{automationStatus.waiting_approval}</span>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-          </div>
         </nav>
+
+        {/* Footer */}
+        <div className="border-t pt-4">
+          <div className="flex items-center justify-between px-2">
+            <div className="flex items-center gap-2">
+              <div className="h-2 w-2 bg-green-500 rounded-full animate-pulse" />
+              <span className="text-xs text-muted-foreground">System Online</span>
+            </div>
+            <Button variant="ghost" size="icon" className="h-8 w-8">
+              <Settings className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
       </div>
     </div>
   )
