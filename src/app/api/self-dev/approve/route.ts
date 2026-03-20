@@ -47,8 +47,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Missing required parameters' }, { status: 400 });
     }
 
-    // Always use main queue file for consistency
-    const queue = JSON.parse(await fs.readFile(MAIN_QUEUE_FILE, 'utf-8'));
+    // Use file-specific queue, fall back to main
+    const specificQueueFile = path.join(TASK_QUEUE_DIR, fileId + '.json');
+    let queueFilePath = MAIN_QUEUE_FILE;
+    try {
+      await fs.stat(specificQueueFile);
+      queueFilePath = specificQueueFile;
+    } catch {}
+    const queue = JSON.parse(await fs.readFile(queueFilePath, 'utf-8'));
     
     let approvedTaskCount = 0;
     
@@ -76,7 +82,11 @@ export async function POST(request: NextRequest) {
     }
     
     // Save to main queue
-    await fs.writeFile(MAIN_QUEUE_FILE, JSON.stringify(queue, null, 2));
+    await fs.writeFile(queueFilePath, JSON.stringify(queue, null, 2));
+    // Also sync to main if it's PRIORITY-1
+    if (fileId.includes('PRIORITY-1')) {
+      await fs.writeFile(MAIN_QUEUE_FILE, JSON.stringify(queue, null, 2));
+    }
     
     // Update individual file - DON'T CREATE NEW FILES
     const individualPath = path.join(TASK_QUEUE_DIR, fileId + '.json');

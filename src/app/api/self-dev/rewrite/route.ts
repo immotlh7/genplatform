@@ -52,9 +52,9 @@ export async function POST(request: NextRequest) {
     }
 
     const queuePath = path.join(TASK_QUEUE_DIR, fileId + '.json');
-    const mainQueuePath2 = '/root/genplatform/data/task-queue/task-queue.json';
-    // Always read from main queue (source of truth)
-    const queue = JSON.parse(await fs.readFile(mainQueuePath2, 'utf-8'));
+    // Read from this file's own queue (source of truth for multi-file support)
+    const sourceFile = await fs.stat(queuePath).then(() => queuePath).catch(() => '/root/genplatform/data/task-queue/task-queue.json');
+    const queue = JSON.parse(await fs.readFile(sourceFile, 'utf-8'));
     
     // Find the message
     const message = queue.messages.find((m: any) => m.messageNumber === messageNumber);
@@ -191,12 +191,12 @@ export async function POST(request: NextRequest) {
       ), 0
     );
     
-    // Save to main queue (source of truth)
-    await fs.writeFile(mainQueuePath2, JSON.stringify(queue, null, 2));
-    // Also save to individual file
-    try {
-      await fs.writeFile(queuePath, JSON.stringify(queue, null, 2));
-    } catch (e) { /* individual file may not exist */ }
+    // Save to the source file
+    await fs.writeFile(sourceFile, JSON.stringify(queue, null, 2));
+    // Also save to main queue if this IS the main priority-1 file
+    if (fileId.includes('PRIORITY-1') || sourceFile.includes('task-queue.json')) {
+      await fs.writeFile('/root/genplatform/data/task-queue/task-queue.json', JSON.stringify(queue, null, 2));
+    }
     
     // Send notification to Telegram about rewrite completion
     const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || '8635233052:AAGsuMzqhTHwQsFg4qGYPfUEyZPiLsAceA4';
