@@ -378,7 +378,7 @@ export function TaskQueue() {
       {/* Queue Files */}
       {queues.map((queue) => {
         const isExpanded = expandedFiles.has(queue.fileId);
-        const messages = queue.messages || [];
+        const messages = (queue.messages || []).filter(m => m.tasks && m.tasks.length > 0);
         const approvedMessages = messages.filter(m => 
           m.tasks && m.tasks.every(t => t.approved)
         );

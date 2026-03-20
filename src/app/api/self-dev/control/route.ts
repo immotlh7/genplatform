@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import fs from 'fs/promises';
 import path from 'path';
+import { executeNext } from '../execute-next/route';
 
 interface SelfDevConfig {
   autoMode: boolean;
@@ -50,26 +51,17 @@ async function addLog(log: any) {
   }
 }
 
-async function triggerExecuteNext() {
-  try {
-    const response = await fetch('http://localhost:3000/api/self-dev/execute-next', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' }
-    });
-    return response.ok;
-  } catch (error) {
-    console.error('Failed to trigger execute-next:', error);
-    return false;
-  }
-}
-
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const { action } = body;
     
+    console.log('[CONTROL] Received action:', action);
+    
     switch (action) {
       case 'start': {
+        console.log('[CONTROL] Starting execution...');
+        
         // Set auto-mode ON and start execution
         const config = await getConfig();
         config.autoMode = true;
@@ -82,7 +74,7 @@ export async function POST(request: NextRequest) {
           queue.autoMode = true;
           await fs.writeFile(TASK_QUEUE_FILE, JSON.stringify(queue, null, 2));
         } catch (error) {
-          console.error('Failed to update queue autoMode:', error);
+          console.error('[CONTROL] Failed to update queue autoMode:', error);
         }
         
         await addLog({
@@ -91,18 +83,23 @@ export async function POST(request: NextRequest) {
           message: '▶️ Execution started - Auto-mode enabled'
         });
         
-        // Trigger first task
-        const success = await triggerExecuteNext();
+        // Directly call executeNext instead of making HTTP request
+        console.log('[CONTROL] Calling executeNext directly...');
+        const result = await executeNext();
+        console.log('[CONTROL] executeNext result:', result);
         
         return NextResponse.json({ 
           action: 'start',
           autoMode: true,
-          success,
-          message: success ? 'Execution started' : 'Failed to start execution'
+          success: !result.error,
+          message: result.error ? result.error : 'Execution started',
+          result
         });
       }
       
       case 'pause': {
+        console.log('[CONTROL] Pausing execution...');
+        
         // Set auto-mode OFF (current task will finish)
         const config = await getConfig();
         config.autoMode = false;
@@ -115,7 +112,7 @@ export async function POST(request: NextRequest) {
           queue.autoMode = false;
           await fs.writeFile(TASK_QUEUE_FILE, JSON.stringify(queue, null, 2));
         } catch (error) {
-          console.error('Failed to update queue autoMode:', error);
+          console.error('[CONTROL] Failed to update queue autoMode:', error);
         }
         
         await addLog({
@@ -132,6 +129,8 @@ export async function POST(request: NextRequest) {
       }
       
       case 'resume': {
+        console.log('[CONTROL] Resuming execution...');
+        
         // Set auto-mode ON and continue
         const config = await getConfig();
         config.autoMode = true;
@@ -144,7 +143,7 @@ export async function POST(request: NextRequest) {
           queue.autoMode = true;
           await fs.writeFile(TASK_QUEUE_FILE, JSON.stringify(queue, null, 2));
         } catch (error) {
-          console.error('Failed to update queue autoMode:', error);
+          console.error('[CONTROL] Failed to update queue autoMode:', error);
         }
         
         await addLog({
@@ -153,18 +152,23 @@ export async function POST(request: NextRequest) {
           message: '▶️ Execution resumed - Auto-mode enabled'
         });
         
-        // Trigger next task
-        const success = await triggerExecuteNext();
+        // Directly call executeNext
+        console.log('[CONTROL] Calling executeNext directly...');
+        const result = await executeNext();
+        console.log('[CONTROL] executeNext result:', result);
         
         return NextResponse.json({ 
           action: 'resume',
           autoMode: true,
-          success,
-          message: success ? 'Execution resumed' : 'Failed to resume execution'
+          success: !result.error,
+          message: result.error ? result.error : 'Execution resumed',
+          result
         });
       }
       
       case 'skip': {
+        console.log('[CONTROL] Skipping current task...');
+        
         // Mark current executing task as skipped
         try {
           const queueData = await fs.readFile(TASK_QUEUE_FILE, 'utf-8');
@@ -197,7 +201,8 @@ export async function POST(request: NextRequest) {
             // If auto-mode is on, trigger next task
             const config = await getConfig();
             if (config.autoMode) {
-              await triggerExecuteNext();
+              const result = await executeNext();
+              console.log('[CONTROL] After skip, executeNext result:', result);
             }
             
             return NextResponse.json({ 
@@ -212,7 +217,7 @@ export async function POST(request: NextRequest) {
             }, { status: 404 });
           }
         } catch (error) {
-          console.error('Failed to skip task:', error);
+          console.error('[CONTROL] Failed to skip task:', error);
           return NextResponse.json({ 
             action: 'skip',
             error: 'Failed to skip task'
@@ -221,6 +226,8 @@ export async function POST(request: NextRequest) {
       }
       
       case 'retry': {
+        console.log('[CONTROL] Retrying failed task...');
+        
         // Find the last failed task and retry it
         try {
           const queueData = await fs.readFile(TASK_QUEUE_FILE, 'utf-8');
@@ -254,14 +261,15 @@ export async function POST(request: NextRequest) {
             });
             
             // Trigger execution
-            const success = await triggerExecuteNext();
+            const result = await executeNext();
+            console.log('[CONTROL] After retry, executeNext result:', result);
             
             return NextResponse.json({ 
               action: 'retry',
               taskId: failedTask.id,
               retryCount: failedTask.retryCount,
-              success,
-              message: success ? 'Task queued for retry' : 'Failed to retry task'
+              success: !result.error,
+              message: result.error ? result.error : 'Task queued for retry'
             });
           } else {
             return NextResponse.json({ 
@@ -270,7 +278,7 @@ export async function POST(request: NextRequest) {
             }, { status: 404 });
           }
         } catch (error) {
-          console.error('Failed to retry task:', error);
+          console.error('[CONTROL] Failed to retry task:', error);
           return NextResponse.json({ 
             action: 'retry',
             error: 'Failed to retry task'
@@ -286,7 +294,7 @@ export async function POST(request: NextRequest) {
     }
     
   } catch (error) {
-    console.error('Control error:', error);
+    console.error('[CONTROL] Control error:', error);
     return NextResponse.json(
       { error: 'Failed to process control action', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
