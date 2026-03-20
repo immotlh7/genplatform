@@ -4,7 +4,7 @@
   "uploadedAt": "2026-03-20T08:45:10.369Z",
   "totalMessages": 33,
   "totalTasks": 68,
-  "totalMicroTasks": 4,
+  "totalMicroTasks": 20,
   "messages": [
     {
       "messageNumber": 1,
@@ -108,55 +108,103 @@
           "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg5-task1",
           "taskNumber": 1,
           "originalDescription": "Live Task Monitor widget at the top. Currently shows \"Sprint 0D\" and old data. Fix:",
-          "status": "pending",
+          "status": "review",
           "approved": false,
-          "rewritten": false,
-          "microTasks": []
+          "rewritten": true,
+          "microTasks": [
+            {
+              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg5-task1-micro1",
+              "filePath": "src/app/dashboard/page.tsx",
+              "change": "Analyze and implement the requested feature",
+              "description": "Implement the following task with precision: Live Task Monitor widget at the top. Currently shows \"Sprint 0D\" and old data. Fix:. First identify the correct file and component, then make the necessary changes following the project's coding standards.",
+              "status": "pending"
+            }
+          ]
         },
         {
           "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg5-task2",
           "taskNumber": 2,
           "originalDescription": "Stat Cards row (All Projects, Tasks, Team, Automations, Reports, Security). Fix each:",
-          "status": "pending",
+          "status": "review",
           "approved": false,
-          "rewritten": false,
-          "microTasks": []
+          "rewritten": true,
+          "microTasks": [
+            {
+              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg5-task2-micro1",
+              "filePath": "src/app/dashboard/page.tsx",
+              "change": "Analyze and implement the requested feature",
+              "description": "Implement the following task with precision: Stat Cards row (All Projects, Tasks, Team, Automations, Reports, Security). Fix each:. First identify the correct file and component, then make the necessary changes following the project's coding standards.",
+              "status": "pending"
+            }
+          ]
         },
         {
           "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg5-task3",
           "taskNumber": 3,
           "originalDescription": "System Performance section at bottom. Must show REAL data:",
-          "status": "pending",
+          "status": "review",
           "approved": false,
-          "rewritten": false,
-          "microTasks": []
+          "rewritten": true,
+          "microTasks": [
+            {
+              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg5-task3-micro1",
+              "filePath": "src/app/dashboard/page.tsx",
+              "change": "Analyze and implement the requested feature",
+              "description": "Implement the following task with precision: System Performance section at bottom. Must show REAL data:. First identify the correct file and component, then make the necessary changes following the project's coding standards.",
+              "status": "pending"
+            }
+          ]
         },
         {
           "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg5-task4",
           "taskNumber": 4,
           "originalDescription": "Quick Actions section. Make ALL buttons work:",
-          "status": "pending",
+          "status": "review",
           "approved": false,
-          "rewritten": false,
-          "microTasks": []
+          "rewritten": true,
+          "microTasks": [
+            {
+              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg5-task4-micro1",
+              "filePath": "src/app/dashboard/page.tsx",
+              "change": "Analyze and implement the requested feature",
+              "description": "Implement the following task with precision: Quick Actions section. Make ALL buttons work:. First identify the correct file and component, then make the necessary changes following the project's coding standards.",
+              "status": "pending"
+            }
+          ]
         },
         {
           "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg5-task5",
           "taskNumber": 5,
           "originalDescription": "Activity Stream. Show real recent events:",
-          "status": "pending",
+          "status": "review",
           "approved": false,
-          "rewritten": false,
-          "microTasks": []
+          "rewritten": true,
+          "microTasks": [
+            {
+              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg5-task5-micro1",
+              "filePath": "src/app/dashboard/page.tsx",
+              "change": "Analyze and implement the requested feature",
+              "description": "Implement the following task with precision: Activity Stream. Show real recent events:. First identify the correct file and component, then make the necessary changes following the project's coding standards.",
+              "status": "pending"
+            }
+          ]
         },
         {
           "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg5-task6",
           "taskNumber": 6,
           "originalDescription": "Workflows section. Either show real workflows from /api/workflows or hide the section if empty. \"No workflows running\" is fine but \"Start Workflow\" button should navigate to /automations.",
-          "status": "pending",
+          "status": "review",
           "approved": false,
-          "rewritten": false,
-          "microTasks": []
+          "rewritten": true,
+          "microTasks": [
+            {
+              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg5-task6-micro1",
+              "filePath": "src/app/api/workflows/route.ts",
+              "change": "Create or update the API route",
+              "description": "In src/app/api/workflows/route.ts, implement the requested API functionality: Workflows section. Either show real workflows from /api/workflows or hide the section if empty. \"No workflows running\" is fine but \"Start Workflow\" button should navigate to /automations.. Use Next.js 13+ app router conventions with proper request/response handling.",
+              "status": "pending"
+            }
+          ]
         }
       ]
     },
@@ -175,37 +223,76 @@
           "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg7-task1",
           "taskNumber": 1,
           "originalDescription": "The user avatar area shows \"U User Member\". Fix:",
-          "status": "pending",
+          "status": "review",
           "approved": false,
-          "rewritten": false,
-          "microTasks": []
+          "rewritten": true,
+          "microTasks": [
+            {
+              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg7-task1-micro1",
+              "filePath": "src/app/dashboard/page.tsx",
+              "change": "Analyze and implement the requested feature",
+              "description": "Implement the following task with precision: The user avatar area shows \"U User Member\". Fix:. First identify the correct file and component, then make the necessary changes following the project's coding standards.",
+              "status": "pending"
+            }
+          ]
         },
         {
           "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg7-task2",
           "taskNumber": 2,
           "originalDescription": "Sign Out button must work:",
-          "status": "pending",
+          "status": "review",
           "approved": false,
-          "rewritten": false,
-          "microTasks": []
+          "rewritten": true,
+          "microTasks": [
+            {
+              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg7-task2-micro1",
+              "filePath": "src/app/dashboard/page.tsx",
+              "change": "Analyze and implement the requested feature",
+              "description": "Implement the following task with precision: Sign Out button must work:. First identify the correct file and component, then make the necessary changes following the project's coding standards.",
+              "status": "pending"
+            }
+          ]
         },
         {
           "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg7-task3",
           "taskNumber": 3,
           "originalDescription": "The \"Select Project\" dropdown in the top bar. Make it functional:",
-          "status": "pending",
+          "status": "review",
           "approved": false,
-          "rewritten": false,
-          "microTasks": []
+          "rewritten": true,
+          "microTasks": [
+            {
+              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg7-task3-micro1",
+              "filePath": "src/app/dashboard/page.tsx",
+              "change": "Analyze and implement the requested feature",
+              "description": "Implement the following task with precision: The \"Select Project\" dropdown in the top bar. Make it functional:. First identify the correct file and component, then make the necessary changes following the project's coding standards.",
+              "status": "pending"
+            }
+          ]
         },
         {
           "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg7-task4",
           "taskNumber": 4,
           "originalDescription": "Navigation links (Dashboard, Projects, Automations, Reports) — verify all navigate correctly:",
-          "status": "pending",
+          "status": "review",
           "approved": false,
-          "rewritten": false,
-          "microTasks": []
+          "rewritten": true,
+          "microTasks": [
+            {
+              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg7-task4-micro1",
+              "filePath": "src/app/dashboard/page.tsx",
+              "change": "Locate the component mentioned in the task",
+              "description": "In src/app/dashboard/page.tsx, find the main DashboardPage component. Look for the specific section mentioned in the task: \"Navigation links (Dashboard, Projects, Automations, Reports) — verify all navigate correctly:\". Identify the exact component or JSX element that needs to be modified.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg7-task4-micro2",
+              "filePath": "src/app/dashboard/page.tsx",
+              "change": "Implement the requested change",
+              "description": "Make the specific change requested in the original task. This involves modifying the identified component to Navigation links (Dashboard, Projects, Automations, Reports) — verify all navigate correctly:. Ensure proper TypeScript types and React best practices are followed.",
+              "status": "pending"
+            }
+          ]
         }
       ]
     },
@@ -264,46 +351,86 @@
           "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg11-task1",
           "taskNumber": 1,
           "originalDescription": "The page should load the file tree from Bridge API. On mount:",
-          "status": "pending",
+          "status": "review",
           "approved": false,
-          "rewritten": false,
-          "microTasks": []
+          "rewritten": true,
+          "microTasks": [
+            {
+              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg11-task1-micro1",
+              "filePath": "src/app/api/endpoint/route.ts",
+              "change": "Create or update the API route",
+              "description": "In src/app/api/endpoint/route.ts, implement the requested API functionality: The page should load the file tree from Bridge API. On mount:. Use Next.js 13+ app router conventions with proper request/response handling.",
+              "status": "pending"
+            }
+          ]
         },
         {
           "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg11-task2",
           "taskNumber": 2,
           "originalDescription": "When clicking a file in the tree:",
-          "status": "pending",
+          "status": "review",
           "approved": false,
-          "rewritten": false,
-          "microTasks": []
+          "rewritten": true,
+          "microTasks": [
+            {
+              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg11-task2-micro1",
+              "filePath": "src/app/dashboard/page.tsx",
+              "change": "Analyze and implement the requested feature",
+              "description": "Implement the following task with precision: When clicking a file in the tree:. First identify the correct file and component, then make the necessary changes following the project's coding standards.",
+              "status": "pending"
+            }
+          ]
         },
         {
           "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg11-task3",
           "taskNumber": 3,
           "originalDescription": "Add EDIT functionality:",
-          "status": "pending",
+          "status": "review",
           "approved": false,
-          "rewritten": false,
-          "microTasks": []
+          "rewritten": true,
+          "microTasks": [
+            {
+              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg11-task3-micro1",
+              "filePath": "src/app/dashboard/page.tsx",
+              "change": "Analyze and implement the requested feature",
+              "description": "Implement the following task with precision: Add EDIT functionality:. First identify the correct file and component, then make the necessary changes following the project's coding standards.",
+              "status": "pending"
+            }
+          ]
         },
         {
           "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg11-task4",
           "taskNumber": 4,
           "originalDescription": "Add NEW FILE button in the header:",
-          "status": "pending",
+          "status": "review",
           "approved": false,
-          "rewritten": false,
-          "microTasks": []
+          "rewritten": true,
+          "microTasks": [
+            {
+              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg11-task4-micro1",
+              "filePath": "src/app/dashboard/page.tsx",
+              "change": "Analyze and implement the requested feature",
+              "description": "Implement the following task with precision: Add NEW FILE button in the header:. First identify the correct file and component, then make the necessary changes following the project's coding standards.",
+              "status": "pending"
+            }
+          ]
         },
         {
           "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg11-task5",
           "taskNumber": 5,
           "originalDescription": "Stats cards at top should show:",
-          "status": "pending",
+          "status": "review",
           "approved": false,
-          "rewritten": false,
-          "microTasks": []
+          "rewritten": true,
+          "microTasks": [
+            {
+              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg11-task5-micro1",
+              "filePath": "src/app/dashboard/page.tsx",
+              "change": "Analyze and implement the requested feature",
+              "description": "Implement the following task with precision: Stats cards at top should show:. First identify the correct file and component, then make the necessary changes following the project's coding standards.",
+              "status": "pending"
+            }
+          ]
         }
       ]
     },

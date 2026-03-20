@@ -102,7 +102,7 @@ export function TaskQueue({ className = '', hideActions = false }: TaskQueueProp
     const response = await fetch('/api/self-dev/rewrite', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ fileId, messageNumber })
+      body: JSON.stringify({ fileId, messageNumber, approved: true })
     });
     
     if (!response.ok) {
@@ -129,7 +129,7 @@ export function TaskQueue({ className = '', hideActions = false }: TaskQueueProp
       const response = await fetch('/api/self-dev/delete-message', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ fileId, messageNumber })
+        body: JSON.stringify({ fileId, messageNumber, approved: true })
       });
       
       if (!response.ok) {
@@ -169,7 +169,6 @@ export function TaskQueue({ className = '', hideActions = false }: TaskQueueProp
   };
 
   const getTaskStatus = (task: Task): string => {
-    if (task.completedIcon === '✅') return 'done';
     if (task.executionResult?.success) return 'done';
     if (task.executionResult?.success === false) return 'failed';
     
@@ -283,7 +282,7 @@ export function TaskQueue({ className = '', hideActions = false }: TaskQueueProp
     const variants: Record<string, string> = {
       done: 'bg-green-700 text-green-100',
       failed: 'bg-red-600 text-red-100',
-      executing: 'bg-blue-600 text-blue-100 animate-pulse',
+      executing: 'bg-blue-600 text-blue-100',
       approved: 'bg-blue-700 text-blue-100',
       review: 'bg-yellow-700 text-yellow-100',
       pending: 'bg-gray-700 text-gray-300'
@@ -292,14 +291,14 @@ export function TaskQueue({ className = '', hideActions = false }: TaskQueueProp
     const labels: Record<string, string> = {
       done: '✅ done',
       failed: 'failed',
-      executing: 'running',
+      executing: 'executing',
       approved: 'ready',
       review: 'review',
       pending: 'pending'
     };
     
     return (
-      <Badge className={cn("text-[10px] px-1.5 py-0.5", variants[status] || variants.pending)}>
+      <Badge className={cn("text-xs", variants[status] || variants.pending)}>
         {labels[status] || status}
       </Badge>
     );
@@ -311,17 +310,17 @@ export function TaskQueue({ className = '', hideActions = false }: TaskQueueProp
     const queue = queues.find(q => q.fileId === selectedMessage.fileId);
     if (!queue || !queue.messages) return;
     
-    const messages = queue.messages.filter(m => m.tasks && m.tasks.length > 0);
-    const currentIndex = messages.findIndex(m => m.messageNumber === selectedMessage.messageNumber);
+    const currentIndex = queue.messages.findIndex(m => m.messageNumber === selectedMessage.messageNumber);
     if (currentIndex === -1) return;
     
     const newIndex = direction === 'prev' 
       ? Math.max(0, currentIndex - 1)
-      : Math.min(messages.length - 1, currentIndex + 1);
+      : Math.min(queue.messages.length - 1, currentIndex + 1);
     
     if (newIndex !== currentIndex) {
-      const newMessage = messages[newIndex];
+      const newMessage = queue.messages[newIndex];
       setSelectedMessage({ fileId: selectedMessage.fileId, messageNumber: newMessage.messageNumber });
+      // Auto-expand the new message
       setExpandedMessages(prev => {
         const newSet = new Set(prev);
         newSet.add(`${selectedMessage.fileId}-${newMessage.messageNumber}`);
@@ -443,36 +442,36 @@ export function TaskQueue({ className = '', hideActions = false }: TaskQueueProp
               </div>
               <div className="flex items-center gap-2 flex-shrink-0">
                 {microTaskStatus.executing > 0 && (
-                  <Badge className="text-[10px] bg-blue-600 text-blue-100 animate-pulse">
+                  <Badge className="text-xs bg-blue-600 text-blue-100 animate-pulse">
                     {microTaskStatus.executing} executing
                   </Badge>
                 )}
                 {doneMessages.length > 0 && (
-                  <Badge className="text-[10px] bg-green-700 text-green-100">
+                  <Badge className="text-xs bg-green-700 text-green-100">
                     ✅ {doneMessages.length} done
                   </Badge>
                 )}
                 {failedMessages.length > 0 && (
-                  <Badge className="text-[10px] bg-red-600 text-red-100">
+                  <Badge className="text-xs bg-red-600 text-red-100">
                     {failedMessages.length} failed
                   </Badge>
                 )}
                 {executingMessages.length > 0 && (
-                  <Badge className="text-[10px] bg-blue-600 text-blue-100">
+                  <Badge className="text-xs bg-blue-600 text-blue-100">
                     {executingMessages.length} running
                   </Badge>
                 )}
                 {reviewMessages.length > 0 && (
-                  <Badge className="text-[10px] bg-yellow-700 text-yellow-100">
+                  <Badge className="text-xs bg-yellow-700 text-yellow-100">
                     {reviewMessages.length} review
                   </Badge>
                 )}
                 {approvedMessages.length > 0 && (
-                  <Badge className="text-[10px] bg-blue-700 text-blue-100">
+                  <Badge className="text-xs bg-blue-700 text-blue-100">
                     {approvedMessages.length} ready
                   </Badge>
                 )}
-                <span className="text-[10px] text-gray-400">
+                <span className="text-xs text-gray-400">
                   {messages.length} msgs
                 </span>
               </div>
@@ -482,7 +481,7 @@ export function TaskQueue({ className = '', hideActions = false }: TaskQueueProp
             {isExpanded && (
               <div className="border-t border-gray-600/50">
                 {/* File Stats */}
-                <div className="p-1.5 bg-gray-800/30 text-[10px] text-gray-400 grid grid-cols-3 gap-2 border-b border-gray-600/50">
+                <div className="p-2 bg-gray-800/30 text-xs text-gray-400 grid grid-cols-3 gap-2 border-b border-gray-600/50">
                   <div>Messages: {queue.totalMessages || messages.length}</div>
                   <div>Tasks: {queue.totalTasks || messages.reduce((sum, m) => sum + (m.tasks?.length || 0), 0)}</div>
                   <div>Micro-tasks: {queue.totalMicroTasks || microTaskStatus.total}</div>
@@ -502,19 +501,19 @@ export function TaskQueue({ className = '', hideActions = false }: TaskQueueProp
                     <div 
                       key={message.messageNumber} 
                       className={cn(
-                        "border-b border-gray-600/30 last:border-b-0",
+                        "border-b border-gray-600/30 last:border-b-0 py-1",
                         isSelected && "bg-blue-900/10"
                       )}
                     >
-                      {/* Message Header - Single row with all info */}
-                      <div>
-                        <div
-                          className="p-1.5 cursor-pointer hover:bg-gray-700/30 transition-colors"
-                          onClick={() => {
-                            toggleMessage(queue.fileId, message.messageNumber);
-                            setSelectedMessage({ fileId: queue.fileId, messageNumber: message.messageNumber });
-                          }}
-                        >
+                      {/* Message Header */}
+                      <div
+                        className="p-2 cursor-pointer hover:bg-gray-700/30 transition-colors"
+                        onClick={() => {
+                          toggleMessage(queue.fileId, message.messageNumber);
+                          setSelectedMessage({ fileId: queue.fileId, messageNumber: message.messageNumber });
+                        }}
+                      >
+                        <div className="flex items-center justify-between w-full">
                           <div className="flex items-center gap-2">
                             {isMessageExpanded ? (
                               <ChevronDown className="h-3 w-3 text-gray-500" />
@@ -525,59 +524,54 @@ export function TaskQueue({ className = '', hideActions = false }: TaskQueueProp
                             <span className="text-xs font-medium text-gray-100">
                               Message {displayNumber}
                             </span>
-                            {message.summary && (
-                              <span className="text-[10px] text-gray-400 font-normal truncate flex-1">
-                                {message.summary}
-                              </span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            {/* Add Rewrite/Approve buttons for messages with tasks */}
+                            {messageStatus === "done" && (
+                              <Badge className="text-xs bg-green-700 text-green-100 font-medium">✅ Done</Badge>
                             )}
-                            <div className="flex items-center gap-1 ml-auto">
-                              <StatusBadge status={messageStatus} />
-                              {!hideActions && (
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleDeleteMessage(queue.fileId, message.messageNumber);
-                                  }}
-                                  className="h-5 px-1"
-                                >
-                                  <Trash2 className="h-3 w-3 text-red-400" />
-                                </Button>
-                              )}
-                            </div>
+                            {message.tasks && message.tasks.length > 0 && messageStatus !== 'done' && messageStatus !== 'executing' && !hideActions && (
+                              <RewriteApprove
+                                fileId={queue.fileId}
+                                messageNumber={message.messageNumber}
+                                onRewrite={() => handleRewrite(queue.fileId, message.messageNumber)}
+                                onApprove={() => handleApprove(queue.fileId, message.messageNumber)}
+                                onRefresh={fetchQueues}
+                                disabled={messageStatus === 'executing'}
+                              />
+                            )}
+                            <StatusBadge status={messageStatus} />
+                            {!hideActions && (
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDeleteMessage(queue.fileId, message.messageNumber);
+                                }}
+                                className="h-6 px-2"
+                              >
+                                <Trash2 className="h-3 w-3 text-red-400" />
+                              </Button>
+                            )}
                           </div>
                         </div>
-                        
-                        {/* Rewrite/Approve buttons on separate line */}
-                        {message.tasks && message.tasks.length > 0 && messageStatus !== 'done' && messageStatus !== 'executing' && !hideActions && (
-                          <div className="px-1.5 py-1 bg-gray-800/30 border-t border-gray-600/30">
-                            <RewriteApprove
-                              fileId={queue.fileId}
-                              messageNumber={message.messageNumber}
-                              onRewrite={() => handleRewrite(queue.fileId, message.messageNumber)}
-                              onApprove={() => handleApprove(queue.fileId, message.messageNumber)}
-                              onRefresh={fetchQueues}
-                              disabled={messageStatus === 'executing'}
-                            />
-                          </div>
-                        )}
                       </div>
 
                       {/* Message Content */}
                       {isMessageExpanded && (
-                        <div className="px-2 py-1.5">
+                        <div className="px-3 pb-3">
                           {/* Original Content */}
                           {message.originalContent && (
-                            <div className="mt-1 p-1.5 bg-gray-800/50 rounded text-[10px] text-gray-300 max-h-24 overflow-y-auto">
+                            <div className="mt-2 p-2 bg-gray-800/50 rounded text-xs text-gray-300 max-h-32 overflow-y-auto">
                               <pre className="whitespace-pre-wrap">{message.originalContent}</pre>
                             </div>
                           )}
 
                           {/* Tasks */}
                           {message.tasks && message.tasks.length > 0 && (
-                            <div className="mt-2 space-y-1">
-                              <div className="text-[10px] font-medium text-gray-400 mb-0.5">Tasks:</div>
+                            <div className="mt-3 space-y-2">
+                              <div className="text-xs font-medium text-gray-400 mb-1">Tasks:</div>
                               {message.tasks.map((task, taskIndex) => {
                                 const taskStatus = getTaskStatus(task);
                                 const hasWarning = task.rewritten && !task.approved;
@@ -586,20 +580,20 @@ export function TaskQueue({ className = '', hideActions = false }: TaskQueueProp
                                   <div 
                                     key={task.taskId || taskIndex}
                                     className={cn(
-                                      "p-1 bg-gray-800/30 rounded border text-[10px]",
+                                      "p-1.5 bg-gray-800/30 rounded border text-[11px]",
                                       taskStatus === 'done' && "border-green-700/50 bg-green-900/10",
                                       taskStatus === 'failed' && "border-red-700/50 bg-red-900/10",
-                                      taskStatus === 'executing' && "border-blue-700/50 bg-blue-900/10 animate-pulse",
+                                      taskStatus === 'executing' && "border-blue-700/50 bg-blue-900/10",
                                       taskStatus === 'approved' && "border-blue-600/50",
                                       hasWarning && "border-yellow-600/50",
                                       !hasWarning && taskStatus === 'pending' && "border-gray-700/50"
                                     )}
                                   >
-                                    <div className="flex items-start justify-between gap-1">
-                                      <div className="flex items-start gap-1 flex-1">
+                                    <div className="flex items-start justify-between gap-2">
+                                      <div className="flex items-start gap-2 flex-1">
                                         <StatusIcon status={taskStatus} />
                                         <div className="flex-1">
-                                          <div className="flex items-center gap-1">
+                                          <div className="flex items-center gap-2">
                                             <span className="font-medium text-gray-200">
                                               Task {task.taskNumber}
                                             </span>
@@ -613,19 +607,19 @@ export function TaskQueue({ className = '', hideActions = false }: TaskQueueProp
                                           
                                           {/* Show micro-tasks if any */}
                                           {task.microTasks && task.microTasks.length > 0 && (
-                                            <div className="mt-1 space-y-0.5 pl-3 border-l border-gray-700">
+                                            <div className="mt-2 space-y-1 pl-4 border-l border-gray-700">
                                               {task.microTasks.map((micro, microIndex) => (
-                                                <div key={micro.id || microIndex} className="flex items-center gap-1">
+                                                <div key={micro.id || microIndex} className="flex items-center gap-2">
                                                   {micro.status === 'done' ? (
-                                                    <span className="text-green-500 text-[9px]">✅</span>
+                                                    <span className="text-green-500 text-xs">✅</span>
                                                   ) : micro.status === 'executing' ? (
-                                                    <Loader2 className="h-2.5 w-2.5 text-blue-500 animate-spin" />
+                                                    <Loader2 className="h-3 w-3 text-blue-500 animate-spin" />
                                                   ) : micro.status === 'failed' ? (
-                                                    <XCircle className="h-2.5 w-2.5 text-red-500" />
+                                                    <XCircle className="h-3 w-3 text-red-500" />
                                                   ) : (
-                                                    <Clock className="h-2.5 w-2.5 text-gray-500" />
+                                                    <Clock className="h-3 w-3 text-gray-500" />
                                                   )}
-                                                  <span className="text-[9px] text-gray-400">
+                                                  <span className="text-xs text-gray-400">
                                                     {micro.filePath}
                                                   </span>
                                                 </div>
@@ -634,18 +628,18 @@ export function TaskQueue({ className = '', hideActions = false }: TaskQueueProp
                                           )}
                                         </div>
                                       </div>
-                                      <div className="flex items-center gap-0.5">
+                                      <div className="flex items-center gap-1">
                                         <StatusBadge status={taskStatus} />
                                       </div>
                                     </div>
                                     
                                     {/* Retry/Skip buttons for failed tasks */}
                                     {!hideActions && taskStatus === 'failed' && (
-                                      <div className="flex gap-1 mt-1">
+                                      <div className="flex gap-2 mt-2">
                                         <Button
                                           size="sm"
                                           variant="outline"
-                                          className="h-5 text-[10px] px-1"
+                                          className="h-6 text-xs"
                                           onClick={async () => {
                                             try {
                                               await fetch('/api/self-dev/control', {
@@ -659,13 +653,13 @@ export function TaskQueue({ className = '', hideActions = false }: TaskQueueProp
                                             }
                                           }}
                                         >
-                                          <RotateCcw className="h-2.5 w-2.5 mr-0.5" />
+                                          <RotateCcw className="h-3 w-3 mr-1" />
                                           Retry
                                         </Button>
                                         <Button
                                           size="sm"
                                           variant="outline"
-                                          className="h-5 text-[10px] px-1"
+                                          className="h-6 text-xs"
                                           onClick={async () => {
                                             try {
                                               await fetch('/api/self-dev/control', {
@@ -679,7 +673,7 @@ export function TaskQueue({ className = '', hideActions = false }: TaskQueueProp
                                             }
                                           }}
                                         >
-                                          <SkipForward className="h-2.5 w-2.5 mr-0.5" />
+                                          <SkipForward className="h-3 w-3 mr-1" />
                                           Skip
                                         </Button>
                                       </div>
@@ -692,9 +686,9 @@ export function TaskQueue({ className = '', hideActions = false }: TaskQueueProp
 
                           {/* Commit Message */}
                           {message.commitMessage && (
-                            <div className="mt-1 p-1 bg-green-900/20 rounded text-[10px]">
+                            <div className="mt-2 p-2 bg-green-900/20 rounded text-xs">
                               <span className="text-green-400">Commit:</span>
-                              <span className="ml-1 text-gray-300">{message.commitMessage}</span>
+                              <span className="ml-2 text-gray-300">{message.commitMessage}</span>
                             </div>
                           )}
                         </div>

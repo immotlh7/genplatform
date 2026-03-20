@@ -19,17 +19,19 @@ interface ExecutionLog {
 
 interface TaskQueue {
   fileName: string;
+  fileId?: string;
   autoMode: boolean;
-  batches?: {
-    id: string;
+  messages?: {
+    messageNumber: number;
     tasks: {
-      id: string;
-      description: string;
+      taskId: string;
+      originalDescription: string;
       status?: string;
       approved?: boolean;
       retryCount?: number;
     }[];
   }[];
+  batches?: any[]; // For old format compatibility
 }
 
 export function ExecutionMonitor({ onRefresh }: ExecutionMonitorProps) {
@@ -58,11 +60,11 @@ export function ExecutionMonitor({ onRefresh }: ExecutionMonitorProps) {
 
   const loadData = async () => {
     try {
-      // Load status/queue
-      const statusResponse = await fetch('/api/self-dev/status');
-      if (statusResponse.ok) {
-        const statusData = await statusResponse.json();
-        setQueue(statusData.queue);
+      // Load main queue file
+      const queueResponse = await fetch('/api/self-dev/queue');
+      if (queueResponse.ok) {
+        const queueData = await queueResponse.json();
+        setQueue(queueData);
         setError(null);
         setIsLoading(false);
         if (onRefresh) onRefresh();
@@ -91,18 +93,20 @@ export function ExecutionMonitor({ onRefresh }: ExecutionMonitorProps) {
     let failedTasks = 0;
     let currentExecutingTask = null;
 
-    if (queue?.batches) {
-      queue.batches.forEach(batch => {
-        batch.tasks.forEach(task => {
-          totalTasks++;
-          if (task.approved) approvedTasks++;
-          if (task.status === 'executing') {
-            executingTasks++;
-            currentExecutingTask = task;
-          }
-          if (task.status === 'done') doneTasks++;
-          if (task.status === 'failed' || task.status === 'skipped') failedTasks++;
-        });
+    if (queue?.messages) {
+      queue.messages.forEach(message => {
+        if (message.tasks) {
+          message.tasks.forEach(task => {
+            totalTasks++;
+            if (task.approved) approvedTasks++;
+            if (task.status === 'executing') {
+              executingTasks++;
+              currentExecutingTask = task;
+            }
+            if (task.status === 'done') doneTasks++;
+            if (task.status === 'failed' || task.status === 'skipped') failedTasks++;
+          });
+        }
       });
     }
 
@@ -111,7 +115,6 @@ export function ExecutionMonitor({ onRefresh }: ExecutionMonitorProps) {
 
   const stats = calculateStats();
   const isExecuting = stats.executingTasks > 0;
-  const isReviewMode = stats.approvedTasks > 0 && stats.executingTasks === 0 && stats.doneTasks < stats.approvedTasks;
 
   const formatTime = (timestamp: string) => {
     return new Date(timestamp).toLocaleTimeString();
@@ -125,6 +128,8 @@ export function ExecutionMonitor({ onRefresh }: ExecutionMonitorProps) {
       case 'build': return <RefreshCw className="h-3 w-3 text-yellow-400" />;
       case 'reset': return <AlertCircle className="h-3 w-3 text-purple-400" />;
       case 'error': return <XCircle className="h-3 w-3 text-red-400" />;
+      case 'api_limit': return <Clock className="h-3 w-3 text-orange-400" />;
+      case 'developer_message': return <FileText className="h-3 w-3 text-purple-400" />;
       default: return <Clock className="h-3 w-3 text-gray-400" />;
     }
   };
@@ -137,88 +142,51 @@ export function ExecutionMonitor({ onRefresh }: ExecutionMonitorProps) {
       case 'build': return 'text-yellow-300';
       case 'reset': return 'text-purple-300';
       case 'error': return 'text-red-300';
-      case 'developer_message': return 'text-gray-300';
-      default: return 'text-gray-400';
+      case 'api_limit': return 'text-orange-300';
+      case 'developer_message': return 'text-purple-300';
+      default: return 'text-gray-300';
     }
   };
 
-  // Loading state
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-full">
-        <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+      <div className="h-full flex items-center justify-center">
+        <Loader2 className="h-6 w-6 animate-spin text-blue-500" />
       </div>
     );
   }
 
-  // Error state
   if (error) {
     return (
-      <div className="flex flex-col items-center justify-center h-full text-red-400">
-        <XCircle className="h-12 w-12 mb-4 opacity-50" />
-        <p className="text-lg mb-2">{error}</p>
-        <button 
-          onClick={loadData}
-          className="text-sm underline hover:no-underline"
-        >
-          Try again
-        </button>
+      <div className="h-full flex items-center justify-center">
+        <div className="text-center">
+          <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+          <p className="text-red-400">{error}</p>
+        </div>
       </div>
     );
   }
 
-  // Empty state
   if (!queue) {
     return (
-      <div className="flex flex-col items-center justify-center h-full text-gray-400">
-        <FileText className="h-12 w-12 mb-4 opacity-50" />
-        <p className="text-lg mb-2">No active execution</p>
-        <p className="text-sm opacity-75">Upload and analyze a task file to begin</p>
+      <div className="h-full flex items-center justify-center">
+        <div className="text-center">
+          <FileText className="h-16 w-16 text-gray-600 mx-auto mb-4" />
+          <p className="text-gray-400 text-lg mb-2">No Execution Queue</p>
+          <p className="text-sm text-gray-500">Upload and analyze a task file to begin</p>
+        </div>
       </div>
     );
   }
 
-  // Review mode
-  if (isReviewMode) {
-    const pendingTasks = stats.approvedTasks - stats.doneTasks;
+  // Empty queue state
+  if (stats.totalTasks === 0) {
     return (
-      <div className="h-full flex flex-col">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold text-yellow-400">✅ Ready to Execute</h3>
-          <Badge variant="default" className="bg-green-600">
-            {pendingTasks} tasks approved
-          </Badge>
-        </div>
-        
-        <div className="flex-1 flex items-center justify-center">
-          <div className="text-center space-y-4">
-            <div className="bg-green-900/20 p-8 rounded-lg border border-green-700/50">
-              <CheckCircle className="h-16 w-16 text-green-400 mx-auto mb-4" />
-              <p className="text-lg font-medium text-green-300 mb-2">
-                {pendingTasks} tasks approved and ready
-              </p>
-              <p className="text-sm text-gray-400 mb-6">
-                Click the "Start Execution" button above to begin processing
-              </p>
-              
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div className="bg-gray-900/50 p-3 rounded border border-gray-700">
-                  <div className="text-gray-400">Total Tasks</div>
-                  <div className="text-xl font-bold">{stats.totalTasks}</div>
-                </div>
-                <div className="bg-gray-900/50 p-3 rounded border border-gray-700">
-                  <div className="text-gray-400">Approved</div>
-                  <div className="text-xl font-bold text-green-400">{stats.approvedTasks}</div>
-                </div>
-              </div>
-            </div>
-            
-            {queue.autoMode && (
-              <Badge variant="outline" className="border-blue-600 text-blue-400">
-                Auto-mode enabled - will process continuously
-              </Badge>
-            )}
-          </div>
+      <div className="h-full flex items-center justify-center">
+        <div className="text-center">
+          <Zap className="h-16 w-16 text-gray-600 mx-auto mb-4" />
+          <p className="text-gray-400 text-lg mb-2">No Approved Tasks</p>
+          <p className="text-sm text-gray-500">Approve tasks in the Task Queue to begin execution</p>
         </div>
       </div>
     );
@@ -272,10 +240,10 @@ export function ExecutionMonitor({ onRefresh }: ExecutionMonitorProps) {
               <Zap className="h-4 w-4 text-blue-400 flex-shrink-0 mt-0.5 animate-pulse" />
               <div className="flex-1">
                 <p className="text-sm font-medium text-blue-300">
-                  Executing: {stats.currentExecutingTask.description}
+                  Executing: {stats.currentExecutingTask.originalDescription}
                 </p>
                 <p className="text-xs text-gray-400 mt-1">
-                  Task ID: {stats.currentExecutingTask.id}
+                  Task ID: {stats.currentExecutingTask.taskId}
                   {stats.currentExecutingTask.retryCount && stats.currentExecutingTask.retryCount > 0 && (
                     <span className="ml-2 text-yellow-400">
                       (Retry {stats.currentExecutingTask.retryCount}/3)
@@ -301,22 +269,23 @@ export function ExecutionMonitor({ onRefresh }: ExecutionMonitorProps) {
             Auto-scroll {autoScroll ? 'ON' : 'OFF'}
           </button>
         </div>
-        
-        <ScrollArea ref={scrollAreaRef} className="h-full rounded-lg bg-gray-900/50 border border-gray-700">
-          <div className="p-4 space-y-1">
+        <ScrollArea className="h-full" ref={scrollAreaRef}>
+          <div className="space-y-1 pr-4">
             {logs.length === 0 ? (
-              <div className="text-center text-gray-500 py-8">
-                <Clock className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                <p>No logs yet</p>
-              </div>
+              <p className="text-gray-500 text-sm text-center py-8">
+                No execution logs yet. Start execution to see activity.
+              </p>
             ) : (
               logs.map((log, index) => (
-                <div key={index} className="flex items-start gap-2 text-xs">
-                  <span className="text-gray-500 font-mono whitespace-nowrap">
+                <div
+                  key={index}
+                  className="flex items-start gap-2 py-1 px-2 hover:bg-gray-800/30 rounded text-xs"
+                >
+                  <span className="text-gray-500 font-mono flex-shrink-0">
                     {formatTime(log.timestamp)}
                   </span>
                   {getLogIcon(log.type)}
-                  <span className={`flex-1 break-words ${getLogColor(log.type)}`}>
+                  <span className={`flex-1 ${getLogColor(log.type)}`}>
                     {log.message}
                   </span>
                 </div>
@@ -332,12 +301,12 @@ export function ExecutionMonitor({ onRefresh }: ExecutionMonitorProps) {
           <div className="flex justify-between text-sm mb-1">
             <span className="text-gray-400">Overall Progress</span>
             <span className="text-gray-300">
-              {stats.doneTasks} / {stats.approvedTasks} tasks 
-              ({stats.approvedTasks > 0 ? Math.round((stats.doneTasks / stats.approvedTasks) * 100) : 0}%)
+              {stats.doneTasks} / {stats.totalTasks} tasks 
+              ({stats.totalTasks > 0 ? Math.round((stats.doneTasks / stats.totalTasks) * 100) : 0}%)
             </span>
           </div>
           <Progress 
-            value={stats.approvedTasks > 0 ? (stats.doneTasks / stats.approvedTasks) * 100 : 0} 
+            value={stats.totalTasks > 0 ? (stats.doneTasks / stats.totalTasks) * 100 : 0} 
             className="h-2" 
           />
         </div>
