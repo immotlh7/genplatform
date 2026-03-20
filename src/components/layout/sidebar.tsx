@@ -134,6 +134,7 @@ export function Sidebar() {
         { name: 'Cron Jobs', href: '/dashboard/cron', icon: Clock },
         { name: 'Projects', href: '/dashboard/projects', icon: Folder },
         { name: 'Tasks', href: '/dashboard/tasks', icon: CheckSquare },
+        { name: 'Claude Code', href: '/dashboard/claude', icon: Bot, badge: 'NEW', badgeVariant: 'default' as any },
         { name: 'Ideas', href: '/ideas', icon: Lightbulb },
         { name: 'Agents', href: '/agents', icon: Bot },
         { 
