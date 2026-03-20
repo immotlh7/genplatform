@@ -357,8 +357,29 @@ async function main() {
       msg += `\n🔧 Fixed:\n${fixes.map(f => `• ${f}`).join('\n')}\n`;
     }
 
+    // Last git commits
+    try {
+      const { execSync } = require('child_process');
+      const commits = execSync(
+        'git log --oneline --since="6 minutes ago" 2>/dev/null | head -5',
+        { cwd: '/root/genplatform', encoding: 'utf-8', timeout: 5000 }
+      ).trim();
+      if (commits) {
+        msg += '\n📝 آخر تغييرات:\n' + commits.split('\n').map(c => '• ' + c.substring(8, 65)).join('\n') + '\n';
+      }
+    } catch {}
+
+    // Current executing task
+    try {
+      const ct = JSON.parse(fs.readFileSync('/root/genplatform/data/current-task.json', 'utf-8'));
+      if (ct && ct.task && ct.task.status === 'executing') {
+        msg += '\n🔨 يعمل الآن: Msg' + ct.messageNumber + '-T' + ct.task.taskNumber + '\n';
+        msg += '📋 ' + (ct.task.description || '').substring(0, 80) + '\n';
+      }
+    } catch {}
+
     if (qStats.done === qStats.total && qStats.total > 0) {
-      msg += `\nAll tasks complete!`;
+      msg += '\nAll tasks complete!';
     }
 
     await notify(msg);
