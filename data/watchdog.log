@@ -413,3 +413,24 @@
 [2026-03-20T20:08:01.705Z] 🔍 No active task — finding next...
 [2026-03-20T20:08:01.705Z] → Next: task_1773996310129_PRIORITY-1-FIX-ALL-PA Msg 15
 [2026-03-20T20:08:01.710Z] Done. Issues: 0, Fixes: 0
+[2026-03-20T20:09:01.594Z] --- Watchdog run ---
+[2026-03-20T20:09:01.627Z] ✅ Site up
+[2026-03-20T20:09:01.853Z] ✅ pm2 online
+[2026-03-20T20:09:01.863Z] 📊 Queue: 147/255 done, 85 approved, 0 executing
+[2026-03-20T20:09:01.864Z] 🔍 No active task — finding next...
+[2026-03-20T20:09:01.864Z] → Next: task_1773996310129_PRIORITY-1-FIX-ALL-PA Msg 15
+[2026-03-20T20:09:02.066Z] Done. Issues: 0, Fixes: 0
+[2026-03-20T20:10:01.676Z] --- Watchdog run ---
+[2026-03-20T20:10:01.700Z] ✅ Site up
+[2026-03-20T20:10:01.932Z] ✅ pm2 online
+[2026-03-20T20:10:01.940Z] 📊 Queue: 147/255 done, 85 approved, 0 executing
+[2026-03-20T20:10:01.941Z] 🔍 No active task — finding next...
+[2026-03-20T20:10:01.942Z] → Next: task_1773996310129_PRIORITY-1-FIX-ALL-PA Msg 15
+[2026-03-20T20:10:01.949Z] Done. Issues: 0, Fixes: 0
+[2026-03-20T20:11:01.777Z] --- Watchdog run ---
+[2026-03-20T20:11:01.798Z] ✅ Site up
+[2026-03-20T20:11:01.982Z] ✅ pm2 online
+[2026-03-20T20:11:01.990Z] 📊 Queue: 147/255 done, 85 approved, 0 executing
+[2026-03-20T20:11:01.991Z] 🔍 No active task — finding next...
+[2026-03-20T20:11:01.991Z] → Next: task_1773996310129_PRIORITY-1-FIX-ALL-PA Msg 15
+[2026-03-20T20:11:01.998Z] Done. Issues: 0, Fixes: 0
