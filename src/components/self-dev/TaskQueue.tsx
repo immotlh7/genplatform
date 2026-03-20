@@ -102,7 +102,7 @@ export function TaskQueue({ className = '', hideActions = false }: TaskQueueProp
     const response = await fetch('/api/self-dev/rewrite', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ fileId, messageNumber })
+      body: JSON.stringify({ fileId, messageNumber, approved: true })
     });
     
     if (!response.ok) {
@@ -114,7 +114,7 @@ export function TaskQueue({ className = '', hideActions = false }: TaskQueueProp
     const response = await fetch('/api/self-dev/approve', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ fileId, messageNumber })
+      body: JSON.stringify({ fileId, messageNumber, approved: true })
     });
     
     if (!response.ok) {
@@ -129,7 +129,7 @@ export function TaskQueue({ className = '', hideActions = false }: TaskQueueProp
       const response = await fetch('/api/self-dev/delete-message', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ fileId, messageNumber })
+        body: JSON.stringify({ fileId, messageNumber, approved: true })
       });
       
       if (!response.ok) {
