@@ -4,7 +4,7 @@
   "uploadedAt": "2026-03-20T08:45:10.369Z",
   "totalMessages": 33,
   "totalTasks": 68,
-  "totalMicroTasks": 192,
+  "totalMicroTasks": 204,
   "messages": [
     {
       "messageNumber": 1,
@@ -2201,28 +2201,115 @@
           "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg33-task1",
           "taskNumber": 1,
           "originalDescription": "Open src/components/layout/sidebar.tsx. Find the navigation items arrays. Add these MISSING links in the correct sections:",
-          "status": "pending",
-          "approved": false,
-          "rewritten": false,
-          "microTasks": []
+          "status": "approved",
+          "approved": true,
+          "rewritten": true,
+          "microTasks": [
+            {
+              "id": "task_1774003310394_PRIORITY-2-CHAT-AND-FEATURES.md-msg33-task1-micro1",
+              "filePath": "src/components/layout/sidebar.tsx",
+              "change": "Add Dashboard, Command Center, and Chat links to OVERVIEW section",
+              "description": "Locate the navigation items array or object that defines the OVERVIEW section links. This is typically named something like 'overviewItems', 'mainNavItems', or exists within a 'navigationConfig' object. Find the exact array structure being used. Add the following items if they don't exist: { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard }, { name: 'Command Center', href: '/dashboard/command-center', icon: Terminal, badge: 'New' }, { name: 'Chat', href: '/dashboard/chat', icon: MessageSquare }. Import any missing icons from lucide-react at the top of the file. Do NOT change any existing styling classes, colors, or layout structure.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774003310394_PRIORITY-2-CHAT-AND-FEATURES.md-msg33-task1-micro2",
+              "filePath": "src/components/layout/sidebar.tsx",
+              "change": "Add Skills, Memory, Cron Jobs, Projects, Tasks, Ideas, Automations, Agents links to CORE FEATURES section",
+              "description": "Locate the navigation items array for the CORE FEATURES section. This might be named 'coreFeatureItems', 'featureNavItems', or similar. Add these items to the array if missing: { name: 'Skills', href: '/dashboard/skills', icon: Sparkles }, { name: 'Memory', href: '/dashboard/memory', icon: Brain }, { name: 'Cron Jobs', href: '/dashboard/cron', icon: Clock }, { name: 'Projects', href: '/projects', icon: FolderKanban }, { name: 'Tasks', href: '/dashboard/tasks', icon: CheckSquare }, { name: 'Ideas', href: '/ideas', icon: Lightbulb }, { name: 'Automations', href: '/automations', icon: Workflow }, { name: 'Agents', href: '/agents', icon: Bot }. Import CheckSquare, Lightbulb, Bot icons from lucide-react if not already imported.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774003310394_PRIORITY-2-CHAT-AND-FEATURES.md-msg33-task1-micro3",
+              "filePath": "src/components/layout/sidebar.tsx",
+              "change": "Add System Monitor, Analytics, Reports links to MONITORING section",
+              "description": "Locate the navigation items array for the MONITORING section. Find the array that contains monitoring-related links and add these items if missing: { name: 'System Monitor', href: '/dashboard/monitoring', icon: Activity }, { name: 'Analytics', href: '/dashboard/analytics', icon: BarChart3 }, { name: 'Reports', href: '/dashboard/reports', icon: FileText }. Make sure to import Activity, BarChart3, FileText icons from lucide-react at the top of the file if they are not already imported. Preserve all existing items in this section.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774003310394_PRIORITY-2-CHAT-AND-FEATURES.md-msg33-task1-micro4",
+              "filePath": "src/components/layout/sidebar.tsx",
+              "change": "Add Settings, Users, Security, Help & Support links to ADMINISTRATION section",
+              "description": "Locate the navigation items array for the ADMINISTRATION section. This might be at the bottom of the navigation config. Add these items if missing: { name: 'Settings', href: '/dashboard/settings', icon: Settings }, { name: 'Users', href: '/dashboard/users', icon: Users }, { name: 'Security', href: '/dashboard/security', icon: Shield }, { name: 'Help & Support', href: '/help', icon: HelpCircle }. Import Settings, Users, Shield, HelpCircle icons from lucide-react if not present. Do NOT modify any CSS classes or layout structure.",
+              "status": "pending"
+            }
+          ]
         },
         {
           "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg33-task2",
           "taskNumber": 2,
           "originalDescription": "Verify EVERY link works by checking that each page file exists:",
-          "status": "pending",
-          "approved": false,
-          "rewritten": false,
-          "microTasks": []
+          "status": "approved",
+          "approved": true,
+          "rewritten": true,
+          "microTasks": [
+            {
+              "id": "task_1774003310394_PRIORITY-2-CHAT-AND-FEATURES.md-msg33-task2-micro1",
+              "filePath": "src/app/dashboard/tasks/page.tsx",
+              "change": "Create tasks page placeholder if missing",
+              "description": "Check if this file exists. If it does NOT exist, create a new placeholder page with the following code: 'use client'; import React from 'react'; export default function TasksPage() { return (<div className='p-6'><h1 className='text-2xl font-bold mb-4'>Tasks</h1><p className='text-muted-foreground'>Task management page coming soon.</p></div>); }. This ensures the /dashboard/tasks route will work when clicked in the sidebar. The placeholder should match the project's existing styling patterns.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774003310394_PRIORITY-2-CHAT-AND-FEATURES.md-msg33-task2-micro2",
+              "filePath": "src/app/ideas/page.tsx",
+              "change": "Create ideas page placeholder if missing",
+              "description": "Check if src/app/ideas/page.tsx OR src/app/(dashboard)/ideas/page.tsx exists. If neither exists, create src/app/ideas/page.tsx with this code: 'use client'; import React from 'react'; export default function IdeasPage() { return (<div className='p-6'><h1 className='text-2xl font-bold mb-4'>Ideas</h1><p className='text-muted-foreground'>Ideas board coming soon. Capture and organize your project ideas here.</p></div>); }. Create the src/app/ideas directory first if it doesn't exist using mkdir -p src/app/ideas.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774003310394_PRIORITY-2-CHAT-AND-FEATURES.md-msg33-task2-micro3",
+              "filePath": "src/app/agents/page.tsx",
+              "change": "Create agents page placeholder if missing",
+              "description": "Check if src/app/agents/page.tsx OR src/app/(dashboard)/agents/page.tsx exists. If neither exists, create src/app/agents/page.tsx with this code: 'use client'; import React from 'react'; export default function AgentsPage() { return (<div className='p-6'><h1 className='text-2xl font-bold mb-4'>Agents</h1><p className='text-muted-foreground'>AI Agents management page coming soon. Configure and deploy autonomous agents.</p></div>); }. Create the src/app/agents directory first if it doesn't exist using mkdir -p src/app/agents.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774003310394_PRIORITY-2-CHAT-AND-FEATURES.md-msg33-task2-micro4",
+              "filePath": "src/app/help/page.tsx",
+              "change": "Create help page placeholder if missing",
+              "description": "Check if src/app/help/page.tsx exists. If it does NOT exist, create it with: 'use client'; import React from 'react'; export default function HelpPage() { return (<div className='p-6'><h1 className='text-2xl font-bold mb-4'>Help & Support</h1><p className='text-muted-foreground'>Documentation and support resources coming soon.</p></div>); }. Create the src/app/help directory first if needed using mkdir -p src/app/help.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774003310394_PRIORITY-2-CHAT-AND-FEATURES.md-msg33-task2-micro5",
+              "filePath": "src/app/automations/page.tsx",
+              "change": "Create automations page placeholder if missing",
+              "description": "Check if src/app/automations/page.tsx exists. If it does NOT exist, create it with: 'use client'; import React from 'react'; export default function AutomationsPage() { return (<div className='p-6'><h1 className='text-2xl font-bold mb-4'>Automations</h1><p className='text-muted-foreground'>Workflow automations page coming soon. Create automated workflows and triggers.</p></div>); }. Create the src/app/automations directory using mkdir -p src/app/automations if needed.",
+              "status": "pending"
+            }
+          ]
         },
         {
           "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg33-task3",
           "taskNumber": 3,
           "originalDescription": "Make sure sidebar highlights the current active page correctly.",
-          "status": "pending",
-          "approved": false,
-          "rewritten": false,
-          "microTasks": []
+          "status": "approved",
+          "approved": true,
+          "rewritten": true,
+          "microTasks": [
+            {
+              "id": "task_1774003310394_PRIORITY-2-CHAT-AND-FEATURES.md-msg33-task3-micro1",
+              "filePath": "src/components/layout/sidebar.tsx",
+              "change": "Import and use usePathname hook from next/navigation",
+              "description": "At the top of the component, ensure usePathname hook from 'next/navigation' is imported: import { usePathname } from 'next/navigation'. Inside the component function, add or verify: const pathname = usePathname(). This hook provides the current URL path which is needed to determine which navigation item should be highlighted as active.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774003310394_PRIORITY-2-CHAT-AND-FEATURES.md-msg33-task3-micro2",
+              "filePath": "src/components/layout/sidebar.tsx",
+              "change": "Add active state styling logic to navigation links",
+              "description": "Find the component or function that renders each navigation link item. Look for where Link components are rendered, typically in a map() function over the navigation items. Add or update the active state logic by comparing pathname to each item's href. Use this pattern: const isActive = pathname === item.href || pathname.startsWith(item.href + '/'). Apply active styling conditionally: className={cn('flex items-center gap-3 px-3 py-2 rounded-lg transition-colors', isActive ? 'bg-primary/10 text-primary font-medium' : 'text-muted-foreground hover:bg-muted')}. Import cn from '@/lib/utils' if not already imported.",
+              "status": "pending"
+            },
+            {
+              "id": "task_1774003310394_PRIORITY-2-CHAT-AND-FEATURES.md-msg33-task3-micro3",
+              "filePath": "src/components/layout/sidebar.tsx",
+              "change": "Handle nested route active states correctly",
+              "description": "Verify that the active indicator appears correctly for nested routes. For example, /dashboard/skills should highlight both the Dashboard parent (if applicable) and the Skills item specifically. Update the isActive logic if needed to handle edge cases: for items with nested children, check if pathname starts with the item's href. For exact matches (like /dashboard), use strict equality: const isActive = item.exact ? pathname === item.href : (pathname === item.href || pathname.startsWith(item.href + '/')). Add an 'exact: true' property to items like Dashboard that should only highlight on exact match.",
+              "status": "pending"
+            }
+          ]
         }
       ]
     }

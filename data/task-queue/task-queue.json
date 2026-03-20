@@ -1,334 +1,242 @@
 {
-  "fileId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md",
-  "fileName": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md",
-  "uploadedAt": "2026-03-20T08:45:10.369Z",
-  "totalMessages": 33,
-  "totalTasks": 68,
-  "totalMicroTasks": 20,
+  "fileId": "task_1774013715110_PRIORITY-2-CHAT-AND-FEATURES.md",
+  "fileName": "task_1774013715110_PRIORITY-2-CHAT-AND-FEATURES.md",
+  "uploadedAt": "2026-03-20T13:35:15.269Z",
+  "totalMessages": 11,
+  "totalTasks": 25,
+  "totalMicroTasks": 0,
   "messages": [
     {
       "messageNumber": 1,
       "summary": "═══════════════════════════════════════════════════════════════",
-      "originalContent": "# ═══════════════════════════════════════════════════════════════\n# الأولوية 1: إصلاح كل الصفحات الحالية\n# كل رسالة = صفحة واحدة\n# ═══════════════════════════════════════════════════════════════\n# قبل البدء أرسل /reset ثم:\n# \"Read ~/.openclaw/workspace/memory/WORK-RULES.md and \n#  ~/.openclaw/workspace/memory/GENPLATFORM-CONTEXT.md.\n#  We are fixing all existing pages. Follow all rules. Confirm: Ready\"\n# ═══════════════════════════════════════════════════════════════",
+      "originalContent": "# ═══════════════════════════════════════════════════════════════\n# الأولوية 2: نظام الشات الاحترافي + المشاريع المتقدمة\n# ═══════════════════════════════════════════════════════════════",
       "tasks": []
     },
     {
       "messageNumber": 2,
-      "summary": "الرسالة 1: إصلاح Gateway Offline Notification",
-      "originalContent": "# الرسالة 1: إصلاح Gateway Offline Notification",
+      "summary": "الرسالة 17: الشات الاحترافي — Split View",
+      "originalContent": "# الرسالة 17: الشات الاحترافي — Split View",
       "tasks": []
     },
     {
       "messageNumber": 3,
-      "summary": "URGENT FIX: The \"Gateway Offline\" notification appears on EVERY page even when gateway is running. F",
-      "originalContent": "URGENT FIX: The \"Gateway Offline\" notification appears on EVERY page even when gateway is running. Fix it completely.\n\nProject: /root/genplatform. Site: https://app.gen3.ai.\n\nDESIGN PROTECTION: Do NOT modify sidebar.tsx, navbar.tsx, layout.tsx, or globals.css.\n\nTask 1: Open src/components/notifications/notification-system.tsx (or wherever the Gateway Offline banner is). Find where it checks gateway status. It currently checks incorrectly. Fix the logic:\n- Fetch /api/bridge/status\n- If response has gateway.status === 'running' OR services array has a running gateway → gateway IS online → do NOT show warning\n- If fetch fails OR gateway not running → show warning\n- Add try/catch so if Bridge API is down, show \"Connecting...\" not \"Gateway Offline\"\n\nTask 2: The notification \"CPU usage has been above 85%\" is fake/hardcoded. Remove it. Only show REAL notifications:\n- Gateway status (from /api/bridge/status)\n- Real CPU alert only if /api/bridge/metrics returns cpu > 85\n- Build/deploy status\n\nTask 3: The notification bell in the top bar shows a red badge with count. Make sure the count matches REAL unread notifications only. If no real alerts, badge should be hidden.\n\nTask 4: Also check if there is a NotificationBell.tsx component that duplicates this logic. If yes, consolidate into one system.\n\nAfter ALL: npm run build && pm2 restart genplatform-app && git add -A && git commit -m \"Fix Gateway Offline notification + remove fake alerts\" && git push\n\n🔗 Preview: https://app.gen3.ai/dashboard\nDo all 4 tasks NOW.",
+      "summary": "Build a professional Chat page like ChatGPT with split view.",
+      "originalContent": "Build a professional Chat page like ChatGPT with split view.\n\nProject: /root/genplatform. Site: https://app.gen3.ai.\nDESIGN PROTECTION: Do NOT modify sidebar.tsx, navbar.tsx, layout.tsx, globals.css.\n\nTask 1: Completely rebuild src/app/dashboard/chat/page.tsx as a split-view layout:\n- LEFT side (40% width): Chat interface\n- RIGHT side (60% width): Live preview iframe\n- A draggable divider between them (optional, fixed split is ok)\n\nTask 2: LEFT side — Chat interface:\n- Top bar: Project selector dropdown (fetch from /api/projects), current project name displayed\n- Chat permissions badges: \"Read/Write\", \"Commander Enabled\"\n- Message area (scrollable, flex-grow):\n  * User messages: right-aligned, blue-ish dark background, rounded corners\n  * AI messages: left-aligned, darker background, rounded corners\n  * System messages: centered, small, gray\n  * Each message: avatar, name, timestamp, content\n  * Auto-scroll to bottom on new message\n- Bottom input area:\n  * Text input with placeholder \"Type your message (English or Arabic)...\"\n  * Send button (arrow icon)\n  * If text contains Arabic characters → show blue banner: \"Commander Mode — Arabic will be translated to English command\"\n  * Input direction: auto-detect RTL for Arabic\n\nTask 3: RIGHT side — Live Preview:\n- iframe src = selected project's previewUrl\n- Device toggle buttons above: Desktop (100% width), Tablet (768px), Mobile (375px)\n- \"Open in new tab\" button\n- \"Refresh\" button to reload iframe\n- If no project selected or no previewUrl: show \"Select a project to preview\" message\n\nTask 4: Message sending flow:\n- User types message → press Enter or click Send\n- Add message to local state immediately (optimistic)\n- POST /api/chat/send with {message, projectId}\n- Show \"AI is thinking...\" indicator\n- The message includes project context: \"[Project: {name} | Path: {path}] {message}\"\n- Bot token: 8635233052:AAGsuMzqhTHwQsFg4qGYPfUEyZPiLsAceA4\n- Owner chat: 510906393\n\nTask 5: When project changes in dropdown:\n- Update the preview iframe src\n- Clear chat or show project-specific chat history\n- Update context for messages\n\nAfter ALL: npm run build && pm2 restart genplatform-app && git add -A && git commit -m \"Chat: professional split view with preview\" && git push\n\n🔗 Preview: https://app.gen3.ai/dashboard/chat\nDo all 5 tasks NOW.",
       "tasks": [
         {
-          "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg3-task1",
+          "taskId": "task_1774013715110_PRIORITY-2-CHAT-AND-FEATURES.md-msg3-task1",
           "taskNumber": 1,
-          "originalDescription": "Open src/components/notifications/notification-system.tsx (or wherever the Gateway Offline banner is). Find where it checks gateway status. It currently checks incorrectly. Fix the logic:",
-          "status": "approved",
-          "approved": true,
-          "rewritten": true,
-          "microTasks": [
-            {
-              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg3-task1-micro1",
-              "filePath": "src/app/dashboard/page.tsx",
-              "change": "Analyze and implement the requested feature",
-              "description": "Implement the following task with precision: Open src/components/notifications/notification-system.tsx (or wherever the Gateway Offline banner is). Find where it checks gateway status. It currently checks incorrectly. Fix the logic:. First identify the correct file and component, then make the necessary changes following the project's coding standards.",
-              "status": "pending"
-            }
-          ]
+          "originalDescription": "Completely rebuild src/app/dashboard/chat/page.tsx as a split-view layout:",
+          "status": "pending",
+          "approved": false,
+          "rewritten": false,
+          "microTasks": []
         },
         {
-          "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg3-task2",
+          "taskId": "task_1774013715110_PRIORITY-2-CHAT-AND-FEATURES.md-msg3-task2",
           "taskNumber": 2,
-          "originalDescription": "The notification \"CPU usage has been above 85%\" is fake/hardcoded. Remove it. Only show REAL notifications:",
-          "status": "approved",
-          "approved": true,
-          "rewritten": true,
-          "microTasks": [
-            {
-              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg3-task2-micro1",
-              "filePath": "src/app/dashboard/page.tsx",
-              "change": "Analyze and implement the requested feature",
-              "description": "Implement the following task with precision: The notification \"CPU usage has been above 85%\" is fake/hardcoded. Remove it. Only show REAL notifications:. First identify the correct file and component, then make the necessary changes following the project's coding standards.",
-              "status": "pending"
-            }
-          ]
+          "originalDescription": "LEFT side — Chat interface:",
+          "status": "pending",
+          "approved": false,
+          "rewritten": false,
+          "microTasks": []
         },
         {
-          "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg3-task3",
+          "taskId": "task_1774013715110_PRIORITY-2-CHAT-AND-FEATURES.md-msg3-task3",
           "taskNumber": 3,
-          "originalDescription": "The notification bell in the top bar shows a red badge with count. Make sure the count matches REAL unread notifications only. If no real alerts, badge should be hidden.",
-          "status": "approved",
-          "approved": true,
-          "rewritten": true,
-          "microTasks": [
-            {
-              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg3-task3-micro1",
-              "filePath": "src/app/dashboard/page.tsx",
-              "change": "Analyze and implement the requested feature",
-              "description": "Implement the following task with precision: The notification bell in the top bar shows a red badge with count. Make sure the count matches REAL unread notifications only. If no real alerts, badge should be hidden.. First identify the correct file and component, then make the necessary changes following the project's coding standards.",
-              "status": "pending"
-            }
-          ]
+          "originalDescription": "RIGHT side — Live Preview:",
+          "status": "pending",
+          "approved": false,
+          "rewritten": false,
+          "microTasks": []
         },
         {
-          "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg3-task4",
+          "taskId": "task_1774013715110_PRIORITY-2-CHAT-AND-FEATURES.md-msg3-task4",
           "taskNumber": 4,
-          "originalDescription": "Also check if there is a NotificationBell.tsx component that duplicates this logic. If yes, consolidate into one system.",
-          "status": "approved",
-          "approved": true,
-          "rewritten": true,
-          "microTasks": [
-            {
-              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg3-task4-micro1",
-              "filePath": "src/app/dashboard/page.tsx",
-              "change": "Analyze and implement the requested feature",
-              "description": "Implement the following task with precision: Also check if there is a NotificationBell.tsx component that duplicates this logic. If yes, consolidate into one system.. First identify the correct file and component, then make the necessary changes following the project's coding standards.",
-              "status": "pending"
-            }
-          ]
+          "originalDescription": "Message sending flow:",
+          "status": "pending",
+          "approved": false,
+          "rewritten": false,
+          "microTasks": []
+        },
+        {
+          "taskId": "task_1774013715110_PRIORITY-2-CHAT-AND-FEATURES.md-msg3-task5",
+          "taskNumber": 5,
+          "originalDescription": "When project changes in dropdown:",
+          "status": "pending",
+          "approved": false,
+          "rewritten": false,
+          "microTasks": []
         }
       ]
     },
     {
       "messageNumber": 4,
-      "summary": "الرسالة 2: إصلاح Dashboard",
-      "originalContent": "# الرسالة 2: إصلاح Dashboard",
+      "summary": "الرسالة 18: Tasks/Kanban Board المتقدم",
+      "originalContent": "# الرسالة 18: Tasks/Kanban Board المتقدم",
       "tasks": []
     },
     {
       "messageNumber": 5,
-      "summary": "Fix the Dashboard page to be professional and useful.",
-      "originalContent": "Fix the Dashboard page to be professional and useful.\n\nProject: /root/genplatform. Site: https://app.gen3.ai.\nDESIGN PROTECTION: Do NOT modify sidebar.tsx, navbar.tsx, layout.tsx, globals.css.\n\nTask 1: Live Task Monitor widget at the top. Currently shows \"Sprint 0D\" and old data. Fix:\n- Fetch from /api/bridge/live-status for current task info\n- Show: Current phase name, current task name, progress bar\n- Make it clickable → navigates to /dashboard/tasks\n- If no active task: show \"All tasks complete — waiting for next assignment\"\n- Remove \"Sprint 0D\" text. Replace with real phase from PROGRESS.md\n\nTask 2: Stat Cards row (All Projects, Tasks, Team, Automations, Reports, Security). Fix each:\n- All Projects: fetch /api/projects → show real count + active/completed\n- Tasks: fetch /api/tasks → show real done/total + completion rate\n- Team: keep 1 active (hardcoded is fine for now)\n- Automations: fetch /api/workflows → show real active count\n- Reports: fetch /api/bridge/reports or keep current if working\n- Security: show \"Healthy\" with real last check time from /api/bridge/status\n\nTask 3: System Performance section at bottom. Must show REAL data:\n- CPU Usage: fetch /api/bridge/metrics → resources.cpu.usage → show percentage with color (green <60, amber <80, red >80)\n- Memory Usage: same from metrics → resources.memory.usage\n- Remove any hardcoded percentages\n\nTask 4: Quick Actions section. Make ALL buttons work:\n- \"New Project\" → navigate to /projects with create dialog open, OR call /api/projects POST\n- \"View Projects\" → navigate to /projects\n- \"View Reports\" → navigate to /dashboard/reports\n- \"Generate Report\" → navigate to /dashboard/reports with generate dialog\n- \"Manage Team\" → navigate to /dashboard/users\n- \"System Health\" → navigate to /dashboard/monitoring\n\nTask 5: Activity Stream. Show real recent events:\n- Fetch last 5 git commits from /api/bridge/logs or hardcode last known commits\n- Each entry: icon + message + time ago\n- Remove any fake \"Task 0D-23 completed\" entries\n\nTask 6: Workflows section. Either show real workflows from /api/workflows or hide the section if empty. \"No workflows running\" is fine but \"Start Workflow\" button should navigate to /automations.\n\nAfter ALL: npm run build && pm2 restart genplatform-app && git add -A && git commit -m \"Dashboard: all real data, working buttons, professional layout\" && git push\n\n🔗 Preview: https://app.gen3.ai/dashboard\nDo all 6 tasks NOW.",
+      "summary": "Improve the Tasks/Kanban page to be fully functional.",
+      "originalContent": "Improve the Tasks/Kanban page to be fully functional.\n\nProject: /root/genplatform. Site: https://app.gen3.ai.\nDESIGN PROTECTION: Do NOT modify sidebar.tsx, navbar.tsx, layout.tsx, globals.css.\n\nTask 1: The Kanban page at /dashboard/tasks should have:\n- 5 columns: Backlog (gray) | Planned (blue) | In Progress (amber) | Review (purple) | Done (green)\n- Each column: colored top border, title, task count badge\n- Top bar: Progress bar (\"X of Y tasks done\"), Search, Role filter, Sprint filter, View toggle (Board/List)\n\nTask 2: Task cards in columns:\n- Task number (T-01), name (bold), assigned department icon+name\n- Priority badge (red=high, amber=medium, green=low)\n- Estimated time\n- If in_progress: show elapsed time since started\n- If done: show actual vs estimated time\n- \"→ Move\" button to advance to next column\n\nTask 3: New Task button:\n- Modal with: Name, Description, Assigned Department (dropdown with 7 departments), Priority, Estimated Time, Sprint\n- Submit → POST /api/tasks → add to Backlog column\n\nTask 4: Click task card → Detail modal:\n- Full details: name, description, department, priority, sprint, times\n- Status change buttons: Plan → Start → Review → Complete\n- Notes textarea\n- History of status changes\n\nTask 5: Initialize with real tasks from our development:\n- T-01: Fix Gateway notification (done)\n- T-02: Fix Dashboard real data (done) \n- T-03: Fix Memory page (done)\n- T-04: Build Chat split view (in_progress)\n- T-05: Build 3D visualization (planned)\n- T-06: Arabic/RTL support (backlog)\n- T-07: Voice input (backlog)\n- T-08: Token tracking (backlog)\n- Plus more realistic tasks\n\nAfter ALL: npm run build && pm2 restart genplatform-app && git add -A && git commit -m \"Kanban: full board, task CRUD, detail modal\" && git push\n\n🔗 Preview: https://app.gen3.ai/dashboard/tasks\nDo all 5 tasks NOW.",
       "tasks": [
         {
-          "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg5-task1",
+          "taskId": "task_1774013715110_PRIORITY-2-CHAT-AND-FEATURES.md-msg5-task1",
           "taskNumber": 1,
-          "originalDescription": "Live Task Monitor widget at the top. Currently shows \"Sprint 0D\" and old data. Fix:",
-          "status": "approved",
-          "approved": true,
-          "rewritten": true,
-          "microTasks": [
-            {
-              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg5-task1-micro1",
-              "filePath": "src/app/dashboard/page.tsx",
-              "change": "Analyze and implement the requested feature",
-              "description": "Implement the following task with precision: Live Task Monitor widget at the top. Currently shows \"Sprint 0D\" and old data. Fix:. First identify the correct file and component, then make the necessary changes following the project's coding standards.",
-              "status": "pending"
-            }
-          ]
+          "originalDescription": "The Kanban page at /dashboard/tasks should have:",
+          "status": "pending",
+          "approved": false,
+          "rewritten": false,
+          "microTasks": []
         },
         {
-          "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg5-task2",
+          "taskId": "task_1774013715110_PRIORITY-2-CHAT-AND-FEATURES.md-msg5-task2",
           "taskNumber": 2,
-          "originalDescription": "Stat Cards row (All Projects, Tasks, Team, Automations, Reports, Security). Fix each:",
-          "status": "approved",
-          "approved": true,
-          "rewritten": true,
-          "microTasks": [
-            {
-              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg5-task2-micro1",
-              "filePath": "src/app/dashboard/page.tsx",
-              "change": "Analyze and implement the requested feature",
-              "description": "Implement the following task with precision: Stat Cards row (All Projects, Tasks, Team, Automations, Reports, Security). Fix each:. First identify the correct file and component, then make the necessary changes following the project's coding standards.",
-              "status": "pending"
-            }
-          ]
+          "originalDescription": "Task cards in columns:",
+          "status": "pending",
+          "approved": false,
+          "rewritten": false,
+          "microTasks": []
         },
         {
-          "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg5-task3",
+          "taskId": "task_1774013715110_PRIORITY-2-CHAT-AND-FEATURES.md-msg5-task3",
           "taskNumber": 3,
-          "originalDescription": "System Performance section at bottom. Must show REAL data:",
-          "status": "approved",
-          "approved": true,
-          "rewritten": true,
-          "microTasks": [
-            {
-              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg5-task3-micro1",
-              "filePath": "src/app/dashboard/page.tsx",
-              "change": "Analyze and implement the requested feature",
-              "description": "Implement the following task with precision: System Performance section at bottom. Must show REAL data:. First identify the correct file and component, then make the necessary changes following the project's coding standards.",
-              "status": "pending"
-            }
-          ]
+          "originalDescription": "New Task button:",
+          "status": "pending",
+          "approved": false,
+          "rewritten": false,
+          "microTasks": []
         },
         {
-          "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg5-task4",
+          "taskId": "task_1774013715110_PRIORITY-2-CHAT-AND-FEATURES.md-msg5-task4",
           "taskNumber": 4,
-          "originalDescription": "Quick Actions section. Make ALL buttons work:",
-          "status": "approved",
-          "approved": true,
-          "rewritten": true,
-          "microTasks": [
-            {
-              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg5-task4-micro1",
-              "filePath": "src/app/dashboard/page.tsx",
-              "change": "Analyze and implement the requested feature",
-              "description": "Implement the following task with precision: Quick Actions section. Make ALL buttons work:. First identify the correct file and component, then make the necessary changes following the project's coding standards.",
-              "status": "pending"
-            }
-          ]
+          "originalDescription": "Click task card → Detail modal:",
+          "status": "pending",
+          "approved": false,
+          "rewritten": false,
+          "microTasks": []
         },
         {
-          "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg5-task5",
+          "taskId": "task_1774013715110_PRIORITY-2-CHAT-AND-FEATURES.md-msg5-task5",
           "taskNumber": 5,
-          "originalDescription": "Activity Stream. Show real recent events:",
-          "status": "approved",
-          "approved": true,
-          "rewritten": true,
-          "microTasks": [
-            {
-              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg5-task5-micro1",
-              "filePath": "src/app/dashboard/page.tsx",
-              "change": "Analyze and implement the requested feature",
-              "description": "Implement the following task with precision: Activity Stream. Show real recent events:. First identify the correct file and component, then make the necessary changes following the project's coding standards.",
-              "status": "pending"
-            }
-          ]
-        },
-        {
-          "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg5-task6",
-          "taskNumber": 6,
-          "originalDescription": "Workflows section. Either show real workflows from /api/workflows or hide the section if empty. \"No workflows running\" is fine but \"Start Workflow\" button should navigate to /automations.",
-          "status": "approved",
-          "approved": true,
-          "rewritten": true,
-          "microTasks": [
-            {
-              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg5-task6-micro1",
-              "filePath": "src/app/api/workflows/route.ts",
-              "change": "Create or update the API route",
-              "description": "In src/app/api/workflows/route.ts, implement the requested API functionality: Workflows section. Either show real workflows from /api/workflows or hide the section if empty. \"No workflows running\" is fine but \"Start Workflow\" button should navigate to /automations.. Use Next.js 13+ app router conventions with proper request/response handling.",
-              "status": "pending"
-            }
-          ]
+          "originalDescription": "Initialize with real tasks from our development:",
+          "status": "pending",
+          "approved": false,
+          "rewritten": false,
+          "microTasks": []
         }
       ]
     },
     {
       "messageNumber": 6,
-      "summary": "الرسالة 3: إصلاح Top Navigation Bar",
-      "originalContent": "# الرسالة 3: إصلاح Top Navigation Bar",
+      "summary": "الرسالة 19: Agents Page الاحترافية",
+      "originalContent": "# الرسالة 19: Agents Page الاحترافية",
       "tasks": []
     },
     {
       "messageNumber": 7,
-      "summary": "Fix the top navigation bar to show correct user info.",
-      "originalContent": "Fix the top navigation bar to show correct user info.\n\nProject: /root/genplatform. Site: https://app.gen3.ai.\nDESIGN PROTECTION: Do NOT change the dark background color, layout structure, or sidebar. ONLY fix the user display area on the right side of the navbar.\n\nTask 1: The user avatar area shows \"U User Member\". Fix:\n- Show \"Med\" as the name (from auth cookie or hardcode)\n- Show \"OWNER\" badge instead of \"Member\" (green badge)\n- The dropdown menu should show: Profile, Settings, Sign out\n- Profile link → /dashboard/settings (not /profile which is 404)\n\nTask 2: Sign Out button must work:\n- Clear the auth-token cookie\n- Redirect to /login\n- After sign out, accessing /dashboard should redirect to /login (not show data)\n\nTask 3: The \"Select Project\" dropdown in the top bar. Make it functional:\n- Fetch /api/projects to get project list\n- When selected, store in localStorage or context\n- Show selected project name in the dropdown\n- Default: \"GenPlatform.ai\"\n\nTask 4: Navigation links (Dashboard, Projects, Automations, Reports) — verify all navigate correctly:\n- Dashboard → /dashboard\n- Projects → /projects\n- Automations → /automations\n- Reports → /dashboard/reports\n\nAfter ALL: npm run build && pm2 restart genplatform-app && git add -A && git commit -m \"Fix navbar: user info, sign out, project selector\" && git push\n\n🔗 Preview: https://app.gen3.ai/dashboard\nDo all 4 tasks NOW.",
+      "summary": "Build a professional Agents page showing all 7 AI departments.",
+      "originalContent": "Build a professional Agents page showing all 7 AI departments.\n\nProject: /root/genplatform. Site: https://app.gen3.ai.\nDESIGN PROTECTION: Do NOT modify sidebar.tsx, navbar.tsx, layout.tsx, globals.css.\n\nTask 1: Create/improve the Agents page at src/app/agents/page.tsx or src/app/(dashboard)/agents/page.tsx. Make sure it's accessible from sidebar.\n\nTask 2: Header with stats:\n- Total Departments: 7\n- Currently Active: count from /api/bridge/status (if gateway running, at least 1 active)\n- Tasks Completed: total across all departments\n- Skills Available: count from /api/bridge/skills\n\nTask 3: Department cards (2-column grid):\n🔬 Research Analyst — Skills: deep-research-pro, exa-search, tavily-search — \"Conducts market research and competitive analysis\"\n📋 Architecture & Planning — Skills: task-planner, project-architect — \"Designs system architecture and sprint roadmaps\"\n💻 Frontend Development — Skills: developer, senior-dev, coding-agent — \"Builds React components and UI features\"\n⚙️ Backend Development — Skills: developer, api-builder — \"Creates API endpoints and server logic\"\n🔍 Quality Assurance — Skills: critical-code-reviewer — \"Reviews code quality and runs tests\"\n🛡️ Security — Skills: security-scanner, security-audit-toolkit — \"Scans vulnerabilities and audits code\"\n📈 Self-Improvement — Skills: self-improving-agent — \"Analyzes performance and suggests improvements\"\n\nTask 4: Each card shows:\n- Icon + name + status indicator (green pulsing=active, gray=idle)\n- Current task if active\n- Skills as small badges\n- Mini weekly activity chart (7 bars, can be placeholder data)\n- Last action with timestamp\n- Task count completed\n\nTask 5: Toggle view: Cards (default) vs Skills Matrix (table showing departments as rows, skills as columns, checkmark where they match)\n\nAfter ALL: npm run build && pm2 restart genplatform-app && git add -A && git commit -m \"Agents: 7 departments, cards, matrix view\" && git push\n\n🔗 Preview: https://app.gen3.ai/agents\nDo all 5 tasks NOW.",
       "tasks": [
         {
-          "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg7-task1",
+          "taskId": "task_1774013715110_PRIORITY-2-CHAT-AND-FEATURES.md-msg7-task1",
           "taskNumber": 1,
-          "originalDescription": "The user avatar area shows \"U User Member\". Fix:",
-          "status": "review",
+          "originalDescription": "Create/improve the Agents page at src/app/agents/page.tsx or src/app/(dashboard)/agents/page.tsx. Make sure it's accessible from sidebar.",
+          "status": "pending",
           "approved": false,
-          "rewritten": true,
-          "microTasks": [
-            {
-              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg7-task1-micro1",
-              "filePath": "src/app/dashboard/page.tsx",
-              "change": "Analyze and implement the requested feature",
-              "description": "Implement the following task with precision: The user avatar area shows \"U User Member\". Fix:. First identify the correct file and component, then make the necessary changes following the project's coding standards.",
-              "status": "pending"
-            }
-          ]
+          "rewritten": false,
+          "microTasks": []
         },
         {
-          "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg7-task2",
+          "taskId": "task_1774013715110_PRIORITY-2-CHAT-AND-FEATURES.md-msg7-task2",
           "taskNumber": 2,
-          "originalDescription": "Sign Out button must work:",
-          "status": "review",
+          "originalDescription": "Header with stats:",
+          "status": "pending",
           "approved": false,
-          "rewritten": true,
-          "microTasks": [
-            {
-              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg7-task2-micro1",
-              "filePath": "src/app/dashboard/page.tsx",
-              "change": "Analyze and implement the requested feature",
-              "description": "Implement the following task with precision: Sign Out button must work:. First identify the correct file and component, then make the necessary changes following the project's coding standards.",
-              "status": "pending"
-            }
-          ]
+          "rewritten": false,
+          "microTasks": []
         },
         {
-          "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg7-task3",
+          "taskId": "task_1774013715110_PRIORITY-2-CHAT-AND-FEATURES.md-msg7-task3",
           "taskNumber": 3,
-          "originalDescription": "The \"Select Project\" dropdown in the top bar. Make it functional:",
-          "status": "review",
+          "originalDescription": "Department cards (2-column grid):",
+          "status": "pending",
           "approved": false,
-          "rewritten": true,
-          "microTasks": [
-            {
-              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg7-task3-micro1",
-              "filePath": "src/app/dashboard/page.tsx",
-              "change": "Analyze and implement the requested feature",
-              "description": "Implement the following task with precision: The \"Select Project\" dropdown in the top bar. Make it functional:. First identify the correct file and component, then make the necessary changes following the project's coding standards.",
-              "status": "pending"
-            }
-          ]
+          "rewritten": false,
+          "microTasks": []
         },
         {
-          "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg7-task4",
+          "taskId": "task_1774013715110_PRIORITY-2-CHAT-AND-FEATURES.md-msg7-task4",
           "taskNumber": 4,
-          "originalDescription": "Navigation links (Dashboard, Projects, Automations, Reports) — verify all navigate correctly:",
-          "status": "review",
+          "originalDescription": "Each card shows:",
+          "status": "pending",
           "approved": false,
-          "rewritten": true,
-          "microTasks": [
-            {
-              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg7-task4-micro1",
-              "filePath": "src/app/dashboard/page.tsx",
-              "change": "Locate the component mentioned in the task",
-              "description": "In src/app/dashboard/page.tsx, find the main DashboardPage component. Look for the specific section mentioned in the task: \"Navigation links (Dashboard, Projects, Automations, Reports) — verify all navigate correctly:\". Identify the exact component or JSX element that needs to be modified.",
-              "status": "pending"
-            },
-            {
-              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg7-task4-micro2",
-              "filePath": "src/app/dashboard/page.tsx",
-              "change": "Implement the requested change",
-              "description": "Make the specific change requested in the original task. This involves modifying the identified component to Navigation links (Dashboard, Projects, Automations, Reports) — verify all navigate correctly:. Ensure proper TypeScript types and React best practices are followed.",
-              "status": "pending"
-            }
-          ]
+          "rewritten": false,
+          "microTasks": []
+        },
+        {
+          "taskId": "task_1774013715110_PRIORITY-2-CHAT-AND-FEATURES.md-msg7-task5",
+          "taskNumber": 5,
+          "originalDescription": "Toggle view: Cards (default) vs Skills Matrix (table showing departments as rows, skills as columns, checkmark where they match)",
+          "status": "pending",
+          "approved": false,
+          "rewritten": false,
+          "microTasks": []
         }
       ]
     },
     {
       "messageNumber": 8,
-      "summary": "الرسالة 4: إصلاح Command Center",
-      "originalContent": "# الرسالة 4: إصلاح Command Center",
+      "summary": "الرسالة 20: Ideas Lab الاحترافية",
+      "originalContent": "# الرسالة 20: Ideas Lab الاحترافية",
       "tasks": []
     },
     {
       "messageNumber": 9,
-      "summary": "Fix the Command Center page to be useful and connected to real actions.",
-      "originalContent": "Fix the Command Center page to be useful and connected to real actions.\n\nProject: /root/genplatform. Site: https://app.gen3.ai.\nDESIGN PROTECTION: Do NOT modify sidebar.tsx, navbar.tsx, layout.tsx, globals.css.\n\nTask 1: Status cards at top. Fix each:\n- System Health: fetch /api/bridge/status. If gateway running → \"Healthy\" (green). If not → \"Warning\" (amber)\n- Resource Usage: fetch /api/bridge/metrics. Show real CPU%, Memory%, Disk%\n- Active Users: show \"1\" (Med, OWNER). Remove \"12\" and \"8 active tasks\" fake data\n- Services Status: fetch /api/bridge/status. List real services: OpenClaw Gateway (running/stopped), Bridge API (running), Next.js (running)\n\nTask 2: Quick Actions — make ALL buttons execute real commands:\n- \"Restart Gateway\": POST /api/bridge/gateway → show success/error toast\n- \"System Health Check\": GET /api/bridge/metrics → show results in a modal\n- \"View Logs\": navigate to /dashboard/monitoring (Logs tab)\n- \"Clear System Cache\": show \"Cache cleared\" toast (can be cosmetic for now)\n- \"Backup Memory Files\": POST /api/bridge/memory with action=backup → show toast\n- \"Update All Skills\": show \"Skills are up to date\" toast\n- \"Optimize Database\": show \"Optimization complete\" toast\n- \"Export System Logs\": download /api/bridge/logs as JSON file\n- \"Network Connectivity Test\": fetch /api/bridge/health → show latency result\n- \"Disk Space Cleanup\": show \"Cleanup complete\" toast\n- \"Reset Configuration\": show confirmation dialog → \"Are you sure?\" → do nothing on confirm (safety)\n\nTask 3: Remove the \"Terminal\" and \"Services\" tabs if they don't have real content. Keep only \"Quick Actions\" tab.\n\nAfter ALL: npm run build && pm2 restart genplatform-app && git add -A && git commit -m \"Command Center: real status, working actions\" && git push\n\n🔗 Preview: https://app.gen3.ai/dashboard/command-center\nDo all 3 tasks NOW.",
+      "summary": "Build a professional Ideas Lab page with pipeline visualization.",
+      "originalContent": "Build a professional Ideas Lab page with pipeline visualization.\n\nProject: /root/genplatform. Site: https://app.gen3.ai.\nDESIGN PROTECTION: Do NOT modify sidebar.tsx, navbar.tsx, layout.tsx, globals.css.\n\nTask 1: The Ideas page at /ideas or /(dashboard)/ideas. Must be accessible from sidebar. Shows the idea pipeline:\n- Pipeline stages displayed as horizontal tabs or columns: Pending → Research → Planning → Approved → In Development\n- Stats cards: Total Ideas, Pending, Approved, In Development\n\nTask 2: Each idea card:\n- Title, description (truncated), status badge, priority badge\n- Vote count with up/down buttons\n- Submitted by + date\n- Category badge (project/feature/enhancement/bug)\n\nTask 3: \"Submit Idea\" button:\n- Modal with: Title (required), Description (textarea), Category (dropdown), Priority (dropdown)\n- Submit → POST /api/ideas\n- Idea starts in \"Pending\" status\n\nTask 4: Idea detail — click an idea:\n- Full view with all fields\n- \"Research\" button → POST /api/ideas/[id]/research → sends to OpenClaw for analysis\n- \"Approve\" button → changes status to \"Approved\"\n- \"Create Tasks\" button → POST /api/ideas/[id]/create-tasks → generates Kanban tasks\n- Research notes area (editable, saved via PUT /api/ideas/[id])\n\nTask 5: Initialize with 4 ideas:\n- \"Online Marketplace for Morocco\" (approved, high priority)\n- \"AI Writing Assistant\" (pending, medium)\n- \"Mobile App Version\" (research, low)\n- \"Voice Commands for Arabic\" (pending, medium)\n\nAfter ALL: npm run build && pm2 restart genplatform-app && git add -A && git commit -m \"Ideas Lab: pipeline, submit, research, approve\" && git push\n\n🔗 Preview: https://app.gen3.ai/ideas\nDo all 5 tasks NOW.",
       "tasks": [
         {
-          "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg9-task1",
+          "taskId": "task_1774013715110_PRIORITY-2-CHAT-AND-FEATURES.md-msg9-task1",
           "taskNumber": 1,
-          "originalDescription": "Status cards at top. Fix each:",
+          "originalDescription": "The Ideas page at /ideas or /(dashboard)/ideas. Must be accessible from sidebar. Shows the idea pipeline:",
           "status": "pending",
           "approved": false,
           "rewritten": false,
           "microTasks": []
         },
         {
-          "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg9-task2",
+          "taskId": "task_1774013715110_PRIORITY-2-CHAT-AND-FEATURES.md-msg9-task2",
           "taskNumber": 2,
-          "originalDescription": "Quick Actions — make ALL buttons execute real commands:",
+          "originalDescription": "Each idea card:",
           "status": "pending",
           "approved": false,
           "rewritten": false,
           "microTasks": []
         },
         {
-          "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg9-task3",
+          "taskId": "task_1774013715110_PRIORITY-2-CHAT-AND-FEATURES.md-msg9-task3",
           "taskNumber": 3,
-          "originalDescription": "Remove the \"Terminal\" and \"Services\" tabs if they don't have real content. Keep only \"Quick Actions\" tab.",
+          "originalDescription": "\"Submit Idea\" button:",
+          "status": "pending",
+          "approved": false,
+          "rewritten": false,
+          "microTasks": []
+        },
+        {
+          "taskId": "task_1774013715110_PRIORITY-2-CHAT-AND-FEATURES.md-msg9-task4",
+          "taskNumber": 4,
+          "originalDescription": "Idea detail — click an idea:",
+          "status": "pending",
+          "approved": false,
+          "rewritten": false,
+          "microTasks": []
+        },
+        {
+          "taskId": "task_1774013715110_PRIORITY-2-CHAT-AND-FEATURES.md-msg9-task5",
+          "taskNumber": 5,
+          "originalDescription": "Initialize with 4 ideas:",
           "status": "pending",
           "approved": false,
           "rewritten": false,
@@ -338,652 +246,55 @@
     },
     {
       "messageNumber": 10,
-      "summary": "الرسالة 5: إصلاح Memory Page",
-      "originalContent": "# الرسالة 5: إصلاح Memory Page",
+      "summary": "الرسالة 21: APIs & Integrations Page (جديدة)",
+      "originalContent": "# الرسالة 21: APIs & Integrations Page (جديدة)",
       "tasks": []
     },
     {
       "messageNumber": 11,
-      "summary": "The Memory page at /dashboard/memory is broken. Fix it completely.",
-      "originalContent": "The Memory page at /dashboard/memory is broken. Fix it completely.\n\nProject: /root/genplatform. Site: https://app.gen3.ai.\nDESIGN PROTECTION: Do NOT modify sidebar.tsx, navbar.tsx, layout.tsx, globals.css.\n\nTask 1: The page should load the file tree from Bridge API. On mount:\n- Fetch GET /api/bridge/memory\n- Response has: tree (array of files/folders), stats (totalFiles, totalFolders, totalSize)\n- Display tree on the LEFT side as a file browser (folders expandable, files clickable)\n- Display stats in the top cards: Total Files, Projects count, Areas count, Resources count\n\nTask 2: When clicking a file in the tree:\n- Fetch GET /api/bridge/memory?path=[filePath]\n- Response has: content (string), name, path, size\n- Display content in the RIGHT panel\n- If file ends with .md: render as formatted text (preserve line breaks, headers)\n- If other format: show as monospace plain text\n- Show file name and path above the content\n\nTask 3: Add EDIT functionality:\n- \"Edit\" button appears when viewing a file\n- Click → content becomes a textarea (editable)\n- \"Save\" button → PUT /api/bridge/memory with body {path: filePath, content: newContent}\n- Show success toast on save\n- \"Cancel\" button → reverts to view mode without saving\n\nTask 4: Add NEW FILE button in the header:\n- Click → modal with two fields: \"File path\" (e.g. notes/meeting.md) and \"Content\" (textarea)\n- Submit → PUT /api/bridge/memory with {path, content}\n- On success → refresh tree and select the new file\n- Validate: path cannot be empty, cannot contain \"..\"\n\nTask 5: Stats cards at top should show:\n- Total Files: real count from API\n- Projects: count files in projects/ folder\n- Areas: count files in areas/ folder  \n- Resources: count files in resources/ folder\n- Last Updated: most recent file modification date\n\nAfter ALL: npm run build && pm2 restart genplatform-app && git add -A && git commit -m \"Memory page: file browser, edit, create, real data\" && git push\n\n🔗 Preview: https://app.gen3.ai/dashboard/memory\nDo all 5 tasks NOW.",
+      "summary": "Create a new APIs & Integrations page.",
+      "originalContent": "Create a new APIs & Integrations page.\n\nProject: /root/genplatform. Site: https://app.gen3.ai.\nDESIGN PROTECTION: Do NOT modify sidebar.tsx, navbar.tsx, layout.tsx, globals.css. ONLY add the new page and a link in sidebar.\n\nTask 1: Create src/app/dashboard/integrations/page.tsx. This page shows all connected services.\n\nTask 2: Service cards (each with status indicator):\n- OpenClaw Gateway: status from /api/bridge/status, model name, version\n- Telegram Bot: connected (token exists), bot name, owner chat ID (masked: 5109****93)\n- GitHub: connected, repo name (immotlh7/genplatform), last push time\n- Bridge API: status from /api/bridge/health, endpoint count (10+), port 3001\n- Caddy (SSL): running, domains (app.gen3.ai), certificate status\n- Claude API: connected via OpenClaw, model: claude-opus-4, plan: Pro Max\n\nTask 3: Each card has:\n- Service icon, name, status badge (green=connected, red=disconnected)\n- Key details (masked for security)\n- \"Test Connection\" button → pings the service and shows result\n- Last checked timestamp\n\nTask 4: Token Usage section (if possible):\n- Show: \"OpenClaw Session: X% of 200K context used\"\n- This can fetch from /api/bridge/sessions\n\nTask 5: Add link in sidebar under ADMINISTRATION: \"Integrations\" → /dashboard/integrations\nREMEMBER: Only ADD the link, do not change sidebar design.\n\nAfter ALL: npm run build && pm2 restart genplatform-app && git add -A && git commit -m \"New page: APIs & Integrations dashboard\" && git push\n\n🔗 Preview: https://app.gen3.ai/dashboard/integrations\nDo all 5 tasks NOW.",
       "tasks": [
         {
-          "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg11-task1",
+          "taskId": "task_1774013715110_PRIORITY-2-CHAT-AND-FEATURES.md-msg11-task1",
           "taskNumber": 1,
-          "originalDescription": "The page should load the file tree from Bridge API. On mount:",
-          "status": "review",
+          "originalDescription": "Create src/app/dashboard/integrations/page.tsx. This page shows all connected services.",
+          "status": "pending",
           "approved": false,
-          "rewritten": true,
-          "microTasks": [
-            {
-              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg11-task1-micro1",
-              "filePath": "src/app/api/endpoint/route.ts",
-              "change": "Create or update the API route",
-              "description": "In src/app/api/endpoint/route.ts, implement the requested API functionality: The page should load the file tree from Bridge API. On mount:. Use Next.js 13+ app router conventions with proper request/response handling.",
-              "status": "pending"
-            }
-          ]
+          "rewritten": false,
+          "microTasks": []
         },
         {
-          "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg11-task2",
+          "taskId": "task_1774013715110_PRIORITY-2-CHAT-AND-FEATURES.md-msg11-task2",
           "taskNumber": 2,
-          "originalDescription": "When clicking a file in the tree:",
-          "status": "review",
+          "originalDescription": "Service cards (each with status indicator):",
+          "status": "pending",
           "approved": false,
-          "rewritten": true,
-          "microTasks": [
-            {
-              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg11-task2-micro1",
-              "filePath": "src/app/dashboard/page.tsx",
-              "change": "Analyze and implement the requested feature",
-              "description": "Implement the following task with precision: When clicking a file in the tree:. First identify the correct file and component, then make the necessary changes following the project's coding standards.",
-              "status": "pending"
-            }
-          ]
+          "rewritten": false,
+          "microTasks": []
         },
         {
-          "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg11-task3",
+          "taskId": "task_1774013715110_PRIORITY-2-CHAT-AND-FEATURES.md-msg11-task3",
           "taskNumber": 3,
-          "originalDescription": "Add EDIT functionality:",
-          "status": "review",
+          "originalDescription": "Each card has:",
+          "status": "pending",
           "approved": false,
-          "rewritten": true,
-          "microTasks": [
-            {
-              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg11-task3-micro1",
-              "filePath": "src/app/dashboard/page.tsx",
-              "change": "Analyze and implement the requested feature",
-              "description": "Implement the following task with precision: Add EDIT functionality:. First identify the correct file and component, then make the necessary changes following the project's coding standards.",
-              "status": "pending"
-            }
-          ]
+          "rewritten": false,
+          "microTasks": []
         },
         {
-          "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg11-task4",
+          "taskId": "task_1774013715110_PRIORITY-2-CHAT-AND-FEATURES.md-msg11-task4",
           "taskNumber": 4,
-          "originalDescription": "Add NEW FILE button in the header:",
-          "status": "review",
+          "originalDescription": "Token Usage section (if possible):",
+          "status": "pending",
           "approved": false,
-          "rewritten": true,
-          "microTasks": [
-            {
-              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg11-task4-micro1",
-              "filePath": "src/app/dashboard/page.tsx",
-              "change": "Analyze and implement the requested feature",
-              "description": "Implement the following task with precision: Add NEW FILE button in the header:. First identify the correct file and component, then make the necessary changes following the project's coding standards.",
-              "status": "pending"
-            }
-          ]
+          "rewritten": false,
+          "microTasks": []
         },
         {
-          "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg11-task5",
+          "taskId": "task_1774013715110_PRIORITY-2-CHAT-AND-FEATURES.md-msg11-task5",
           "taskNumber": 5,
-          "originalDescription": "Stats cards at top should show:",
-          "status": "review",
-          "approved": false,
-          "rewritten": true,
-          "microTasks": [
-            {
-              "id": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg11-task5-micro1",
-              "filePath": "src/app/dashboard/page.tsx",
-              "change": "Analyze and implement the requested feature",
-              "description": "Implement the following task with precision: Stats cards at top should show:. First identify the correct file and component, then make the necessary changes following the project's coding standards.",
-              "status": "pending"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "messageNumber": 12,
-      "summary": "الرسالة 6: إصلاح Settings + Authentication",
-      "originalContent": "# الرسالة 6: إصلاح Settings + Authentication",
-      "tasks": []
-    },
-    {
-      "messageNumber": 13,
-      "summary": "Fix Settings page and authentication system completely.",
-      "originalContent": "Fix Settings page and authentication system completely.\n\nProject: /root/genplatform. Site: https://app.gen3.ai.\nDESIGN PROTECTION: Do NOT modify sidebar.tsx, navbar.tsx, layout.tsx, globals.css.\n\nTask 1: Settings page — make Save Changes work:\n- Profile section: Full Name and Timezone should be saved\n- Create/update PUT /api/settings route that stores settings in a JSON file on disk (/root/genplatform/data/settings.json)\n- On page load: GET /api/settings → populate fields\n- On Save: PUT /api/settings → write to file → success toast\n- Add '/api/settings' to CSRF skip list\n\nTask 2: Password change:\n- Add \"Change Password\" section in Settings\n- Two fields: New Password, Confirm Password\n- On submit: POST /api/auth/change-password\n- Create this route: validates passwords match, updates the password variable\n- Show success/error toast\n\nTask 3: Sign Out — fix completely:\n- The Sign Out button (in navbar dropdown AND settings page) must:\n  1. Call POST /api/auth/logout (create if not exists)\n  2. This route clears the auth-token cookie: Set-Cookie: auth-token=; Path=/; HttpOnly; Max-Age=0\n  3. Redirect to /login\n- After sign out: visiting /dashboard must redirect to /login\n- The middleware should check auth-token on every request to /dashboard/*\n\nTask 4: Login page security:\n- After login, should NOT show sidebar or any dashboard content on the login page itself\n- Login page should be a clean standalone page without sidebar\n\nTask 5: Notifications settings (Daily Reports toggle, System Alerts toggle):\n- Save state to settings.json\n- These can be cosmetic for now (save the boolean but don't connect to real notifications yet)\n\nAfter ALL: npm run build && pm2 restart genplatform-app && git add -A && git commit -m \"Settings: save, password change, sign out, auth security\" && git push\n\n🔗 Preview: https://app.gen3.ai/dashboard/settings\nDo all 5 tasks NOW.",
-      "tasks": [
-        {
-          "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg13-task1",
-          "taskNumber": 1,
-          "originalDescription": "Settings page — make Save Changes work:",
-          "status": "pending",
-          "approved": false,
-          "rewritten": false,
-          "microTasks": []
-        },
-        {
-          "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg13-task2",
-          "taskNumber": 2,
-          "originalDescription": "Password change:",
-          "status": "pending",
-          "approved": false,
-          "rewritten": false,
-          "microTasks": []
-        },
-        {
-          "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg13-task3",
-          "taskNumber": 3,
-          "originalDescription": "Sign Out — fix completely:",
-          "status": "pending",
-          "approved": false,
-          "rewritten": false,
-          "microTasks": []
-        },
-        {
-          "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg13-task4",
-          "taskNumber": 4,
-          "originalDescription": "Login page security:",
-          "status": "pending",
-          "approved": false,
-          "rewritten": false,
-          "microTasks": []
-        },
-        {
-          "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg13-task5",
-          "taskNumber": 5,
-          "originalDescription": "Notifications settings (Daily Reports toggle, System Alerts toggle):",
-          "status": "pending",
-          "approved": false,
-          "rewritten": false,
-          "microTasks": []
-        }
-      ]
-    },
-    {
-      "messageNumber": 14,
-      "summary": "الرسالة 7: إصلاح Skills Library",
-      "originalContent": "# الرسالة 7: إصلاح Skills Library",
-      "tasks": []
-    },
-    {
-      "messageNumber": 15,
-      "summary": "Improve the Skills Library page.",
-      "originalContent": "Improve the Skills Library page.\n\nProject: /root/genplatform. Site: https://app.gen3.ai.\nDESIGN PROTECTION: Do NOT modify sidebar.tsx, navbar.tsx, layout.tsx, globals.css.\n\nTask 1: Skills are loading (27-35 skills from Bridge API). Good. But improve the cards:\n- Each skill card should show: name, status (active badge), category badge, description (first 100 chars)\n- Add which DEPARTMENT uses this skill. Map skills to departments:\n  * developer, senior-dev, coding-agent → 💻 Frontend/Backend Dev\n  * deep-research-pro, exa-search, tavily-search → 🔬 Research\n  * security-scanner, security-audit-toolkit → 🛡️ Security\n  * critical-code-reviewer → 🔍 QA\n  * auto-continue, task-planner → 📋 Planning\n  * self-improving-agent → 📈 Self-Improvement\n- Show department icon badge on each card\n\nTask 2: Click a skill card → open a detail modal:\n- Fetch skill details: GET /api/bridge/skills?name=[skillName]\n- Show: full name, description, version, category, department, last used date\n- If the skill has a SKILL.md content, show it in a scrollable area\n- Close button to dismiss\n\nTask 3: \"Add Skill\" button in header should show a message: \"Skills are managed through OpenClaw. Use the Command Center to update skills.\" with a link to /dashboard/command-center.\n\nTask 4: Category filter should work with real data:\n- \"all\" shows everything\n- \"development\" filters to developer, coding-agent, etc.\n- \"research\" filters to search and research skills\n- \"security\" filters to security skills\n- \"productivity\" filters to auto-continue, task-planner, etc.\n\nTask 5: Stats cards at top:\n- Total Skills: real count\n- Development: count of dev skills\n- Research: count of research skills\n- Security: count of security skills\n- Productivity: count of productivity skills\n\nAfter ALL: npm run build && pm2 restart genplatform-app && git add -A && git commit -m \"Skills: department mapping, detail modal, working filters\" && git push\n\n🔗 Preview: https://app.gen3.ai/dashboard/skills\nDo all 5 tasks NOW.",
-      "tasks": [
-        {
-          "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg15-task1",
-          "taskNumber": 1,
-          "originalDescription": "Skills are loading (27-35 skills from Bridge API). Good. But improve the cards:",
-          "status": "pending",
-          "approved": false,
-          "rewritten": false,
-          "microTasks": []
-        },
-        {
-          "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg15-task2",
-          "taskNumber": 2,
-          "originalDescription": "Click a skill card → open a detail modal:",
-          "status": "pending",
-          "approved": false,
-          "rewritten": false,
-          "microTasks": []
-        },
-        {
-          "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg15-task3",
-          "taskNumber": 3,
-          "originalDescription": "\"Add Skill\" button in header should show a message: \"Skills are managed through OpenClaw. Use the Command Center to update skills.\" with a link to /dashboard/command-center.",
-          "status": "pending",
-          "approved": false,
-          "rewritten": false,
-          "microTasks": []
-        },
-        {
-          "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg15-task4",
-          "taskNumber": 4,
-          "originalDescription": "Category filter should work with real data:",
-          "status": "pending",
-          "approved": false,
-          "rewritten": false,
-          "microTasks": []
-        },
-        {
-          "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg15-task5",
-          "taskNumber": 5,
-          "originalDescription": "Stats cards at top:",
-          "status": "pending",
-          "approved": false,
-          "rewritten": false,
-          "microTasks": []
-        }
-      ]
-    },
-    {
-      "messageNumber": 16,
-      "summary": "الرسالة 8: إصلاح Cron Jobs + New Job",
-      "originalContent": "# الرسالة 8: إصلاح Cron Jobs + New Job",
-      "tasks": []
-    },
-    {
-      "messageNumber": 17,
-      "summary": "Improve Cron Jobs page with smart job creation.",
-      "originalContent": "Improve Cron Jobs page with smart job creation.\n\nProject: /root/genplatform. Site: https://app.gen3.ai.\nDESIGN PROTECTION: Do NOT modify sidebar.tsx, navbar.tsx, layout.tsx, globals.css.\n\nTask 1: Stats cards fix:\n- Total Jobs: show real count from /api/bridge/cron (should be 3-4)\n- Running: count of jobs currently executing\n- Failed Today: count of failed jobs today\n- Next Job: show time until next execution in human readable format (\"in 2h 15m\")\n\nTask 2: Job list is working. Improve each job card:\n- Show: name, human-readable schedule, last run time, next run time, status badge\n- The \"Run\" toggle should work: POST to /api/bridge/cron/[id]/toggle (create if needed)\n- The \"...\" menu should have: Edit, Delete, Run Now options\n\nTask 3: \"New Job\" button — make it smart:\n- Click → modal with:\n  * \"What do you want to schedule?\" (textarea — natural language)\n  * Examples shown below: \"Send me a daily progress report at 8 AM\", \"Check system health every hour\", \"Backup memory files every Sunday\"\n- On submit: POST /api/cron/create-smart\n- Create this API route that:\n  * Takes the natural language description\n  * Sends to OpenClaw via Telegram: \"Create a cron job: [description]. Respond with: name, cron expression, command.\"\n  * Returns the parsed result to the frontend\n  * Shows preview: \"Name: daily-report | Schedule: 0 8 * * * (Daily at 8:00 AM) | Command: ...\"\n  * \"Confirm\" button → creates the job via openclaw cron create\n\nTask 4: Each job should show the cron expression in human readable form:\n- \"0 7 * * *\" → \"Daily at 7:00 AM\"\n- \"0 21 * * *\" → \"Daily at 9:00 PM\"\n- \"0 10 * * 0\" → \"Weekly on Sunday at 10:00 AM\"\n- \"*/5 * * * *\" → \"Every 5 minutes\"\n\nAfter ALL: npm run build && pm2 restart genplatform-app && git add -A && git commit -m \"Cron: smart job creation, working toggles, human schedules\" && git push\n\n🔗 Preview: https://app.gen3.ai/dashboard/cron\nDo all 4 tasks NOW.",
-      "tasks": [
-        {
-          "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg17-task1",
-          "taskNumber": 1,
-          "originalDescription": "Stats cards fix:",
-          "status": "pending",
-          "approved": false,
-          "rewritten": false,
-          "microTasks": []
-        },
-        {
-          "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg17-task2",
-          "taskNumber": 2,
-          "originalDescription": "Job list is working. Improve each job card:",
-          "status": "pending",
-          "approved": false,
-          "rewritten": false,
-          "microTasks": []
-        },
-        {
-          "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg17-task3",
-          "taskNumber": 3,
-          "originalDescription": "\"New Job\" button — make it smart:",
-          "status": "pending",
-          "approved": false,
-          "rewritten": false,
-          "microTasks": []
-        },
-        {
-          "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg17-task4",
-          "taskNumber": 4,
-          "originalDescription": "Each job should show the cron expression in human readable form:",
-          "status": "pending",
-          "approved": false,
-          "rewritten": false,
-          "microTasks": []
-        }
-      ]
-    },
-    {
-      "messageNumber": 18,
-      "summary": "الرسالة 9: إصلاح System Monitoring",
-      "originalContent": "# الرسالة 9: إصلاح System Monitoring",
-      "tasks": []
-    },
-    {
-      "messageNumber": 19,
-      "summary": "Fix System Monitoring page with all real data.",
-      "originalContent": "Fix System Monitoring page with all real data.\n\nProject: /root/genplatform. Site: https://app.gen3.ai.\nDESIGN PROTECTION: Do NOT modify sidebar.tsx, navbar.tsx, layout.tsx, globals.css.\n\nTask 1: System Health bar at top:\n- Services: fetch /api/bridge/status → count running vs total\n- Resources: fetch /api/bridge/metrics → show healthy if CPU<80 and RAM<80 and Disk<90\n- Network: always \"Connected\" (the server is online if you can see this page)\n\nTask 2: Resources tab — show ALL real metrics from /api/bridge/metrics:\n- CPU Usage: percentage bar + number (real from server)\n- Memory Usage: used/total in GB + percentage bar\n- Disk Usage: used/total in GB + percentage bar\n- Swap: used/total (if available from metrics)\n- Load Average: 1min, 5min, 15min (if available)\n- Uptime: real system uptime\n\nTask 3: Services tab — show real services:\n- Fetch /api/bridge/status → services array\n- Each service: name, status (running/stopped), uptime, port\n- Must show: OpenClaw Gateway, Bridge API, Next.js (genplatform-app)\n- If service down: red indicator. If up: green.\n\nTask 4: Logs tab — show real parsed logs:\n- Fetch /api/bridge/logs → lines array\n- Each log: timestamp, level (info/warn/error), message\n- Color code: info=gray, warn=amber, error=red\n- Auto-scroll to bottom\n- \"Refresh\" button to reload\n\nTask 5: Auto-refresh toggle (already exists at top right). Make sure it works:\n- When ON: poll every 5 seconds for new metrics\n- When OFF: stop polling\n- The interval selector (5000ms dropdown) should change poll rate\n\nAfter ALL: npm run build && pm2 restart genplatform-app && git add -A && git commit -m \"Monitoring: all real metrics, services, logs\" && git push\n\n🔗 Preview: https://app.gen3.ai/dashboard/monitoring\nDo all 5 tasks NOW.",
-      "tasks": [
-        {
-          "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg19-task1",
-          "taskNumber": 1,
-          "originalDescription": "System Health bar at top:",
-          "status": "pending",
-          "approved": false,
-          "rewritten": false,
-          "microTasks": []
-        },
-        {
-          "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg19-task2",
-          "taskNumber": 2,
-          "originalDescription": "Resources tab — show ALL real metrics from /api/bridge/metrics:",
-          "status": "pending",
-          "approved": false,
-          "rewritten": false,
-          "microTasks": []
-        },
-        {
-          "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg19-task3",
-          "taskNumber": 3,
-          "originalDescription": "Services tab — show real services:",
-          "status": "pending",
-          "approved": false,
-          "rewritten": false,
-          "microTasks": []
-        },
-        {
-          "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg19-task4",
-          "taskNumber": 4,
-          "originalDescription": "Logs tab — show real parsed logs:",
-          "status": "pending",
-          "approved": false,
-          "rewritten": false,
-          "microTasks": []
-        },
-        {
-          "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg19-task5",
-          "taskNumber": 5,
-          "originalDescription": "Auto-refresh toggle (already exists at top right). Make sure it works:",
-          "status": "pending",
-          "approved": false,
-          "rewritten": false,
-          "microTasks": []
-        }
-      ]
-    },
-    {
-      "messageNumber": 20,
-      "summary": "الرسالة 10: إصلاح Analytics Dashboard",
-      "originalContent": "# الرسالة 10: إصلاح Analytics Dashboard",
-      "tasks": []
-    },
-    {
-      "messageNumber": 21,
-      "summary": "Fix Analytics Dashboard with real or meaningful data.",
-      "originalContent": "Fix Analytics Dashboard with real or meaningful data.\n\nProject: /root/genplatform. Site: https://app.gen3.ai.\nDESIGN PROTECTION: Do NOT modify sidebar.tsx, navbar.tsx, layout.tsx, globals.css.\n\nTask 1: Stats cards at top:\n- Total Sessions: fetch /api/bridge/sessions → real count (probably 2-3)\n- Skill Executions: show 0 with note \"Tracking starts now\" (we don't have historical data)\n- Response Time: show \"~2.5s\" (average AI response time)\n- Memory Operations: fetch /api/bridge/memory → stats.totalFiles count\n\nTask 2: Usage Trends chart area. Since we don't have historical data yet:\n- Show a clean message: \"📊 Collecting data — Charts will appear after 24h of monitoring\"\n- Add a small info icon explaining: \"Analytics data is collected in real-time. Check back tomorrow for trends.\"\n- Do NOT show fake random charts\n\nTask 3: Tabs (Overview, Skills, Memory, Performance):\n- Overview: the stats + trends message above\n- Skills: fetch /api/bridge/skills → show skills by category as a simple bar chart (Development: 4, Research: 3, Security: 3, Productivity: 5)\n- Memory: fetch /api/bridge/memory → show files by folder as a bar chart\n- Performance: fetch /api/bridge/metrics → show current CPU, RAM, Disk as gauge charts or progress bars\n\nTask 4: Remove ALL fake numbers. If real data is 0, show 0. Never show random generated numbers like \"1.42843582752945\".\n\nAfter ALL: npm run build && pm2 restart genplatform-app && git add -A && git commit -m \"Analytics: real data, no fake charts, clean placeholders\" && git push\n\n🔗 Preview: https://app.gen3.ai/dashboard/analytics\nDo all 4 tasks NOW.",
-      "tasks": [
-        {
-          "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg21-task1",
-          "taskNumber": 1,
-          "originalDescription": "Stats cards at top:",
-          "status": "pending",
-          "approved": false,
-          "rewritten": false,
-          "microTasks": []
-        },
-        {
-          "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg21-task2",
-          "taskNumber": 2,
-          "originalDescription": "Usage Trends chart area. Since we don't have historical data yet:",
-          "status": "pending",
-          "approved": false,
-          "rewritten": false,
-          "microTasks": []
-        },
-        {
-          "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg21-task3",
-          "taskNumber": 3,
-          "originalDescription": "Tabs (Overview, Skills, Memory, Performance):",
-          "status": "pending",
-          "approved": false,
-          "rewritten": false,
-          "microTasks": []
-        },
-        {
-          "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg21-task4",
-          "taskNumber": 4,
-          "originalDescription": "Remove ALL fake numbers. If real data is 0, show 0. Never show random generated numbers like \"1.42843582752945\".",
-          "status": "pending",
-          "approved": false,
-          "rewritten": false,
-          "microTasks": []
-        }
-      ]
-    },
-    {
-      "messageNumber": 22,
-      "summary": "الرسالة 11: إصلاح Reports & Analytics",
-      "originalContent": "# الرسالة 11: إصلاح Reports & Analytics",
-      "tasks": []
-    },
-    {
-      "messageNumber": 23,
-      "summary": "Fix Reports page.",
-      "originalContent": "Fix Reports page.\n\nProject: /root/genplatform. Site: https://app.gen3.ai.\nDESIGN PROTECTION: Do NOT modify sidebar.tsx, navbar.tsx, layout.tsx, globals.css.\n\nTask 1: Stats cards:\n- Total Reports: this seems to show 47 which is fake. Fix: count real reports from the API or show accurate number\n- Success Rate: show real or \"N/A\" if no data\n- Avg Generation: show \"~30s\" (reasonable estimate)\n- Last Generated: show real timestamp of last report\n\nTask 2: Report list. Currently shows \"Daily System Report\" etc. Make these real:\n- Keep existing reports if they look reasonable\n- Each report card: title, description, status badge, tags, created date, size\n- Click a report → navigate to report detail page (/reports/[id])\n\nTask 3: \"Generate Report\" button in header:\n- Click → modal with: Report Type dropdown (Daily Summary, Weekly Review, Security Audit, Performance Report), Date Range, Description\n- Submit → POST /api/reports/generate\n- This route sends to OpenClaw: \"Generate a [type] report for [date range]. Include: system metrics, tasks completed, issues found.\"\n- Show \"Generating...\" state while waiting\n- On complete → add to report list\n\nTask 4: \"Compare Reports\" and \"Export Reports\" buttons:\n- Compare: show \"Select 2 reports to compare\" (can be cosmetic for now)\n- Export: download reports list as JSON file\n\nAfter ALL: npm run build && pm2 restart genplatform-app && git add -A && git commit -m \"Reports: real data, generate button, clean stats\" && git push\n\n🔗 Preview: https://app.gen3.ai/dashboard/reports\nDo all 4 tasks NOW.",
-      "tasks": [
-        {
-          "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg23-task1",
-          "taskNumber": 1,
-          "originalDescription": "Stats cards:",
-          "status": "pending",
-          "approved": false,
-          "rewritten": false,
-          "microTasks": []
-        },
-        {
-          "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg23-task2",
-          "taskNumber": 2,
-          "originalDescription": "Report list. Currently shows \"Daily System Report\" etc. Make these real:",
-          "status": "pending",
-          "approved": false,
-          "rewritten": false,
-          "microTasks": []
-        },
-        {
-          "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg23-task3",
-          "taskNumber": 3,
-          "originalDescription": "\"Generate Report\" button in header:",
-          "status": "pending",
-          "approved": false,
-          "rewritten": false,
-          "microTasks": []
-        },
-        {
-          "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg23-task4",
-          "taskNumber": 4,
-          "originalDescription": "\"Compare Reports\" and \"Export Reports\" buttons:",
-          "status": "pending",
-          "approved": false,
-          "rewritten": false,
-          "microTasks": []
-        }
-      ]
-    },
-    {
-      "messageNumber": 24,
-      "summary": "الرسالة 12: إصلاح Automations/Workflows",
-      "originalContent": "# الرسالة 12: إصلاح Automations/Workflows",
-      "tasks": []
-    },
-    {
-      "messageNumber": 25,
-      "summary": "Fix Automations page with working workflows.",
-      "originalContent": "Fix Automations page with working workflows.\n\nProject: /root/genplatform. Site: https://app.gen3.ai.\nDESIGN PROTECTION: Do NOT modify sidebar.tsx, navbar.tsx, layout.tsx, globals.css.\n\nTask 1: Verify the page loads at /automations. Currently it shows 404 sometimes. Check the route:\n- If page is at src/app/automations/page.tsx → make sure it works\n- If page is at src/app/(dashboard)/automations/page.tsx → check routing\n- The sidebar links to /automations → this path must work\n\nTask 2: Stats cards:\n- Total Workflows: fetch /api/workflows → real count\n- Active Workflows: count where status=active\n- Success Rate: calculate from completed/total\n- Failed Workflows: count where status=failed\n\nTask 3: Workflow list. Show 3 demo workflows that make sense:\n- \"Idea to MVP\": Takes an idea → analyzes → creates tasks → assigns to agents\n- \"Bug Fix Pipeline\": Detects bugs → creates fix task → assigns to dev → reviews\n- \"Code Review\": When code is pushed → reviews → reports issues\n- Each workflow: name, description, type, last run time, status, action buttons (Run, Edit, Delete)\n\nTask 4: \"New Workflow\" button:\n- Click → modal with: Name, Description, Trigger (Manual/Scheduled/On Push), Steps\n- Submit → POST /api/workflows → add to list\n- Show success toast\n\nTask 5: \"Browse Marketplace\" button → show message: \"Marketplace coming soon. Currently 3 built-in workflows available.\"\n\nAfter ALL: npm run build && pm2 restart genplatform-app && git add -A && git commit -m \"Automations: working page, real workflows, new workflow button\" && git push\n\n🔗 Preview: https://app.gen3.ai/automations\nDo all 5 tasks NOW.",
-      "tasks": [
-        {
-          "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg25-task1",
-          "taskNumber": 1,
-          "originalDescription": "Verify the page loads at /automations. Currently it shows 404 sometimes. Check the route:",
-          "status": "pending",
-          "approved": false,
-          "rewritten": false,
-          "microTasks": []
-        },
-        {
-          "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg25-task2",
-          "taskNumber": 2,
-          "originalDescription": "Stats cards:",
-          "status": "pending",
-          "approved": false,
-          "rewritten": false,
-          "microTasks": []
-        },
-        {
-          "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg25-task3",
-          "taskNumber": 3,
-          "originalDescription": "Workflow list. Show 3 demo workflows that make sense:",
-          "status": "pending",
-          "approved": false,
-          "rewritten": false,
-          "microTasks": []
-        },
-        {
-          "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg25-task4",
-          "taskNumber": 4,
-          "originalDescription": "\"New Workflow\" button:",
-          "status": "pending",
-          "approved": false,
-          "rewritten": false,
-          "microTasks": []
-        },
-        {
-          "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg25-task5",
-          "taskNumber": 5,
-          "originalDescription": "\"Browse Marketplace\" button → show message: \"Marketplace coming soon. Currently 3 built-in workflows available.\"",
-          "status": "pending",
-          "approved": false,
-          "rewritten": false,
-          "microTasks": []
-        }
-      ]
-    },
-    {
-      "messageNumber": 26,
-      "summary": "الرسالة 13: إصلاح Projects Page",
-      "originalContent": "# الرسالة 13: إصلاح Projects Page",
-      "tasks": []
-    },
-    {
-      "messageNumber": 27,
-      "summary": "Improve Projects page.",
-      "originalContent": "Improve Projects page.\n\nProject: /root/genplatform. Site: https://app.gen3.ai.\nDESIGN PROTECTION: Do NOT modify sidebar.tsx, navbar.tsx, layout.tsx, globals.css.\n\nTask 1: Project cards look good. Improve:\n- Each card: name, description, status badge (green=active, amber=paused), progress bar with %, tech stack tags, last activity time\n- \"Command\" button → opens chat in project context\n- \"Edit\" button → opens project settings\n- The external link icon → opens preview URL in new tab\n\nTask 2: \"New Project\" button must work:\n- Click → modal with: Project Name (required), Description, Tech Stack (multi-select or tags), GitHub URL, Preview URL, Priority\n- Submit → POST /api/projects\n- On success → project appears in list\n- Navigate to new project's detail page\n\nTask 3: Click on project card → navigate to /projects/[id]:\n- This page should have tabs: Overview, Preview, Tasks, Chat, Settings\n- Overview: name, description, progress, recent activity\n- Preview: iframe with project URL (if previewUrl is set)\n- Tasks: filtered Kanban for this project\n- Chat: project-specific chat\n- Settings: edit project details\n\nTask 4: For GenPlatform.ai project: previewUrl should be \"https://app.gen3.ai\". When you click Preview tab, it should show the live site in an iframe with device toggles (Desktop/Tablet/Mobile).\n\nAfter ALL: npm run build && pm2 restart genplatform-app && git add -A && git commit -m \"Projects: improved cards, new project, detail page with preview\" && git push\n\n🔗 Preview: https://app.gen3.ai/projects\nDo all 4 tasks NOW.",
-      "tasks": [
-        {
-          "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg27-task1",
-          "taskNumber": 1,
-          "originalDescription": "Project cards look good. Improve:",
-          "status": "pending",
-          "approved": false,
-          "rewritten": false,
-          "microTasks": []
-        },
-        {
-          "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg27-task2",
-          "taskNumber": 2,
-          "originalDescription": "\"New Project\" button must work:",
-          "status": "pending",
-          "approved": false,
-          "rewritten": false,
-          "microTasks": []
-        },
-        {
-          "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg27-task3",
-          "taskNumber": 3,
-          "originalDescription": "Click on project card → navigate to /projects/[id]:",
-          "status": "pending",
-          "approved": false,
-          "rewritten": false,
-          "microTasks": []
-        },
-        {
-          "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg27-task4",
-          "taskNumber": 4,
-          "originalDescription": "For GenPlatform.ai project: previewUrl should be \"https://app.gen3.ai\". When you click Preview tab, it should show the live site in an iframe with device toggles (Desktop/Tablet/Mobile).",
-          "status": "pending",
-          "approved": false,
-          "rewritten": false,
-          "microTasks": []
-        }
-      ]
-    },
-    {
-      "messageNumber": 28,
-      "summary": "الرسالة 14: إصلاح Users/Team Page",
-      "originalContent": "# الرسالة 14: إصلاح Users/Team Page",
-      "tasks": []
-    },
-    {
-      "messageNumber": 29,
-      "summary": "Fix Users and Team page.",
-      "originalContent": "Fix Users and Team page.\n\nProject: /root/genplatform. Site: https://app.gen3.ai.\nDESIGN PROTECTION: Do NOT modify sidebar.tsx, navbar.tsx, layout.tsx, globals.css.\n\nTask 1: The Users page should show the team. Currently shows Med (OWNER). Make it look professional:\n- Card for Med: name \"Med\", role \"OWNER\", status \"Active\" (green dot), email \"owner@genplatform.ai\", last active \"Just now\"\n- Show avatar placeholder (circle with \"M\" letter)\n\nTask 2: \"Invite Member\" button → show modal:\n- Fields: Email, Display Name, Role (Viewer/Manager/Admin)\n- Submit → show toast \"Invitation sent to [email]\" (cosmetic — we don't have email system yet)\n- Note below: \"Members will receive an email invitation\"\n\nTask 3: Role badges should be styled:\n- OWNER: red/premium badge\n- ADMIN: purple badge\n- MANAGER: blue badge\n- VIEWER: gray badge\n\nTask 4: Table view (if exists) should show: Avatar, Name, Email, Role, Status, Last Active, Actions (Edit/Remove)\n\nAfter ALL: npm run build && pm2 restart genplatform-app && git add -A && git commit -m \"Users: professional team display, invite modal\" && git push\n\n🔗 Preview: https://app.gen3.ai/dashboard/users\nDo all 4 tasks NOW.",
-      "tasks": [
-        {
-          "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg29-task1",
-          "taskNumber": 1,
-          "originalDescription": "The Users page should show the team. Currently shows Med (OWNER). Make it look professional:",
-          "status": "pending",
-          "approved": false,
-          "rewritten": false,
-          "microTasks": []
-        },
-        {
-          "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg29-task2",
-          "taskNumber": 2,
-          "originalDescription": "\"Invite Member\" button → show modal:",
-          "status": "pending",
-          "approved": false,
-          "rewritten": false,
-          "microTasks": []
-        },
-        {
-          "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg29-task3",
-          "taskNumber": 3,
-          "originalDescription": "Role badges should be styled:",
-          "status": "pending",
-          "approved": false,
-          "rewritten": false,
-          "microTasks": []
-        },
-        {
-          "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg29-task4",
-          "taskNumber": 4,
-          "originalDescription": "Table view (if exists) should show: Avatar, Name, Email, Role, Status, Last Active, Actions (Edit/Remove)",
-          "status": "pending",
-          "approved": false,
-          "rewritten": false,
-          "microTasks": []
-        }
-      ]
-    },
-    {
-      "messageNumber": 30,
-      "summary": "الرسالة 15: إصلاح Help & Support + Security Pages",
-      "originalContent": "# الرسالة 15: إصلاح Help & Support + Security Pages",
-      "tasks": []
-    },
-    {
-      "messageNumber": 31,
-      "summary": "Fix Help and Security pages.",
-      "originalContent": "Fix Help and Security pages.\n\nProject: /root/genplatform. Site: https://app.gen3.ai.\nDESIGN PROTECTION: Do NOT modify sidebar.tsx, navbar.tsx, layout.tsx, globals.css.\n\nTask 1: Help & Support page (/help or wherever it is):\n- Show sections: Getting Started, FAQ, Documentation, Contact\n- Getting Started: 4 steps (Login → Dashboard → Create Project → Start Building)\n- FAQ: 5 common questions with expandable answers about GenPlatform\n- Documentation: link to external docs (can be placeholder)\n- Contact: \"Contact the platform owner via Telegram\"\n- Make sure the page exists and is accessible from sidebar\n\nTask 2: Security page (/dashboard/security):\n- Show security status overview\n- Last security scan: date/time\n- Vulnerabilities found: 0\n- SSL Certificate: Valid (auto from Caddy)\n- Authentication: Enabled\n- API Security: CSRF Protection active\n- \"Run Security Scan\" button → POST to OpenClaw requesting a security audit\n- Show scan results\n\nTask 3: Make sure both pages are in the sidebar under ADMINISTRATION section with correct links.\n\nAfter ALL: npm run build && pm2 restart genplatform-app && git add -A && git commit -m \"Help + Security pages complete\" && git push\n\n🔗 Preview: https://app.gen3.ai/help and https://app.gen3.ai/dashboard/security\nDo all 3 tasks NOW.",
-      "tasks": [
-        {
-          "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg31-task1",
-          "taskNumber": 1,
-          "originalDescription": "Help & Support page (/help or wherever it is):",
-          "status": "pending",
-          "approved": false,
-          "rewritten": false,
-          "microTasks": []
-        },
-        {
-          "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg31-task2",
-          "taskNumber": 2,
-          "originalDescription": "Security page (/dashboard/security):",
-          "status": "pending",
-          "approved": false,
-          "rewritten": false,
-          "microTasks": []
-        },
-        {
-          "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg31-task3",
-          "taskNumber": 3,
-          "originalDescription": "Make sure both pages are in the sidebar under ADMINISTRATION section with correct links.",
-          "status": "pending",
-          "approved": false,
-          "rewritten": false,
-          "microTasks": []
-        }
-      ]
-    },
-    {
-      "messageNumber": 32,
-      "summary": "الرسالة 16: Sidebar — إضافة الروابط الناقصة",
-      "originalContent": "# الرسالة 16: Sidebar — إضافة الروابط الناقصة",
-      "tasks": []
-    },
-    {
-      "messageNumber": 33,
-      "summary": "IMPORTANT: The sidebar is MISSING links to new pages from Phase 2. Add them WITHOUT changing the des",
-      "originalContent": "IMPORTANT: The sidebar is MISSING links to new pages from Phase 2. Add them WITHOUT changing the design.\n\nProject: /root/genplatform. Site: https://app.gen3.ai.\nDESIGN PROTECTION: Do NOT change colors, layout structure, fonts, spacing. ONLY add new items to existing arrays.\n\nTask 1: Open src/components/layout/sidebar.tsx. Find the navigation items arrays. Add these MISSING links in the correct sections:\n\nOVERVIEW section (add if missing):\n- Dashboard → /dashboard\n- Command Center → /dashboard/command-center (with \"New\" badge)\n- Chat → /dashboard/chat\n\nCORE FEATURES section (add if missing):\n- Skills → /dashboard/skills\n- Memory → /dashboard/memory\n- Cron Jobs → /dashboard/cron\n- Projects → /projects\n- Tasks → /dashboard/tasks (NEW — add this)\n- Ideas → /ideas (NEW — add this if page exists)\n- Automations → /automations\n- Agents → /agents (NEW — add this if page exists)\n\nMONITORING section:\n- System Monitor → /dashboard/monitoring\n- Analytics → /dashboard/analytics\n- Reports → /dashboard/reports\n\nADMINISTRATION section:\n- Settings → /dashboard/settings\n- Users → /dashboard/users\n- Security → /dashboard/security\n- Help & Support → /help\n\nTask 2: Verify EVERY link works by checking that each page file exists:\n- ls src/app/dashboard/tasks/page.tsx\n- ls src/app/(dashboard)/ideas/page.tsx OR src/app/ideas/page.tsx\n- ls src/app/agents/page.tsx OR src/app/(dashboard)/agents/page.tsx\n- For pages that don't exist: create a simple placeholder page\n\nTask 3: Make sure sidebar highlights the current active page correctly.\n\nAfter ALL: npm run build && pm2 restart genplatform-app && git add -A && git commit -m \"Sidebar: add all missing navigation links\" && git push\n\n🔗 Preview: https://app.gen3.ai/dashboard (check sidebar)\nDo all 3 tasks NOW.",
-      "tasks": [
-        {
-          "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg33-task1",
-          "taskNumber": 1,
-          "originalDescription": "Open src/components/layout/sidebar.tsx. Find the navigation items arrays. Add these MISSING links in the correct sections:",
-          "status": "pending",
-          "approved": false,
-          "rewritten": false,
-          "microTasks": []
-        },
-        {
-          "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg33-task2",
-          "taskNumber": 2,
-          "originalDescription": "Verify EVERY link works by checking that each page file exists:",
-          "status": "pending",
-          "approved": false,
-          "rewritten": false,
-          "microTasks": []
-        },
-        {
-          "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg33-task3",
-          "taskNumber": 3,
-          "originalDescription": "Make sure sidebar highlights the current active page correctly.",
+          "originalDescription": "Add link in sidebar under ADMINISTRATION: \"Integrations\" → /dashboard/integrations",
           "status": "pending",
           "approved": false,
           "rewritten": false,
@@ -993,5 +304,5 @@
     }
   ],
   "status": "analyzed",
-  "hasApprovedTasks": true
+  "hasApprovedTasks": false
 }
