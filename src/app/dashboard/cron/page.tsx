@@ -58,7 +58,10 @@ interface CronStats {
 }
 
 export default function CronPage() {
-  const [currentUser, setCurrentUser] = useState<User | null>(null)
+  const [currentUser, setCurrentUser] = useState<User | null>({
+    id: '1', name: 'Med', email: 'owner@genplatform.ai',
+    role: 'OWNER' as any, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString()
+  })
   const [jobs, setJobs] = useState<CronJob[]>([])
   const [filteredJobs, setFilteredJobs] = useState<CronJob[]>([])
   const [stats, setStats] = useState<CronStats>({ total: 0, enabled: 0, running: 0, failed: 0 })

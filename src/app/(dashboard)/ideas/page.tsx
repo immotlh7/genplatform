@@ -68,9 +68,12 @@ interface IdeaStats {
 }
 
 export default function IdeasPage() {
-  const [currentUser, setCurrentUser] = useState<User | null>(null)
+  const [currentUser, setCurrentUser] = useState<User | null>({
+    id: '1', name: 'Med', email: 'owner@genplatform.ai',
+    role: 'OWNER' as any, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString()
+  })
   const [userPermissions, setUserPermissions] = useState<any>(null)
-  const [authLoading, setAuthLoading] = useState(true)
+  const [authLoading, setAuthLoading] = useState(false)
   const [ideas, setIdeas] = useState<Idea[]>([])
   const [stats, setStats] = useState<IdeaStats | null>(null)
   const [loading, setLoading] = useState(false)

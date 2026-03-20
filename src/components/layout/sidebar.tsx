@@ -268,14 +268,14 @@ export function Sidebar() {
                     <span className="flex-1">AI Assistant</span>
                   </Link>
                   <Link
-                    href="/dashboard/docs"
+                    href="/help"
                     className="group flex items-center rounded-md px-2 py-2 text-sm font-medium text-muted-foreground hover:bg-accent hover:text-accent-foreground"
                   >
                     <FileText className="mr-3 h-4 w-4 flex-shrink-0 rtl:mr-0 rtl:ml-3" />
                     <span className="flex-1">Documentation</span>
                   </Link>
                   <Link
-                    href="/dashboard/support"
+                    href="/help"
                     className="group flex items-center rounded-md px-2 py-2 text-sm font-medium text-muted-foreground hover:bg-accent hover:text-accent-foreground"
                   >
                     <HelpCircle className="mr-3 h-4 w-4 flex-shrink-0 rtl:mr-0 rtl:ml-3" />
