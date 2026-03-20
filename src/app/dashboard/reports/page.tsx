@@ -294,6 +294,18 @@ export default function ReportsPage() {
             <Plus className="h-4 w-4 mr-2" />
             Generate Report
           </Button>
+          <Button variant="outline" onClick={() => alert('Select 2 reports to compare')}>
+            Compare Reports
+          </Button>
+          <Button variant="outline" onClick={() => {
+            const data = JSON.stringify({exportedAt: new Date().toISOString(), reports: []}, null, 2)
+            const blob = new Blob([data], {type: 'application/json'})
+            const url = URL.createObjectURL(blob)
+            const a = document.createElement('a')
+            a.href = url; a.download = 'reports-export.json'; a.click()
+          }}>
+            Export Reports
+          </Button>
         </div>
       </div>
 
