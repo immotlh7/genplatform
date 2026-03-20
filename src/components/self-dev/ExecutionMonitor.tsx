@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { Hammer, Send, FileText, Settings, CheckCircle, XCircle, RefreshCw, Package, Brain, Clock, AlertCircle } from 'lucide-react';
+import { Hammer, Send, FileText, Settings, CheckCircle, XCircle, RefreshCw, Package, Brain, Clock, AlertCircle, Upload } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
@@ -39,7 +39,7 @@ export function ExecutionMonitor({ onRefresh }: ExecutionMonitorProps) {
 
   useEffect(() => {
     loadStatus();
-    const interval = setInterval(loadStatus, 1000); // Refresh every second
+    const interval = setInterval(loadStatus, 1000);
     return () => clearInterval(interval);
   }, []);
 
@@ -85,59 +85,58 @@ export function ExecutionMonitor({ onRefresh }: ExecutionMonitorProps) {
       : `${secs}s`;
   };
 
-  const estimateRemaining = () => {
-    if (!status || status.overallProgress.tasksDone === 0) return null;
-    const rate = status.overallProgress.tasksDone / status.elapsedTime;
-    const remaining = (status.overallProgress.tasksTotal - status.overallProgress.tasksDone) / rate;
-    return formatTime(Math.round(remaining));
-  };
-
   if (!status) {
     return (
-      <div className="flex items-center justify-center h-96">
+      <div className="flex items-center justify-center h-full">
         <Clock className="h-8 w-8 text-gray-400 animate-pulse" />
       </div>
     );
   }
 
+  // Idle state
+  if (status.status === 'idle' && status.overallProgress.tasksTotal === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full text-gray-500 dark:text-gray-400">
+        <Upload className="h-16 w-16 mb-4 text-gray-300 dark:text-gray-600" />
+        <h3 className="text-lg font-medium mb-2">Upload a task file to begin</h3>
+        <p className="text-sm text-center max-w-md">
+          Drop a .md file in the left panel to start the self-development process.
+          The Orchestrator will analyze it and break it down into micro-tasks.
+        </p>
+      </div>
+    );
+  }
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 h-full flex flex-col">
       {/* Current Task Card */}
-      {status.currentTask && (
+      {status.currentTask && status.status !== 'idle' && (
         <Card className="border-2 border-blue-200 dark:border-blue-800">
-          <CardHeader>
+          <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <Hammer className="h-6 w-6 text-blue-600" />
-                <CardTitle>
+                <Hammer className="h-5 w-5 text-blue-600" />
+                <CardTitle className="text-base">
                   Task {status.currentTask.number}/{status.overallProgress.tasksTotal}
                 </CardTitle>
               </div>
-              <Badge variant={status.status === 'executing' ? 'default' : 'secondary'}>
+              <Badge variant={status.status === 'executing' ? 'default' : 'secondary'} className="text-xs">
                 {status.status === 'executing' ? 'Developer working...' : status.status}
               </Badge>
             </div>
           </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              <div>
-                <p className="font-medium text-lg">{status.currentTask.description}</p>
-              </div>
-              
+          <CardContent className="pt-0">
+            <p className="font-medium text-sm mb-2">{status.currentTask.description}</p>
+            
+            <div className="space-y-1 text-xs text-gray-600 dark:text-gray-400">
               {status.currentFile && (
-                <div className="text-sm text-gray-600 dark:text-gray-400">
-                  <span className="font-medium">File:</span> {status.currentFile.name}
-                </div>
+                <div><span className="font-medium">File:</span> {status.currentFile.name}</div>
               )}
-              
               {status.currentMessage && (
-                <div className="text-sm text-gray-600 dark:text-gray-400">
-                  <span className="font-medium">Message {status.currentMessage.number}:</span> {status.currentMessage.title}
-                </div>
+                <div><span className="font-medium">Message {status.currentMessage.number}:</span> {status.currentMessage.title}</div>
               )}
-              
               {status.currentBatch && (
-                <div className="text-sm text-gray-600 dark:text-gray-400">
+                <div>
                   <span className="font-medium">Batch:</span> {status.currentBatch.position}/{status.currentBatch.total}
                   {status.currentBatch.position === status.currentBatch.total && 
                     <span className="ml-2 text-purple-600">(build after this task)</span>
@@ -150,36 +149,39 @@ export function ExecutionMonitor({ onRefresh }: ExecutionMonitorProps) {
       )}
 
       {/* Live Log */}
-      <Card>
-        <CardHeader>
+      <Card className="flex-1 flex flex-col">
+        <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
-            <CardTitle>Execution Log</CardTitle>
+            <CardTitle className="text-base">Execution Log</CardTitle>
             <div className="flex items-center gap-3">
-              <label className="flex items-center gap-2 text-sm">
+              <label className="flex items-center gap-2 text-xs">
                 <Switch
                   checked={autoscroll}
                   onCheckedChange={setAutoscroll}
+                  className="scale-75"
                 />
                 Auto-scroll
               </label>
             </div>
           </div>
         </CardHeader>
-        <CardContent>
-          <ScrollArea className="h-96 w-full rounded-md border p-4" ref={scrollRef}>
-            <div className="space-y-2 font-mono text-xs">
+        <CardContent className="flex-1 p-0">
+          <ScrollArea className="h-full w-full p-4" ref={scrollRef}>
+            <div className="space-y-1.5 font-mono text-xs">
               {status.log.length === 0 ? (
-                <p className="text-gray-500">No log entries yet</p>
+                <p className="text-gray-400 text-center py-8">No log entries yet</p>
               ) : (
                 status.log.map((entry, index) => {
                   const [timestamp, ...rest] = entry.split(' | ');
                   const message = rest.join(' | ');
                   
                   return (
-                    <div key={index} className="flex items-start gap-3">
-                      <span className="text-gray-500 whitespace-nowrap">{timestamp}</span>
+                    <div key={index} className="flex items-start gap-2">
+                      <span className="text-gray-400 whitespace-nowrap text-[10px]">
+                        {timestamp ? new Date(timestamp).toLocaleTimeString() : ''}
+                      </span>
                       {getLogIcon(message)}
-                      <span className="flex-1">{message}</span>
+                      <span className="flex-1 break-all">{message}</span>
                     </div>
                   );
                 })

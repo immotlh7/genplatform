@@ -6,7 +6,7 @@ import { TaskQueue } from '@/components/self-dev/TaskQueue';
 import { ExecutionMonitor } from '@/components/self-dev/ExecutionMonitor';
 import { PreviewPanel } from '@/components/self-dev/PreviewPanel';
 import { ControlBar } from '@/components/self-dev/ControlBar';
-import { Bot, Brain, AlertCircle } from 'lucide-react';
+import { AlertCircle } from 'lucide-react';
 
 interface ExecutionStatus {
   status: 'idle' | 'analyzing' | 'executing' | 'building' | 'paused' | 'error';
@@ -41,11 +41,10 @@ export default function SelfDevPage() {
     elapsedTime: 0
   });
   const [error, setError] = useState<string | null>(null);
-  const [selectedTask, setSelectedTask] = useState<any>(null);
 
   useEffect(() => {
     loadStatus();
-    const interval = setInterval(loadStatus, 3000); // Poll every 3 seconds
+    const interval = setInterval(loadStatus, 3000);
     return () => clearInterval(interval);
   }, []);
 
@@ -62,7 +61,6 @@ export default function SelfDevPage() {
   };
 
   const handleFileUpload = async (fileData: any) => {
-    // File uploaded and analyzed, ready to start execution
     await loadStatus();
   };
 
@@ -87,116 +85,60 @@ export default function SelfDevPage() {
 
   return (
     <>
-      <div className="max-w-[1800px] mx-auto pb-20 px-4 md:px-6 lg:px-8">
+      <div className="h-screen flex flex-col">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2">🔧 Self-Development Center</h1>
-          <p className="text-gray-600 dark:text-gray-400">
+        <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+          <h1 className="text-2xl font-bold">🔧 Self-Development Center</h1>
+          <p className="text-sm text-gray-600 dark:text-gray-400">
             Upload task files and watch the platform develop itself
           </p>
         </div>
         
-        {/* Two-Agent Architecture Explanation */}
-        {status.overallProgress.filesTotal === 0 && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-              <div className="flex items-center gap-3 mb-4">
-                <Brain className="h-8 w-8 text-blue-600" />
-                <div>
-                  <h3 className="text-lg font-semibold">Orchestrator Agent</h3>
-                  <p className="text-sm text-gray-500">Claude Sonnet - Fast Analysis</p>
-                </div>
-              </div>
-              <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
-                <li className="flex items-start gap-2">
-                  <span className="text-green-500 mt-0.5">•</span>
-                  Reads entire task files (100+ tasks)
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-green-500 mt-0.5">•</span>
-                  Decomposes into micro-tasks
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-green-500 mt-0.5">•</span>
-                  Manages execution flow
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-green-500 mt-0.5">•</span>
-                  Never touches code directly
-                </li>
-              </ul>
+        {/* Main 3-Panel Layout */}
+        <div className="flex-1 flex overflow-hidden">
+          {/* Left Panel - Task Queue (25%) */}
+          <div className="w-1/4 border-r border-gray-200 dark:border-gray-700 flex flex-col">
+            <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+              <h2 className="font-semibold">Task Files</h2>
             </div>
-            
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-              <div className="flex items-center gap-3 mb-4">
-                <Bot className="h-8 w-8 text-purple-600" />
-                <div>
-                  <h3 className="text-lg font-semibold">Developer Agent</h3>
-                  <p className="text-sm text-gray-500">Claude Opus on OpenClaw</p>
-                </div>
+            <div className="flex-1 overflow-y-auto p-4">
+              {/* Compact Upload Zone */}
+              <div className="mb-6">
+                <FileUploader onUploadComplete={handleFileUpload} />
               </div>
-              <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
-                <li className="flex items-start gap-2">
-                  <span className="text-green-500 mt-0.5">•</span>
-                  Receives one micro-task at a time
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-green-500 mt-0.5">•</span>
-                  Executes code changes
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-green-500 mt-0.5">•</span>
-                  Runs builds and tests
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-green-500 mt-0.5">•</span>
-                  Clean context (200 tokens vs 4000)
-                </li>
-              </ul>
+              
+              {/* Task Queue Tree */}
+              <TaskQueue />
             </div>
           </div>
-        )}
-        
-        {/* File Upload */}
-        {status.overallProgress.filesTotal === 0 && (
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 mb-8">
-            <h2 className="text-xl font-semibold mb-4">Upload Task File</h2>
-            <FileUploader onUploadComplete={handleFileUpload} />
-          </div>
-        )}
-        
-        {/* Main Content Area - 3 Panel Layout */}
-        {(status.overallProgress.filesTotal > 0 || status.status !== 'idle') && (
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-            {/* Left Panel - Task Queue (25%) */}
-            <div className="lg:col-span-3">
-              <div className="bg-white dark:bg-gray-800 rounded-lg shadow h-full">
-                <div className="p-4 border-b border-gray-200 dark:border-gray-700">
-                  <h2 className="text-lg font-semibold">Task Queue</h2>
-                </div>
-                <div className="p-4 max-h-[calc(100vh-300px)] overflow-y-auto">
-                  <TaskQueue onTaskSelect={setSelectedTask} />
-                </div>
-              </div>
+          
+          {/* Middle Panel - Execution Monitor (45%) */}
+          <div className="w-[45%] flex flex-col">
+            <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+              <h2 className="font-semibold">Execution Monitor</h2>
             </div>
-            
-            {/* Center Panel - Execution Monitor (45%) */}
-            <div className="lg:col-span-5">
+            <div className="flex-1 overflow-y-auto p-4">
               <ExecutionMonitor onRefresh={loadStatus} />
             </div>
-            
-            {/* Right Panel - Preview (30%) */}
-            <div className="lg:col-span-4">
-              <div className="h-[calc(100vh-300px)]">
-                <PreviewPanel isBuilding={status.status === 'building'} />
-              </div>
+          </div>
+          
+          {/* Right Panel - Live Preview (30%) */}
+          <div className="w-[30%] border-l border-gray-200 dark:border-gray-700 flex flex-col">
+            <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+              <h2 className="font-semibold">Live Preview</h2>
+            </div>
+            <div className="flex-1">
+              <PreviewPanel 
+                url="https://app.gen3.ai/dashboard"
+                isBuilding={status.status === 'building'} 
+              />
             </div>
           </div>
-        )}
+        </div>
         
         {/* Error Display */}
         {error && (
-          <div className="mt-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+          <div className="absolute bottom-20 left-1/2 transform -translate-x-1/2 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
             <div className="flex items-center gap-2 text-red-600 dark:text-red-400">
               <AlertCircle className="h-5 w-5" />
               <span>{error}</span>
@@ -205,17 +147,15 @@ export default function SelfDevPage() {
         )}
       </div>
       
-      {/* Control Bar - Fixed Bottom */}
-      {(status.overallProgress.filesTotal > 0 || status.status !== 'idle') && (
-        <ControlBar
-          status={status}
-          onStart={() => handleControl('start')}
-          onPause={() => handleControl('pause')}
-          onResume={() => handleControl('resume')}
-          onSkip={() => handleControl('skip')}
-          onRetry={() => handleControl('retry')}
-        />
-      )}
+      {/* Control Bar - Always Visible */}
+      <ControlBar
+        status={status}
+        onStart={() => handleControl('start')}
+        onPause={() => handleControl('pause')}
+        onResume={() => handleControl('resume')}
+        onSkip={() => handleControl('skip')}
+        onRetry={() => handleControl('retry')}
+      />
     </>
   );
 }

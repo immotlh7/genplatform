@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import { Monitor, Tablet, Smartphone, ExternalLink, RefreshCw, Loader2 } from 'lucide-react';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 
 interface PreviewPanelProps {
@@ -10,10 +9,10 @@ interface PreviewPanelProps {
   isBuilding?: boolean;
 }
 
-export function PreviewPanel({ url = 'https://app.gen3.ai', isBuilding = false }: PreviewPanelProps) {
+export function PreviewPanel({ url = 'https://app.gen3.ai/dashboard', isBuilding = false }: PreviewPanelProps) {
   const [device, setDevice] = useState<'desktop' | 'tablet' | 'mobile'>('desktop');
   const [isLoading, setIsLoading] = useState(true);
-  const [key, setKey] = useState(0); // Used to force iframe refresh
+  const [key, setKey] = useState(0);
 
   const deviceWidths = {
     desktop: '100%',
@@ -29,7 +28,6 @@ export function PreviewPanel({ url = 'https://app.gen3.ai', isBuilding = false }
 
   useEffect(() => {
     if (!isBuilding) {
-      // Auto-refresh 5 seconds after build completes
       const timer = setTimeout(() => {
         refreshPreview();
       }, 5000);
@@ -39,7 +37,7 @@ export function PreviewPanel({ url = 'https://app.gen3.ai', isBuilding = false }
 
   const refreshPreview = () => {
     setIsLoading(true);
-    setKey(prev => prev + 1); // Force iframe to reload
+    setKey(prev => prev + 1);
   };
 
   const openInNewTab = () => {
@@ -47,71 +45,74 @@ export function PreviewPanel({ url = 'https://app.gen3.ai', isBuilding = false }
   };
 
   return (
-    <Card className="h-full flex flex-col">
-      <CardHeader>
+    <div className="h-full flex flex-col bg-gray-100 dark:bg-gray-900">
+      {/* Controls */}
+      <div className="p-3 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
         <div className="flex items-center justify-between">
-          <CardTitle>Live Preview</CardTitle>
-          <div className="flex items-center gap-2">
-            {/* Device Toggles */}
-            <div className="flex bg-gray-100 dark:bg-gray-800 rounded-md p-1">
-              <button
-                onClick={() => setDevice('desktop')}
-                className={`p-2 rounded transition-colors ${
-                  device === 'desktop' 
-                    ? 'bg-white dark:bg-gray-700 shadow-sm' 
-                    : 'hover:bg-gray-200 dark:hover:bg-gray-700'
-                }`}
-                title="Desktop"
-              >
-                <Monitor className="h-4 w-4" />
-              </button>
-              <button
-                onClick={() => setDevice('tablet')}
-                className={`p-2 rounded transition-colors ${
-                  device === 'tablet' 
-                    ? 'bg-white dark:bg-gray-700 shadow-sm' 
-                    : 'hover:bg-gray-200 dark:hover:bg-gray-700'
-                }`}
-                title="Tablet"
-              >
-                <Tablet className="h-4 w-4" />
-              </button>
-              <button
-                onClick={() => setDevice('mobile')}
-                className={`p-2 rounded transition-colors ${
-                  device === 'mobile' 
-                    ? 'bg-white dark:bg-gray-700 shadow-sm' 
-                    : 'hover:bg-gray-200 dark:hover:bg-gray-700'
-                }`}
-                title="Mobile"
-              >
-                <Smartphone className="h-4 w-4" />
-              </button>
-            </div>
+          {/* Device Toggles */}
+          <div className="flex bg-gray-100 dark:bg-gray-700 rounded-md p-1">
+            <button
+              onClick={() => setDevice('desktop')}
+              className={`p-1.5 rounded transition-colors ${
+                device === 'desktop' 
+                  ? 'bg-white dark:bg-gray-600 shadow-sm' 
+                  : 'hover:bg-gray-200 dark:hover:bg-gray-600'
+              }`}
+              title="Desktop"
+            >
+              <Monitor className="h-3.5 w-3.5" />
+            </button>
+            <button
+              onClick={() => setDevice('tablet')}
+              className={`p-1.5 rounded transition-colors ${
+                device === 'tablet' 
+                  ? 'bg-white dark:bg-gray-600 shadow-sm' 
+                  : 'hover:bg-gray-200 dark:hover:bg-gray-600'
+              }`}
+              title="Tablet"
+            >
+              <Tablet className="h-3.5 w-3.5" />
+            </button>
+            <button
+              onClick={() => setDevice('mobile')}
+              className={`p-1.5 rounded transition-colors ${
+                device === 'mobile' 
+                  ? 'bg-white dark:bg-gray-600 shadow-sm' 
+                  : 'hover:bg-gray-200 dark:hover:bg-gray-600'
+              }`}
+              title="Mobile"
+            >
+              <Smartphone className="h-3.5 w-3.5" />
+            </button>
+          </div>
 
-            {/* Action Buttons */}
+          {/* Action Buttons */}
+          <div className="flex items-center gap-2">
             <Button
               variant="outline"
               size="icon"
+              className="h-7 w-7"
               onClick={refreshPreview}
               disabled={isBuilding}
               title="Refresh"
             >
-              <RefreshCw className={`h-4 w-4 ${isBuilding ? 'animate-spin' : ''}`} />
+              <RefreshCw className={`h-3 w-3 ${isBuilding ? 'animate-spin' : ''}`} />
             </Button>
             <Button
               variant="outline"
               size="icon"
+              className="h-7 w-7"
               onClick={openInNewTab}
               title="Open in new tab"
             >
-              <ExternalLink className="h-4 w-4" />
+              <ExternalLink className="h-3 w-3" />
             </Button>
           </div>
         </div>
-      </CardHeader>
+      </div>
       
-      <CardContent className="flex-1 p-0 relative bg-gray-100 dark:bg-gray-900">
+      {/* Preview Area */}
+      <div className="flex-1 relative overflow-auto p-4">
         {/* Building Overlay */}
         {isBuilding && (
           <div className="absolute inset-0 bg-black/50 backdrop-blur-sm z-10 flex items-center justify-center">
@@ -132,7 +133,7 @@ export function PreviewPanel({ url = 'https://app.gen3.ai', isBuilding = false }
         )}
         
         {/* Device Frame */}
-        <div className="h-full overflow-auto p-4">
+        <div className="h-full">
           <div className={`${deviceClasses[device]} h-full transition-all duration-300 ease-in-out`}>
             <div className="bg-white dark:bg-gray-950 rounded-lg shadow-2xl h-full overflow-hidden">
               <iframe
@@ -145,7 +146,7 @@ export function PreviewPanel({ url = 'https://app.gen3.ai', isBuilding = false }
             </div>
           </div>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }
