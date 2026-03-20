@@ -122,14 +122,17 @@ export function ExecutionMonitor({ onRefresh }: ExecutionMonitorProps) {
   const stats = status?.stats || {
     totalTasks: 0,
     completedTasks: 0,
-    executingTasks: 0
+    executingTasks: 0,
+    approvedTasks: 0,
+    pendingTasks: 0,
+    skippedTasks: 0
   };
   
   const currentTask = status?.currentTask;
   const isExecuting = stats.executingTasks > 0;
 
   // Empty queue state
-  if (stats.totalTasks === 0) {
+  if (stats.totalTasks === 0 && !stats.approvedTasks && !stats.executingTasks) {
     return (
       <div className="h-full flex items-center justify-center">
         <div className="text-center">

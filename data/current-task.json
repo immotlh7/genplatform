@@ -1,12 +1,12 @@
 {
-  "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg5-task1",
-  "messageNumber": 5,
-  "messageTitle": "Fix the Dashboard page to be professional and useful.",
+  "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg3-task4",
+  "messageNumber": 3,
+  "messageTitle": "URGENT FIX: The \"Gateway Offline\" notification appears on EVERY page even when gateway is running. F",
   "totalTasks": 68,
-  "completedTasks": 1,
+  "completedTasks": 0,
   "task": {
-    "taskNumber": 1,
-    "description": "Live Task Monitor widget at the top. Currently shows \"Sprint 0D\" and old data. Fix:",
+    "taskNumber": 4,
+    "description": "Also check if there is a NotificationBell.tsx component that duplicates this logic. If yes, consolidate into one system.",
     "status": "executing"
   }
 }
