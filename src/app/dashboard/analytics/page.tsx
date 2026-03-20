@@ -102,7 +102,7 @@ export default function AnalyticsPage() {
       const enabledSkills = skillsData.skills?.filter((s: any) => s.enabled)?.length || 0
       
       // Process skills data
-      const skillExecutions = Math.floor(Math.random() * 3000) + 1000 // Placeholder until real execution tracking
+      const skillExecutions = 0 // Tracking starts from now
       
       setMetrics({
         sessions: {
@@ -636,10 +636,10 @@ function generateTimeSeriesData(period: string, granularity: string) {
     const timestamp = new Date(now.getTime() - i * stepMs)
     data.push({
       timestamp: timestamp.toISOString(),
-      sessions: Math.floor(Math.random() * 50) + 10,
-      skillExecutions: Math.floor(Math.random() * 200) + 50,
-      memoryAccess: Math.floor(Math.random() * 100) + 20,
-      responseTime: Math.random() * 3 + 0.5
+      sessions: 0,
+      skillExecutions: 0,
+      memoryAccess: 0,
+      responseTime: 2.5
     })
   }
   

@@ -163,7 +163,7 @@ export default function ProjectsPage() {
               Manage and track your development projects
             </p>
           </div>
-          <Button>
+          <Button onClick={() => setShowNewProject(true)}>
             <Plus className="mr-2 h-4 w-4" />
             New Project
           </Button>
@@ -322,6 +322,33 @@ export default function ProjectsPage() {
 
         )}
       </div>
+      {showNewProject && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-background border rounded-xl p-6 w-full max-w-md mx-4 shadow-xl">
+            <h2 className="text-lg font-semibold mb-4">New Project</h2>
+            <div className="space-y-4">
+              <div>
+                <label className="text-sm font-medium">Project Name *</label>
+                <input className="w-full mt-1 border rounded-lg px-3 py-2 text-sm bg-background" placeholder="My Awesome Project" value={newProjectName} onChange={e => setNewProjectName(e.target.value)} />
+              </div>
+              <div>
+                <label className="text-sm font-medium">Description</label>
+                <textarea className="w-full mt-1 border rounded-lg px-3 py-2 text-sm bg-background min-h-[80px]" placeholder="What is this project about?" value={newProjectDesc} onChange={e => setNewProjectDesc(e.target.value)} />
+              </div>
+            </div>
+            <div className="flex gap-3 justify-end mt-6">
+              <button className="px-4 py-2 text-sm border rounded-lg hover:bg-accent" onClick={() => { setShowNewProject(false); setNewProjectName(''); setNewProjectDesc(''); }}>Cancel</button>
+              <button className="px-4 py-2 text-sm bg-primary text-primary-foreground rounded-lg disabled:opacity-50" disabled={!newProjectName.trim() || isCreating} onClick={async () => {
+                setIsCreating(true);
+                try {
+                  const res = await fetch('/api/projects', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: newProjectName, description: newProjectDesc, status: 'active', priority: 'medium', progress: 0, techStack: [] }) });
+                  if (res.ok) { setShowNewProject(false); setNewProjectName(''); setNewProjectDesc(''); fetchProjects(); }
+                } finally { setIsCreating(false); }
+              }}>{isCreating ? 'Creating...' : 'Create Project'}</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

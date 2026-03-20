@@ -194,7 +194,7 @@ export default function SkillsPage() {
             <RefreshCw className="w-4 h-4" />
             Refresh Skills
           </Button>
-          <Button className="gap-2">
+          <Button className="gap-2" onClick={() => alert('Skills are managed through OpenClaw. Use the Command Center to update skills. → /dashboard/command-center')}>
             <Plus className="w-4 h-4" />
             Add Skill
           </Button>

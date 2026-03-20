@@ -446,7 +446,7 @@ export default function CronPage() {
             </Button>
           )}
           {canUserCreate() && (
-            <Button>
+            <Button onClick={() => setShowNewJobModal(true)}>
               <Plus className="h-4 w-4 mr-2" />
               New Job
             </Button>
