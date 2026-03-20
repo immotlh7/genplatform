@@ -3,7 +3,7 @@ import { Inter } from 'next/font/google'
 import './globals.css'
 import { Sidebar } from '@/components/layout/sidebar'
 import { Navbar } from '@/components/layout/navbar'
-import { NotificationProvider, NotificationToast } from '@/components/notifications/notification-system'
+import { NotificationProvider } from '@/components/notifications/notification-context'
 import { ProjectProvider } from '@/contexts/project-context'
 
 const inter = Inter({ subsets: ['latin'] })
@@ -58,7 +58,7 @@ export default function RootLayout({
                   {children}
                 </main>
               </div>
-              <NotificationToast />
+              
             </div>
           </ProjectProvider>
         </NotificationProvider>

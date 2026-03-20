@@ -101,6 +101,14 @@ Write and execute the implementation. After completion run: npm run build && pm2
 
   const script = bashMatch[1];
   
+  // Safety check - block destructive commands
+  const dangerous = ['rm -rf .next', 'rm -rf node_modules', 'rm -rf /', 'DROP TABLE', 'format c:', 'del /'];
+  for (const cmd of dangerous) {
+    if (script.toLowerCase().includes(cmd.toLowerCase())) {
+      return { success: false, result: `Blocked dangerous command: ${cmd}` };
+    }
+  }
+  
   try {
     const { stdout, stderr } = await execAsync(script, { 
       cwd: '/root/genplatform',
