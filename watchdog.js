@@ -203,7 +203,7 @@ async function main() {
     const lock = JSON.parse(fs.readFileSync(LOCK_FILE, 'utf-8'));
     if (lock.locked && lock.lockedAt) {
       const ageMin = (Date.now() - new Date(lock.lockedAt).getTime()) / 60000;
-      if (ageMin > 10) {
+      if (ageMin > 5) {
         issues.push(`Execution lock stuck for ${ageMin.toFixed(0)} min`);
         // Clear lock and reset stuck task
         try {

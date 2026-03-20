@@ -413,3 +413,13 @@
 [2026-03-20T19:20:02.028Z] → Next: task_1773996310129_PRIORITY-1-FIX-ALL-PA Msg 5
 [2026-03-20T19:20:02.060Z] ⚠️ Execute returned: {"error":"Execution locked","lockedBy":"task_1773996310129_PRIORITY-1-FIX-ALL-PA
 [2026-03-20T19:20:03.270Z] Done. Issues: 0, Fixes: 0
+[2026-03-20T19:21:01.820Z] --- Watchdog run ---
+[2026-03-20T19:21:01.868Z] ❌ Site is DOWN - attempting fix...
+[2026-03-20T19:21:01.869Z] 🔧 Fixing site...
+[2026-03-20T19:21:06.189Z] ❌ Site fix failed
+[2026-03-20T19:21:06.373Z] ✅ pm2 online
+[2026-03-20T19:21:06.380Z] 📊 Queue: 3/255 done, 173 approved, 0 executing
+[2026-03-20T19:21:06.381Z] 🔍 No active task — finding next...
+[2026-03-20T19:21:06.383Z] → Next: task_1773996310129_PRIORITY-1-FIX-ALL-PA Msg 5
+[2026-03-20T19:21:06.391Z] ⚠️ Execute returned: {}
+[2026-03-20T19:21:07.645Z] Done. Issues: 2, Fixes: 0
