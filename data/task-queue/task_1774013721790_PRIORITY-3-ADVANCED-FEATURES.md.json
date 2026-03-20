@@ -1,0 +1,357 @@
+{
+  "fileId": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md",
+  "fileName": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md",
+  "uploadedAt": "2026-03-20T13:35:21.881Z",
+  "totalMessages": 13,
+  "totalTasks": 29,
+  "totalMicroTasks": 0,
+  "messages": [
+    {
+      "messageNumber": 1,
+      "summary": "═══════════════════════════════════════════════════════════════",
+      "originalContent": "# ═══════════════════════════════════════════════════════════════\n# الأولوية 3: الميزات المتقدمة\n# 3D Visualization + Voice + Arabic + Security\n# ═══════════════════════════════════════════════════════════════",
+      "tasks": []
+    },
+    {
+      "messageNumber": 2,
+      "summary": "الرسالة 22: Project Detail — التصور البصري للتدفق",
+      "originalContent": "# الرسالة 22: Project Detail — التصور البصري للتدفق",
+      "tasks": []
+    },
+    {
+      "messageNumber": 3,
+      "summary": "Build an interactive pipeline visualization for the project detail page.",
+      "originalContent": "Build an interactive pipeline visualization for the project detail page.\n\nProject: /root/genplatform. Site: https://app.gen3.ai.\nDESIGN PROTECTION: Do NOT modify sidebar.tsx, navbar.tsx, layout.tsx, globals.css.\n\nTask 1: In the project detail page (/projects/[id]), add a new tab called \"Pipeline\" after the Overview tab.\n\nTask 2: Build an animated pipeline flow using SVG + CSS animations (NOT Three.js for now — keep it simple and reliable):\n- Horizontal flow diagram showing stages:\n  💡 Idea → 🔬 Analysis → 📋 Task Planning → 💻 Development → 🔍 Review → 🛡️ Security → ✅ Deploy\n- Each stage is a rounded box with icon, name, and task count\n- Animated dots flow between stages (CSS keyframe animation on small circles moving along paths)\n- Color coding: completed stages = green, active = amber pulsing, pending = gray\n\nTask 3: Below the pipeline, show a table of tasks for this project:\n- Columns: Task #, Name, Stage, Assigned Agent, Status, Time\n- Each row is a task that belongs to this project\n- Click a row → opens task detail\n\nTask 4: Stats bar above the pipeline:\n- Total Tasks: X\n- Completed: Y\n- In Progress: Z\n- Active Agents: N\n- Estimated completion: time\n\nTask 5: The pipeline should animate on load — dots appearing at \"Idea\" and flowing through to \"Deploy\". When a task moves stages, a new dot appears. Use requestAnimationFrame for smooth animation.\n\nAfter ALL: npm run build && pm2 restart genplatform-app && git add -A && git commit -m \"Project pipeline visualization with animated flow\" && git push\n\n🔗 Preview: https://app.gen3.ai/projects/1 (Pipeline tab)\nDo all 5 tasks NOW.",
+      "tasks": [
+        {
+          "taskId": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg3-task1",
+          "taskNumber": 1,
+          "originalDescription": "In the project detail page (/projects/[id]), add a new tab called \"Pipeline\" after the Overview tab.",
+          "status": "pending",
+          "approved": false,
+          "rewritten": false,
+          "microTasks": []
+        },
+        {
+          "taskId": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg3-task2",
+          "taskNumber": 2,
+          "originalDescription": "Build an animated pipeline flow using SVG + CSS animations (NOT Three.js for now — keep it simple and reliable):",
+          "status": "pending",
+          "approved": false,
+          "rewritten": false,
+          "microTasks": []
+        },
+        {
+          "taskId": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg3-task3",
+          "taskNumber": 3,
+          "originalDescription": "Below the pipeline, show a table of tasks for this project:",
+          "status": "pending",
+          "approved": false,
+          "rewritten": false,
+          "microTasks": []
+        },
+        {
+          "taskId": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg3-task4",
+          "taskNumber": 4,
+          "originalDescription": "Stats bar above the pipeline:",
+          "status": "pending",
+          "approved": false,
+          "rewritten": false,
+          "microTasks": []
+        },
+        {
+          "taskId": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg3-task5",
+          "taskNumber": 5,
+          "originalDescription": "The pipeline should animate on load — dots appearing at \"Idea\" and flowing through to \"Deploy\". When a task moves stages, a new dot appears. Use requestAnimationFrame for smooth animation.",
+          "status": "pending",
+          "approved": false,
+          "rewritten": false,
+          "microTasks": []
+        }
+      ]
+    },
+    {
+      "messageNumber": 4,
+      "summary": "الرسالة 23: نظام تطوير الأفكار المتكامل",
+      "originalContent": "# الرسالة 23: نظام تطوير الأفكار المتكامل",
+      "tasks": []
+    },
+    {
+      "messageNumber": 5,
+      "summary": "Build the complete idea-to-project pipeline system.",
+      "originalContent": "Build the complete idea-to-project pipeline system.\n\nProject: /root/genplatform. Site: https://app.gen3.ai.\nDESIGN PROTECTION: Do NOT modify sidebar.tsx, navbar.tsx, layout.tsx, globals.css.\n\nTask 1: Create src/app/api/ideas/[id]/analyze/route.ts — Deep analysis endpoint:\n- POST receives {ideaId, ideaTitle, ideaDescription}\n- Sends to OpenClaw via Telegram: \"🔬 Deep Analysis Request for idea: {title}. Description: {description}. Provide comprehensive analysis: 1. Market size and opportunity 2. Competitor landscape (list top 5) 3. Unique value proposition 4. Technical feasibility (1-10) 5. Estimated development time 6. Recommended tech stack 7. Cost estimate (hosting, APIs, tools) 8. Revenue model suggestions 9. Risk assessment 10. Go/No-Go recommendation with reasoning\"\n- Returns {success: true, message: \"Analysis request sent\"}\n\nTask 2: In the Ideas Lab page, when clicking \"Research\" on an idea:\n- Call POST /api/ideas/[id]/analyze\n- Show loading state: \"AI is analyzing your idea... This may take 2-3 minutes\"\n- Update idea status to \"research\"\n\nTask 3: Create src/app/api/ideas/[id]/plan/route.ts — Planning endpoint:\n- After analysis is approved, this creates the development plan\n- Sends to OpenClaw: \"📋 Create detailed development plan for: {title}. Break down into: Phase 1 (MVP), Phase 2 (Core features), Phase 3 (Advanced). For each phase list specific tasks with: task name, department (Frontend/Backend/Security/QA), estimated hours, dependencies.\"\n- Returns {success: true}\n\nTask 4: Create src/app/api/ideas/[id]/execute/route.ts — Execution endpoint:\n- After plan is approved, starts execution\n- Creates a new project via POST /api/projects\n- Creates tasks from the plan via POST /api/tasks (multiple)\n- Sets up the project structure\n- Returns {projectId, taskCount}\n\nTask 5: Update Ideas Lab UI to show the full pipeline with visual progress for each idea:\n- Stage 1: Submitted (gray) → clickable \"Analyze\" button\n- Stage 2: Analyzing (amber, animated) → shows \"AI working...\"\n- Stage 3: Analysis Complete → shows summary, \"Approve/Reject\" buttons\n- Stage 4: Planning (amber) → shows \"Creating plan...\"\n- Stage 5: Plan Ready → shows task breakdown, \"Start Development\" button\n- Stage 6: In Development (green) → links to project page\n\nAfter ALL: npm run build && pm2 restart genplatform-app && git add -A && git commit -m \"Ideas: complete pipeline from idea to project\" && git push\n\n🔗 Preview: https://app.gen3.ai/ideas\nDo all 5 tasks NOW.",
+      "tasks": [
+        {
+          "taskId": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg5-task1",
+          "taskNumber": 1,
+          "originalDescription": "Create src/app/api/ideas/[id]/analyze/route.ts — Deep analysis endpoint:",
+          "status": "pending",
+          "approved": false,
+          "rewritten": false,
+          "microTasks": []
+        },
+        {
+          "taskId": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg5-task2",
+          "taskNumber": 2,
+          "originalDescription": "In the Ideas Lab page, when clicking \"Research\" on an idea:",
+          "status": "pending",
+          "approved": false,
+          "rewritten": false,
+          "microTasks": []
+        },
+        {
+          "taskId": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg5-task3",
+          "taskNumber": 3,
+          "originalDescription": "Create src/app/api/ideas/[id]/plan/route.ts — Planning endpoint:",
+          "status": "pending",
+          "approved": false,
+          "rewritten": false,
+          "microTasks": []
+        },
+        {
+          "taskId": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg5-task4",
+          "taskNumber": 4,
+          "originalDescription": "Create src/app/api/ideas/[id]/execute/route.ts — Execution endpoint:",
+          "status": "pending",
+          "approved": false,
+          "rewritten": false,
+          "microTasks": []
+        },
+        {
+          "taskId": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg5-task5",
+          "taskNumber": 5,
+          "originalDescription": "Update Ideas Lab UI to show the full pipeline with visual progress for each idea:",
+          "status": "pending",
+          "approved": false,
+          "rewritten": false,
+          "microTasks": []
+        }
+      ]
+    },
+    {
+      "messageNumber": 6,
+      "summary": "الرسالة 24: Arabic/RTL Support",
+      "originalContent": "# الرسالة 24: Arabic/RTL Support",
+      "tasks": []
+    },
+    {
+      "messageNumber": 7,
+      "summary": "Add Arabic language support and RTL layout.",
+      "originalContent": "Add Arabic language support and RTL layout.\n\nProject: /root/genplatform. Site: https://app.gen3.ai.\nDESIGN PROTECTION: Do NOT modify the visual design. ONLY add RTL support and translation capability.\n\nTask 1: Install next-intl if not installed: npm install next-intl\n\nTask 2: Create src/messages/en.json with ALL UI text (at least 150 keys). Cover: navigation names, button labels, page titles, status messages, form labels, error messages, placeholders.\n\nTask 3: Create src/messages/ar.json with professional Arabic translations. Examples:\n- Dashboard → لوحة التحكم\n- Skills → المهارات\n- Memory → الذاكرة\n- Projects → المشاريع\n- System Monitor → مراقبة النظام\n- Settings → الإعدادات\n- Save Changes → حفظ التغييرات\n- Sign Out → تسجيل الخروج\n\nTask 4: Create src/components/layout/LanguageToggle.tsx:\n- Small button showing \"AR\" or \"EN\"\n- Click toggles between Arabic and English\n- Saves to localStorage('locale')\n- When Arabic: document.documentElement.dir = 'rtl' and lang = 'ar'\n- When English: dir = 'ltr' and lang = 'en'\n\nTask 5: Add the LanguageToggle to the navbar (next to user avatar). When RTL:\n- Sidebar appears on the RIGHT\n- Text aligns RIGHT\n- Use CSS logical properties (margin-inline-start, padding-inline-end)\n- Icons don't flip\n\nAfter ALL: npm run build && pm2 restart genplatform-app && git add -A && git commit -m \"Arabic/RTL: translations, toggle, layout support\" && git push\n\n🔗 Preview: https://app.gen3.ai/dashboard (click AR toggle)\nDo all 5 tasks NOW.",
+      "tasks": [
+        {
+          "taskId": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg7-task1",
+          "taskNumber": 1,
+          "originalDescription": "Install next-intl if not installed: npm install next-intl",
+          "status": "pending",
+          "approved": false,
+          "rewritten": false,
+          "microTasks": []
+        },
+        {
+          "taskId": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg7-task2",
+          "taskNumber": 2,
+          "originalDescription": "Create src/messages/en.json with ALL UI text (at least 150 keys). Cover: navigation names, button labels, page titles, status messages, form labels, error messages, placeholders.",
+          "status": "pending",
+          "approved": false,
+          "rewritten": false,
+          "microTasks": []
+        },
+        {
+          "taskId": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg7-task3",
+          "taskNumber": 3,
+          "originalDescription": "Create src/messages/ar.json with professional Arabic translations. Examples:",
+          "status": "pending",
+          "approved": false,
+          "rewritten": false,
+          "microTasks": []
+        },
+        {
+          "taskId": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg7-task4",
+          "taskNumber": 4,
+          "originalDescription": "Create src/components/layout/LanguageToggle.tsx:",
+          "status": "pending",
+          "approved": false,
+          "rewritten": false,
+          "microTasks": []
+        },
+        {
+          "taskId": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg7-task5",
+          "taskNumber": 5,
+          "originalDescription": "Add the LanguageToggle to the navbar (next to user avatar). When RTL:",
+          "status": "pending",
+          "approved": false,
+          "rewritten": false,
+          "microTasks": []
+        }
+      ]
+    },
+    {
+      "messageNumber": 8,
+      "summary": "الرسالة 25: Security Hardening",
+      "originalContent": "# الرسالة 25: Security Hardening",
+      "tasks": []
+    },
+    {
+      "messageNumber": 9,
+      "summary": "Harden the platform security.",
+      "originalContent": "Harden the platform security.\n\nProject: /root/genplatform. Site: https://app.gen3.ai.\nDESIGN PROTECTION: Do NOT modify sidebar.tsx, navbar.tsx, layout.tsx, globals.css.\n\nTask 1: Install zod: npm install zod. Create src/lib/validators.ts:\n- loginSchema: {password: string min 1}\n- ideaSchema: {title: string min 3 max 200, description optional max 2000}\n- taskSchema: {name: string min 3 max 200, description optional}\n- chatSchema: {message: string min 1 max 4000, projectId optional}\n- memorySchema: {path: string, no \"..\" allowed, content: string max 500000}\n\nTask 2: Create src/lib/prompt-scanner.ts — scans for injection:\n- Patterns: \"ignore previous instructions\", \"forget your rules\", \"reveal system prompt\", \"act as admin\", \"<script\", \"javascript:\", \"${\", \"/etc/passwd\"\n- Returns {safe: boolean, threats: string[]}\n\nTask 3: Apply validation to API routes:\n- POST /api/chat/send → validate + scan\n- POST /api/ideas → validate\n- POST /api/tasks → validate\n- PUT /api/bridge/memory → validate path (no \"..\")\n- Return 400 with clear error on validation failure\n\nTask 4: Protect sensitive files: chmod 600 ~/.openclaw/openclaw.json\n\nTask 5: Make sure /login page works properly:\n- Cannot access /dashboard without valid auth-token cookie\n- Sign out clears cookie completely\n- Cookie is HttpOnly and Secure\n\nAfter ALL: npm run build && pm2 restart genplatform-app && git add -A && git commit -m \"Security: Zod validation, prompt scanner, auth hardening\" && git push\n\n🔗 Preview: https://app.gen3.ai/login\nDo all 5 tasks NOW.",
+      "tasks": [
+        {
+          "taskId": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg9-task1",
+          "taskNumber": 1,
+          "originalDescription": "Install zod: npm install zod. Create src/lib/validators.ts:",
+          "status": "pending",
+          "approved": false,
+          "rewritten": false,
+          "microTasks": []
+        },
+        {
+          "taskId": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg9-task2",
+          "taskNumber": 2,
+          "originalDescription": "Create src/lib/prompt-scanner.ts — scans for injection:",
+          "status": "pending",
+          "approved": false,
+          "rewritten": false,
+          "microTasks": []
+        },
+        {
+          "taskId": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg9-task3",
+          "taskNumber": 3,
+          "originalDescription": "Apply validation to API routes:",
+          "status": "pending",
+          "approved": false,
+          "rewritten": false,
+          "microTasks": []
+        },
+        {
+          "taskId": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg9-task4",
+          "taskNumber": 4,
+          "originalDescription": "Protect sensitive files: chmod 600 ~/.openclaw/openclaw.json",
+          "status": "pending",
+          "approved": false,
+          "rewritten": false,
+          "microTasks": []
+        },
+        {
+          "taskId": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg9-task5",
+          "taskNumber": 5,
+          "originalDescription": "Make sure /login page works properly:",
+          "status": "pending",
+          "approved": false,
+          "rewritten": false,
+          "microTasks": []
+        }
+      ]
+    },
+    {
+      "messageNumber": 10,
+      "summary": "الرسالة 26: PWA + Meta + Favicon",
+      "originalContent": "# الرسالة 26: PWA + Meta + Favicon",
+      "tasks": []
+    },
+    {
+      "messageNumber": 11,
+      "summary": "Add PWA support and proper meta tags.",
+      "originalContent": "Add PWA support and proper meta tags.\n\nProject: /root/genplatform. Site: https://app.gen3.ai.\nDESIGN PROTECTION: Do NOT modify sidebar.tsx, navbar.tsx, layout.tsx (structure), globals.css.\n\nTask 1: Create public/manifest.json:\n{\n  \"name\": \"GenPlatform.ai\",\n  \"short_name\": \"GenPlatform\",\n  \"description\": \"AI Mission Control Dashboard\",\n  \"start_url\": \"/dashboard\",\n  \"display\": \"standalone\",\n  \"background_color\": \"#09090b\",\n  \"theme_color\": \"#3b82f6\"\n}\n\nTask 2: Create a favicon. Create public/favicon.svg:\n- A 32x32 SVG with \"GP\" text in white on a blue (#3b82f6) rounded rect background\n- Reference in layout.tsx metadata\n\nTask 3: Update metadata in layout.tsx (do NOT change the layout structure, ONLY update the metadata object):\n- title: \"GenPlatform.ai — Mission Control\"\n- description: \"AI-powered platform for managing projects, agents, and automation\"\n- Add link to manifest.json\n\nTask 4: Add loading skeleton components:\n- Create src/components/ui/page-skeleton.tsx\n- A generic skeleton that shows animated gray rectangles while pages load\n- Apply to Dashboard and other pages that fetch data on mount\n\nAfter ALL: npm run build && pm2 restart genplatform-app && git add -A && git commit -m \"PWA manifest, favicon, meta tags, loading skeletons\" && git push\n\n🔗 Preview: https://app.gen3.ai/dashboard\nDo all 4 tasks NOW.",
+      "tasks": [
+        {
+          "taskId": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg11-task1",
+          "taskNumber": 1,
+          "originalDescription": "Create public/manifest.json:",
+          "status": "pending",
+          "approved": false,
+          "rewritten": false,
+          "microTasks": []
+        },
+        {
+          "taskId": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg11-task2",
+          "taskNumber": 2,
+          "originalDescription": "Create a favicon. Create public/favicon.svg:",
+          "status": "pending",
+          "approved": false,
+          "rewritten": false,
+          "microTasks": []
+        },
+        {
+          "taskId": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg11-task3",
+          "taskNumber": 3,
+          "originalDescription": "Update metadata in layout.tsx (do NOT change the layout structure, ONLY update the metadata object):",
+          "status": "pending",
+          "approved": false,
+          "rewritten": false,
+          "microTasks": []
+        },
+        {
+          "taskId": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg11-task4",
+          "taskNumber": 4,
+          "originalDescription": "Add loading skeleton components:",
+          "status": "pending",
+          "approved": false,
+          "rewritten": false,
+          "microTasks": []
+        }
+      ]
+    },
+    {
+      "messageNumber": 12,
+      "summary": "الرسالة 27: Production Hardening + Documentation",
+      "originalContent": "# الرسالة 27: Production Hardening + Documentation",
+      "tasks": []
+    },
+    {
+      "messageNumber": 13,
+      "summary": "Final production checks and documentation.",
+      "originalContent": "Final production checks and documentation.\n\nProject: /root/genplatform. Site: https://app.gen3.ai.\nDESIGN PROTECTION: Do NOT modify sidebar.tsx, navbar.tsx, layout.tsx, globals.css.\n\nTask 1: Test EVERY page. Run this and fix any 500 errors:\nfor page in dashboard dashboard/skills dashboard/memory dashboard/cron dashboard/monitoring dashboard/analytics dashboard/reports dashboard/settings dashboard/users dashboard/chat dashboard/command-center dashboard/tasks dashboard/integrations projects automations ideas agents help login; do\n  STATUS=$(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3000/$page)\n  echo \"$page: $STATUS\"\ndone\nFix any page returning 500 or that crashes.\n\nTask 2: Test all API routes:\nfor route in health skills memory cron metrics status logs sessions live-status config; do\n  STATUS=$(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3000/api/bridge/$route)\n  echo \"/api/bridge/$route: $STATUS\"\ndone\nFix any returning non-200.\n\nTask 3: PM2 production setup:\npm2 save\npm2 startup\nVerify both genplatform-app and bridge-api survive reboot.\n\nTask 4: Create /root/genplatform/README.md with professional documentation:\n- Project overview\n- Architecture diagram (text)\n- Setup instructions\n- All pages listed\n- All API routes listed\n- Deployment process\n\nTask 5: Final git tag:\ngit add -A && git commit -m \"Production ready: all pages tested, documented\" && git push\ngit tag -a \"v1.0-production\" -m \"GenPlatform.ai v1.0\" && git push --tags\npm2 save\n\nUpdate PROGRESS.md: ALL phases complete.\n\nAfter ALL: Send final status via Telegram to owner.\nDo all 5 tasks NOW.",
+      "tasks": [
+        {
+          "taskId": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg13-task1",
+          "taskNumber": 1,
+          "originalDescription": "Test EVERY page. Run this and fix any 500 errors:",
+          "status": "pending",
+          "approved": false,
+          "rewritten": false,
+          "microTasks": []
+        },
+        {
+          "taskId": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg13-task2",
+          "taskNumber": 2,
+          "originalDescription": "Test all API routes:",
+          "status": "pending",
+          "approved": false,
+          "rewritten": false,
+          "microTasks": []
+        },
+        {
+          "taskId": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg13-task3",
+          "taskNumber": 3,
+          "originalDescription": "PM2 production setup:",
+          "status": "pending",
+          "approved": false,
+          "rewritten": false,
+          "microTasks": []
+        },
+        {
+          "taskId": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg13-task4",
+          "taskNumber": 4,
+          "originalDescription": "Create /root/genplatform/README.md with professional documentation:",
+          "status": "pending",
+          "approved": false,
+          "rewritten": false,
+          "microTasks": []
+        },
+        {
+          "taskId": "task_1774013721790_PRIORITY-3-ADVANCED-FEATURES.md-msg13-task5",
+          "taskNumber": 5,
+          "originalDescription": "Final git tag:",
+          "status": "pending",
+          "approved": false,
+          "rewritten": false,
+          "microTasks": []
+        }
+      ]
+    }
+  ],
+  "status": "analyzed",
+  "hasApprovedTasks": false
+}

@@ -1,0 +1,308 @@
+{
+  "fileId": "task_1774013715110_PRIORITY-2-CHAT-AND-FEATURES.md",
+  "fileName": "task_1774013715110_PRIORITY-2-CHAT-AND-FEATURES.md",
+  "uploadedAt": "2026-03-20T13:35:15.269Z",
+  "totalMessages": 11,
+  "totalTasks": 25,
+  "totalMicroTasks": 0,
+  "messages": [
+    {
+      "messageNumber": 1,
+      "summary": "═══════════════════════════════════════════════════════════════",
+      "originalContent": "# ═══════════════════════════════════════════════════════════════\n# الأولوية 2: نظام الشات الاحترافي + المشاريع المتقدمة\n# ═══════════════════════════════════════════════════════════════",
+      "tasks": []
+    },
+    {
+      "messageNumber": 2,
+      "summary": "الرسالة 17: الشات الاحترافي — Split View",
+      "originalContent": "# الرسالة 17: الشات الاحترافي — Split View",
+      "tasks": []
+    },
+    {
+      "messageNumber": 3,
+      "summary": "Build a professional Chat page like ChatGPT with split view.",
+      "originalContent": "Build a professional Chat page like ChatGPT with split view.\n\nProject: /root/genplatform. Site: https://app.gen3.ai.\nDESIGN PROTECTION: Do NOT modify sidebar.tsx, navbar.tsx, layout.tsx, globals.css.\n\nTask 1: Completely rebuild src/app/dashboard/chat/page.tsx as a split-view layout:\n- LEFT side (40% width): Chat interface\n- RIGHT side (60% width): Live preview iframe\n- A draggable divider between them (optional, fixed split is ok)\n\nTask 2: LEFT side — Chat interface:\n- Top bar: Project selector dropdown (fetch from /api/projects), current project name displayed\n- Chat permissions badges: \"Read/Write\", \"Commander Enabled\"\n- Message area (scrollable, flex-grow):\n  * User messages: right-aligned, blue-ish dark background, rounded corners\n  * AI messages: left-aligned, darker background, rounded corners\n  * System messages: centered, small, gray\n  * Each message: avatar, name, timestamp, content\n  * Auto-scroll to bottom on new message\n- Bottom input area:\n  * Text input with placeholder \"Type your message (English or Arabic)...\"\n  * Send button (arrow icon)\n  * If text contains Arabic characters → show blue banner: \"Commander Mode — Arabic will be translated to English command\"\n  * Input direction: auto-detect RTL for Arabic\n\nTask 3: RIGHT side — Live Preview:\n- iframe src = selected project's previewUrl\n- Device toggle buttons above: Desktop (100% width), Tablet (768px), Mobile (375px)\n- \"Open in new tab\" button\n- \"Refresh\" button to reload iframe\n- If no project selected or no previewUrl: show \"Select a project to preview\" message\n\nTask 4: Message sending flow:\n- User types message → press Enter or click Send\n- Add message to local state immediately (optimistic)\n- POST /api/chat/send with {message, projectId}\n- Show \"AI is thinking...\" indicator\n- The message includes project context: \"[Project: {name} | Path: {path}] {message}\"\n- Bot token: 8635233052:AAGsuMzqhTHwQsFg4qGYPfUEyZPiLsAceA4\n- Owner chat: 510906393\n\nTask 5: When project changes in dropdown:\n- Update the preview iframe src\n- Clear chat or show project-specific chat history\n- Update context for messages\n\nAfter ALL: npm run build && pm2 restart genplatform-app && git add -A && git commit -m \"Chat: professional split view with preview\" && git push\n\n🔗 Preview: https://app.gen3.ai/dashboard/chat\nDo all 5 tasks NOW.",
+      "tasks": [
+        {
+          "taskId": "task_1774013715110_PRIORITY-2-CHAT-AND-FEATURES.md-msg3-task1",
+          "taskNumber": 1,
+          "originalDescription": "Completely rebuild src/app/dashboard/chat/page.tsx as a split-view layout:",
+          "status": "pending",
+          "approved": false,
+          "rewritten": false,
+          "microTasks": []
+        },
+        {
+          "taskId": "task_1774013715110_PRIORITY-2-CHAT-AND-FEATURES.md-msg3-task2",
+          "taskNumber": 2,
+          "originalDescription": "LEFT side — Chat interface:",
+          "status": "pending",
+          "approved": false,
+          "rewritten": false,
+          "microTasks": []
+        },
+        {
+          "taskId": "task_1774013715110_PRIORITY-2-CHAT-AND-FEATURES.md-msg3-task3",
+          "taskNumber": 3,
+          "originalDescription": "RIGHT side — Live Preview:",
+          "status": "pending",
+          "approved": false,
+          "rewritten": false,
+          "microTasks": []
+        },
+        {
+          "taskId": "task_1774013715110_PRIORITY-2-CHAT-AND-FEATURES.md-msg3-task4",
+          "taskNumber": 4,
+          "originalDescription": "Message sending flow:",
+          "status": "pending",
+          "approved": false,
+          "rewritten": false,
+          "microTasks": []
+        },
+        {
+          "taskId": "task_1774013715110_PRIORITY-2-CHAT-AND-FEATURES.md-msg3-task5",
+          "taskNumber": 5,
+          "originalDescription": "When project changes in dropdown:",
+          "status": "pending",
+          "approved": false,
+          "rewritten": false,
+          "microTasks": []
+        }
+      ]
+    },
+    {
+      "messageNumber": 4,
+      "summary": "الرسالة 18: Tasks/Kanban Board المتقدم",
+      "originalContent": "# الرسالة 18: Tasks/Kanban Board المتقدم",
+      "tasks": []
+    },
+    {
+      "messageNumber": 5,
+      "summary": "Improve the Tasks/Kanban page to be fully functional.",
+      "originalContent": "Improve the Tasks/Kanban page to be fully functional.\n\nProject: /root/genplatform. Site: https://app.gen3.ai.\nDESIGN PROTECTION: Do NOT modify sidebar.tsx, navbar.tsx, layout.tsx, globals.css.\n\nTask 1: The Kanban page at /dashboard/tasks should have:\n- 5 columns: Backlog (gray) | Planned (blue) | In Progress (amber) | Review (purple) | Done (green)\n- Each column: colored top border, title, task count badge\n- Top bar: Progress bar (\"X of Y tasks done\"), Search, Role filter, Sprint filter, View toggle (Board/List)\n\nTask 2: Task cards in columns:\n- Task number (T-01), name (bold), assigned department icon+name\n- Priority badge (red=high, amber=medium, green=low)\n- Estimated time\n- If in_progress: show elapsed time since started\n- If done: show actual vs estimated time\n- \"→ Move\" button to advance to next column\n\nTask 3: New Task button:\n- Modal with: Name, Description, Assigned Department (dropdown with 7 departments), Priority, Estimated Time, Sprint\n- Submit → POST /api/tasks → add to Backlog column\n\nTask 4: Click task card → Detail modal:\n- Full details: name, description, department, priority, sprint, times\n- Status change buttons: Plan → Start → Review → Complete\n- Notes textarea\n- History of status changes\n\nTask 5: Initialize with real tasks from our development:\n- T-01: Fix Gateway notification (done)\n- T-02: Fix Dashboard real data (done) \n- T-03: Fix Memory page (done)\n- T-04: Build Chat split view (in_progress)\n- T-05: Build 3D visualization (planned)\n- T-06: Arabic/RTL support (backlog)\n- T-07: Voice input (backlog)\n- T-08: Token tracking (backlog)\n- Plus more realistic tasks\n\nAfter ALL: npm run build && pm2 restart genplatform-app && git add -A && git commit -m \"Kanban: full board, task CRUD, detail modal\" && git push\n\n🔗 Preview: https://app.gen3.ai/dashboard/tasks\nDo all 5 tasks NOW.",
+      "tasks": [
+        {
+          "taskId": "task_1774013715110_PRIORITY-2-CHAT-AND-FEATURES.md-msg5-task1",
+          "taskNumber": 1,
+          "originalDescription": "The Kanban page at /dashboard/tasks should have:",
+          "status": "pending",
+          "approved": false,
+          "rewritten": false,
+          "microTasks": []
+        },
+        {
+          "taskId": "task_1774013715110_PRIORITY-2-CHAT-AND-FEATURES.md-msg5-task2",
+          "taskNumber": 2,
+          "originalDescription": "Task cards in columns:",
+          "status": "pending",
+          "approved": false,
+          "rewritten": false,
+          "microTasks": []
+        },
+        {
+          "taskId": "task_1774013715110_PRIORITY-2-CHAT-AND-FEATURES.md-msg5-task3",
+          "taskNumber": 3,
+          "originalDescription": "New Task button:",
+          "status": "pending",
+          "approved": false,
+          "rewritten": false,
+          "microTasks": []
+        },
+        {
+          "taskId": "task_1774013715110_PRIORITY-2-CHAT-AND-FEATURES.md-msg5-task4",
+          "taskNumber": 4,
+          "originalDescription": "Click task card → Detail modal:",
+          "status": "pending",
+          "approved": false,
+          "rewritten": false,
+          "microTasks": []
+        },
+        {
+          "taskId": "task_1774013715110_PRIORITY-2-CHAT-AND-FEATURES.md-msg5-task5",
+          "taskNumber": 5,
+          "originalDescription": "Initialize with real tasks from our development:",
+          "status": "pending",
+          "approved": false,
+          "rewritten": false,
+          "microTasks": []
+        }
+      ]
+    },
+    {
+      "messageNumber": 6,
+      "summary": "الرسالة 19: Agents Page الاحترافية",
+      "originalContent": "# الرسالة 19: Agents Page الاحترافية",
+      "tasks": []
+    },
+    {
+      "messageNumber": 7,
+      "summary": "Build a professional Agents page showing all 7 AI departments.",
+      "originalContent": "Build a professional Agents page showing all 7 AI departments.\n\nProject: /root/genplatform. Site: https://app.gen3.ai.\nDESIGN PROTECTION: Do NOT modify sidebar.tsx, navbar.tsx, layout.tsx, globals.css.\n\nTask 1: Create/improve the Agents page at src/app/agents/page.tsx or src/app/(dashboard)/agents/page.tsx. Make sure it's accessible from sidebar.\n\nTask 2: Header with stats:\n- Total Departments: 7\n- Currently Active: count from /api/bridge/status (if gateway running, at least 1 active)\n- Tasks Completed: total across all departments\n- Skills Available: count from /api/bridge/skills\n\nTask 3: Department cards (2-column grid):\n🔬 Research Analyst — Skills: deep-research-pro, exa-search, tavily-search — \"Conducts market research and competitive analysis\"\n📋 Architecture & Planning — Skills: task-planner, project-architect — \"Designs system architecture and sprint roadmaps\"\n💻 Frontend Development — Skills: developer, senior-dev, coding-agent — \"Builds React components and UI features\"\n⚙️ Backend Development — Skills: developer, api-builder — \"Creates API endpoints and server logic\"\n🔍 Quality Assurance — Skills: critical-code-reviewer — \"Reviews code quality and runs tests\"\n🛡️ Security — Skills: security-scanner, security-audit-toolkit — \"Scans vulnerabilities and audits code\"\n📈 Self-Improvement — Skills: self-improving-agent — \"Analyzes performance and suggests improvements\"\n\nTask 4: Each card shows:\n- Icon + name + status indicator (green pulsing=active, gray=idle)\n- Current task if active\n- Skills as small badges\n- Mini weekly activity chart (7 bars, can be placeholder data)\n- Last action with timestamp\n- Task count completed\n\nTask 5: Toggle view: Cards (default) vs Skills Matrix (table showing departments as rows, skills as columns, checkmark where they match)\n\nAfter ALL: npm run build && pm2 restart genplatform-app && git add -A && git commit -m \"Agents: 7 departments, cards, matrix view\" && git push\n\n🔗 Preview: https://app.gen3.ai/agents\nDo all 5 tasks NOW.",
+      "tasks": [
+        {
+          "taskId": "task_1774013715110_PRIORITY-2-CHAT-AND-FEATURES.md-msg7-task1",
+          "taskNumber": 1,
+          "originalDescription": "Create/improve the Agents page at src/app/agents/page.tsx or src/app/(dashboard)/agents/page.tsx. Make sure it's accessible from sidebar.",
+          "status": "pending",
+          "approved": false,
+          "rewritten": false,
+          "microTasks": []
+        },
+        {
+          "taskId": "task_1774013715110_PRIORITY-2-CHAT-AND-FEATURES.md-msg7-task2",
+          "taskNumber": 2,
+          "originalDescription": "Header with stats:",
+          "status": "pending",
+          "approved": false,
+          "rewritten": false,
+          "microTasks": []
+        },
+        {
+          "taskId": "task_1774013715110_PRIORITY-2-CHAT-AND-FEATURES.md-msg7-task3",
+          "taskNumber": 3,
+          "originalDescription": "Department cards (2-column grid):",
+          "status": "pending",
+          "approved": false,
+          "rewritten": false,
+          "microTasks": []
+        },
+        {
+          "taskId": "task_1774013715110_PRIORITY-2-CHAT-AND-FEATURES.md-msg7-task4",
+          "taskNumber": 4,
+          "originalDescription": "Each card shows:",
+          "status": "pending",
+          "approved": false,
+          "rewritten": false,
+          "microTasks": []
+        },
+        {
+          "taskId": "task_1774013715110_PRIORITY-2-CHAT-AND-FEATURES.md-msg7-task5",
+          "taskNumber": 5,
+          "originalDescription": "Toggle view: Cards (default) vs Skills Matrix (table showing departments as rows, skills as columns, checkmark where they match)",
+          "status": "pending",
+          "approved": false,
+          "rewritten": false,
+          "microTasks": []
+        }
+      ]
+    },
+    {
+      "messageNumber": 8,
+      "summary": "الرسالة 20: Ideas Lab الاحترافية",
+      "originalContent": "# الرسالة 20: Ideas Lab الاحترافية",
+      "tasks": []
+    },
+    {
+      "messageNumber": 9,
+      "summary": "Build a professional Ideas Lab page with pipeline visualization.",
+      "originalContent": "Build a professional Ideas Lab page with pipeline visualization.\n\nProject: /root/genplatform. Site: https://app.gen3.ai.\nDESIGN PROTECTION: Do NOT modify sidebar.tsx, navbar.tsx, layout.tsx, globals.css.\n\nTask 1: The Ideas page at /ideas or /(dashboard)/ideas. Must be accessible from sidebar. Shows the idea pipeline:\n- Pipeline stages displayed as horizontal tabs or columns: Pending → Research → Planning → Approved → In Development\n- Stats cards: Total Ideas, Pending, Approved, In Development\n\nTask 2: Each idea card:\n- Title, description (truncated), status badge, priority badge\n- Vote count with up/down buttons\n- Submitted by + date\n- Category badge (project/feature/enhancement/bug)\n\nTask 3: \"Submit Idea\" button:\n- Modal with: Title (required), Description (textarea), Category (dropdown), Priority (dropdown)\n- Submit → POST /api/ideas\n- Idea starts in \"Pending\" status\n\nTask 4: Idea detail — click an idea:\n- Full view with all fields\n- \"Research\" button → POST /api/ideas/[id]/research → sends to OpenClaw for analysis\n- \"Approve\" button → changes status to \"Approved\"\n- \"Create Tasks\" button → POST /api/ideas/[id]/create-tasks → generates Kanban tasks\n- Research notes area (editable, saved via PUT /api/ideas/[id])\n\nTask 5: Initialize with 4 ideas:\n- \"Online Marketplace for Morocco\" (approved, high priority)\n- \"AI Writing Assistant\" (pending, medium)\n- \"Mobile App Version\" (research, low)\n- \"Voice Commands for Arabic\" (pending, medium)\n\nAfter ALL: npm run build && pm2 restart genplatform-app && git add -A && git commit -m \"Ideas Lab: pipeline, submit, research, approve\" && git push\n\n🔗 Preview: https://app.gen3.ai/ideas\nDo all 5 tasks NOW.",
+      "tasks": [
+        {
+          "taskId": "task_1774013715110_PRIORITY-2-CHAT-AND-FEATURES.md-msg9-task1",
+          "taskNumber": 1,
+          "originalDescription": "The Ideas page at /ideas or /(dashboard)/ideas. Must be accessible from sidebar. Shows the idea pipeline:",
+          "status": "pending",
+          "approved": false,
+          "rewritten": false,
+          "microTasks": []
+        },
+        {
+          "taskId": "task_1774013715110_PRIORITY-2-CHAT-AND-FEATURES.md-msg9-task2",
+          "taskNumber": 2,
+          "originalDescription": "Each idea card:",
+          "status": "pending",
+          "approved": false,
+          "rewritten": false,
+          "microTasks": []
+        },
+        {
+          "taskId": "task_1774013715110_PRIORITY-2-CHAT-AND-FEATURES.md-msg9-task3",
+          "taskNumber": 3,
+          "originalDescription": "\"Submit Idea\" button:",
+          "status": "pending",
+          "approved": false,
+          "rewritten": false,
+          "microTasks": []
+        },
+        {
+          "taskId": "task_1774013715110_PRIORITY-2-CHAT-AND-FEATURES.md-msg9-task4",
+          "taskNumber": 4,
+          "originalDescription": "Idea detail — click an idea:",
+          "status": "pending",
+          "approved": false,
+          "rewritten": false,
+          "microTasks": []
+        },
+        {
+          "taskId": "task_1774013715110_PRIORITY-2-CHAT-AND-FEATURES.md-msg9-task5",
+          "taskNumber": 5,
+          "originalDescription": "Initialize with 4 ideas:",
+          "status": "pending",
+          "approved": false,
+          "rewritten": false,
+          "microTasks": []
+        }
+      ]
+    },
+    {
+      "messageNumber": 10,
+      "summary": "الرسالة 21: APIs & Integrations Page (جديدة)",
+      "originalContent": "# الرسالة 21: APIs & Integrations Page (جديدة)",
+      "tasks": []
+    },
+    {
+      "messageNumber": 11,
+      "summary": "Create a new APIs & Integrations page.",
+      "originalContent": "Create a new APIs & Integrations page.\n\nProject: /root/genplatform. Site: https://app.gen3.ai.\nDESIGN PROTECTION: Do NOT modify sidebar.tsx, navbar.tsx, layout.tsx, globals.css. ONLY add the new page and a link in sidebar.\n\nTask 1: Create src/app/dashboard/integrations/page.tsx. This page shows all connected services.\n\nTask 2: Service cards (each with status indicator):\n- OpenClaw Gateway: status from /api/bridge/status, model name, version\n- Telegram Bot: connected (token exists), bot name, owner chat ID (masked: 5109****93)\n- GitHub: connected, repo name (immotlh7/genplatform), last push time\n- Bridge API: status from /api/bridge/health, endpoint count (10+), port 3001\n- Caddy (SSL): running, domains (app.gen3.ai), certificate status\n- Claude API: connected via OpenClaw, model: claude-opus-4, plan: Pro Max\n\nTask 3: Each card has:\n- Service icon, name, status badge (green=connected, red=disconnected)\n- Key details (masked for security)\n- \"Test Connection\" button → pings the service and shows result\n- Last checked timestamp\n\nTask 4: Token Usage section (if possible):\n- Show: \"OpenClaw Session: X% of 200K context used\"\n- This can fetch from /api/bridge/sessions\n\nTask 5: Add link in sidebar under ADMINISTRATION: \"Integrations\" → /dashboard/integrations\nREMEMBER: Only ADD the link, do not change sidebar design.\n\nAfter ALL: npm run build && pm2 restart genplatform-app && git add -A && git commit -m \"New page: APIs & Integrations dashboard\" && git push\n\n🔗 Preview: https://app.gen3.ai/dashboard/integrations\nDo all 5 tasks NOW.",
+      "tasks": [
+        {
+          "taskId": "task_1774013715110_PRIORITY-2-CHAT-AND-FEATURES.md-msg11-task1",
+          "taskNumber": 1,
+          "originalDescription": "Create src/app/dashboard/integrations/page.tsx. This page shows all connected services.",
+          "status": "pending",
+          "approved": false,
+          "rewritten": false,
+          "microTasks": []
+        },
+        {
+          "taskId": "task_1774013715110_PRIORITY-2-CHAT-AND-FEATURES.md-msg11-task2",
+          "taskNumber": 2,
+          "originalDescription": "Service cards (each with status indicator):",
+          "status": "pending",
+          "approved": false,
+          "rewritten": false,
+          "microTasks": []
+        },
+        {
+          "taskId": "task_1774013715110_PRIORITY-2-CHAT-AND-FEATURES.md-msg11-task3",
+          "taskNumber": 3,
+          "originalDescription": "Each card has:",
+          "status": "pending",
+          "approved": false,
+          "rewritten": false,
+          "microTasks": []
+        },
+        {
+          "taskId": "task_1774013715110_PRIORITY-2-CHAT-AND-FEATURES.md-msg11-task4",
+          "taskNumber": 4,
+          "originalDescription": "Token Usage section (if possible):",
+          "status": "pending",
+          "approved": false,
+          "rewritten": false,
+          "microTasks": []
+        },
+        {
+          "taskId": "task_1774013715110_PRIORITY-2-CHAT-AND-FEATURES.md-msg11-task5",
+          "taskNumber": 5,
+          "originalDescription": "Add link in sidebar under ADMINISTRATION: \"Integrations\" → /dashboard/integrations",
+          "status": "pending",
+          "approved": false,
+          "rewritten": false,
+          "microTasks": []
+        }
+      ]
+    }
+  ],
+  "status": "analyzed",
+  "hasApprovedTasks": false
+}
