@@ -201,7 +201,7 @@ export default function ProjectsPage() {
               <CardHeader>
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
-                    <CardTitle className="text-lg">{project.name}</CardTitle>
+                    <Link href={`/projects/${project.id}`}><CardTitle className="text-lg hover:text-primary cursor-pointer">{project.name}</CardTitle></Link>
                     <CardDescription className="mt-1 line-clamp-2">
                       {project.description}
                     </CardDescription>
