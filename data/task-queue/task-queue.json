@@ -27,7 +27,7 @@
           "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg3-task1",
           "taskNumber": 1,
           "originalDescription": "Open src/components/notifications/notification-system.tsx (or wherever the Gateway Offline banner is). Find where it checks gateway status. It currently checks incorrectly. Fix the logic:",
-          "status": "executing",
+          "status": "skipped",
           "approved": true,
           "rewritten": true,
           "microTasks": [
@@ -39,13 +39,14 @@
               "status": "pending"
             }
           ],
-          "startedAt": "2026-03-20T10:52:14.929Z"
+          "startedAt": "2026-03-20T10:52:14.929Z",
+          "skippedReason": "Duplicate task"
         },
         {
           "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg3-task2",
           "taskNumber": 2,
           "originalDescription": "The notification \"CPU usage has been above 85%\" is fake/hardcoded. Remove it. Only show REAL notifications:",
-          "status": "approved",
+          "status": "skipped",
           "approved": true,
           "rewritten": true,
           "microTasks": [
@@ -57,13 +58,14 @@
               "status": "pending"
             }
           ],
-          "startedAt": "2026-03-20T10:51:51.400Z"
+          "startedAt": "2026-03-20T10:51:51.400Z",
+          "skippedReason": "Duplicate task"
         },
         {
           "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg3-task3",
           "taskNumber": 3,
           "originalDescription": "The notification bell in the top bar shows a red badge with count. Make sure the count matches REAL unread notifications only. If no real alerts, badge should be hidden.",
-          "status": "approved",
+          "status": "skipped",
           "approved": true,
           "rewritten": true,
           "microTasks": [
@@ -75,13 +77,14 @@
               "status": "pending"
             }
           ],
-          "startedAt": "2026-03-20T10:52:09.498Z"
+          "startedAt": "2026-03-20T10:52:09.498Z",
+          "skippedReason": "Duplicate task"
         },
         {
           "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg3-task4",
           "taskNumber": 4,
           "originalDescription": "Also check if there is a NotificationBell.tsx component that duplicates this logic. If yes, consolidate into one system.",
-          "status": "approved",
+          "status": "executing",
           "approved": true,
           "rewritten": true,
           "microTasks": [
@@ -92,7 +95,8 @@
               "description": "Implement the following task with precision: Also check if there is a NotificationBell.tsx component that duplicates this logic. If yes, consolidate into one system.. First identify the correct file and component, then make the necessary changes following the project's coding standards.",
               "status": "pending"
             }
-          ]
+          ],
+          "startedAt": "2026-03-20T11:31:42.891Z"
         }
       ]
     },
@@ -354,8 +358,8 @@
           "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg11-task1",
           "taskNumber": 1,
           "originalDescription": "The page should load the file tree from Bridge API. On mount:",
-          "status": "review",
-          "approved": false,
+          "status": "approved",
+          "approved": true,
           "rewritten": true,
           "microTasks": [
             {
@@ -371,8 +375,8 @@
           "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg11-task2",
           "taskNumber": 2,
           "originalDescription": "When clicking a file in the tree:",
-          "status": "review",
-          "approved": false,
+          "status": "approved",
+          "approved": true,
           "rewritten": true,
           "microTasks": [
             {
@@ -388,8 +392,8 @@
           "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg11-task3",
           "taskNumber": 3,
           "originalDescription": "Add EDIT functionality:",
-          "status": "review",
-          "approved": false,
+          "status": "approved",
+          "approved": true,
           "rewritten": true,
           "microTasks": [
             {
@@ -405,8 +409,8 @@
           "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg11-task4",
           "taskNumber": 4,
           "originalDescription": "Add NEW FILE button in the header:",
-          "status": "review",
-          "approved": false,
+          "status": "approved",
+          "approved": true,
           "rewritten": true,
           "microTasks": [
             {
@@ -422,8 +426,8 @@
           "taskId": "task_1773996310129_PRIORITY-1-FIX-ALL-PAGES.md-msg11-task5",
           "taskNumber": 5,
           "originalDescription": "Stats cards at top should show:",
-          "status": "review",
-          "approved": false,
+          "status": "approved",
+          "approved": true,
           "rewritten": true,
           "microTasks": [
             {
