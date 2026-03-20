@@ -3,114 +3,72 @@ import fs from 'fs/promises';
 import path from 'path';
 
 const TASK_QUEUE_DIR = '/root/genplatform/data/task-queue';
-const TELEGRAM_BOT_TOKEN = '8635233052:AAGsuMzqhTHwQsFg4qGYPfUEyZPiLsAceA4';
-const TELEGRAM_CHAT_ID = '510906393';
 
 export async function POST(request: NextRequest) {
   try {
     const { fileId, messageNumber } = await request.json();
     
     if (!fileId || !messageNumber) {
-      return NextResponse.json({ error: 'Missing fileId or messageNumber' }, { status: 400 });
+      return NextResponse.json({ error: 'Missing required parameters' }, { status: 400 });
     }
-    
-    // Load the task queue
-    const queuePath = path.join(TASK_QUEUE_DIR, `${fileId}.json`);
-    const queueData = JSON.parse(await fs.readFile(queuePath, 'utf-8'));
+
+    const queuePath = path.join(TASK_QUEUE_DIR, fileId + '.json');
+    const queue = JSON.parse(await fs.readFile(queuePath, 'utf-8'));
     
     // Find the message
-    const message = queueData.messages.find((m: any) => m.messageNumber === messageNumber);
+    const message = queue.messages.find((m: any) => m.messageNumber === messageNumber);
     if (!message) {
       return NextResponse.json({ error: 'Message not found' }, { status: 404 });
     }
     
-    // Skip if already rewritten
-    if (message.tasks.every((t: any) => t.rewritten)) {
-      return NextResponse.json({ 
-        status: 'already_rewritten',
-        microTasks: message.tasks.flatMap((t: any) => t.microTasks)
-      });
-    }
+    // Update task status to indicate rewriting is in progress
+    message.tasks.forEach((task: any) => {
+      task.status = 'rewriting';
+    });
     
-    // Prepare the rewrite prompt
-    const tasksText = message.tasks.map((t: any, idx: number) => 
-      `Task ${idx + 1}: ${t.originalDescription}`
-    ).join('\n');
+    await fs.writeFile(queuePath, JSON.stringify(queue, null, 2));
     
-    const rewritePrompt = `[ORCHESTRATOR] Rewrite these tasks as ultra-precise micro-tasks. Each micro-task = ONE specific file change. Include exact file path, exact function/line to change, exact new code logic. Make them 10x more detailed than the original. Return as numbered list.
+    // Send to Telegram for orchestrator to rewrite
+    const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || '8635233052:AAGsuMzqhTHwQsFg4qGYPfUEyZPiLsAceA4';
+    const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID || '510906393';
+    
+    const orchestratorPrompt = `[ORCHESTRATOR] Rewrite Message ${messageNumber} from ${queue.fileName} into micro-tasks:
 
-Message: ${message.summary}
+${message.originalContent}
 
-Original Tasks:
-${tasksText}
+Break down each task into specific, ultra-precise micro-tasks that:
+1. Target a single file
+2. Make one atomic change
+3. Can be completed in under 5 minutes
+4. Include exact file paths and specific changes
 
-For each task, break it down into multiple micro-tasks. Each micro-task must specify:
-1. Exact file path (e.g., src/app/dashboard/page.tsx)
-2. Exact location (function name, line description, or component)
-3. Exact change (what to add/remove/modify)
-4. Expected result
-
-Format each micro-task as:
-[Task X.Y] File: <path> | Location: <where> | Change: <what> | Result: <expected>`;
-
-    // Send to OpenClaw via Telegram
-    const telegramResponse = await fetch(
-      `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          chat_id: TELEGRAM_CHAT_ID,
-          text: rewritePrompt.substring(0, 4000) // Telegram limit
-        })
-      }
-    );
+Respond with the rewritten micro-tasks in this format:
+[REWRITE_COMPLETE:${fileId}:${messageNumber}]
+Task 1 micro-tasks:
+1. /path/to/file.tsx | Add import statement for X
+2. /path/to/file.tsx | Create component function
+...`;
     
-    if (!telegramResponse.ok) {
-      const error = await telegramResponse.text();
-      console.error('Failed to send rewrite request:', error);
-      return NextResponse.json({ error: 'Failed to send rewrite request' }, { status: 500 });
-    }
+    await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chat_id: TELEGRAM_CHAT_ID,
+        text: orchestratorPrompt,
+        parse_mode: 'Markdown'
+      })
+    });
     
-    // For now, create mock micro-tasks (in production, wait for webhook response)
-    const mockMicroTasks = [];
-    for (let i = 0; i < message.tasks.length; i++) {
-      const task = message.tasks[i];
-      
-      // Generate 2-4 micro-tasks per original task
-      const numMicroTasks = Math.floor(Math.random() * 3) + 2;
-      for (let j = 0; j < numMicroTasks; j++) {
-        mockMicroTasks.push({
-          id: `${task.taskId}_micro_${j + 1}`,
-          parentTaskId: task.taskId,
-          filePath: `src/app/example-${i}.tsx`,
-          location: `function exampleFunction${i}`,
-          change: `Add validation for ${task.originalDescription}`,
-          expectedResult: 'Function properly validates input',
-          status: 'pending',
-          approved: false
-        });
-      }
-    }
-    
-    // Update the task queue with mock micro-tasks
-    for (const task of message.tasks) {
-      task.rewritten = true;
-      task.microTasks = mockMicroTasks.filter(m => m.parentTaskId === task.taskId);
-    }
-    
-    // Save updated queue
-    await fs.writeFile(queuePath, JSON.stringify(queueData, null, 2));
-    
-    return NextResponse.json({
-      status: 'rewritten',
-      messageNumber,
-      microTasks: mockMicroTasks,
-      note: 'Using mock micro-tasks - real rewrite sent to OpenClaw'
+    return NextResponse.json({ 
+      success: true,
+      message: 'Rewrite request sent to orchestrator'
     });
     
   } catch (error) {
     console.error('Rewrite error:', error);
-    return NextResponse.json({ error: 'Rewrite failed' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Failed to initiate rewrite', details: error instanceof Error ? error.message : 'Unknown error' },
+      { status: 500 }
+    );
   }
 }

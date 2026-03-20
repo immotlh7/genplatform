@@ -1,188 +1,103 @@
 import { NextRequest, NextResponse } from 'next/server';
 import fs from 'fs/promises';
 import path from 'path';
-import { executionState } from '../status/route';
 
+const EXECUTION_LOG = '/root/genplatform/data/self-dev-execution.log';
 const TASK_QUEUE_DIR = '/root/genplatform/data/task-queue';
-const EXECUTION_LOG_FILE = '/root/genplatform/data/self-dev-execution.log';
-
-// Helper to append to log
-async function appendLog(entry: string) {
-  const timestamp = new Date().toISOString();
-  const logEntry = `${timestamp} | ${entry}\n`;
-  await fs.appendFile(EXECUTION_LOG_FILE, logEntry).catch(() => {});
-}
-
-// Helper to get current executing task
-async function getCurrentExecutingTask(): Promise<any | null> {
-  const files = await fs.readdir(TASK_QUEUE_DIR).catch(() => []);
-  
-  for (const file of files.sort()) {
-    if (!file.endsWith('.json')) continue;
-    
-    const queuePath = path.join(TASK_QUEUE_DIR, file);
-    const queue = JSON.parse(await fs.readFile(queuePath, 'utf-8'));
-    
-    // Find executing micro-task
-    for (const message of queue.messages) {
-      for (const task of message.tasks) {
-        if (!task.microTasks) continue;
-        
-        for (const microTask of task.microTasks) {
-          if (microTask.status === 'executing') {
-            return {
-              fileId: queue.fileId,
-              microTask,
-              queue,
-              queuePath
-            };
-          }
-        }
-      }
-    }
-  }
-  
-  return null;
-}
-
-// Helper to trigger next task execution
-async function triggerNextTask() {
-  if (!executionState.autoMode) {
-    await appendLog('⏸️ Auto-mode is OFF, not triggering next task');
-    return;
-  }
-  
-  // Wait 10 seconds before next task
-  setTimeout(async () => {
-    try {
-      const response = await fetch('http://localhost:3000/api/self-dev/execute-next', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({})
-      });
-      
-      if (!response.ok) {
-        await appendLog('❌ Failed to trigger next task');
-      }
-    } catch (error) {
-      await appendLog(`❌ Error triggering next task: ${error}`);
-    }
-  }, 10000);
-}
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
+    const message = body.message;
+    const text = message?.text || '';
     
-    // Parse Telegram webhook data
-    const message = body.message || body.edited_message;
-    if (!message || !message.text) {
-      return NextResponse.json({ ok: true });
-    }
+    // Log the webhook
+    const logEntry = `[${new Date().toISOString()}] Webhook received: ${text.substring(0, 100)}...\n`;
+    await fs.appendFile(EXECUTION_LOG, logEntry).catch(console.error);
     
-    const text = message.text.trim();
-    const chatId = message.chat.id;
-    
-    // Only process messages from our OpenClaw chat
-    if (chatId.toString() !== '510906393') {
-      return NextResponse.json({ ok: true });
-    }
-    
-    // Check if this is an orchestrator rewrite response
-    if (text.includes('[ORCHESTRATOR]') || text.includes('[Task')) {
-      await appendLog('🧠 Received Orchestrator rewrite response');
+    // Handle rewrite completion
+    const rewriteMatch = text.match(/\[REWRITE_COMPLETE:([^:]+):(\d+)\]/);
+    if (rewriteMatch) {
+      const [_, fileId, messageNumberStr] = rewriteMatch;
+      const messageNumber = parseInt(messageNumberStr);
       
-      // TODO: Parse rewritten tasks and update queue
-      // For now, just log it
-      await appendLog('📝 Rewrite response received (manual update needed)');
+      const queuePath = path.join(TASK_QUEUE_DIR, fileId + '.json');
+      const queue = JSON.parse(await fs.readFile(queuePath, 'utf-8'));
+      const queueMessage = queue.messages.find((m: any) => m.messageNumber === messageNumber);
       
-      return NextResponse.json({ ok: true });
-    }
-    
-    // Otherwise handle as Developer response
-    await appendLog(`📝 Developer response: ${text.substring(0, 100)}...`);
-    
-    // Detect response type
-    if (text.includes('✅ Done') || text.includes('✅ DONE')) {
-      // Task completed successfully
-      await appendLog('✅ Task completed successfully');
-      
-      const currentData = await getCurrentExecutingTask();
-      if (currentData) {
-        currentData.microTask.status = 'done';
-        await fs.writeFile(currentData.queuePath, JSON.stringify(currentData.queue, null, 2));
+      if (queueMessage) {
+        // Parse micro-tasks from the response
+        const lines = text.split('\n').slice(1); // Skip the header
+        const microTasksByTask: Record<number, any[]> = {};
+        let currentTaskNumber = 0;
         
-        executionState.tasksProcessed++;
-        executionState.contextTokens += 700; // Approximate response size
-        
-        // Reset retry count for this task
-        executionState.retryCount.delete(currentData.microTask.id);
-        
-        // Trigger next task
-        await triggerNextTask();
-      }
-      
-    } else if (text.includes('❌ Failed') || text.includes('❌ Error')) {
-      // Task failed
-      await appendLog('❌ Task failed');
-      
-      const currentData = await getCurrentExecutingTask();
-      if (currentData) {
-        const taskId = currentData.microTask.id;
-        const retries = executionState.retryCount.get(taskId) || 0;
-        
-        if (retries < 3) {
-          // Retry the task
-          executionState.retryCount.set(taskId, retries + 1);
-          await appendLog(`🔄 Retrying task (attempt ${retries + 2}/3)`);
-          
-          // Re-send the same task with retry message
-          setTimeout(async () => {
-            const response = await fetch('http://localhost:3000/api/self-dev/execute', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                task: currentData.microTask,
-                projectContext: `Retry ${retries + 2}/3 - Previous attempt failed. Please try again.`
-              })
-            });
-            
-            if (response.ok) {
-              await appendLog(`📤 Resent task for retry`);
+        for (const line of lines) {
+          const taskMatch = line.match(/Task (\d+) micro-tasks:/);
+          if (taskMatch) {
+            currentTaskNumber = parseInt(taskMatch[1]);
+            microTasksByTask[currentTaskNumber] = [];
+          } else if (currentTaskNumber && line.match(/^\d+\.\s/)) {
+            const microTaskMatch = line.match(/^\d+\.\s([^|]+)\s*\|\s*(.+)$/);
+            if (microTaskMatch) {
+              const [_, filePath, change] = microTaskMatch;
+              microTasksByTask[currentTaskNumber].push({
+                id: `${fileId}-msg${messageNumber}-task${currentTaskNumber}-micro${microTasksByTask[currentTaskNumber].length + 1}`,
+                filePath: filePath.trim(),
+                change: change.trim(),
+                description: `${filePath.trim()} - ${change.trim()}`,
+                status: 'pending'
+              });
             }
-          }, 5000);
-          
-        } else {
-          // Max retries reached, skip task
-          currentData.microTask.status = 'skipped';
-          await fs.writeFile(currentData.queuePath, JSON.stringify(currentData.queue, null, 2));
-          await appendLog('⏭️ Max retries reached, task skipped');
-          
-          // Move to next task
-          await triggerNextTask();
+          }
         }
+        
+        // Update tasks with micro-tasks
+        queueMessage.tasks.forEach((task: any) => {
+          if (microTasksByTask[task.taskNumber]) {
+            task.microTasks = microTasksByTask[task.taskNumber];
+            task.rewritten = true;
+            task.status = 'review'; // Ready for review
+          }
+        });
+        
+        // Update total micro-tasks count
+        queue.totalMicroTasks = queue.messages.reduce((sum: number, msg: any) => 
+          sum + msg.tasks.reduce((taskSum: number, task: any) => 
+            taskSum + (task.microTasks?.length || 0), 0
+          ), 0
+        );
+        
+        await fs.writeFile(queuePath, JSON.stringify(queue, null, 2));
       }
-      
-    } else if (text.includes('Building') || text.includes('npm run build')) {
-      // Build output
-      await appendLog('⚙️ Build in progress...');
-      executionState.status = 'building';
-      
-    } else if (text.includes('committed') || text.includes('git commit')) {
-      // Commit message
-      await appendLog('📦 Code committed');
-      
-    } else if (text.includes('/reset acknowledged')) {
-      // Context reset acknowledged
-      await appendLog('🧠 Context reset acknowledged by Developer');
-      executionState.contextTokens = 500; // Reset to base context size
     }
     
-    return NextResponse.json({ ok: true });
+    // Handle task execution results
+    const resultMatch = text.match(/\[TASK_RESULT:([^:]+):(\d+):(\d+):(success|failed)\]/);
+    if (resultMatch) {
+      const [_, fileId, messageNumberStr, taskNumberStr, result] = resultMatch;
+      const messageNumber = parseInt(messageNumberStr);
+      const taskNumber = parseInt(taskNumberStr);
+      
+      const queuePath = path.join(TASK_QUEUE_DIR, fileId + '.json');
+      const queue = JSON.parse(await fs.readFile(queuePath, 'utf-8'));
+      const queueMessage = queue.messages.find((m: any) => m.messageNumber === messageNumber);
+      
+      if (queueMessage) {
+        const task = queueMessage.tasks.find((t: any) => t.taskNumber === taskNumber);
+        if (task) {
+          task.status = result === 'success' ? 'done' : 'failed';
+        }
+        await fs.writeFile(queuePath, JSON.stringify(queue, null, 2));
+      }
+    }
+    
+    return NextResponse.json({ success: true });
     
   } catch (error) {
     console.error('Webhook error:', error);
-    await appendLog(`❌ Webhook error: ${error}`);
-    return NextResponse.json({ error: 'Webhook processing failed' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Failed to process webhook', details: error instanceof Error ? error.message : 'Unknown error' },
+      { status: 500 }
+    );
   }
 }
