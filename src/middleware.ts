@@ -3,6 +3,7 @@ import type { NextRequest } from "next/server";
 
 // Only these paths are public (no auth needed)
 const publicPaths = [
+  "/",
   "/login",
   "/api/auth/login",
   "/api/auth/logout",
@@ -61,10 +62,6 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
-  // Authenticated - allow through
-  if (pathname === "/") {
-    return NextResponse.redirect(new URL("/dashboard", request.url));
-  }
 
   return NextResponse.next();
 }
