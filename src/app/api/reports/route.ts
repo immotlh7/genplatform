@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerComponentClient } from '@supabase/auth-helpers-nextjs'
+// Supabase disabled
 import { cookies } from 'next/headers'
 
 interface Report {

@@ -1,23 +1,46 @@
-import { createClient } from '@supabase/supabase-js'
+// Supabase is DISABLED — all calls return empty results instantly (no network)
+// Using local file-based data in /root/genplatform/data/ instead
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co'
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder'
+const SUPABASE_ENABLED = false
 
-// Check if Supabase is actually configured and reachable
-const SUPABASE_ENABLED = false // Disabled - using local Bridge API instead
-
-// Create a mock client that returns empty results immediately (no network calls)
-const mockClient = {
-  from: () => ({
-    select: () => ({ count: 0, data: [], error: null, head: true }),
-    insert: () => ({ data: null, error: null }),
-    update: () => ({ data: null, error: null }),
-    delete: () => ({ data: null, error: null }),
-    eq: function() { return this; },
-    order: function() { return this; },
-    limit: function() { return this; },
+// Chainable mock that resolves to empty data — supports await at any point
+function mockChain() {
+  const result = { data: [], error: null, count: 0 }
+  const chain: any = {
+    select: () => chain,
+    insert: () => Promise.resolve({ data: null, error: null }),
+    update: () => chain,
+    upsert: () => Promise.resolve({ data: null, error: null }),
+    delete: () => chain,
+    eq: () => chain,
+    neq: () => chain,
+    gt: () => chain,
+    lt: () => chain,
+    gte: () => chain,
+    lte: () => chain,
+    in: () => chain,
+    is: () => chain,
+    like: () => chain,
+    ilike: () => chain,
+    or: () => chain,
+    not: () => chain,
+    order: () => chain,
+    limit: () => chain,
+    range: () => chain,
     single: () => Promise.resolve({ data: null, error: null }),
-  }),
+    maybeSingle: () => Promise.resolve({ data: null, error: null }),
+    match: () => chain,
+    filter: () => chain,
+    // Make chain thenable so `await supabase.from(...).select(...)...` works
+    then: (resolve: any) => resolve(result),
+    catch: () => chain,
+  }
+  return chain
+}
+
+const mockClient = {
+  from: () => mockChain(),
+  rpc: () => Promise.resolve({ data: null, error: null }),
   auth: {
     signUp: async () => ({ data: { user: null, session: null }, error: null }),
     signInWithPassword: async () => ({ data: { user: null, session: null }, error: null }),
@@ -26,22 +49,23 @@ const mockClient = {
     getSession: async () => ({ data: { session: null }, error: null }),
     resetPasswordForEmail: async () => ({ error: null }),
     updateUser: async () => ({ error: null }),
+    onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => {} } } }),
+  },
+  storage: {
+    from: () => ({
+      upload: async () => ({ data: null, error: null }),
+      download: async () => ({ data: null, error: null }),
+      getPublicUrl: () => ({ data: { publicUrl: '' } }),
+      list: async () => ({ data: [], error: null }),
+      remove: async () => ({ data: null, error: null }),
+    })
   }
 } as any
 
-export const supabase = SUPABASE_ENABLED
-  ? createClient(supabaseUrl, supabaseAnonKey, {
-      auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
-    })
-  : mockClient
+export const supabase = mockClient
+export const supabaseAdmin = mockClient
 
-export const supabaseAdmin = SUPABASE_ENABLED
-  ? createClient(supabaseUrl, process.env.SUPABASE_SERVICE_ROLE_KEY || '', {
-      auth: { autoRefreshToken: false, persistSession: false }
-    })
-  : mockClient
-
-// Database types
+// Type definitions (kept for compatibility)
 export interface Project {
   id: string; name: string; description?: string;
   status: 'planning' | 'active' | 'paused' | 'completed' | 'archived';

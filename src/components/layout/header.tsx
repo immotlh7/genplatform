@@ -20,12 +20,12 @@ import { LanguageToggle } from '@/components/layout/LanguageToggle'
 import { getCurrentUserClient } from '@/lib/access-control'
 import type { User as UserType } from '@/lib/access-control'
 import { logout } from '@/lib/auth'
-import { createBrowserClient } from '@supabase/ssr'
+import { supabase } from '@/lib/supabase'
 
 export function Header() {
   const [currentUser, setCurrentUser] = useState<UserType | null>(null)
   const [loading, setLoading] = useState(true)
-  const supabase = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
+  
 
   useEffect(() => {
     loadCurrentUser()
