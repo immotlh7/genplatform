@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { ExternalLink, Monitor, Smartphone, Tablet, Terminal, RefreshCw } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { ExternalLink, Monitor, Smartphone, Tablet, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 interface Props {
@@ -21,7 +21,35 @@ export function LivePreviewPanel({ projectUrl, mode = 'preview', terminalOutput 
   const [device, setDevice] = useState<'desktop' | 'tablet' | 'mobile'>('desktop');
   const [key, setKey] = useState(0);
   const [iframeError, setIframeError] = useState(false);
+  const [lastEvent, setLastEvent] = useState<string | null>(null);
   const resolvedUrl = safeUrl(projectUrl);
+
+  // Connect to SSE for auto-refresh
+  useEffect(() => {
+    let es: EventSource | null = null;
+    try {
+      es = new EventSource('/api/events');
+      es.onmessage = (e) => {
+        try {
+          const event = JSON.parse(e.data);
+          if (event.type === 'build_success' || event.type === 'app_restarted') {
+            // Auto-refresh preview after successful build
+            setTimeout(() => setKey(Date.now()), 2000); // 2s delay for pm2 to restart
+            setLastEvent('✅ Build successful — refreshing preview...');
+            setTimeout(() => setLastEvent(null), 4000);
+          } else if (event.type === 'file_modified') {
+            setLastEvent(`📝 ${event.data?.message || 'File modified'}`);
+            setTimeout(() => setLastEvent(null), 3000);
+          }
+        } catch {}
+      };
+      es.onerror = () => {
+        // Silently reconnect
+        es?.close();
+      };
+    } catch {}
+    return () => { es?.close(); };
+  }, []);
 
   return (
     <div className="h-full flex flex-col bg-gray-900 border-l">
@@ -35,7 +63,12 @@ export function LivePreviewPanel({ projectUrl, mode = 'preview', terminalOutput 
             </button>
           ))}
         </div>
-        <div className="text-xs text-gray-400 truncate max-w-[150px]">{projectUrl || 'No project'}</div>
+        <div className="flex items-center gap-2">
+          {lastEvent && (
+            <span className="text-[10px] text-green-400 animate-pulse">{lastEvent}</span>
+          )}
+          <span className="text-xs text-gray-400 truncate max-w-[150px]">{projectUrl || 'No project'}</span>
+        </div>
         <div className="flex gap-1">
           <Button variant="ghost" size="icon" className="h-7 w-7 text-gray-400 hover:text-white" onClick={() => setKey(k=>k+1)}>
             <RefreshCw className="h-3.5 w-3.5" />
