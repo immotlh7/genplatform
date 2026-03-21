@@ -1,7 +1,52 @@
 import { NextRequest, NextResponse } from 'next/server';
+import fs from 'fs/promises';
+import path from 'path';
 
 const GATEWAY_URL = 'http://127.0.0.1:18789/v1/chat/completions';
 const GATEWAY_TOKEN = process.env.OPENCLAW_GATEWAY_TOKEN || 'bd8c8bd58ce00e2cebbcff1d7c406fdb5eca73f38da0d7df';
+const DATA_DIR = path.join(process.cwd(), 'data');
+
+async function loadProjectContext(projectId: string): Promise<string> {
+  if (!projectId) return '';
+  
+  try {
+    // Load project data
+    const projectsData = await fs.readFile(path.join(DATA_DIR, 'projects.json'), 'utf-8');
+    const projects = JSON.parse(projectsData);
+    const project = projects.find((p: any) => p.id === projectId);
+    
+    if (!project) return '';
+
+    let context = `\n\n## Current Project Context\n`;
+    context += `Project: ${project.name}\n`;
+    if (project.description) context += `Description: ${project.description}\n`;
+    if (project.techStack) context += `Tech Stack: ${Array.isArray(project.techStack) ? project.techStack.join(', ') : project.techStack}\n`;
+    if (project.repoPath || project.path) context += `Repo Path: ${project.repoPath || project.path}\n`;
+    if (project.deployUrl) context += `Deploy URL: ${project.deployUrl}\n`;
+    if (project.previewUrl) context += `Preview URL: ${project.previewUrl}\n`;
+    if (project.status) context += `Status: ${project.status}\n`;
+    
+    // Load recent tasks for this project
+    try {
+      const tasksData = await fs.readFile(path.join(DATA_DIR, 'tasks.json'), 'utf-8');
+      const allTasks = JSON.parse(tasksData);
+      const projectTasks = allTasks
+        .filter((t: any) => t.projectId === projectId)
+        .slice(-10);
+      
+      if (projectTasks.length > 0) {
+        context += `\nRecent Tasks (${projectTasks.length}):\n`;
+        projectTasks.forEach((t: any) => {
+          context += `- [${t.status || 'unknown'}] ${t.title || t.name}\n`;
+        });
+      }
+    } catch {}
+
+    return context;
+  } catch {
+    return '';
+  }
+}
 
 export async function POST(req: NextRequest) {
   try {
@@ -10,6 +55,7 @@ export async function POST(req: NextRequest) {
     // Support both formats: { message: { content } } and { message: "text" }
     let userMessage = '';
     let sessionId = 'web-chat-default';
+    let projectId = '';
     
     if (typeof body.message === 'string') {
       userMessage = body.message;
@@ -24,26 +70,38 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // Build conversation history from context
-    const previousMessages = (body.context?.previousMessages || body.history || [])
-      .filter((m: any) => m.content && m.role)
-      .slice(-10)
-      .map((m: any) => ({
-        role: m.role === 'user' ? 'user' : 'assistant',
-        content: typeof m.content === 'string' ? m.content : JSON.stringify(m.content)
-      }));
-
-    // Use session ID for conversation continuity  
+    // Extract context
+    projectId = body.context?.projectId || body.projectId || '';
     if (body.context?.sessionId) {
       sessionId = body.context.sessionId;
     }
 
-    const messages = [
-      ...previousMessages,
-      { role: 'user', content: userMessage }
-    ];
+    // Build project context for system message
+    const projectContext = await loadProjectContext(projectId);
 
-    // Call OpenClaw Gateway - same agent, same tools, same memory as Telegram
+    // Build conversation history
+    const previousMessages = (body.context?.previousMessages || body.history || [])
+      .filter((m: any) => m.content && m.role)
+      .slice(-10)
+      .map((m: any) => ({
+        role: m.role === 'user' ? 'user' as const : 'assistant' as const,
+        content: typeof m.content === 'string' ? m.content : JSON.stringify(m.content)
+      }));
+
+    const messages: { role: 'system' | 'user' | 'assistant'; content: string }[] = [];
+    
+    // Add project context as system message if available
+    if (projectContext) {
+      messages.push({
+        role: 'system',
+        content: `The user is working within a specific project context. Use this information when relevant:${projectContext}\n\nProtected files (NEVER modify): sidebar.tsx, navbar.tsx, layout.tsx, globals.css, self-dev/**`
+      });
+    }
+
+    messages.push(...previousMessages);
+    messages.push({ role: 'user', content: userMessage });
+
+    // Call OpenClaw Gateway
     const response = await fetch(GATEWAY_URL, {
       method: 'POST',
       headers: {
@@ -56,8 +114,7 @@ export async function POST(req: NextRequest) {
         model: 'openclaw',
         messages,
         user: sessionId,
-        stream: false,
-        max_tokens: 2000
+        stream: false
       })
     });
 
@@ -77,8 +134,6 @@ export async function POST(req: NextRequest) {
     }
 
     const data = await response.json();
-    
-    // Extract reply from OpenAI-compatible response
     const replyContent = data.choices?.[0]?.message?.content || 'لا يوجد رد';
 
     return NextResponse.json({
@@ -93,6 +148,7 @@ export async function POST(req: NextRequest) {
         metadata: {
           model: data.model,
           via: 'openclaw-gateway',
+          projectId,
           usage: data.usage
         }
       }

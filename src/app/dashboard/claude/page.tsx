@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
-import { Send, Loader2, ChevronDown, Monitor, RefreshCw, ExternalLink, Mic, MicOff } from 'lucide-react'
+import { Send, Loader2, ChevronDown } from 'lucide-react'
 import { LivePreviewPanel } from '@/components/chat/LivePreviewPanel'
 
 interface Message {
@@ -33,7 +33,7 @@ export default function ClaudeCodePage() {
   const [messages, setMessages] = useState<Message[]>([
     {
       role: 'ai',
-      content: '## مرحباً! 👋\n\nأنا متصل بـ OpenClaw Gateway — نفس العقل، نفس الأدوات، نفس الذاكرة.\n\nاختر مشروعاً وأخبرني بما تريد.',
+      content: '## مرحباً! 👋\n\nمتصل بـ OpenClaw Gateway — نفس العقل، نفس الأدوات، نفس الذاكرة.\n\nاختر مشروعاً وأخبرني بما تريد.',
       type: 'text'
     }
   ])
@@ -43,11 +43,10 @@ export default function ClaudeCodePage() {
   const [projects, setProjects] = useState<Project[]>([DEFAULT_PROJECT])
   const [selectedProject, setSelectedProject] = useState<Project>(DEFAULT_PROJECT)
   const [showProjectMenu, setShowProjectMenu] = useState(false)
-  const [previewMode, setPreviewMode] = useState<'preview' | 'terminal'>('preview')
-  const [terminalOutput, setTerminalOutput] = useState('')
+  const [previewMode] = useState<'preview' | 'terminal'>('preview')
+  const [terminalOutput] = useState('')
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
-  // Load projects from API
   useEffect(() => {
     const loadProjects = async () => {
       try {
@@ -57,9 +56,7 @@ export default function ClaudeCodePage() {
           const allProjects = [DEFAULT_PROJECT, ...data.projects.filter((p: Project) => p.id !== 'genplatform')]
           setProjects(allProjects)
         }
-      } catch {
-        // Keep default project
-      }
+      } catch {}
     }
     loadProjects()
   }, [])
@@ -81,8 +78,12 @@ export default function ClaudeCodePage() {
     const userMsg: Message = { role: 'user', content: text }
     setMessages(prev => [...prev, userMsg])
 
+    // Add placeholder AI message for streaming
+    const aiMsgId = Date.now()
+    setMessages(prev => [...prev, { role: 'ai', content: '', type: 'text' }])
+
     try {
-      const res = await fetch('/api/chat/send', {
+      const res = await fetch('/api/chat/stream', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -98,20 +99,79 @@ export default function ClaudeCodePage() {
         })
       })
 
-      const data = await res.json()
-      const replyText = data.reply || data.message?.content || data.response || 'تم استقبال رسالتك.'
-      const aiMsg: Message = {
-        role: 'ai',
-        content: replyText,
-        type: 'text'
+      if (!res.ok) {
+        // Fallback to non-streaming
+        const fallbackRes = await fetch('/api/chat/send', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            message: text,
+            context: { sessionId: `claude-${selectedProject.id}`, projectId: selectedProject.id }
+          })
+        })
+        const data = await fallbackRes.json()
+        const replyText = data.reply || data.message?.content || 'تم.'
+        setMessages(prev => {
+          const updated = [...prev]
+          updated[updated.length - 1] = { role: 'ai', content: replyText, type: 'text' }
+          return updated
+        })
+        return
       }
-      setMessages(prev => [...prev, aiMsg])
+
+      const reader = res.body?.getReader()
+      if (!reader) throw new Error('No reader')
+      
+      const decoder = new TextDecoder()
+      let fullText = ''
+      let buffer = ''
+
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+
+        buffer += decoder.decode(value, { stream: true })
+        const lines = buffer.split('\n')
+        buffer = lines.pop() || ''
+
+        for (const line of lines) {
+          if (!line.startsWith('data: ')) continue
+          const data = line.slice(6).trim()
+          if (data === '[DONE]') continue
+
+          try {
+            const parsed = JSON.parse(data)
+            if (parsed.error) {
+              fullText = `❌ ${parsed.error}`
+              break
+            }
+            const delta = parsed.choices?.[0]?.delta?.content
+            if (delta) {
+              fullText += delta
+              setMessages(prev => {
+                const updated = [...prev]
+                updated[updated.length - 1] = { role: 'ai', content: fullText, type: 'text' }
+                return updated
+              })
+            }
+          } catch {}
+        }
+      }
+
+      // Final update if no streaming content was received
+      if (!fullText) {
+        setMessages(prev => {
+          const updated = [...prev]
+          updated[updated.length - 1] = { role: 'ai', content: 'تم استقبال رسالتك.', type: 'text' }
+          return updated
+        })
+      }
     } catch {
-      setMessages(prev => [...prev, {
-        role: 'ai',
-        content: '❌ خطأ في الاتصال بـ OpenClaw Gateway. تأكد من أن الخدمة تعمل.',
-        type: 'text'
-      }])
+      setMessages(prev => {
+        const updated = [...prev]
+        updated[updated.length - 1] = { role: 'ai', content: '❌ خطأ في الاتصال بـ OpenClaw Gateway.', type: 'text' }
+        return updated
+      })
     } finally {
       setLoading(false)
     }
@@ -126,10 +186,10 @@ export default function ClaudeCodePage() {
           : 'bg-card border rounded-2xl rounded-tl-sm px-4 py-3'
         }`}>
           {isUser ? (
-            <p className="text-sm">{msg.content}</p>
+            <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
           ) : (
             <div className="text-sm prose prose-sm dark:prose-invert max-w-none whitespace-pre-wrap">
-              {msg.content}
+              {msg.content || <span className="text-muted-foreground animate-pulse">●●●</span>}
             </div>
           )}
         </div>
@@ -172,7 +232,7 @@ export default function ClaudeCodePage() {
         {/* Messages */}
         <div className="flex-1 overflow-y-auto p-4">
           {messages.map(renderMessage)}
-          {loading && (
+          {loading && messages[messages.length - 1]?.content === '' && (
             <div className="flex justify-start mb-4">
               <div className="bg-card border rounded-2xl rounded-tl-sm px-4 py-3 flex items-center gap-2">
                 <Loader2 className="h-4 w-4 animate-spin text-blue-500" />

@@ -354,7 +354,7 @@ export default function ChatPage() {
         body: JSON.stringify({
           message: newMessage,
           context: {
-            sessionId: `chat-${currentUser?.id}-${Date.now()}`,
+            sessionId: `chat-${currentUser?.id || 'default'}`,
             previousMessages: messages.slice(-5),
             projectId: selectedProject?.id,
             userPermissions

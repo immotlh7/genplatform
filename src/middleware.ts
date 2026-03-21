@@ -21,6 +21,8 @@ const publicApiPaths = [
   "/api/ideas",
   "/api/chat/",
   "/api/csrf-token",
+  "/api/agents",
+  "/api/self-dev/",
 ];
 
 export function middleware(request: NextRequest) {

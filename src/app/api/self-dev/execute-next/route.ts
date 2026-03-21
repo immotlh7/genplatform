@@ -350,6 +350,17 @@ export async function executeNext() {
         `💬 ${result.result.substring(0, 150)}\n` +
         `⏭️ Moving to next task...`
       );
+
+      // Auto-update lessons on failure
+      try {
+        const lessonsFile = '/root/.openclaw/workspace/memory/LESSONS.md';
+        const date = new Date().toISOString().split('T')[0];
+        const title = (foundTask.originalDescription || 'Unknown').substring(0, 60);
+        const lesson = '\n\n## Lesson ' + date + ': ' + title + '\nFailed: ' + title + '\nError: ' + result.result.substring(0, 200) + '\nFix: Review error and avoid this pattern.';
+        let lessons = '';
+        try { lessons = await fs.readFile(lessonsFile, 'utf-8'); } catch {}
+        await fs.writeFile(lessonsFile, lessons + lesson);
+      } catch {}
     }
 
     // Individual file already saved via foundQueueFile
