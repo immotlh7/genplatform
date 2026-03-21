@@ -77,5 +77,70 @@
     ],
     "createdAt": "2026-03-18T00:00:00.000Z",
     "lastActivity": "2026-03-21T01:03:03.305Z"
+  },
+  {
+    "id": "taskflow",
+    "name": "TaskFlow",
+    "description": "Simple task management app with clean UI. Create, organize, and track tasks with priority and status.",
+    "slug": "taskflow",
+    "status": "active",
+    "progress": 0,
+    "priority": "high",
+    "color": "#059669",
+    "initials": "TF",
+    "techStack": [
+      "Next.js",
+      "TypeScript",
+      "Tailwind"
+    ],
+    "deployUrl": "https://taskflow.gen3.ai",
+    "previewUrl": "https://taskflow.gen3.ai",
+    "subdomain": "taskflow",
+    "repoPath": "/root/projects/taskflow",
+    "pipeline": {
+      "idea": {
+        "status": "done",
+        "completedAt": "2026-03-21"
+      },
+      "analysis": {
+        "status": "done",
+        "completedAt": "2026-03-21"
+      },
+      "planning": {
+        "status": "done",
+        "completedAt": "2026-03-21"
+      },
+      "development": {
+        "status": "active",
+        "total": 8,
+        "completed": 0
+      },
+      "review": {
+        "status": "pending"
+      },
+      "security": {
+        "status": "pending"
+      },
+      "deploy": {
+        "status": "pending",
+        "liveUrl": "https://taskflow.gen3.ai"
+      }
+    },
+    "agents": [
+      {
+        "name": "Frontend Dev",
+        "status": "active",
+        "currentTask": "Build task list UI",
+        "badge": "building"
+      },
+      {
+        "name": "Backend Dev",
+        "status": "idle",
+        "currentTask": "idle",
+        "badge": "idle"
+      }
+    ],
+    "createdAt": "2026-03-21T01:40:00.000Z",
+    "lastActivity": "2026-03-21T01:40:00.000Z"
   }
 ]

@@ -1,41 +1,421 @@
 [
-  { "id": "T-01", "title": "Set up project repository", "status": "done", "department": "Backend", "projectId": "genplatform-ai", "priority": "high", "sprint": 1, "estimatedHours": 2, "actualHours": 2 },
-  { "id": "T-02", "title": "Design system architecture", "status": "done", "department": "Architecture", "projectId": "genplatform-ai", "priority": "high", "sprint": 1, "estimatedHours": 8, "actualHours": 10 },
-  { "id": "T-03", "title": "Bridge API setup", "status": "done", "department": "Backend", "projectId": "genplatform-ai", "priority": "critical", "sprint": 1 },
-  { "id": "T-04", "title": "Dashboard UI components", "status": "done", "department": "Frontend", "projectId": "genplatform-ai", "priority": "high", "sprint": 2 },
-  { "id": "T-05", "title": "API endpoint development", "status": "done", "department": "Backend", "projectId": "genplatform-ai", "priority": "medium", "sprint": 2 },
-  { "id": "T-06", "title": "Security audit preparation", "status": "done", "department": "Security", "projectId": "genplatform-ai", "priority": "high", "sprint": 2 },
-  { "id": "T-07", "title": "Database optimization", "status": "done", "department": "Backend", "projectId": "genplatform-ai", "priority": "medium", "sprint": 2 },
-  { "id": "T-08", "title": "User onboarding flow", "status": "done", "department": "Frontend", "projectId": "genplatform-ai", "priority": "medium", "sprint": 3 },
-  { "id": "T-09", "title": "Integration testing", "status": "done", "department": "QA", "projectId": "genplatform-ai", "priority": "high", "sprint": 3 },
-  { "id": "T-10", "title": "Performance monitoring", "status": "done", "department": "Backend", "projectId": "genplatform-ai", "priority": "medium", "sprint": 3 },
-  { "id": "T-11", "title": "Projects CRUD API", "status": "done", "department": "Backend", "projectId": "genplatform-ai", "priority": "critical", "sprint": 3 },
-  { "id": "T-12", "title": "Pipeline visualization", "status": "done", "department": "Frontend", "projectId": "genplatform-ai", "priority": "critical", "sprint": 3 },
-  { "id": "T-13", "title": "Kanban board", "status": "done", "department": "Frontend", "projectId": "genplatform-ai", "priority": "high", "sprint": 3 },
-  { "id": "T-14", "title": "Telegram integration", "status": "done", "department": "Backend", "projectId": "genplatform-ai", "priority": "critical", "sprint": 3 },
-  { "id": "T-15", "title": "Memory read/write system", "status": "done", "department": "Backend", "projectId": "genplatform-ai", "priority": "high", "sprint": 3 },
-  { "id": "T-16", "title": "Ideas Intelligence UI", "status": "done", "department": "Frontend", "projectId": "genplatform-ai", "priority": "high", "sprint": 4 },
-  { "id": "T-17", "title": "AI analysis API", "status": "done", "department": "Backend", "projectId": "genplatform-ai", "priority": "critical", "sprint": 4 },
-  { "id": "T-18", "title": "OAuth dual account setup", "status": "done", "department": "Backend", "projectId": "genplatform-ai", "priority": "critical", "sprint": 4 },
-  { "id": "T-19", "title": "Context window management", "status": "done", "department": "Backend", "projectId": "genplatform-ai", "priority": "high", "sprint": 4 },
-  { "id": "T-20", "title": "Self-Dev execution system", "status": "done", "department": "AI", "projectId": "genplatform-ai", "priority": "critical", "sprint": 4 },
-  { "id": "T-21", "title": "Watchdog + auto-restart", "status": "done", "department": "DevOps", "projectId": "genplatform-ai", "priority": "high", "sprint": 4 },
-  { "id": "T-22", "title": "Chat split-view UI", "status": "done", "department": "Frontend", "projectId": "genplatform-ai", "priority": "critical", "sprint": 5 },
-  { "id": "T-23", "title": "Project selector in chat", "status": "done", "department": "Frontend", "projectId": "genplatform-ai", "priority": "high", "sprint": 5 },
-  { "id": "T-24", "title": "Live preview panel", "status": "done", "department": "Frontend", "projectId": "genplatform-ai", "priority": "high", "sprint": 5 },
-  { "id": "T-25", "title": "Terminal output component", "status": "done", "department": "Frontend", "projectId": "genplatform-ai", "priority": "medium", "sprint": 5 },
-  { "id": "T-26", "title": "SSE stream for live logs", "status": "done", "department": "Backend", "projectId": "genplatform-ai", "priority": "high", "sprint": 5 },
-  { "id": "T-27", "title": "Files API for project browsing", "status": "done", "department": "Backend", "projectId": "genplatform-ai", "priority": "high", "sprint": 5 },
-  { "id": "T-28", "title": "Auto subdomain generation", "status": "done", "department": "DevOps", "projectId": "genplatform-ai", "priority": "high", "sprint": 5 },
-  { "id": "T-29", "title": "Project detail page rebuild", "status": "done", "department": "Frontend", "projectId": "genplatform-ai", "priority": "critical", "sprint": 5 },
-  { "id": "T-30", "title": "Pipeline stage detail panels", "status": "done", "department": "Frontend", "projectId": "genplatform-ai", "priority": "high", "sprint": 5 },
-  { "id": "T-47", "title": "Fix dashboard real data", "status": "in_progress", "department": "Frontend", "projectId": "genplatform-ai", "priority": "high", "sprint": 6 },
-  { "id": "T-48", "title": "Chat tool-use execution via Bridge", "status": "in_progress", "department": "Backend", "projectId": "genplatform-ai", "priority": "critical", "sprint": 6 },
-  { "id": "T-49", "title": "Self-improvement agent (daily cron)", "status": "planned", "department": "AI", "projectId": "genplatform-ai", "priority": "critical", "sprint": 6 },
-  { "id": "T-50", "title": "Pipeline clickable stages with real content", "status": "planned", "department": "Frontend", "projectId": "genplatform-ai", "priority": "high", "sprint": 6 },
-  { "id": "T-51", "title": "Add improvement suggestion to project page", "status": "planned", "department": "Frontend", "projectId": "genplatform-ai", "priority": "high", "sprint": 6 },
-  { "id": "T-52", "title": "File viewer with syntax highlighting", "status": "planned", "department": "Frontend", "projectId": "genplatform-ai", "priority": "medium", "sprint": 6 },
-  { "id": "T-53", "title": "Voice input in chat (Whisper)", "status": "planned", "department": "Frontend", "projectId": "genplatform-ai", "priority": "medium", "sprint": 7 },
-  { "id": "T-54", "title": "Security scan agent", "status": "planned", "department": "Security", "projectId": "genplatform-ai", "priority": "high", "sprint": 7 },
-  { "id": "T-55", "title": "Multi-project support", "status": "planned", "department": "Backend", "projectId": "genplatform-ai", "priority": "critical", "sprint": 7 }
+  {
+    "id": "T-01",
+    "title": "Set up project repository",
+    "status": "done",
+    "department": "Backend",
+    "projectId": "genplatform-ai",
+    "priority": "high",
+    "sprint": 1,
+    "estimatedHours": 2,
+    "actualHours": 2
+  },
+  {
+    "id": "T-02",
+    "title": "Design system architecture",
+    "status": "done",
+    "department": "Architecture",
+    "projectId": "genplatform-ai",
+    "priority": "high",
+    "sprint": 1,
+    "estimatedHours": 8,
+    "actualHours": 10
+  },
+  {
+    "id": "T-03",
+    "title": "Bridge API setup",
+    "status": "done",
+    "department": "Backend",
+    "projectId": "genplatform-ai",
+    "priority": "critical",
+    "sprint": 1
+  },
+  {
+    "id": "T-04",
+    "title": "Dashboard UI components",
+    "status": "done",
+    "department": "Frontend",
+    "projectId": "genplatform-ai",
+    "priority": "high",
+    "sprint": 2
+  },
+  {
+    "id": "T-05",
+    "title": "API endpoint development",
+    "status": "done",
+    "department": "Backend",
+    "projectId": "genplatform-ai",
+    "priority": "medium",
+    "sprint": 2
+  },
+  {
+    "id": "T-06",
+    "title": "Security audit preparation",
+    "status": "done",
+    "department": "Security",
+    "projectId": "genplatform-ai",
+    "priority": "high",
+    "sprint": 2
+  },
+  {
+    "id": "T-07",
+    "title": "Database optimization",
+    "status": "done",
+    "department": "Backend",
+    "projectId": "genplatform-ai",
+    "priority": "medium",
+    "sprint": 2
+  },
+  {
+    "id": "T-08",
+    "title": "User onboarding flow",
+    "status": "done",
+    "department": "Frontend",
+    "projectId": "genplatform-ai",
+    "priority": "medium",
+    "sprint": 3
+  },
+  {
+    "id": "T-09",
+    "title": "Integration testing",
+    "status": "done",
+    "department": "QA",
+    "projectId": "genplatform-ai",
+    "priority": "high",
+    "sprint": 3
+  },
+  {
+    "id": "T-10",
+    "title": "Performance monitoring",
+    "status": "done",
+    "department": "Backend",
+    "projectId": "genplatform-ai",
+    "priority": "medium",
+    "sprint": 3
+  },
+  {
+    "id": "T-11",
+    "title": "Projects CRUD API",
+    "status": "done",
+    "department": "Backend",
+    "projectId": "genplatform-ai",
+    "priority": "critical",
+    "sprint": 3
+  },
+  {
+    "id": "T-12",
+    "title": "Pipeline visualization",
+    "status": "done",
+    "department": "Frontend",
+    "projectId": "genplatform-ai",
+    "priority": "critical",
+    "sprint": 3
+  },
+  {
+    "id": "T-13",
+    "title": "Kanban board",
+    "status": "done",
+    "department": "Frontend",
+    "projectId": "genplatform-ai",
+    "priority": "high",
+    "sprint": 3
+  },
+  {
+    "id": "T-14",
+    "title": "Telegram integration",
+    "status": "done",
+    "department": "Backend",
+    "projectId": "genplatform-ai",
+    "priority": "critical",
+    "sprint": 3
+  },
+  {
+    "id": "T-15",
+    "title": "Memory read/write system",
+    "status": "done",
+    "department": "Backend",
+    "projectId": "genplatform-ai",
+    "priority": "high",
+    "sprint": 3
+  },
+  {
+    "id": "T-16",
+    "title": "Ideas Intelligence UI",
+    "status": "done",
+    "department": "Frontend",
+    "projectId": "genplatform-ai",
+    "priority": "high",
+    "sprint": 4
+  },
+  {
+    "id": "T-17",
+    "title": "AI analysis API",
+    "status": "done",
+    "department": "Backend",
+    "projectId": "genplatform-ai",
+    "priority": "critical",
+    "sprint": 4
+  },
+  {
+    "id": "T-18",
+    "title": "OAuth dual account setup",
+    "status": "done",
+    "department": "Backend",
+    "projectId": "genplatform-ai",
+    "priority": "critical",
+    "sprint": 4
+  },
+  {
+    "id": "T-19",
+    "title": "Context window management",
+    "status": "done",
+    "department": "Backend",
+    "projectId": "genplatform-ai",
+    "priority": "high",
+    "sprint": 4
+  },
+  {
+    "id": "T-20",
+    "title": "Self-Dev execution system",
+    "status": "done",
+    "department": "AI",
+    "projectId": "genplatform-ai",
+    "priority": "critical",
+    "sprint": 4
+  },
+  {
+    "id": "T-21",
+    "title": "Watchdog + auto-restart",
+    "status": "done",
+    "department": "DevOps",
+    "projectId": "genplatform-ai",
+    "priority": "high",
+    "sprint": 4
+  },
+  {
+    "id": "T-22",
+    "title": "Chat split-view UI",
+    "status": "done",
+    "department": "Frontend",
+    "projectId": "genplatform-ai",
+    "priority": "critical",
+    "sprint": 5
+  },
+  {
+    "id": "T-23",
+    "title": "Project selector in chat",
+    "status": "done",
+    "department": "Frontend",
+    "projectId": "genplatform-ai",
+    "priority": "high",
+    "sprint": 5
+  },
+  {
+    "id": "T-24",
+    "title": "Live preview panel",
+    "status": "done",
+    "department": "Frontend",
+    "projectId": "genplatform-ai",
+    "priority": "high",
+    "sprint": 5
+  },
+  {
+    "id": "T-25",
+    "title": "Terminal output component",
+    "status": "done",
+    "department": "Frontend",
+    "projectId": "genplatform-ai",
+    "priority": "medium",
+    "sprint": 5
+  },
+  {
+    "id": "T-26",
+    "title": "SSE stream for live logs",
+    "status": "done",
+    "department": "Backend",
+    "projectId": "genplatform-ai",
+    "priority": "high",
+    "sprint": 5
+  },
+  {
+    "id": "T-27",
+    "title": "Files API for project browsing",
+    "status": "done",
+    "department": "Backend",
+    "projectId": "genplatform-ai",
+    "priority": "high",
+    "sprint": 5
+  },
+  {
+    "id": "T-28",
+    "title": "Auto subdomain generation",
+    "status": "done",
+    "department": "DevOps",
+    "projectId": "genplatform-ai",
+    "priority": "high",
+    "sprint": 5
+  },
+  {
+    "id": "T-29",
+    "title": "Project detail page rebuild",
+    "status": "done",
+    "department": "Frontend",
+    "projectId": "genplatform-ai",
+    "priority": "critical",
+    "sprint": 5
+  },
+  {
+    "id": "T-30",
+    "title": "Pipeline stage detail panels",
+    "status": "done",
+    "department": "Frontend",
+    "projectId": "genplatform-ai",
+    "priority": "high",
+    "sprint": 5
+  },
+  {
+    "id": "T-47",
+    "title": "Fix dashboard real data",
+    "status": "in_progress",
+    "department": "Frontend",
+    "projectId": "genplatform-ai",
+    "priority": "high",
+    "sprint": 6
+  },
+  {
+    "id": "T-48",
+    "title": "Chat tool-use execution via Bridge",
+    "status": "in_progress",
+    "department": "Backend",
+    "projectId": "genplatform-ai",
+    "priority": "critical",
+    "sprint": 6
+  },
+  {
+    "id": "T-49",
+    "title": "Self-improvement agent (daily cron)",
+    "status": "planned",
+    "department": "AI",
+    "projectId": "genplatform-ai",
+    "priority": "critical",
+    "sprint": 6
+  },
+  {
+    "id": "T-50",
+    "title": "Pipeline clickable stages with real content",
+    "status": "planned",
+    "department": "Frontend",
+    "projectId": "genplatform-ai",
+    "priority": "high",
+    "sprint": 6
+  },
+  {
+    "id": "T-51",
+    "title": "Add improvement suggestion to project page",
+    "status": "planned",
+    "department": "Frontend",
+    "projectId": "genplatform-ai",
+    "priority": "high",
+    "sprint": 6
+  },
+  {
+    "id": "T-52",
+    "title": "File viewer with syntax highlighting",
+    "status": "planned",
+    "department": "Frontend",
+    "projectId": "genplatform-ai",
+    "priority": "medium",
+    "sprint": 6
+  },
+  {
+    "id": "T-53",
+    "title": "Voice input in chat (Whisper)",
+    "status": "planned",
+    "department": "Frontend",
+    "projectId": "genplatform-ai",
+    "priority": "medium",
+    "sprint": 7
+  },
+  {
+    "id": "T-54",
+    "title": "Security scan agent",
+    "status": "planned",
+    "department": "Security",
+    "projectId": "genplatform-ai",
+    "priority": "high",
+    "sprint": 7
+  },
+  {
+    "id": "T-55",
+    "title": "Multi-project support",
+    "status": "planned",
+    "department": "Backend",
+    "projectId": "genplatform-ai",
+    "priority": "critical",
+    "sprint": 7
+  },
+  {
+    "id": "TF-01",
+    "title": "Setup Next.js project",
+    "status": "done",
+    "department": "DevOps",
+    "projectId": "taskflow",
+    "priority": "critical"
+  },
+  {
+    "id": "TF-02",
+    "title": "Create task data model",
+    "status": "done",
+    "department": "Backend",
+    "projectId": "taskflow",
+    "priority": "high"
+  },
+  {
+    "id": "TF-03",
+    "title": "Build task list page",
+    "status": "in_progress",
+    "department": "Frontend",
+    "projectId": "taskflow",
+    "priority": "critical"
+  },
+  {
+    "id": "TF-04",
+    "title": "Add task creation form",
+    "status": "planned",
+    "department": "Frontend",
+    "projectId": "taskflow",
+    "priority": "high"
+  },
+  {
+    "id": "TF-05",
+    "title": "Add priority badges",
+    "status": "planned",
+    "department": "Frontend",
+    "projectId": "taskflow",
+    "priority": "medium"
+  },
+  {
+    "id": "TF-06",
+    "title": "Add status toggle",
+    "status": "planned",
+    "department": "Frontend",
+    "projectId": "taskflow",
+    "priority": "high"
+  },
+  {
+    "id": "TF-07",
+    "title": "Add search/filter",
+    "status": "planned",
+    "department": "Frontend",
+    "projectId": "taskflow",
+    "priority": "medium"
+  },
+  {
+    "id": "TF-08",
+    "title": "Deploy to taskflow.gen3.ai",
+    "status": "planned",
+    "department": "DevOps",
+    "projectId": "taskflow",
+    "priority": "critical"
+  }
 ]
