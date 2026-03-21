@@ -50,7 +50,7 @@ export default function ProjectDetailPage() {
 
   const loadTasks = async () => {
     try {
-      const res = await fetch(`/api/tasks?projectId=${projectId}`)
+      const res = await fetch(`/api/projects/${projectId}/tasks`)
       if (res.ok) {
         const data = await res.json()
         setTasks(data.tasks || [])
@@ -134,6 +134,7 @@ export default function ProjectDetailPage() {
           <Card>
             <CardContent className="pt-6">
               <ProjectPipeline
+                projectId={projectId}
                 progress={project.progress}
                 currentPhase="development"
                 tasksDone={doneTasks}
@@ -222,9 +223,8 @@ export default function ProjectDetailPage() {
         {/* Files Tab */}
         <TabsContent value="files">
           <Card>
-            <CardContent className="pt-4 h-96">
-              <iframe src={`/api/projects/${projectId}/files?path=/src`}
-                className="w-full h-full border-0" title="Files" />
+            <CardContent className="pt-4">
+              <FilesViewer projectId={projectId} />
             </CardContent>
           </Card>
         </TabsContent>

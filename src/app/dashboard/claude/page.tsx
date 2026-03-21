@@ -27,6 +27,7 @@ export default function ClaudeCodePage() {
   ])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
+  const [attachment, setAttachment] = useState<{name:string;content:string}|null>(null)
   const [selectedProject, setSelectedProject] = useState(PROJECTS[0])
   const [showProjectMenu, setShowProjectMenu] = useState(false)
   const [previewMode, setPreviewMode] = useState<'preview' | 'terminal'>('preview')
@@ -38,7 +39,11 @@ export default function ClaudeCodePage() {
   }, [messages])
 
   const sendMessage = async () => {
-    const text = input.trim()
+    let text = input.trim()
+    if (attachment) {
+      text += '\n\nAttached file (' + attachment.name + '):\n```\n' + attachment.content.substring(0, 3000) + '\n```'
+      setAttachment(null)
+    }
     if (!text || loading) return
     setInput('')
     setLoading(true)
@@ -47,7 +52,7 @@ export default function ClaudeCodePage() {
     setMessages(prev => [...prev, userMsg])
 
     try {
-      const res = await fetch('/api/chat/ai', {
+      const res = await fetch('/api/chat/send', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -144,7 +149,22 @@ export default function ClaudeCodePage() {
 
         {/* Input */}
         <div className="p-3 border-t bg-card flex-shrink-0">
-          <div className="flex gap-2">
+          {attachment && (
+            <div className="mb-2 flex items-center gap-2 text-xs bg-muted/30 px-3 py-1.5 rounded">
+              <span>📎 {attachment.name}</span>
+              <button onClick={() => setAttachment(null)} className="text-muted-foreground hover:text-foreground">✕</button>
+            </div>
+          )}
+          <div className="flex gap-2 items-end">
+            <label className="cursor-pointer text-muted-foreground hover:text-foreground p-2 self-end">
+              <input type="file" className="hidden" accept=".ts,.tsx,.js,.json,.md,.txt,.py,image/*"
+                onChange={async e => {
+                  const file = e.target.files?.[0]; if (!file) return;
+                  const text = await file.text();
+                  setAttachment({ name: file.name, content: text });
+                }} />
+              📎
+            </label>
             <Textarea
               value={input}
               onChange={e => setInput(e.target.value)}
