@@ -24,6 +24,8 @@ const publicApiPaths = [
   "/api/csrf-token",
   "/api/agents",
   "/api/self-dev/",
+  "/api/notifications",
+  "/api/execution-log",
 ];
 
 export function middleware(request: NextRequest) {
