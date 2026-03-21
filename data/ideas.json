@@ -585,5 +585,469 @@
     "skippedFeatures": [],
     "createdAt": "2026-03-21T04:29:00.413Z",
     "updatedAt": "2026-03-21T04:29:00.413Z"
+  },
+  {
+    "id": "test-1",
+    "ideaText": "test",
+    "status": "analyzed",
+    "analysis": {
+      "expanded": {
+        "projectName": "TestPilot",
+        "tagline": "AI-powered software testing platform that writes, runs, and maintains your tests automatically.",
+        "vision": "TestPilot reimagines software quality assurance by leveraging AI agents to automatically generate, execute, and maintain comprehensive test suites for any codebase. Our platform eliminates the tedious manual work of writing tests, dramatically reduces bugs in production, and gives development teams the confidence to ship faster with fewer regressions.",
+        "marketOpportunity": {
+          "tam": "$40 billion — global software testing market (2024), projected to reach $70B by 2030",
+          "sam": "$12 billion — automated testing tools and platforms for mid-market and enterprise teams",
+          "som": "$120 million — AI-first testing tools targeting teams of 5-200 developers in the first 3 years",
+          "summary": "Software testing accounts for 25-35% of development budgets, yet most teams still rely heavily on manual testing or poorly maintained automated suites. The rise of AI code generation (Copilot, Cursor) is accelerating code output, creating an even larger gap in test coverage. Teams desperately need intelligent automation that keeps up with the pace of modern development."
+        },
+        "coreFeatures": [
+          {
+            "id": "F001",
+            "name": "AI Test Generation",
+            "description": "Analyzes source code, API schemas, and UI components to automatically generate unit tests, integration tests, and end-to-end tests. Uses static analysis combined with LLM understanding to produce meaningful, non-trivial test cases covering happy paths, edge cases, and error scenarios.",
+            "userValue": "Developers save 60-80% of time spent writing tests, and get better coverage than they'd write manually.",
+            "complexity": "high",
+            "impact": "high"
+          },
+          {
+            "id": "F002",
+            "name": "Visual Test Dashboard",
+            "description": "Real-time dashboard showing test coverage heatmaps, pass/fail trends, flaky test detection, and risk scores per module. Provides a bird's-eye view of project health with drill-down capabilities to individual test results and failure logs.",
+            "userValue": "Engineering leads and QA managers can instantly understand project quality without digging through CI logs.",
+            "complexity": "medium",
+            "impact": "high"
+          },
+          {
+            "id": "F003",
+            "name": "Smart Test Runner",
+            "description": "Intelligent test execution engine that prioritizes tests based on code changes, historical failure rates, and dependency graphs. Runs the most relevant tests first, providing fast feedback on likely breakages while the full suite continues in the background.",
+            "userValue": "Get feedback on critical tests in seconds instead of waiting for the entire suite to complete, reducing CI wait times by up to 70%.",
+            "complexity": "high",
+            "impact": "high"
+          },
+          {
+            "id": "F004",
+            "name": "Self-Healing Tests",
+            "description": "Automatically detects when tests break due to non-functional changes (renamed selectors, moved elements, refactored code) and proposes or auto-applies fixes. Distinguishes between genuine regressions and test maintenance issues.",
+            "userValue": "Eliminates the #1 pain point of test automation — brittle tests that break with every UI change and erode team trust in the suite.",
+            "complexity": "high",
+            "impact": "high"
+          },
+          {
+            "id": "F005",
+            "name": "CI/CD Integration",
+            "description": "Native plugins for GitHub Actions, GitLab CI, Jenkins, CircleCI, and Bitbucket Pipelines. Automatically runs relevant tests on pull requests, posts coverage reports as PR comments, and blocks merges when quality gates fail.",
+            "userValue": "Zero-friction adoption into existing workflows — teams don't need to change their CI pipeline, just add one step.",
+            "complexity": "medium",
+            "impact": "high"
+          },
+          {
+            "id": "F006",
+            "name": "Flaky Test Detection & Quarantine",
+            "description": "Monitors test execution history to identify flaky tests using statistical analysis. Automatically quarantines unreliable tests, notifies owners, and tracks flakiness resolution over time. Provides root cause analysis suggestions.",
+            "userValue": "Flaky tests destroy developer trust in test suites. This feature restores confidence and saves hours of false-alarm investigation.",
+            "complexity": "medium",
+            "impact": "medium"
+          },
+          {
+            "id": "F007",
+            "name": "Multi-Language Support",
+            "description": "Supports test generation and analysis for JavaScript/TypeScript (Jest, Vitest, Playwright), Python (pytest), Java (JUnit), Go (testing), Ruby (RSpec), and Rust. Framework-aware generation produces idiomatic tests that follow community conventions.",
+            "userValue": "Works with whatever stack the team uses — no need to switch frameworks or learn new testing paradigms.",
+            "complexity": "high",
+            "impact": "medium"
+          },
+          {
+            "id": "F008",
+            "name": "Collaborative Test Reviews",
+            "description": "Enables teams to review, comment on, and approve AI-generated tests before they're committed. Integrates with pull request workflows so generated tests appear as suggestions that humans can accept, modify, or reject.",
+            "userValue": "Keeps humans in the loop for quality control while still automating the heavy lifting of test creation.",
+            "complexity": "medium",
+            "impact": "medium"
+          }
+        ],
+        "suggestedAdditions": [
+          {
+            "id": "A001",
+            "name": "Mutation Testing Engine",
+            "description": "Automatically introduces small bugs (mutations) into the codebase and verifies that existing tests catch them. Reports mutation survival rates to reveal weak spots in test coverage that line-coverage metrics miss.",
+            "inspiration": "Stryker Mutator and PIT — mutation testing is the gold standard for measuring test quality but rarely adopted due to complexity and cost.",
+            "impact": "high"
+          },
+          {
+            "id": "A002",
+            "name": "AI Bug Prediction",
+            "description": "Analyzes code change patterns, complexity metrics, and historical bug data to predict which files and functions are most likely to contain bugs. Focuses testing resources on high-risk areas.",
+            "inspiration": "Microsoft's research on bug prediction using code churn and developer patterns; Google's approach to risk-based testing.",
+            "impact": "high"
+          },
+          {
+            "id": "A003",
+            "name": "Performance Regression Detection",
+            "description": "Automatically benchmarks critical code paths and detects performance regressions between commits. Alerts teams when a change causes measurable slowdowns before it reaches production.",
+            "inspiration": "Codspeed, Bencher, and the difficulty most teams face in catching performance issues before users complain.",
+            "impact": "medium"
+          },
+          {
+            "id": "A004",
+            "name": "Natural Language Test Specs",
+            "description": "Allows product managers and QA to write test requirements in plain English (e.g., 'User should be able to reset password with a valid email'). The AI translates these into executable test code.",
+            "inspiration": "Cucumber/Gherkin BDD specifications, but without the rigid syntax and step-definition boilerplate.",
+            "impact": "medium"
+          },
+          {
+            "id": "A005",
+            "name": "Security Vulnerability Testing",
+            "description": "Generates security-focused test cases targeting OWASP Top 10 vulnerabilities: SQL injection, XSS, CSRF, authentication bypass, etc. Integrates with SAST/DAST pipelines for comprehensive security coverage.",
+            "inspiration": "Snyk, Semgrep, and the growing need for shift-left security testing as part of the development workflow.",
+            "impact": "high"
+          }
+        ],
+        "pages": [
+          {
+            "id": "P001",
+            "name": "Dashboard",
+            "route": "/dashboard",
+            "purpose": "Central overview of all projects, showing test health scores, recent activity, coverage trends, and alerts requiring attention.",
+            "components": [
+              "ProjectSelector",
+              "HealthScoreCards",
+              "CoverageTrendChart",
+              "RecentRunsList",
+              "AlertsBanner",
+              "QuickActions"
+            ],
+            "wireframeDescription": "Top bar with project selector and user menu. Below, a grid of 4 metric cards (coverage %, pass rate, flaky count, avg run time). Center area has a large coverage trend line chart spanning 30 days. Right sidebar shows recent test runs with status badges. Bottom section has an alerts panel with actionable items."
+          },
+          {
+            "id": "P002",
+            "name": "Test Explorer",
+            "route": "/tests",
+            "purpose": "Browse, search, and manage all tests across the project. View test source, execution history, and AI-generated suggestions.",
+            "components": [
+              "TestTree",
+              "SearchBar",
+              "FilterPanel",
+              "TestDetailPane",
+              "CodeViewer",
+              "ExecutionHistory"
+            ],
+            "wireframeDescription": "Left panel shows a collapsible file tree of all tests, grouped by directory. Top has search and filter controls (status, type, language, flaky). Main content area shows selected test code with syntax highlighting. Right panel shows execution history timeline, last 10 runs with durations and pass/fail indicators."
+          },
+          {
+            "id": "P003",
+            "name": "AI Generator",
+            "route": "/generate",
+            "purpose": "Interface for triggering AI test generation. Select files, modules, or entire repos. Configure generation preferences and review results.",
+            "components": [
+              "RepoFileSelector",
+              "GenerationConfig",
+              "ProgressTracker",
+              "GeneratedTestReview",
+              "ApprovalActions",
+              "DiffViewer"
+            ],
+            "wireframeDescription": "Step-by-step wizard layout. Step 1: select target files/folders via checkbox tree. Step 2: configure options (test framework, coverage targets, edge case depth). Step 3: progress bar with live log of generation. Step 4: review generated tests in a diff-style viewer with approve/edit/reject buttons per test."
+          },
+          {
+            "id": "P004",
+            "name": "CI Runs",
+            "route": "/runs",
+            "purpose": "View all CI/CD test run results, compare runs across commits, and investigate failures with AI-assisted root cause analysis.",
+            "components": [
+              "RunsList",
+              "RunDetailView",
+              "FailureAnalysis",
+              "CommitComparison",
+              "LogViewer",
+              "RetryButton"
+            ],
+            "wireframeDescription": "Table listing all runs sorted by recency — columns: commit hash, branch, trigger, duration, pass/fail/skip counts, status badge. Clicking a run expands to full detail: test results grouped by suite, expandable failure messages with AI root cause suggestions, and a log viewer for raw output."
+          },
+          {
+            "id": "P005",
+            "name": "Settings & Integrations",
+            "route": "/settings",
+            "purpose": "Configure project settings, connect CI/CD providers, manage team members, set quality gates, and configure notification preferences.",
+            "components": [
+              "ProjectSettings",
+              "IntegrationCards",
+              "TeamManager",
+              "QualityGateConfig",
+              "NotificationPrefs",
+              "APIKeyManager"
+            ],
+            "wireframeDescription": "Tabbed layout with sections: General (project name, repo URL, default branch), Integrations (cards for GitHub, GitLab, etc. with connect/disconnect), Team (member list with role badges and invite button), Quality Gates (threshold sliders for coverage, pass rate), Notifications (channel configuration for Slack/email/webhook)."
+          },
+          {
+            "id": "P006",
+            "name": "Coverage Map",
+            "route": "/coverage",
+            "purpose": "Interactive visualization of code coverage at file, function, and line level. Highlights untested areas and high-risk code with no coverage.",
+            "components": [
+              "CoverageTreeMap",
+              "FileHeatmap",
+              "UncoveredCodeList",
+              "RiskScorePanel",
+              "CoverageHistoryChart",
+              "ExportButton"
+            ],
+            "wireframeDescription": "Main area shows a treemap visualization where each rectangle represents a file, sized by lines of code and colored by coverage percentage (red = 0%, yellow = 50%, green = 90%+). Clicking a file opens a heatmap view showing line-by-line coverage. Sidebar lists top 20 uncovered functions sorted by risk score. Bottom chart shows coverage trend over last 30 days."
+          }
+        ],
+        "agents": [
+          {
+            "name": "TestWriter Agent",
+            "role": "Generates comprehensive test cases by analyzing source code, types, API contracts, and existing test patterns in the codebase.",
+            "capabilities": [
+              "Parse and understand code in 7+ languages",
+              "Generate unit, integration, and E2E tests",
+              "Identify edge cases and boundary conditions",
+              "Follow existing test conventions in the project",
+              "Produce idiomatic framework-specific test code"
+            ],
+            "triggers": "Manually triggered via the AI Generator page, automatically on new PR when auto-generate is enabled, or when coverage drops below configured threshold."
+          },
+          {
+            "name": "TestHealer Agent",
+            "role": "Monitors test failures, distinguishes real regressions from maintenance breakage, and auto-fixes tests broken by non-functional changes.",
+            "capabilities": [
+              "Analyze failure stack traces and diffs",
+              "Detect selector/locator changes in UI tests",
+              "Propose minimal fixes to restore passing tests",
+              "Create fix PRs with clear explanations",
+              "Learn from developer feedback on fix quality"
+            ],
+            "triggers": "Activated when tests fail on the main branch or when a previously-passing test fails after a code change that doesn't alter business logic (refactors, renames, restructures)."
+          },
+          {
+            "name": "InsightAnalyst Agent",
+            "role": "Continuously analyzes test execution data to surface actionable insights: flaky test patterns, slow test bottlenecks, coverage gaps, and quality trends.",
+            "capabilities": [
+              "Statistical flakiness detection across runs",
+              "Performance regression identification",
+              "Coverage gap analysis correlated with bug history",
+              "Weekly quality digest generation",
+              "Predictive risk scoring for untested code"
+            ],
+            "triggers": "Runs after every test suite execution to update metrics. Generates weekly digest reports on Monday mornings. Sends real-time alerts when flakiness score exceeds threshold or coverage drops significantly."
+          }
+        ],
+        "techStack": {
+          "frontend": {
+            "framework": "Next.js 14 with React and TypeScript",
+            "why": "Server-side rendering for fast dashboards, App Router for clean page structure, excellent TypeScript support, and massive ecosystem for charting and UI components.",
+            "cost": "Free (open source)"
+          },
+          "backend": {
+            "framework": "Node.js with Fastify + tRPC",
+            "why": "Fastify offers top-tier performance for API routes. tRPC provides end-to-end type safety with the Next.js frontend. Node.js enables code sharing between test analysis engine and API layer.",
+            "cost": "Free (open source)"
+          },
+          "database": {
+            "type": "PostgreSQL (primary) + ClickHouse (analytics)",
+            "why": "PostgreSQL for reliable relational data (users, projects, configs). ClickHouse for high-volume test execution data and fast analytical queries across millions of test results.",
+            "cost": "PostgreSQL: $50-200/mo managed (Supabase/Neon). ClickHouse: $100-300/mo (ClickHouse Cloud)."
+          },
+          "aiModels": [
+            {
+              "name": "Claude Sonnet 4",
+              "useCase": "Primary model for test generation — understands code context, produces high-quality idiomatic tests, and handles complex multi-file analysis.",
+              "cost": "$3/1M input tokens, $15/1M output tokens — estimated $500-2000/mo depending on usage"
+            },
+            {
+              "name": "Claude Haiku (fast model)",
+              "useCase": "Lightweight tasks: flaky test classification, simple selector fix suggestions, test naming, and quick failure triage.",
+              "cost": "$0.25/1M input tokens, $1.25/1M output tokens — estimated $100-300/mo"
+            },
+            {
+              "name": "Code embedding model (Voyage Code 3)",
+              "useCase": "Semantic code search for finding related tests, similar code patterns, and relevant test examples across the codebase.",
+              "cost": "$0.06/1M tokens — estimated $20-50/mo"
+            }
+          ],
+          "infrastructure": {
+            "hosting": "Vercel (frontend) + Railway or Fly.io (backend services) + dedicated runners for test execution",
+            "cdn": "Vercel Edge Network (included) + Cloudflare for API caching",
+            "cost": "Vercel Pro: $20/mo. Backend hosting: $50-200/mo. Test runners: $200-500/mo (scales with usage)."
+          }
+        },
+        "financials": {
+          "monthlyCosts": {
+            "hosting": "$300",
+            "ai": "$1,500",
+            "apis": "$200",
+            "total": "$2,000"
+          },
+          "revenueModel": "SaaS subscription with usage-based pricing for AI test generation. Free tier for open source projects to drive adoption. Team plans for professional use. Enterprise plans with SSO, audit logs, and dedicated support.",
+          "pricing": [
+            {
+              "plan": "Free",
+              "price": "$0/month",
+              "features": [
+                "1 project",
+                "500 AI-generated tests/month",
+                "Basic dashboard",
+                "GitHub integration",
+                "Community support"
+              ]
+            },
+            {
+              "plan": "Pro",
+              "price": "$29/developer/month",
+              "features": [
+                "Unlimited projects",
+                "5,000 AI-generated tests/month",
+                "Self-healing tests",
+                "All CI integrations",
+                "Flaky test detection",
+                "Priority support"
+              ]
+            },
+            {
+              "plan": "Team",
+              "price": "$79/developer/month",
+              "features": [
+                "Everything in Pro",
+                "Unlimited AI generation",
+                "Mutation testing",
+                "Security test generation",
+                "Custom quality gates",
+                "Slack/Teams notifications",
+                "API access"
+              ]
+            },
+            {
+              "plan": "Enterprise",
+              "price": "Custom",
+              "features": [
+                "Everything in Team",
+                "SSO/SAML",
+                "Audit logs",
+                "Self-hosted option",
+                "Dedicated support engineer",
+                "SLA guarantees",
+                "Custom model fine-tuning"
+              ]
+            }
+          ],
+          "projections": {
+            "month3": "500 free users, 30 paid Pro users, $870 MRR — focus on developer advocacy and open source community",
+            "month6": "2,000 free users, 150 paid users (mixed Pro/Team), $8,500 MRR — launch Team plan, first enterprise pilot",
+            "month12": "8,000 free users, 600 paid users, 3 enterprise contracts, $45,000 MRR — expanding language support and hiring"
+          }
+        },
+        "competitors": [
+          {
+            "name": "Codium AI (Qodo)",
+            "strengths": "Strong IDE integration, good at generating unit tests inline, backed by significant VC funding, established user base among individual developers.",
+            "weaknesses": "Focused on individual developer workflow rather than team-wide quality management. No CI/CD dashboard, no flaky test detection, no self-healing capabilities.",
+            "ourAdvantage": "We provide the full testing lifecycle — not just generation, but execution intelligence, maintenance automation, and team-wide quality visibility. We're a platform, not just a plugin."
+          },
+          {
+            "name": "Mabl",
+            "strengths": "Mature E2E testing platform with good auto-healing for UI tests. Strong enterprise customer base. Reliable test execution infrastructure.",
+            "weaknesses": "Expensive enterprise pricing, limited to E2E/UI testing, no AI test generation from source code, steep learning curve for non-technical users.",
+            "ourAdvantage": "We cover all test types (unit, integration, E2E) and use AI to generate tests from code — not just maintain existing ones. Our pricing is developer-friendly, not enterprise-gated."
+          },
+          {
+            "name": "Diffblue Cover",
+            "strengths": "Pioneered AI test generation for Java, proven technology for enterprise Java codebases, strong academic research foundation.",
+            "weaknesses": "Java-only, extremely expensive enterprise pricing, no dashboard or CI insights, purely focused on unit test generation without broader quality management.",
+            "ourAdvantage": "Multi-language support from day one, affordable pricing, and a complete platform that goes beyond generation to include execution intelligence and maintenance automation."
+          },
+          {
+            "name": "Codecov / Coveralls",
+            "strengths": "Industry standard for coverage reporting, deep GitHub integration, well-known brand, free for open source.",
+            "weaknesses": "Purely passive — only reports coverage, doesn't help improve it. No test generation, no smart execution, no self-healing. Commodity product with limited differentiation.",
+            "ourAdvantage": "We don't just measure coverage — we actively improve it. AI generation fills gaps, smart execution saves time, and self-healing reduces maintenance burden. Coverage reporting is a feature of our platform, not the whole product."
+          }
+        ],
+        "phases": [
+          {
+            "name": "Phase 1: MVP",
+            "duration": "8 weeks",
+            "goal": "Ship a working product that generates tests for JavaScript/TypeScript projects and displays results in a basic dashboard. Validate that AI-generated tests are useful enough for developers to adopt.",
+            "features": [
+              "F001",
+              "F002",
+              "F005",
+              "F008"
+            ],
+            "successMetrics": [
+              "200 beta signups",
+              "50 active users generating tests weekly",
+              "70% of generated tests accepted without modification",
+              "NPS score > 30"
+            ]
+          },
+          {
+            "name": "Phase 2: Intelligence Layer",
+            "duration": "10 weeks",
+            "goal": "Add smart test execution, self-healing, and flaky test detection. Expand to Python support. Launch paid plans and establish product-market fit.",
+            "features": [
+              "F003",
+              "F004",
+              "F006",
+              "F007"
+            ],
+            "successMetrics": [
+              "30 paying customers",
+              "$2,000+ MRR",
+              "50% reduction in CI wait times for users",
+              "Self-healing resolves 60%+ of test maintenance issues automatically"
+            ]
+          },
+          {
+            "name": "Phase 3: Platform & Scale",
+            "duration": "12 weeks",
+            "goal": "Launch coverage map, mutation testing, security testing, and enterprise features. Expand to Java, Go, and Ruby. Pursue enterprise contracts and partnerships.",
+            "features": [
+              "A001",
+              "A002",
+              "A005"
+            ],
+            "successMetrics": [
+              "3 enterprise contracts signed",
+              "$30,000+ MRR",
+              "8,000+ registered users",
+              "Recognized in analyst reports or major dev publications"
+            ]
+          }
+        ],
+        "risks": [
+          {
+            "risk": "AI-generated tests are low quality or trivial, failing to provide value beyond what developers write manually.",
+            "probability": "medium",
+            "mitigation": "Invest heavily in prompt engineering and fine-tuning. Build feedback loops where user edits improve generation quality. Focus on edge cases and boundary conditions where AI excels. Benchmark generated tests against human-written ones using mutation testing scores."
+          },
+          {
+            "risk": "Large language model costs scale faster than revenue as usage grows, making the unit economics unsustainable.",
+            "probability": "medium",
+            "mitigation": "Implement aggressive caching of common patterns. Use smaller models (Haiku) for simple tasks and reserve expensive models for complex generation. Build usage tiers that align cost with revenue. Explore fine-tuned smaller models as costs decrease."
+          },
+          {
+            "risk": "Enterprise customers refuse to send source code to external AI services due to security and IP concerns.",
+            "probability": "high",
+            "mitigation": "Offer self-hosted deployment option from Phase 3. Support on-premise LLM inference (Ollama, vLLM). Obtain SOC 2 certification. Provide clear data handling policies with zero-retention guarantees for code sent to AI providers."
+          },
+          {
+            "risk": "GitHub Copilot or major IDEs add built-in test generation, commoditizing our core feature overnight.",
+            "probability": "medium",
+            "mitigation": "Differentiate on the platform layer — execution intelligence, self-healing, flaky detection, and team dashboards are hard to replicate in an IDE plugin. Build switching costs through deep CI/CD integration and historical data. Move fast on the intelligence features that go beyond simple generation."
+          },
+          {
+            "risk": "Developer adoption is slow because teams are skeptical of AI-generated tests or resistant to changing their workflow.",
+            "probability": "medium",
+            "mitigation": "Offer generous free tier to reduce adoption friction. Create compelling case studies and benchmarks. Design the product to augment existing workflows (PR comments, IDE suggestions) rather than requiring wholesale process changes. Invest in developer advocacy and open source community."
+          }
+        ]
+      }
+    },
+    "approvedFeatures": [],
+    "skippedFeatures": [],
+    "createdAt": "2026-03-21T04:35:14.285Z",
+    "updatedAt": "2026-03-21T04:35:14.285Z"
   }
 ]

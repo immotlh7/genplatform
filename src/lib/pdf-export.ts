@@ -1,4 +1,4 @@
-import type { Report } from '@/components/reports/report-card'
+type Report = { title?: string; description?: string; sections?: any[]; metrics?: any[]; generatedAt?: string; [key: string]: any };
 
 /**
  * PDF Export utilities for reports
