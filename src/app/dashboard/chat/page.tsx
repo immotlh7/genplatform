@@ -27,11 +27,25 @@ import {
   AlertCircle,
   Shield,
   Target,
-  Lightbulb
+  Lightbulb,
+  Paperclip,
+  Image as ImageIcon,
+  FileText,
+  X
 } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { getCurrentUserClient, getUserPermissionSummary } from '@/lib/access-control'
 import type { User } from '@/lib/access-control'
+
+interface UploadedFile {
+  name: string
+  savedAs: string
+  size: number
+  type: string
+  isImage: boolean
+  url: string
+  preview?: string
+}
 
 interface Message {
   id: string
@@ -40,6 +54,7 @@ interface Message {
   timestamp: string
   type?: 'message' | 'command' | 'commander'
   projectId?: string
+  attachments?: UploadedFile[]
   metadata?: {
     language?: string
     isArabic?: boolean
@@ -81,6 +96,12 @@ interface Project {
 // Arabic detection regex - covers Arabic and Arabic-Indic script ranges
 const ARABIC_REGEX = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/
 
+function formatFileSize(bytes: number): string {
+  if (bytes < 1024) return bytes + ' B'
+  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB'
+  return (bytes / (1024 * 1024)).toFixed(1) + ' MB'
+}
+
 export default function ChatPage() {
   const { toast } = useToast()
   const {
@@ -114,8 +135,11 @@ export default function ChatPage() {
     translatedText?: string
     content?: string
   }>({})
+  const [attachedFiles, setAttachedFiles] = useState<UploadedFile[]>([])
+  const [isUploading, setIsUploading] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   // Authentication and authorization check
   useEffect(() => {
@@ -163,14 +187,13 @@ export default function ChatPage() {
         const permissions = getUserPermissionSummary(user)
         const isOwner = user.role === 'OWNER'
         setUserPermissions({
-          canRead: true, // All authenticated users can read chat
-          canWrite: true, // All authenticated users can send messages
+          canRead: true,
+          canWrite: true,
           canModerate: isOwner || permissions.isAdmin,
           canUseCommander: isOwner || permissions.isManager || permissions.isAdmin,
           canCreateIdeas: true
         })
         
-        // Show welcome notification for new users
         if (permissions.isManager || permissions.isAdmin) {
           showSystemUpdate(`Welcome to chat, ${user.displayName}! Commander is ${permissions.isManager || permissions.isAdmin ? 'enabled' : 'disabled'}.`)
         }
@@ -225,16 +248,80 @@ export default function ChatPage() {
     return arabicChars / text.length
   }
 
+  // File upload handler
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files
+    if (!files || files.length === 0) return
+
+    setIsUploading(true)
+    const newFiles: UploadedFile[] = []
+
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i]
+      if (file.size > 10 * 1024 * 1024) {
+        showError("ملف كبير", `${file.name} أكبر من 10MB`)
+        continue
+      }
+
+      try {
+        const formData = new FormData()
+        formData.append('file', file)
+
+        const res = await fetch('/api/chat/upload', { method: 'POST', body: formData })
+        if (res.ok) {
+          const data = await res.json()
+          const uploaded = data.file as UploadedFile
+
+          // Generate local preview for images
+          if (uploaded.isImage) {
+            uploaded.preview = URL.createObjectURL(file)
+          }
+
+          newFiles.push(uploaded)
+        } else {
+          const err = await res.json()
+          showError("فشل الرفع", err.error || `فشل رفع ${file.name}`)
+        }
+      } catch {
+        showError("خطأ", `فشل رفع ${file.name}`)
+      }
+    }
+
+    if (newFiles.length > 0) {
+      setAttachedFiles(prev => [...prev, ...newFiles])
+      showSuccess("تم الرفع", `تم رفع ${newFiles.length} ملف`)
+    }
+
+    setIsUploading(false)
+    // Reset file input
+    if (fileInputRef.current) fileInputRef.current.value = ''
+  }
+
+  const removeAttachment = (idx: number) => {
+    setAttachedFiles(prev => {
+      const file = prev[idx]
+      if (file.preview) URL.revokeObjectURL(file.preview)
+      return prev.filter((_, i) => i !== idx)
+    })
+  }
+
   const sendMessage = async () => {
-    if (!inputValue.trim() || !userPermissions?.canWrite) return
+    if ((!inputValue.trim() && attachedFiles.length === 0) || !userPermissions?.canWrite) return
+
+    const messageContent = inputValue.trim()
+    const fileDescriptions = attachedFiles.map(f => 
+      f.isImage ? `[صورة مرفقة: ${f.name}]` : `[ملف مرفق: ${f.name}]`
+    ).join(' ')
+    const fullContent = [messageContent, fileDescriptions].filter(Boolean).join('\n')
 
     const newMessage: Message = {
       id: Date.now().toString(),
-      content: inputValue,
+      content: fullContent,
       role: 'user',
       timestamp: new Date().toISOString(),
       type: isArabicDetected ? 'commander' : 'message',
       projectId: selectedProject?.id || undefined,
+      attachments: attachedFiles.length > 0 ? [...attachedFiles] : undefined,
       metadata: {
         language: isArabicDetected ? 'ar' : 'en',
         isArabic: isArabicDetected,
@@ -248,6 +335,7 @@ export default function ChatPage() {
     setMessages(prev => [...prev, newMessage])
     const originalInputValue = inputValue
     setInputValue('')
+    setAttachedFiles([])
     setIsLoading(true)
 
     try {
@@ -305,7 +393,6 @@ export default function ChatPage() {
         }
         setMessages(prev => [...prev, commanderMessage])
         
-        // Show Commander success notification
         showCommanderSuccess(
           originalInputValue,
           data.commanderResponse.translation,
@@ -321,7 +408,6 @@ export default function ChatPage() {
       
       showError("Message Failed", errorMessage)
 
-      // Add error message to chat
       const errorChatMessage: Message = {
         id: Date.now().toString(),
         content: "Sorry, I couldn't process your message. Please check your permissions and try again.",
@@ -347,9 +433,7 @@ export default function ChatPage() {
       showError("Access Denied", "You don't have permission to use Commander actions.")
       return
     }
-
     showSuccess("Action Triggered", `Executing: ${action.label}`)
-    // Handle different action types here
   }
 
   const handleEditCommand = (text: string) => {
@@ -357,7 +441,6 @@ export default function ChatPage() {
       showError("Access Denied", "You don't have permission to edit commands.")
       return
     }
-
     setInputValue(text)
     inputRef.current?.focus()
     showSystemUpdate("Command loaded into input field for editing.")
@@ -368,13 +451,10 @@ export default function ChatPage() {
       showError("Access Denied", "You don't have permission to send commands to projects.")
       return
     }
-
     if (!selectedProject) {
       showWarning("No Project Selected", "Please select a project first to send commands.")
       return
     }
-
-    // Mock task creation
     const taskId = `task-${Date.now()}`
     showTaskCreated(
       text.length > 50 ? text.substring(0, 47) + '...' : text,
@@ -388,7 +468,6 @@ export default function ChatPage() {
       showError("Access Denied", "You don't have permission to create ideas.")
       return
     }
-
     setIdeaContext({
       originalText: message.metadata?.isArabic ? message.content : undefined,
       translatedText: message.metadata?.translatedText || (!message.metadata?.isArabic ? message.content : undefined),
@@ -402,17 +481,12 @@ export default function ChatPage() {
       showError("Access Denied", "You don't have permission to create ideas.")
       return
     }
-
-    setIdeaContext({
-      content: inputValue.trim()
-    })
+    setIdeaContext({ content: inputValue.trim() })
     setShowNewIdeaModal(true)
   }
 
   const handleIdeaSuccess = (idea: any) => {
     showIdeaSaved(idea.title, idea.id)
-    
-    // Optionally clear input if it was used for the idea
     if (inputValue.trim() === idea.content) {
       setInputValue('')
     }
@@ -665,6 +739,10 @@ export default function ChatPage() {
                     Supports: English{userPermissions?.canUseCommander ? ', Arabic (العربية)' : ''}
                   </span>
                 </div>
+                <div className="mt-2 flex items-center space-x-2 text-sm text-muted-foreground">
+                  <Paperclip className="h-4 w-4" />
+                  <span>يمكنك إرفاق صور وملفات مع رسائلك</span>
+                </div>
                 {selectedProject && (
                   <div className="mt-2 flex items-center space-x-2 text-sm text-blue-600">
                     <Target className="h-4 w-4" />
@@ -704,6 +782,36 @@ export default function ChatPage() {
                              dir={message.metadata?.isArabic ? 'rtl' : 'ltr'}>
                             {message.content}
                           </p>
+
+                          {/* Attached files display */}
+                          {message.attachments && message.attachments.length > 0 && (
+                            <div className="mt-2 space-y-2">
+                              {message.attachments.map((file, i) => (
+                                <div key={i}>
+                                  {file.isImage ? (
+                                    <div className="rounded-lg overflow-hidden mt-1">
+                                      <img 
+                                        src={file.preview || file.url} 
+                                        alt={file.name}
+                                        className="max-w-full max-h-64 rounded-lg object-contain"
+                                      />
+                                      <div className="text-[10px] opacity-70 mt-1">{file.name} · {formatFileSize(file.size)}</div>
+                                    </div>
+                                  ) : (
+                                    <div className={`flex items-center gap-2 p-2 rounded-lg mt-1 ${
+                                      message.role === 'user' ? 'bg-blue-700/50' : 'bg-muted-foreground/10'
+                                    }`}>
+                                      <FileText className="h-4 w-4 flex-shrink-0" />
+                                      <div className="flex-1 min-w-0">
+                                        <div className="text-xs font-medium truncate">{file.name}</div>
+                                        <div className="text-[10px] opacity-70">{formatFileSize(file.size)}</div>
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          )}
                         </div>
                         
                         {/* Message Actions */}
@@ -794,8 +902,70 @@ export default function ChatPage() {
                 </div>
               </div>
 
+              {/* Attached Files Preview */}
+              {attachedFiles.length > 0 && (
+                <div className="flex flex-wrap gap-2 p-2 bg-muted/30 rounded-lg">
+                  {attachedFiles.map((file, idx) => (
+                    <div key={idx} className="relative group">
+                      {file.isImage && file.preview ? (
+                        <div className="relative w-20 h-20 rounded-lg overflow-hidden border">
+                          <img src={file.preview} alt={file.name} className="w-full h-full object-cover" />
+                          <button
+                            onClick={() => removeAttachment(idx)}
+                            className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center text-xs hover:bg-red-600"
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
+                          <div className="absolute bottom-0 left-0 right-0 bg-black/60 text-white text-[9px] px-1 py-0.5 truncate">
+                            {file.name}
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-2 px-3 py-2 bg-muted rounded-lg border text-sm">
+                          <FileText className="h-4 w-4 text-blue-500 flex-shrink-0" />
+                          <span className="truncate max-w-[120px]">{file.name}</span>
+                          <span className="text-[10px] text-muted-foreground">{formatFileSize(file.size)}</span>
+                          <button
+                            onClick={() => removeAttachment(idx)}
+                            className="ml-1 text-muted-foreground hover:text-red-500"
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+
               {/* Input Row */}
               <div className="flex items-center space-x-2">
+                {/* Hidden file input */}
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  multiple
+                  accept="image/*,.pdf,.txt,.md,.json,.ts,.tsx,.js,.jsx,.css,.html,.py,.sh,.yaml,.yml,.csv"
+                  onChange={handleFileSelect}
+                  className="hidden"
+                />
+
+                {/* Attach file button */}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-10 w-10 p-0 flex-shrink-0"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={isLoading || isUploading}
+                  title="إرفاق ملف أو صورة"
+                >
+                  {isUploading ? (
+                    <RefreshCw className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Paperclip className="h-4 w-4" />
+                  )}
+                </Button>
+
                 <div className="flex-1 relative">
                   <Input
                     ref={inputRef}
@@ -807,7 +977,7 @@ export default function ChatPage() {
                         ? "اكتب أمرك بالعربية..." 
                         : selectedProject
                         ? `Type your message (Context: ${selectedProject.name})...`
-                        : "Type your message..."
+                        : "اكتب رسالتك... أو أرفق ملف 📎"
                     }
                     className={`pr-12 ${isArabicDetected ? 'text-right' : 'text-left'}`}
                     dir={isArabicDetected ? 'rtl' : 'ltr'}
@@ -829,7 +999,7 @@ export default function ChatPage() {
                 </div>
                 <Button 
                   onClick={sendMessage} 
-                  disabled={!inputValue.trim() || isLoading}
+                  disabled={(!inputValue.trim() && attachedFiles.length === 0) || isLoading}
                   size="sm"
                 >
                   <Send className="h-4 w-4" />
