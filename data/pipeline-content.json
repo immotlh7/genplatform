@@ -1,0 +1,85 @@
+{
+  "genplatform-ai": {
+    "idea": {
+      "status": "done",
+      "completedAt": "2026-03-18",
+      "title": "GenPlatform.ai — Mission Control for AI Development",
+      "originalIdea": "بناء منصة متكاملة للتحكم في وكلاء الذكاء الاصطناعي وأتمتة تطوير المشاريع. المنصة تحول الأفكار إلى مشاريع احترافية عبر pipeline ذكي يشمل التحليل، التخطيط، التطوير، المراجعة، والنشر.",
+      "problemSolved": "لا توجد أداة متكاملة تجمع بين إدارة المشاريع + تنفيذ AI agents + تتبع التقدم في مكان واحد",
+      "targetAudience": ["AI developers", "Tech entrepreneurs", "Automation engineers"],
+      "valueProposition": "من فكرة بسيطة إلى مشروع منشور — كل شيء في مكان واحد بدعم كامل من الذكاء الاصطناعي"
+    },
+    "analysis": {
+      "status": "done",
+      "completedAt": "2026-03-18",
+      "marketAnalysis": {
+        "marketSize": "AI dev tools market: $15B+ (2026)",
+        "competitors": [
+          { "name": "LangChain", "strength": "Python ecosystem", "weakness": "No UI, developer only", "ourAdvantage": "Full UI + no-code friendly" },
+          { "name": "CrewAI", "strength": "Multi-agent", "weakness": "No project management", "ourAdvantage": "Complete project lifecycle" },
+          { "name": "AutoGPT", "strength": "Autonomous", "weakness": "Unreliable, hard to control", "ourAdvantage": "Controlled + monitored execution" }
+        ]
+      },
+      "coreFeatures": [
+        { "name": "Pipeline Visualization", "priority": "must", "description": "7-stage interactive pipeline from Idea to Deploy" },
+        { "name": "AI Chat Execution", "priority": "must", "description": "Chat that reads code, proposes fixes, and executes them" },
+        { "name": "Self-Improvement Agent", "priority": "must", "description": "Daily agent that analyzes and suggests improvements" },
+        { "name": "Ideas Intelligence", "priority": "must", "description": "AI transforms vague ideas into detailed project plans" },
+        { "name": "Multi-Account Claude", "priority": "must", "description": "Rotate between 2 Claude Pro Max accounts for uninterrupted work" },
+        { "name": "File Manager", "priority": "should", "description": "Browse and view project files directly in the dashboard" },
+        { "name": "Subdomain Auto-Deploy", "priority": "should", "description": "Each project gets its own .gen3.ai subdomain automatically" }
+      ],
+      "techStack": {
+        "frontend": "Next.js 16 + TypeScript + Tailwind + shadcn/ui",
+        "backend": "Express.js (Bridge API port 3001)",
+        "ai": "Claude Opus 4 via OpenClaw + OAuth rotation",
+        "infra": "Hostinger VPS + Caddy SSL + PM2",
+        "storage": "JSON files (data/) + Git for versioning"
+      },
+      "costEstimation": {
+        "hosting": "$20/month",
+        "aiAccounts": "2x Claude Pro Max = $40/month",
+        "total": "~$60/month"
+      },
+      "timeline": {
+        "mvp": "3 weeks (done)",
+        "fullVersion": "2 months",
+        "currentPhase": "Phase 3 — Advanced Features"
+      }
+    },
+    "planning": {
+      "status": "done",
+      "completedAt": "2026-03-19",
+      "architecture": "Frontend (Next.js:3000) ← Caddy SSL → User\nBridge API (Express:3001) ← Frontend → OpenClaw → Claude\nOpenClaw ← Telegram Bot → User",
+      "pages": [
+        { "name": "Dashboard", "route": "/dashboard", "role": "System overview with live stats and agent status" },
+        { "name": "Projects", "route": "/dashboard/projects", "role": "List all projects with pipeline status" },
+        { "name": "Project Detail", "route": "/dashboard/projects/[id]", "role": "Full pipeline + files + chat per project" },
+        { "name": "Chat", "route": "/dashboard/chat", "role": "Claude Code — AI engineer with server access" },
+        { "name": "Ideas", "route": "/dashboard/ideas", "role": "AI-powered idea analysis and conversion to projects" },
+        { "name": "Self-Dev", "route": "/dashboard/self-dev", "role": "Autonomous development system" },
+        { "name": "Memory", "route": "/dashboard/memory", "role": "Agent memory and context management" },
+        { "name": "Agents", "route": "/dashboard/agents", "role": "Active AI agents and their tasks" }
+      ],
+      "keyDecisions": [
+        "JSON files for storage (no DB setup needed)",
+        "OpenClaw as Claude interface (OAuth not API key)",
+        "Bridge API as execution layer (server commands)",
+        "PM2 for process management",
+        "Caddy for SSL + subdomains"
+      ]
+    },
+    "development": {
+      "status": "active",
+      "startedAt": "2026-03-18",
+      "total": 127,
+      "completed": 48,
+      "phases": [
+        { "name": "Phase 1: Infrastructure", "status": "done", "tasks": 32 },
+        { "name": "Phase 2: Project System", "status": "done", "tasks": 28 },
+        { "name": "Phase 3: Advanced Features", "status": "active", "tasks": 45 },
+        { "name": "Phase 4: Polish + Deploy", "status": "pending", "tasks": 22 }
+      ]
+    }
+  }
+}

@@ -1,114 +1,84 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { chatMessageSchema } from '@/lib/validators'
-import { scanForInjection } from '@/lib/prompt-scanner'
-import { z } from 'zod'
+import { NextRequest, NextResponse } from 'next/server';
+import fs from 'fs/promises';
+import path from 'path';
+import { execSync } from 'child_process';
 
-const BOT_TOKEN = '8635233052:AAGsuMzqhTHwQsFg4qGYPfUEyZPiLsAceA4'
-const CHAT_ID = '8630551989'
+const PROJECT_ROOT = '/root/genplatform';
+const PROTECTED = ['sidebar.tsx', 'navbar.tsx', 'layout.tsx', 'globals.css'];
 
-interface Project {
-  id: string
-  name: string
+async function readFile(filePath: string): Promise<string> {
+  const full = path.join(PROJECT_ROOT, filePath);
+  if (!full.startsWith(PROJECT_ROOT)) return 'ERROR: Invalid path';
+  try { return await fs.readFile(full, 'utf-8'); } catch { return 'ERROR: File not found'; }
 }
 
-// Helper to get project name
-async function getProjectName(projectId: string): Promise<string | null> {
+async function writeFile(filePath: string, content: string): Promise<string> {
+  if (PROTECTED.some(p => filePath.includes(p))) return 'ERROR: Protected file';
+  if (filePath.includes('self-dev')) return 'ERROR: Protected directory';
+  const full = path.join(PROJECT_ROOT, filePath);
+  if (!full.startsWith(PROJECT_ROOT)) return 'ERROR: Invalid path';
+  await fs.mkdir(path.dirname(full), { recursive: true });
+  await fs.writeFile(full, content);
+  return 'SUCCESS: File written';
+}
+
+function runBash(cmd: string): string {
+  const blocked = ['rm -rf /', 'dd if=', 'mkfs', 'rm -rf .next'];
+  if (blocked.some(d => cmd.includes(d))) return 'ERROR: Blocked command';
+  try { return execSync(cmd, { cwd: PROJECT_ROOT, timeout: 30000, encoding: 'utf-8' }).substring(0, 2000); }
+  catch (e: any) { return `ERROR: ${(e.message || '').substring(0, 500)}`; }
+}
+
+export async function POST(req: NextRequest) {
   try {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_URL || 'http://localhost:3000'}/api/projects/${projectId}`)
-    if (response.ok) {
-      const project: Project = await response.json()
-      return project.name
-    }
-  } catch (error) {
-    console.error('Error fetching project:', error)
-  }
-  return null
-}
+    const { message, projectId, history } = await req.json();
 
-export async function POST(request: NextRequest) {
-  try {
-    const body = await request.json()
+    const systemPrompt = `You are an AI Engineer with DIRECT server access to ${PROJECT_ROOT}.
+Tools: bash, read_file, write_file.
+PROTECTED — never modify: ${PROTECTED.join(', ')}, self-dev/**
+When user reports problem → read_file → find issue → show fix → ask approval.
+When user says yes/نعم/apply → write_file → bash "npm run build" → bash "pm2 reload genplatform-app".
+Respond in user's language.`;
 
-    // Validate with Zod schema
-    let validatedData
-    try {
-      validatedData = chatMessageSchema.parse(body)
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        return NextResponse.json(
-          { 
-            error: 'Validation failed', 
-            details: error.errors.map(e => e.message).join(', ') 
-          },
-          { status: 400 }
-        )
+    let currentMessages = [...(history || []).slice(-8), { role: 'user', content: message }];
+    let finalReply = '';
+
+    const tools = [
+      { name: 'bash', description: 'Run bash command', input_schema: { type: 'object' as const, properties: { command: { type: 'string' as const } }, required: ['command'] } },
+      { name: 'read_file', description: 'Read file', input_schema: { type: 'object' as const, properties: { path: { type: 'string' as const } }, required: ['path'] } },
+      { name: 'write_file', description: 'Write file', input_schema: { type: 'object' as const, properties: { path: { type: 'string' as const }, content: { type: 'string' as const } }, required: ['path', 'content'] } },
+    ];
+
+    for (let i = 0; i < 6; i++) {
+      const response = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-api-key': process.env.ANTHROPIC_API_KEY || '', 'anthropic-version': '2023-06-01' },
+        body: JSON.stringify({ model: 'claude-opus-4-5', max_tokens: 4096, system: systemPrompt, tools, messages: currentMessages })
+      });
+
+      const data = await response.json();
+
+      if (data.stop_reason === 'end_turn' || !data.stop_reason) {
+        finalReply = (data.content || []).filter((b: any) => b.type === 'text').map((b: any) => b.text).join('\n');
+        break;
       }
-      throw error
-    }
 
-    const { message, projectId } = validatedData
-
-    // Scan for prompt injection
-    const scanResult = scanForInjection(message)
-    if (!scanResult.safe) {
-      return NextResponse.json(
-        { 
-          error: 'Message contains potentially harmful content',
-          threats: scanResult.threats 
-        },
-        { status: 400 }
-      )
-    }
-
-    // Prepare message text
-    let telegramMessage = message
-    if (projectId) {
-      const projectName = await getProjectName(projectId)
-      if (projectName) {
-        telegramMessage = `[Project: ${projectName}] ${message}`
+      if (data.stop_reason === 'tool_use') {
+        currentMessages.push({ role: 'assistant', content: data.content });
+        const results: any[] = [];
+        for (const block of (data.content || []).filter((b: any) => b.type === 'tool_use')) {
+          let result = '';
+          if (block.name === 'bash') result = runBash(block.input.command);
+          if (block.name === 'read_file') result = await readFile(block.input.path);
+          if (block.name === 'write_file') result = await writeFile(block.input.path, block.input.content);
+          results.push({ type: 'tool_result', tool_use_id: block.id, content: result.substring(0, 3000) });
+        }
+        currentMessages.push({ role: 'user', content: results });
       }
     }
 
-    // Send to Telegram
-    const telegramUrl = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`
-    const telegramResponse = await fetch(telegramUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        chat_id: CHAT_ID,
-        text: telegramMessage,
-        parse_mode: 'HTML'
-      })
-    })
-
-    if (!telegramResponse.ok) {
-      const error = await telegramResponse.json()
-      console.error('Telegram API error:', error)
-      throw new Error('Failed to send message to Telegram')
-    }
-
-    const telegramData = await telegramResponse.json()
-
-    return NextResponse.json({
-      success: true,
-      messageId: telegramData.result.message_id
-    })
-
-  } catch (error) {
-    console.error('Chat send error:', error)
-    return NextResponse.json(
-      { 
-        error: 'Failed to send message',
-        details: error instanceof Error ? error.message : 'Unknown error'
-      },
-      { status: 500 }
-    )
+    return NextResponse.json({ reply: finalReply || 'تم.' });
+  } catch (e: any) {
+    return NextResponse.json({ reply: `خطأ: ${e.message}` }, { status: 500 });
   }
-}
-
-// Handle OPTIONS request for CORS
-export async function OPTIONS() {
-  return new NextResponse(null, { status: 200 })
 }
