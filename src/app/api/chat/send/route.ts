@@ -1,84 +1,115 @@
 import { NextRequest, NextResponse } from 'next/server';
-import fs from 'fs/promises';
-import path from 'path';
-import { execSync } from 'child_process';
 
-const PROJECT_ROOT = '/root/genplatform';
-const PROTECTED = ['sidebar.tsx', 'navbar.tsx', 'layout.tsx', 'globals.css'];
-
-async function readFile(filePath: string): Promise<string> {
-  const full = path.join(PROJECT_ROOT, filePath);
-  if (!full.startsWith(PROJECT_ROOT)) return 'ERROR: Invalid path';
-  try { return await fs.readFile(full, 'utf-8'); } catch { return 'ERROR: File not found'; }
-}
-
-async function writeFile(filePath: string, content: string): Promise<string> {
-  if (PROTECTED.some(p => filePath.includes(p))) return 'ERROR: Protected file';
-  if (filePath.includes('self-dev')) return 'ERROR: Protected directory';
-  const full = path.join(PROJECT_ROOT, filePath);
-  if (!full.startsWith(PROJECT_ROOT)) return 'ERROR: Invalid path';
-  await fs.mkdir(path.dirname(full), { recursive: true });
-  await fs.writeFile(full, content);
-  return 'SUCCESS: File written';
-}
-
-function runBash(cmd: string): string {
-  const blocked = ['rm -rf /', 'dd if=', 'mkfs', 'rm -rf .next'];
-  if (blocked.some(d => cmd.includes(d))) return 'ERROR: Blocked command';
-  try { return execSync(cmd, { cwd: PROJECT_ROOT, timeout: 30000, encoding: 'utf-8' }).substring(0, 2000); }
-  catch (e: any) { return `ERROR: ${(e.message || '').substring(0, 500)}`; }
-}
+const GATEWAY_URL = 'http://127.0.0.1:18789/v1/chat/completions';
+const GATEWAY_TOKEN = process.env.OPENCLAW_GATEWAY_TOKEN || 'bd8c8bd58ce00e2cebbcff1d7c406fdb5eca73f38da0d7df';
 
 export async function POST(req: NextRequest) {
   try {
-    const { message, projectId, history } = await req.json();
-
-    const systemPrompt = `You are an AI Engineer with DIRECT server access to ${PROJECT_ROOT}.
-Tools: bash, read_file, write_file.
-PROTECTED — never modify: ${PROTECTED.join(', ')}, self-dev/**
-When user reports problem → read_file → find issue → show fix → ask approval.
-When user says yes/نعم/apply → write_file → bash "npm run build" → bash "pm2 reload genplatform-app".
-Respond in user's language.`;
-
-    let currentMessages = [...(history || []).slice(-8), { role: 'user', content: message }];
-    let finalReply = '';
-
-    const tools = [
-      { name: 'bash', description: 'Run bash command', input_schema: { type: 'object' as const, properties: { command: { type: 'string' as const } }, required: ['command'] } },
-      { name: 'read_file', description: 'Read file', input_schema: { type: 'object' as const, properties: { path: { type: 'string' as const } }, required: ['path'] } },
-      { name: 'write_file', description: 'Write file', input_schema: { type: 'object' as const, properties: { path: { type: 'string' as const }, content: { type: 'string' as const } }, required: ['path', 'content'] } },
-    ];
-
-    for (let i = 0; i < 6; i++) {
-      const response = await fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-api-key': process.env.ANTHROPIC_API_KEY || '', 'anthropic-version': '2023-06-01' },
-        body: JSON.stringify({ model: 'claude-opus-4-5', max_tokens: 4096, system: systemPrompt, tools, messages: currentMessages })
+    const body = await req.json();
+    
+    // Support both formats: { message: { content } } and { message: "text" }
+    let userMessage = '';
+    let sessionId = 'web-chat-default';
+    
+    if (typeof body.message === 'string') {
+      userMessage = body.message;
+    } else if (body.message?.content) {
+      userMessage = body.message.content;
+    }
+    
+    if (!userMessage.trim()) {
+      return NextResponse.json({ 
+        success: false, 
+        message: { id: Date.now().toString(), content: 'رسالة فارغة', role: 'assistant', timestamp: new Date().toISOString(), type: 'message' }
       });
-
-      const data = await response.json();
-
-      if (data.stop_reason === 'end_turn' || !data.stop_reason) {
-        finalReply = (data.content || []).filter((b: any) => b.type === 'text').map((b: any) => b.text).join('\n');
-        break;
-      }
-
-      if (data.stop_reason === 'tool_use') {
-        currentMessages.push({ role: 'assistant', content: data.content });
-        const results: any[] = [];
-        for (const block of (data.content || []).filter((b: any) => b.type === 'tool_use')) {
-          let result = '';
-          if (block.name === 'bash') result = runBash(block.input.command);
-          if (block.name === 'read_file') result = await readFile(block.input.path);
-          if (block.name === 'write_file') result = await writeFile(block.input.path, block.input.content);
-          results.push({ type: 'tool_result', tool_use_id: block.id, content: result.substring(0, 3000) });
-        }
-        currentMessages.push({ role: 'user', content: results });
-      }
     }
 
-    return NextResponse.json({ reply: finalReply || 'تم.' });
+    // Build conversation history from context
+    const previousMessages = (body.context?.previousMessages || body.history || [])
+      .filter((m: any) => m.content && m.role)
+      .slice(-10)
+      .map((m: any) => ({
+        role: m.role === 'user' ? 'user' : 'assistant',
+        content: typeof m.content === 'string' ? m.content : JSON.stringify(m.content)
+      }));
+
+    // Use session ID for conversation continuity  
+    if (body.context?.sessionId) {
+      sessionId = body.context.sessionId;
+    }
+
+    const messages = [
+      ...previousMessages,
+      { role: 'user', content: userMessage }
+    ];
+
+    // Call OpenClaw Gateway - same agent, same tools, same memory as Telegram
+    const response = await fetch(GATEWAY_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${GATEWAY_TOKEN}`,
+        'x-openclaw-agent-id': 'main',
+        'x-openclaw-session-key': `web:${sessionId}`
+      },
+      body: JSON.stringify({
+        model: 'openclaw',
+        messages,
+        user: sessionId,
+        stream: false,
+        max_tokens: 2000
+      })
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('OpenClaw Gateway error:', response.status, errorText);
+      return NextResponse.json({
+        success: false,
+        message: {
+          id: Date.now().toString(),
+          content: `خطأ في الاتصال بالـ Gateway (${response.status})`,
+          role: 'assistant',
+          timestamp: new Date().toISOString(),
+          type: 'message'
+        }
+      }, { status: 500 });
+    }
+
+    const data = await response.json();
+    
+    // Extract reply from OpenAI-compatible response
+    const replyContent = data.choices?.[0]?.message?.content || 'لا يوجد رد';
+
+    return NextResponse.json({
+      success: true,
+      reply: replyContent,
+      message: {
+        id: data.id || Date.now().toString(),
+        content: replyContent,
+        role: 'assistant',
+        timestamp: new Date().toISOString(),
+        type: 'message',
+        metadata: {
+          model: data.model,
+          via: 'openclaw-gateway',
+          usage: data.usage
+        }
+      }
+    });
+
   } catch (e: any) {
-    return NextResponse.json({ reply: `خطأ: ${e.message}` }, { status: 500 });
+    console.error('Chat send error:', e);
+    return NextResponse.json({
+      success: false,
+      reply: `خطأ: ${e.message}`,
+      message: {
+        id: Date.now().toString(),
+        content: `خطأ: ${e.message}`,
+        role: 'assistant',
+        timestamp: new Date().toISOString(),
+        type: 'message'
+      }
+    }, { status: 500 });
   }
 }

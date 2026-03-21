@@ -1,0 +1,32 @@
+[2026-03-21T02:44:54.718Z] https://app.gen3.ai/dashboard/projects/taskflow
+  Message: FilesViewer is not defined
+  Stack: ReferenceError: FilesViewer is not defined
+    at v (https://app.gen3.ai/_next/static/chunks/93ddfaab8e17cd04.js:2:13112)
+    at av (https://app.gen3.ai/_next/static/chunks/9a3b3acb35c3fa8f.js:1:63230)
+    at oY (https://app.gen3.ai/_next/static/chunks/9a3b3acb35c3fa8f.js:1:83503)
+    at io (https://app.gen3.ai/_next/static/chunks/9a3b3acb35c3fa8f.js:1:94935)
+    at sc (https://app.gen3.ai/_next/static/chunks/9a3b3acb35c3fa8f.js:1:137956)
+    at https://app.gen3.ai/_next/static/chunks/9a3b3acb35
+
+[2026-03-21T02:50:18.625Z] https://app.gen3.ai/projects
+  Message: Link is not defined
+  Stack: ReferenceError: Link is not defined
+    at https://app.gen3.ai/_next/static/chunks/de22a3cbaf1f8edd.js:1:11473
+    at Array.map (<anonymous>)
+    at v (https://app.gen3.ai/_next/static/chunks/de22a3cbaf1f8edd.js:1:11201)
+    at av (https://app.gen3.ai/_next/static/chunks/9a3b3acb35c3fa8f.js:1:63230)
+    at oY (https://app.gen3.ai/_next/static/chunks/9a3b3acb35c3fa8f.js:1:83503)
+    at io (https://app.gen3.ai/_next/static/chunks/9a3b3acb35c3fa8f.js:1:94935)
+    at sc (https://app.gen3.ai/_next/st
+
+[2026-03-21T02:50:21.825Z] https://app.gen3.ai/projects
+  Message: Link is not defined
+  Stack: ReferenceError: Link is not defined
+    at https://app.gen3.ai/_next/static/chunks/de22a3cbaf1f8edd.js:1:11473
+    at Array.map (<anonymous>)
+    at v (https://app.gen3.ai/_next/static/chunks/de22a3cbaf1f8edd.js:1:11201)
+    at av (https://app.gen3.ai/_next/static/chunks/9a3b3acb35c3fa8f.js:1:63230)
+    at oY (https://app.gen3.ai/_next/static/chunks/9a3b3acb35c3fa8f.js:1:83503)
+    at io (https://app.gen3.ai/_next/static/chunks/9a3b3acb35c3fa8f.js:1:94935)
+    at sc (https://app.gen3.ai/_next/st
+

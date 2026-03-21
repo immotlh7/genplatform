@@ -29,7 +29,8 @@ import {
   Bot,
   Wrench,
   CheckSquare,
-  Lightbulb
+  Lightbulb,
+  Receipt
 } from 'lucide-react'
 
 interface AutomationStatus {
@@ -134,6 +135,7 @@ export function Sidebar() {
         { name: 'Cron Jobs', href: '/dashboard/cron', icon: Clock },
         { name: 'Projects', href: '/dashboard/projects', icon: Folder },
         { name: 'Tasks', href: '/dashboard/tasks', icon: CheckSquare },
+        { name: 'Invoices', href: '/dashboard/invoices', icon: Receipt },
         { name: 'Chat', href: '/dashboard/claude', icon: Bot },
         { name: 'Ideas', href: '/ideas', icon: Lightbulb },
         { name: 'Agents', href: '/agents', icon: Bot },

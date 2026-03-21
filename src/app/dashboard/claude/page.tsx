@@ -13,26 +13,56 @@ interface Message {
   type?: 'text' | 'code' | 'execution'
 }
 
-const PROJECTS = [
-  { id: 'genplatform', name: 'GenPlatform.ai', url: 'https://app.gen3.ai/dashboard', path: '/root/genplatform' },
-]
+interface Project {
+  id: string
+  name: string
+  url?: string
+  path?: string
+  previewUrl?: string
+  deployUrl?: string
+}
+
+const DEFAULT_PROJECT: Project = {
+  id: 'genplatform',
+  name: 'GenPlatform.ai',
+  url: 'https://app.gen3.ai/dashboard',
+  path: '/root/genplatform'
+}
 
 export default function ClaudeCodePage() {
   const [messages, setMessages] = useState<Message[]>([
     {
       role: 'ai',
-      content: '## مرحباً! 👋\n\nأنا AI Engineer — يمكنني تحليل مشاكلك، كتابة الكود، وتنفيذه مباشرة على السيرفر.\n\nاختر مشروعاً وأخبرني بما تريد.',
+      content: '## مرحباً! 👋\n\nأنا متصل بـ OpenClaw Gateway — نفس العقل، نفس الأدوات، نفس الذاكرة.\n\nاختر مشروعاً وأخبرني بما تريد.',
       type: 'text'
     }
   ])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
   const [attachment, setAttachment] = useState<{name:string;content:string}|null>(null)
-  const [selectedProject, setSelectedProject] = useState(PROJECTS[0])
+  const [projects, setProjects] = useState<Project[]>([DEFAULT_PROJECT])
+  const [selectedProject, setSelectedProject] = useState<Project>(DEFAULT_PROJECT)
   const [showProjectMenu, setShowProjectMenu] = useState(false)
   const [previewMode, setPreviewMode] = useState<'preview' | 'terminal'>('preview')
   const [terminalOutput, setTerminalOutput] = useState('')
   const messagesEndRef = useRef<HTMLDivElement>(null)
+
+  // Load projects from API
+  useEffect(() => {
+    const loadProjects = async () => {
+      try {
+        const res = await fetch('/api/projects')
+        const data = await res.json()
+        if (data.projects && data.projects.length > 0) {
+          const allProjects = [DEFAULT_PROJECT, ...data.projects.filter((p: Project) => p.id !== 'genplatform')]
+          setProjects(allProjects)
+        }
+      } catch {
+        // Keep default project
+      }
+    }
+    loadProjects()
+  }, [])
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -57,29 +87,29 @@ export default function ClaudeCodePage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           message: text,
-          projectContext: {
-            name: selectedProject.name,
-            path: selectedProject.path,
-            url: selectedProject.url,
-          },
-          conversationHistory: messages.filter(m => m.role === 'user' || m.role === 'ai').slice(-10).map(m => ({
+          history: messages.filter(m => m.role === 'user' || m.role === 'ai').slice(-10).map(m => ({
             role: m.role === 'ai' ? 'assistant' : 'user',
             content: m.content
-          }))
+          })),
+          context: {
+            sessionId: `claude-${selectedProject.id}`,
+            projectId: selectedProject.id
+          }
         })
       })
 
       const data = await res.json()
-        const aiMsg: Message = {
-          role: 'ai',
-          content: data.reply || data.response || data.message || 'تم استقبال رسالتك.',
-          type: 'text'
-        }
-        setMessages(prev => [...prev, aiMsg])
+      const replyText = data.reply || data.message?.content || data.response || 'تم استقبال رسالتك.'
+      const aiMsg: Message = {
+        role: 'ai',
+        content: replyText,
+        type: 'text'
+      }
+      setMessages(prev => [...prev, aiMsg])
     } catch {
       setMessages(prev => [...prev, {
         role: 'ai',
-        content: '📨 تم إرسال طلبك. OpenClaw يعمل على المهمة.',
+        content: '❌ خطأ في الاتصال بـ OpenClaw Gateway. تأكد من أن الخدمة تعمل.',
         type: 'text'
       }])
     } finally {
@@ -107,6 +137,8 @@ export default function ClaudeCodePage() {
     )
   }
 
+  const projectUrl = selectedProject.url || selectedProject.previewUrl || selectedProject.deployUrl || 'https://app.gen3.ai/dashboard'
+
   return (
     <div className="flex h-[calc(100vh-4rem)] overflow-hidden">
       {/* Chat Panel (40%) */}
@@ -121,8 +153,10 @@ export default function ClaudeCodePage() {
             </Button>
             {showProjectMenu && (
               <div className="absolute top-full left-0 mt-1 bg-card border rounded-lg shadow-lg z-10 min-w-[200px]">
-                {PROJECTS.map(p => (
-                  <button key={p.id} className="w-full text-left px-3 py-2 text-xs hover:bg-accent"
+                {projects.map(p => (
+                  <button key={p.id} className={`w-full text-left px-3 py-2 text-xs hover:bg-accent ${
+                    p.id === selectedProject.id ? 'bg-accent font-medium' : ''
+                  }`}
                     onClick={() => { setSelectedProject(p); setShowProjectMenu(false) }}>
                     {p.name}
                   </button>
@@ -130,7 +164,9 @@ export default function ClaudeCodePage() {
               </div>
             )}
           </div>
-          <Badge variant="outline" className="text-[10px]">AI Engineer</Badge>
+          <Badge variant="outline" className="text-[10px] bg-green-50 text-green-700 dark:bg-green-950 dark:text-green-400">
+            OpenClaw Gateway
+          </Badge>
         </div>
 
         {/* Messages */}
@@ -182,7 +218,7 @@ export default function ClaudeCodePage() {
       {/* Live Preview Panel (60%) */}
       <div className="flex-1">
         <LivePreviewPanel
-          projectUrl={selectedProject.url}
+          projectUrl={projectUrl}
           mode={previewMode}
           terminalOutput={terminalOutput}
         />
