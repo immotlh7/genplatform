@@ -1,124 +1,126 @@
 'use client';
+import { useState } from 'react';
 
-import { useState, useEffect } from 'react';
-import { ExternalLink, Monitor, Smartphone, Tablet, RefreshCw } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-
-interface Props {
-  projectUrl?: string;
-  mode?: 'preview' | 'terminal' | 'diff';
-  terminalOutput?: string;
-  isBuilding?: boolean;
+interface Project {
+  id: string;
+  name: string;
+  deployUrl?: string;
 }
 
-function safeUrl(url?: string): string | null {
-  if (!url) return null;
-  if (url.startsWith('http://') || url.startsWith('https://')) return url;
-  return `https://${url}`;
+interface LivePreviewPanelProps {
+  project: Project | null;
+  previewKey?: number;
 }
 
-export function LivePreviewPanel({ projectUrl, mode = 'preview', terminalOutput = '', isBuilding = false }: Props) {
-  const [device, setDevice] = useState<'desktop' | 'tablet' | 'mobile'>('desktop');
-  const [key, setKey] = useState(0);
+type ViewMode = 'desktop' | 'tablet' | 'mobile';
+
+const VIEW_MODES: { mode: ViewMode; label: string; width: string }[] = [
+  { mode: 'desktop', label: 'Desktop', width: '100%' },
+  { mode: 'tablet',  label: 'Tablet',  width: '768px' },
+  { mode: 'mobile',  label: 'Mobile',  width: '375px' },
+];
+
+export function LivePreviewPanel({ project, previewKey = 0 }: LivePreviewPanelProps) {
+  const [viewMode, setViewMode] = useState<ViewMode>('desktop');
   const [iframeError, setIframeError] = useState(false);
-  const [lastEvent, setLastEvent] = useState<string | null>(null);
-  const resolvedUrl = safeUrl(projectUrl);
+  const [lastKey, setLastKey] = useState(previewKey);
 
-  // Connect to SSE for auto-refresh
-  useEffect(() => {
-    let es: EventSource | null = null;
-    try {
-      es = new EventSource('/api/events');
-      es.onmessage = (e) => {
-        try {
-          const event = JSON.parse(e.data);
-          if (event.type === 'build_success' || event.type === 'app_restarted') {
-            // Auto-refresh preview after successful build
-            setTimeout(() => setKey(Date.now()), 2000); // 2s delay for pm2 to restart
-            setLastEvent('✅ Build successful — refreshing preview...');
-            setTimeout(() => setLastEvent(null), 4000);
-          } else if (event.type === 'file_modified') {
-            setLastEvent(`📝 ${event.data?.message || 'File modified'}`);
-            setTimeout(() => setLastEvent(null), 3000);
-          }
-        } catch {}
-      };
-      es.onerror = () => {
-        // Silently reconnect
-        es?.close();
-      };
-    } catch {}
-    return () => { es?.close(); };
-  }, []);
+  if (previewKey !== lastKey) {
+    setLastKey(previewKey);
+    setIframeError(false);
+  }
+
+  const url = project?.deployUrl;
+  const safeUrl = url?.startsWith('http') ? url : url ? `https://${url}` : null;
+  const currentWidth = VIEW_MODES.find(m => m.mode === viewMode)?.width || '100%';
 
   return (
-    <div className="h-full flex flex-col bg-gray-900 border-l">
-      {/* Controls */}
-      <div className="p-3 border-b border-gray-700 flex items-center justify-between bg-gray-800">
-        <div className="flex gap-1 bg-gray-700 rounded-md p-1">
-          {(['desktop','tablet','mobile'] as const).map(d => (
-            <button key={d} onClick={() => setDevice(d)}
-              className={`p-1.5 rounded text-xs transition-colors ${device===d ? 'bg-white text-gray-900' : 'text-gray-400 hover:text-white'}`}>
-              {d === 'desktop' ? <Monitor className="h-3.5 w-3.5" /> : d === 'tablet' ? <Tablet className="h-3.5 w-3.5" /> : <Smartphone className="h-3.5 w-3.5" />}
-            </button>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: 'var(--color-background-tertiary)' }}>
+
+      <div style={{
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        padding: '8px 12px',
+        borderBottom: '0.5px solid var(--color-border-tertiary)',
+        background: 'var(--color-background-secondary)',
+      }}>
+        <div style={{ display: 'flex', gap: 4 }}>
+          {VIEW_MODES.map(({ mode, label }) => (
+            <button
+              key={mode}
+              onClick={() => setViewMode(mode)}
+              style={{
+                padding: '3px 8px', borderRadius: 6, fontSize: 11, cursor: 'pointer',
+                border: '0.5px solid var(--color-border-tertiary)',
+                background: viewMode === mode ? 'var(--color-background-primary)' : 'transparent',
+                color: viewMode === mode ? 'var(--color-text-primary)' : 'var(--color-text-secondary)',
+              }}
+            >{label}</button>
           ))}
         </div>
-        <div className="flex items-center gap-2">
-          {lastEvent && (
-            <span className="text-[10px] text-green-400 animate-pulse">{lastEvent}</span>
-          )}
-          <span className="text-xs text-gray-400 truncate max-w-[150px]">{projectUrl || 'No project'}</span>
-        </div>
-        <div className="flex gap-1">
-          <Button variant="ghost" size="icon" className="h-7 w-7 text-gray-400 hover:text-white" onClick={() => setKey(k=>k+1)}>
-            <RefreshCw className="h-3.5 w-3.5" />
-          </Button>
-          {projectUrl && (
-            <Button variant="ghost" size="icon" className="h-7 w-7 text-gray-400 hover:text-white" onClick={() => window.open(projectUrl,'_blank')}>
-              <ExternalLink className="h-3.5 w-3.5" />
-            </Button>
-          )}
-        </div>
+
+        <span style={{ fontSize: 11, color: 'var(--color-text-secondary)', fontFamily: 'monospace' }}>
+          {safeUrl || 'No project selected'}
+        </span>
+
+        {safeUrl && (
+          <a
+            href={safeUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ fontSize: 11, color: 'var(--color-text-info)', textDecoration: 'none' }}
+          >
+            Open ↗
+          </a>
+        )}
       </div>
 
-      {/* Content */}
-      <div className="flex-1 overflow-hidden">
-        {isBuilding ? (
-          <div className="h-full flex items-center justify-center">
-            <div className="text-center">
-              <div className="text-4xl mb-3 animate-spin">⚙️</div>
-              <p className="text-gray-300 font-medium">Building...</p>
-              <p className="text-gray-500 text-sm mt-1">npm run build</p>
-            </div>
+      <div style={{ flex: 1, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', overflow: 'auto', padding: viewMode !== 'desktop' ? 16 : 0 }}>
+
+        {!project ? (
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', gap: 12 }}>
+            <div style={{ fontSize: 32, opacity: 0.2 }}>◻</div>
+            <p style={{ fontSize: 13, color: 'var(--color-text-secondary)' }}>
+              Select a project to see the live preview
+            </p>
           </div>
-        ) : mode === 'terminal' || terminalOutput ? (
-          <div className="h-full p-4 font-mono text-xs text-green-400 overflow-y-auto bg-black">
-            <pre className="whitespace-pre-wrap">{terminalOutput || '$ waiting for commands...'}</pre>
-          </div>
-        ) : projectUrl ? (
-          <div className={`h-full flex items-center justify-center transition-all ${
-            device === 'tablet' ? 'px-8' : device === 'mobile' ? 'px-16' : ''
-          }`}>
-            {iframeError || !resolvedUrl ? (
-              <div className="flex flex-col items-center justify-center h-full text-sm text-muted-foreground gap-3">
-                <div className="text-4xl">🌐</div>
-                <p>{resolvedUrl ? 'Preview unavailable in iframe' : 'Select a project to see live preview'}</p>
-                {resolvedUrl && <a href={resolvedUrl} target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline text-xs">{resolvedUrl} ↗</a>}
-              </div>
-            ) : (
-              <div className="w-full h-full bg-white rounded overflow-hidden">
-                <iframe key={key} src={resolvedUrl} className="w-full h-full" title="Preview"
-                  onError={() => setIframeError(true)}
-                  onLoad={() => setIframeError(false)} />
-              </div>
+        ) : iframeError || !safeUrl ? (
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', gap: 12 }}>
+            <p style={{ fontSize: 13, color: 'var(--color-text-secondary)' }}>
+              Preview not available in iframe
+            </p>
+            {safeUrl && (
+              <a
+                href={safeUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  fontSize: 12, padding: '6px 14px', borderRadius: 8,
+                  border: '0.5px solid var(--color-border-info)',
+                  color: 'var(--color-text-info)', textDecoration: 'none',
+                }}
+              >
+                Open {safeUrl} →
+              </a>
             )}
           </div>
         ) : (
-          <div className="h-full flex items-center justify-center text-center px-6">
-            <div>
-              <div className="text-5xl mb-3">🌐</div>
-              <p className="text-gray-400 text-sm">Select a project to see live preview</p>
-            </div>
+          <div style={{
+            width: currentWidth,
+            height: viewMode === 'desktop' ? '100%' : 'auto',
+            minHeight: viewMode !== 'desktop' ? 600 : undefined,
+            border: viewMode !== 'desktop' ? '0.5px solid var(--color-border-tertiary)' : 'none',
+            borderRadius: viewMode !== 'desktop' ? 8 : 0,
+            overflow: 'hidden',
+            boxShadow: viewMode !== 'desktop' ? '0 4px 20px rgba(0,0,0,0.15)' : 'none',
+          }}>
+            <iframe
+              key={`${project.id}-${previewKey}`}
+              src={safeUrl}
+              style={{ width: '100%', height: viewMode === 'desktop' ? '100%' : '600px', border: 'none' }}
+              onError={() => setIframeError(true)}
+              sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox"
+              title={`${project.name} preview`}
+            />
           </div>
         )}
       </div>

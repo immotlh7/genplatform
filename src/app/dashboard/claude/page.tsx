@@ -1,288 +1,419 @@
-"use client"
-
-import { useState, useRef, useEffect } from 'react'
-import { Button } from '@/components/ui/button'
-import { Textarea } from '@/components/ui/textarea'
-import { Badge } from '@/components/ui/badge'
-import { Send, Loader2, ChevronDown } from 'lucide-react'
-import { LivePreviewPanel } from '@/components/chat/LivePreviewPanel'
+'use client';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { LivePreviewPanel } from '@/components/chat/LivePreviewPanel';
 
 interface Message {
-  role: 'user' | 'ai'
-  content: string
-  type?: 'text' | 'code' | 'execution'
+  id: string;
+  role: 'user' | 'assistant';
+  content: string;
+  toolEvents?: ToolEvent[];
+  buildStatus?: 'building' | 'success' | 'failed';
+}
+
+interface ToolEvent {
+  type: string;
+  tool?: string;
+  input?: any;
+  result?: string;
+  message?: string;
+  error?: string;
 }
 
 interface Project {
-  id: string
-  name: string
-  url?: string
-  path?: string
-  previewUrl?: string
-  deployUrl?: string
+  id: string;
+  name: string;
+  deployUrl?: string;
+  repoPath?: string;
+  techStack?: string[];
 }
 
-const DEFAULT_PROJECT: Project = {
-  id: 'genplatform',
-  name: 'GenPlatform.ai',
-  url: 'https://app.gen3.ai/dashboard',
-  path: '/root/genplatform'
+interface Attachment {
+  name: string;
+  content: string;
 }
 
-export default function ClaudeCodePage() {
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      role: 'ai',
-      content: '## مرحباً! 👋\n\nمتصل بـ OpenClaw Gateway — نفس العقل، نفس الأدوات، نفس الذاكرة.\n\nاختر مشروعاً وأخبرني بما تريد.',
-      type: 'text'
-    }
-  ])
-  const [input, setInput] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [attachment, setAttachment] = useState<{name:string;content:string}|null>(null)
-  const [projects, setProjects] = useState<Project[]>([DEFAULT_PROJECT])
-  const [selectedProject, setSelectedProject] = useState<Project>(DEFAULT_PROJECT)
-  const [showProjectMenu, setShowProjectMenu] = useState(false)
-  const [previewMode] = useState<'preview' | 'terminal'>('preview')
-  const [terminalOutput] = useState('')
-  const messagesEndRef = useRef<HTMLDivElement>(null)
+export default function ClaudePage() {
+  const [messages, setMessages] = useState<Message[]>([{
+    id: '0',
+    role: 'assistant',
+    content: '## Hello! I am your AI Engineer.\n\nI am connected to OpenClaw Gateway — same brain, same tools, same memory as Telegram.\n\nSelect a project and tell me what you need. I can read files, fix bugs, add features, and deploy changes live.',
+  }]);
+
+  const [input, setInput] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
+  const [showProjectMenu, setShowProjectMenu] = useState(false);
+  const [attachment, setAttachment] = useState<Attachment | null>(null);
+  const [previewKey, setPreviewKey] = useState(0);
+
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    const loadProjects = async () => {
+    fetch('/api/projects')
+      .then(r => r.json())
+      .then(data => {
+        if (Array.isArray(data)) {
+          setProjects(data);
+          if (data.length > 0 && !selectedProject) setSelectedProject(data[0]);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    const es = new EventSource('/api/events');
+    es.onmessage = (e) => {
       try {
-        const res = await fetch('/api/projects')
-        const data = await res.json()
-        if (data.projects && data.projects.length > 0) {
-          const allProjects = [DEFAULT_PROJECT, ...data.projects.filter((p: Project) => p.id !== 'genplatform')]
-          setProjects(allProjects)
+        const event = JSON.parse(e.data);
+        if (event.event === 'build_success' || event.event === 'app_restarted') {
+          setPreviewKey(k => k + 1);
         }
       } catch {}
-    }
-    loadProjects()
-  }, [])
+    };
+    return () => es.close();
+  }, []);
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages])
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
 
-  const sendMessage = async () => {
-    let text = input.trim()
-    if (attachment) {
-      text += '\n\nAttached file (' + attachment.name + '):\n```\n' + attachment.content.substring(0, 3000) + '\n```'
-      setAttachment(null)
-    }
-    if (!text || loading) return
-    setInput('')
-    setLoading(true)
+  const handleFileUpload = useCallback(async (file: File) => {
+    if (file.size > 500000) { alert('File too large. Maximum 500KB.'); return; }
+    const text = await file.text();
+    setAttachment({ name: file.name, content: text });
+    setInput(prev => prev || `I uploaded ${file.name} — please review it.`);
+  }, []);
 
-    const userMsg: Message = { role: 'user', content: text }
-    setMessages(prev => [...prev, userMsg])
+  const sendMessage = useCallback(async () => {
+    if (!input.trim() && !attachment) return;
+    if (loading) return;
 
-    // Add placeholder AI message for streaming
-    const aiMsgId = Date.now()
-    setMessages(prev => [...prev, { role: 'ai', content: '', type: 'text' }])
+    const userContent = input.trim();
+    const userMessage: Message = {
+      id: Date.now().toString(),
+      role: 'user',
+      content: attachment ? `${userContent}\n\n*Attached: ${attachment.name}*` : userContent,
+    };
+
+    setMessages(prev => [...prev, userMessage]);
+    setInput('');
+    setAttachment(null);
+    setLoading(true);
+
+    const assistantId = (Date.now() + 1).toString();
+    const assistantMessage: Message = {
+      id: assistantId, role: 'assistant', content: '', toolEvents: [],
+    };
+    setMessages(prev => [...prev, assistantMessage]);
 
     try {
-      const res = await fetch('/api/chat/stream', {
+      const res = await fetch('/api/chat/send', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          message: text,
-          history: messages.filter(m => m.role === 'user' || m.role === 'ai').slice(-10).map(m => ({
-            role: m.role === 'ai' ? 'assistant' : 'user',
-            content: m.content
-          })),
-          context: {
-            sessionId: `claude-${selectedProject.id}`,
-            projectId: selectedProject.id
-          }
-        })
-      })
+          message: userContent,
+          projectId: selectedProject?.id || null,
+          history: messages.slice(-6).map(m => ({ role: m.role, content: m.content })),
+          attachment: attachment || null,
+        }),
+      });
 
-      if (!res.ok) {
-        // Fallback to non-streaming
-        const fallbackRes = await fetch('/api/chat/send', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            message: text,
-            context: { sessionId: `claude-${selectedProject.id}`, projectId: selectedProject.id }
-          })
-        })
-        const data = await fallbackRes.json()
-        const replyText = data.reply || data.message?.content || 'تم.'
-        setMessages(prev => {
-          const updated = [...prev]
-          updated[updated.length - 1] = { role: 'ai', content: replyText, type: 'text' }
-          return updated
-        })
-        return
-      }
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      if (!res.body) throw new Error('No response body');
 
-      const reader = res.body?.getReader()
-      if (!reader) throw new Error('No reader')
-      
-      const decoder = new TextDecoder()
-      let fullText = ''
-      let buffer = ''
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+      const toolEvents: ToolEvent[] = [];
 
       while (true) {
-        const { done, value } = await reader.read()
-        if (done) break
+        const { done, value } = await reader.read();
+        if (done) break;
 
-        buffer += decoder.decode(value, { stream: true })
-        const lines = buffer.split('\n')
-        buffer = lines.pop() || ''
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || '';
 
         for (const line of lines) {
-          if (!line.startsWith('data: ')) continue
-          const data = line.slice(6).trim()
-          if (data === '[DONE]') continue
-
+          if (!line.startsWith('data: ')) continue;
           try {
-            const parsed = JSON.parse(data)
-            if (parsed.error) {
-              fullText = `❌ ${parsed.error}`
-              break
+            const event = JSON.parse(line.slice(6));
+
+            if (event.type === 'text') {
+              setMessages(prev => prev.map(m =>
+                m.id === assistantId ? { ...m, content: event.text } : m
+              ));
             }
-            const delta = parsed.choices?.[0]?.delta?.content
-            if (delta) {
-              fullText += delta
-              setMessages(prev => {
-                const updated = [...prev]
-                updated[updated.length - 1] = { role: 'ai', content: fullText, type: 'text' }
-                return updated
-              })
+            if (event.type === 'tool_start') {
+              toolEvents.push({ type: 'tool_start', tool: event.tool, input: event.input });
+              setMessages(prev => prev.map(m =>
+                m.id === assistantId ? { ...m, toolEvents: [...toolEvents] } : m
+              ));
+            }
+            if (event.type === 'tool_end') {
+              toolEvents.push({ type: 'tool_end', tool: event.tool, result: event.result });
+              setMessages(prev => prev.map(m =>
+                m.id === assistantId ? { ...m, toolEvents: [...toolEvents] } : m
+              ));
+            }
+            if (event.type === 'building') {
+              setMessages(prev => prev.map(m =>
+                m.id === assistantId ? { ...m, buildStatus: 'building' } : m
+              ));
+            }
+            if (event.type === 'build_complete') {
+              setMessages(prev => prev.map(m =>
+                m.id === assistantId ? { ...m, buildStatus: 'success' } : m
+              ));
+              setPreviewKey(k => k + 1);
+            }
+            if (event.type === 'build_failed' || event.type === 'build_failed_final') {
+              setMessages(prev => prev.map(m =>
+                m.id === assistantId ? { ...m, buildStatus: 'failed' } : m
+              ));
+            }
+            if (event.type === 'error') {
+              setMessages(prev => prev.map(m =>
+                m.id === assistantId ? { ...m, content: `Error: ${event.message}` } : m
+              ));
             }
           } catch {}
         }
       }
 
-      // Final update if no streaming content was received
-      if (!fullText) {
-        setMessages(prev => {
-          const updated = [...prev]
-          updated[updated.length - 1] = { role: 'ai', content: 'تم استقبال رسالتك.', type: 'text' }
-          return updated
-        })
-      }
-    } catch {
-      setMessages(prev => {
-        const updated = [...prev]
-        updated[updated.length - 1] = { role: 'ai', content: '❌ خطأ في الاتصال بـ OpenClaw Gateway.', type: 'text' }
-        return updated
-      })
+    } catch (err: any) {
+      setMessages(prev => prev.map(m =>
+        m.id === assistantId
+          ? { ...m, content: `Connection error: ${err.message}. Check if the server is running.` }
+          : m
+      ));
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  }, [input, attachment, loading, messages, selectedProject]);
 
-  const renderMessage = (msg: Message, idx: number) => {
-    const isUser = msg.role === 'user'
-    return (
-      <div key={idx} className={`flex ${isUser ? 'justify-end' : 'justify-start'} mb-4`}>
-        <div className={`max-w-[85%] ${isUser
-          ? 'bg-blue-600 text-white rounded-2xl rounded-tr-sm px-4 py-3'
-          : 'bg-card border rounded-2xl rounded-tl-sm px-4 py-3'
-        }`}>
-          {isUser ? (
-            <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
-          ) : (
-            <div className="text-sm prose prose-sm dark:prose-invert max-w-none whitespace-pre-wrap">
-              {msg.content || <span className="text-muted-foreground animate-pulse">●●●</span>}
-            </div>
-          )}
-        </div>
-      </div>
-    )
-  }
-
-  const projectUrl = selectedProject.url || selectedProject.previewUrl || selectedProject.deployUrl || 'https://app.gen3.ai/dashboard'
+  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+  }, [sendMessage]);
 
   return (
-    <div className="flex h-[calc(100vh-4rem)] overflow-hidden">
-      {/* Chat Panel (40%) */}
-      <div className="w-[42%] flex flex-col border-r">
+    <div style={{ display: 'flex', height: '100%', overflow: 'hidden' }}>
+
+      {/* Left: Chat */}
+      <div style={{
+        width: '42%', minWidth: 320, display: 'flex', flexDirection: 'column',
+        borderRight: '0.5px solid var(--color-border-tertiary)',
+      }}>
+
         {/* Header */}
-        <div className="p-3 border-b flex items-center gap-2 bg-card flex-shrink-0">
-          <div className="relative">
-            <Button variant="outline" size="sm" className="gap-1.5 text-xs h-8"
-              onClick={() => setShowProjectMenu(p => !p)}>
-              🔧 {selectedProject.name}
-              <ChevronDown className="h-3 w-3" />
-            </Button>
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 8, padding: '10px 16px',
+          borderBottom: '0.5px solid var(--color-border-tertiary)',
+          background: 'var(--color-background-secondary)',
+        }}>
+          <div style={{ position: 'relative' }}>
+            <button
+              onClick={() => setShowProjectMenu(p => !p)}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 6, padding: '5px 10px',
+                borderRadius: 8, border: '0.5px solid var(--color-border-tertiary)',
+                background: 'transparent', cursor: 'pointer', fontSize: 12,
+                color: 'var(--color-text-primary)',
+              }}
+            >
+              <span style={{ fontSize: 10 }}>◆</span>
+              {selectedProject?.name || 'Select project'}
+              <span style={{ fontSize: 10, opacity: 0.5 }}>▾</span>
+            </button>
+
             {showProjectMenu && (
-              <div className="absolute top-full left-0 mt-1 bg-card border rounded-lg shadow-lg z-10 min-w-[200px]">
+              <div style={{
+                position: 'absolute', top: '100%', left: 0, marginTop: 4, zIndex: 50,
+                minWidth: 200, background: 'var(--color-background-primary)',
+                border: '0.5px solid var(--color-border-tertiary)', borderRadius: 8,
+                boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+              }}>
                 {projects.map(p => (
-                  <button key={p.id} className={`w-full text-left px-3 py-2 text-xs hover:bg-accent ${
-                    p.id === selectedProject.id ? 'bg-accent font-medium' : ''
-                  }`}
-                    onClick={() => { setSelectedProject(p); setShowProjectMenu(false) }}>
+                  <button
+                    key={p.id}
+                    onClick={() => { setSelectedProject(p); setShowProjectMenu(false); }}
+                    style={{
+                      width: '100%', textAlign: 'left', padding: '8px 12px',
+                      fontSize: 12, cursor: 'pointer', background: 'transparent', border: 'none',
+                      color: selectedProject?.id === p.id ? 'var(--color-text-info)' : 'var(--color-text-primary)',
+                    }}
+                  >
                     {p.name}
                   </button>
                 ))}
               </div>
             )}
           </div>
-          <Badge variant="outline" className="text-[10px] bg-green-50 text-green-700 dark:bg-green-950 dark:text-green-400">
+
+          <span style={{
+            fontSize: 10, padding: '3px 8px', borderRadius: 4,
+            background: 'rgba(29,158,117,0.15)', color: '#1D9E75',
+          }}>
             OpenClaw Gateway
-          </Badge>
+          </span>
         </div>
 
         {/* Messages */}
-        <div className="flex-1 overflow-y-auto p-4">
-          {messages.map(renderMessage)}
-          {loading && messages[messages.length - 1]?.content === '' && (
-            <div className="flex justify-start mb-4">
-              <div className="bg-card border rounded-2xl rounded-tl-sm px-4 py-3 flex items-center gap-2">
-                <Loader2 className="h-4 w-4 animate-spin text-blue-500" />
-                <span className="text-sm text-muted-foreground">جاري المعالجة...</span>
+        <div style={{ flex: 1, overflowY: 'auto', padding: 16 }}>
+          {messages.map(msg => (
+            <div key={msg.id} style={{ marginBottom: 16 }}>
+              <div style={{
+                display: 'flex',
+                justifyContent: msg.role === 'user' ? 'flex-end' : 'flex-start',
+              }}>
+                <div style={{
+                  maxWidth: '85%', padding: '10px 14px', borderRadius: 10, fontSize: 13,
+                  lineHeight: 1.6, whiteSpace: 'pre-wrap',
+                  background: msg.role === 'user'
+                    ? 'var(--color-background-info)'
+                    : 'var(--color-background-secondary)',
+                }}>
+                  {msg.content || (loading && msg.role === 'assistant' ? (
+                    <span style={{ color: 'var(--color-text-secondary)' }}>Thinking...</span>
+                  ) : '')}
+                </div>
               </div>
+
+              {msg.toolEvents && msg.toolEvents.length > 0 && (
+                <div style={{ marginTop: 8, marginLeft: 4 }}>
+                  {msg.toolEvents
+                    .filter(e => e.type === 'tool_start')
+                    .map((e, i) => (
+                    <div key={i} style={{
+                      display: 'flex', alignItems: 'center', gap: 6,
+                      padding: '4px 8px', marginBottom: 3, borderRadius: 6, fontSize: 11,
+                      background: 'var(--color-background-secondary)',
+                      color: 'var(--color-text-secondary)',
+                    }}>
+                      <span>{
+                        e.tool === 'bash' ? '⚙' :
+                        e.tool === 'read_file' ? '📖' :
+                        e.tool === 'write_file' ? '✏️' :
+                        e.tool === 'patch_file' ? '🔧' : '◦'
+                      }</span>
+                      <span style={{ fontFamily: 'monospace' }}>
+                        {e.tool}:{' '}
+                        {e.tool === 'bash' ? (e.input?.command || '').slice(0, 50) :
+                         (e.input?.path || e.input || '').toString().slice(0, 50)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {msg.buildStatus && (
+                <div style={{
+                  marginTop: 8, marginLeft: 4, padding: '6px 10px', borderRadius: 6,
+                  fontSize: 11, display: 'flex', alignItems: 'center', gap: 6,
+                  background: msg.buildStatus === 'success'
+                    ? 'rgba(29,158,117,0.1)'
+                    : msg.buildStatus === 'failed'
+                    ? 'rgba(226,75,74,0.1)'
+                    : 'rgba(24,95,165,0.1)',
+                  color: msg.buildStatus === 'success' ? '#1D9E75'
+                    : msg.buildStatus === 'failed' ? '#E24B4A' : '#185FA5',
+                }}>
+                  {msg.buildStatus === 'building' && '⟳ Building...'}
+                  {msg.buildStatus === 'success' && '✓ Build passed — preview updated'}
+                  {msg.buildStatus === 'failed' && '✗ Build failed — attempting auto-fix'}
+                </div>
+              )}
             </div>
-          )}
+          ))}
           <div ref={messagesEndRef} />
         </div>
 
-        {/* Input */}
-        <div className="p-3 border-t bg-card flex-shrink-0">
+        {/* Input area */}
+        <div style={{ padding: 12, borderTop: '0.5px solid var(--color-border-tertiary)' }}>
           {attachment && (
-            <div className="mb-2 flex items-center gap-2 text-xs bg-muted/30 px-3 py-1.5 rounded">
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8,
+              padding: '5px 10px', borderRadius: 6, fontSize: 11,
+              background: 'var(--color-background-secondary)',
+              color: 'var(--color-text-secondary)',
+            }}>
               <span>📎 {attachment.name}</span>
-              <button onClick={() => setAttachment(null)} className="text-muted-foreground hover:text-foreground">✕</button>
+              <button
+                onClick={() => setAttachment(null)}
+                style={{ marginLeft: 'auto', background: 'none', border: 'none',
+                         cursor: 'pointer', color: 'var(--color-text-secondary)', fontSize: 14 }}
+              >✕</button>
             </div>
           )}
-          <div className="flex gap-2 items-end">
-            <label className="cursor-pointer text-muted-foreground hover:text-foreground p-2 self-end">
-              <input type="file" className="hidden" accept=".ts,.tsx,.js,.json,.md,.txt,.py,image/*"
-                onChange={async e => {
-                  const file = e.target.files?.[0]; if (!file) return;
-                  const text = await file.text();
-                  setAttachment({ name: file.name, content: text });
-                }} />
-              📎
-            </label>
-            <Textarea
+
+          <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end' }}>
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              title="Attach file"
+              style={{
+                padding: 8, borderRadius: 8, background: 'transparent',
+                border: '0.5px solid var(--color-border-tertiary)', cursor: 'pointer',
+                color: 'var(--color-text-secondary)', fontSize: 14, flexShrink: 0,
+              }}
+            >📎</button>
+
+            <input
+              ref={fileInputRef}
+              type="file"
+              style={{ display: 'none' }}
+              accept=".txt,.md,.json,.ts,.tsx,.js,.jsx,.py,.sh,.env,.yaml,.yml,.css"
+              onChange={e => {
+                const file = e.target.files?.[0];
+                if (file) handleFileUpload(file);
+                e.target.value = '';
+              }}
+            />
+
+            <textarea
+              ref={inputRef}
               value={input}
               onChange={e => setInput(e.target.value)}
-              placeholder="أخبرني بالمشكلة أو الميزة التي تريدها... (Ctrl+Enter)"
-              className="min-h-[52px] max-h-[120px] resize-none text-sm"
-              onKeyDown={e => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); sendMessage() } }}
+              onKeyDown={handleKeyDown}
+              placeholder="Describe a problem, request a change, or drop a file... (Enter to send)"
+              disabled={loading}
+              rows={2}
+              style={{
+                flex: 1, padding: '8px 12px', fontSize: 13, borderRadius: 8,
+                resize: 'none', minHeight: 40, maxHeight: 120,
+                border: '0.5px solid var(--color-border-tertiary)',
+                background: 'var(--color-background-secondary)',
+                color: 'var(--color-text-primary)',
+                opacity: loading ? 0.6 : 1,
+              }}
             />
-            <Button onClick={sendMessage} disabled={loading || !input.trim()} className="self-end">
-              {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-            </Button>
+
+            <button
+              onClick={sendMessage}
+              disabled={loading || (!input.trim() && !attachment)}
+              style={{
+                padding: '8px 14px', borderRadius: 8, cursor: 'pointer',
+                border: '0.5px solid var(--color-border-tertiary)',
+                background: 'transparent', color: 'var(--color-text-primary)',
+                fontSize: 14, flexShrink: 0,
+                opacity: loading || (!input.trim() && !attachment) ? 0.4 : 1,
+              }}
+            >→</button>
+          </div>
+
+          <div style={{ marginTop: 6, fontSize: 10, color: 'var(--color-text-secondary)', opacity: 0.7 }}>
+            Enter to send · Shift+Enter for new line · Drop files to attach
           </div>
         </div>
       </div>
 
-      {/* Live Preview Panel (60%) */}
-      <div className="flex-1">
-        <LivePreviewPanel
-          projectUrl={projectUrl}
-          mode={previewMode}
-          terminalOutput={terminalOutput}
-        />
+      {/* Right: Live Preview */}
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+        <LivePreviewPanel project={selectedProject} previewKey={previewKey} />
       </div>
+
     </div>
-  )
+  );
 }

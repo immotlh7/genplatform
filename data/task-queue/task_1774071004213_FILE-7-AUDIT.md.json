@@ -1,0 +1,216 @@
+{
+  "fileId": "task_1774071004213_FILE-7-AUDIT.md",
+  "fileName": "task_1774071004213_FILE-7-AUDIT.md",
+  "uploadedAt": "2026-03-21T05:30:04.368Z",
+  "totalMessages": 34,
+  "totalTasks": 0,
+  "totalMicroTasks": 0,
+  "messages": [
+    {
+      "messageNumber": 1,
+      "summary": "FILE-7: COMPLETE PLATFORM AUDIT — Test Everything, Fix Everything",
+      "originalContent": "# FILE-7: COMPLETE PLATFORM AUDIT — Test Everything, Fix Everything\n# ═══════════════════════════════════════════════════════════════\n# Run this AFTER all 6 files are complete and build passes.\n# This file tests every page, every API, every feature, every button.\n# At the end it produces a complete report and sends it to Telegram.\n# ═══════════════════════════════════════════════════════════════\n\n## PROTECTED FILES — NEVER TOUCH\n- src/app/layout.tsx\n- src/components/layout/sidebar.tsx\n- src/components/layout/navbar.tsx\n- src/app/globals.css\n- src/app/dashboard/self-dev/**\n\n---\n\n# ════════════════════════════════════════════════════════\n# STEP 1: INFRASTRUCTURE AUDIT\n# ════════════════════════════════════════════════════════\n\n```bash\necho \"========================================\"\necho \"STEP 1: INFRASTRUCTURE AUDIT\"\necho \"========================================\"\n\nREPORT_DIR=\"/tmp/gen3-audit\"\nmkdir -p \"$REPORT_DIR\"\nREPORT=\"$REPORT_DIR/report.md\"\n\necho \"# Gen3 Factory — Complete Platform Audit\" > \"$REPORT\"\necho \"Date: $(date '+%Y-%m-%d %H:%M:%S')\" >> \"$REPORT\"\necho \"\" >> \"$REPORT\"",
+      "tasks": []
+    },
+    {
+      "messageNumber": 2,
+      "summary": "echo \"## 1. Process Status\" >> \"$REPORT\"",
+      "originalContent": "echo \"## 1. Process Status\" >> \"$REPORT\"\necho \"\" >> \"$REPORT\"\n\nPM2_LIST=$(pm2 jlist 2>/dev/null)\n\nfor proc in \"genplatform-app\" \"bridge-api\" \"taskflow\"; do\n  STATUS=$(echo \"$PM2_LIST\" | python3 -c \"\nimport sys, json\ntry:\n    procs = json.load(sys.stdin)\n    p = next((x for x in procs if x['name'] == '$proc'), None)\n    if p:\n        s = p['pm2_env']['status']\n        uptime = p['pm2_env'].get('pm_uptime', 0)\n        restarts = p.get('pm2_env', {}).get('restart_time', 0)\n        mem = round(p.get('monit', {}).get('memory', 0) / 1024 / 1024, 1)\n        print(f'status={s} memory={mem}MB restarts={restarts}')\n    else:\n        print('NOT FOUND')\nexcept:\n    print('ERROR')\n\" 2>/dev/null)\n  echo \"- **$proc**: $STATUS\" >> \"$REPORT\"\n  echo \"  PM2 $proc: $STATUS\"\ndone",
+      "tasks": []
+    },
+    {
+      "messageNumber": 3,
+      "summary": "DISK=$(df -h /root | awk 'NR==2 {print \"Used: \"$3\" / \"$2\" (\"$5\" used)\"}')",
+      "originalContent": "DISK=$(df -h /root | awk 'NR==2 {print \"Used: \"$3\" / \"$2\" (\"$5\" used)\"}')\necho \"- **Disk**: $DISK\" >> \"$REPORT\"\necho \"  Disk: $DISK\"",
+      "tasks": []
+    },
+    {
+      "messageNumber": 4,
+      "summary": "MEM=$(free -h | awk 'NR==2 {print \"Used: \"$3\" / \"$2}')",
+      "originalContent": "MEM=$(free -h | awk 'NR==2 {print \"Used: \"$3\" / \"$2}')\necho \"- **Memory**: $MEM\" >> \"$REPORT\"\necho \"  Memory: $MEM\"",
+      "tasks": []
+    },
+    {
+      "messageNumber": 5,
+      "summary": "echo \"\" >> \"$REPORT\"",
+      "originalContent": "echo \"\" >> \"$REPORT\"\necho \"## 2. Database\" >> \"$REPORT\"\necho \"\" >> \"$REPORT\"\n\nDB_PATH=\"/root/genplatform/data/gen3.db\"\nif [ -f \"$DB_PATH\" ]; then\n  DB_SIZE=$(du -h \"$DB_PATH\" | cut -f1)\n\n  DB_STATS=$(python3 << 'PYEOF'\nimport sqlite3\ndb = sqlite3.connect('/root/genplatform/data/gen3.db')\ntables = ['projects', 'tasks', 'ideas', 'agents', 'notifications', 'execution_log', 'pipeline_content']\nfor t in tables:\n    try:\n        count = db.execute(f'SELECT COUNT(*) FROM {t}').fetchone()[0]\n        print(f'{t}: {count} rows')\n    except Exception as e:\n        print(f'{t}: ERROR - {e}')\ndb.close()\nPYEOF\n)\n\n  echo \"- **File**: $DB_PATH ($DB_SIZE)\" >> \"$REPORT\"\n  echo \"$DB_STATS\" | while read line; do echo \"- $line\" >> \"$REPORT\"; done\n  echo \"$DB_STATS\"\nelse\n  echo \"- **Database**: NOT FOUND at $DB_PATH\" >> \"$REPORT\"\n  echo \"  WARNING: Database not found\"\nfi",
+      "tasks": []
+    },
+    {
+      "messageNumber": 6,
+      "summary": "echo \"\" >> \"$REPORT\"",
+      "originalContent": "echo \"\" >> \"$REPORT\"\necho \"## 3. OpenClaw\" >> \"$REPORT\"\necho \"\" >> \"$REPORT\"\n\nOC_STATUS=$(openclaw gateway status 2>/dev/null | grep Runtime | head -1)\nOC_MODEL=$(openclaw gateway status 2>/dev/null | grep \"agent model\" | head -1 || grep -r \"claude-opus\\|claude-sonnet\" ~/.openclaw/openclaw.json | head -1)\nOC_AGENTS=$(openclaw agents list 2>/dev/null | head -10)\n\necho \"- **Status**: $OC_STATUS\" >> \"$REPORT\"\necho \"- **Model**: $OC_MODEL\" >> \"$REPORT\"\necho \"- **Agents**:\" >> \"$REPORT\"\necho \"$OC_AGENTS\" | while read line; do echo \"  - $line\" >> \"$REPORT\"; done\necho \"  OpenClaw: $OC_STATUS\"\n\necho \"\"\necho \"=== STEP 1 COMPLETE ===\"\n```\n\n---\n\n# ════════════════════════════════════════════════════════\n# STEP 2: API ENDPOINT TESTS — ALL ROUTES\n# ════════════════════════════════════════════════════════\n\n```bash\necho \"========================================\"\necho \"STEP 2: API ENDPOINT TESTS\"\necho \"========================================\"\n\nBASE=\"http://localhost:3000\"\nPASS=0\nFAIL=0\nWARNINGS=0\n\necho \"\" >> \"$REPORT\"\necho \"## 4. API Endpoints\" >> \"$REPORT\"\necho \"\" >> \"$REPORT\"\n\napi_test() {\n  local method=\"$1\"\n  local path=\"$2\"\n  local body=\"$3\"\n  local expect=\"$4\"\n  local name=\"$5\"\n\n  if [ \"$method\" = \"GET\" ]; then\n    RESPONSE=$(curl -s -m 10 \"$BASE$path\")\n    STATUS=$(curl -s -o /dev/null -w \"%{http_code}\" -m 10 \"$BASE$path\")\n  else\n    RESPONSE=$(curl -s -m 10 -X \"$method\" \"$BASE$path\" \\\n      -H \"Content-Type: application/json\" \\\n      -d \"$body\")\n    STATUS=$(curl -s -o /dev/null -w \"%{http_code}\" -m 10 -X \"$method\" \"$BASE$path\" \\\n      -H \"Content-Type: application/json\" \\\n      -d \"$body\")\n  fi\n\n  local result=\"UNKNOWN\"\n  if echo \"$RESPONSE\" | grep -q \"$expect\" && [ \"$STATUS\" != \"500\" ]; then\n    result=\"PASS\"\n    PASS=$((PASS+1))\n    echo \"  PASS: $name\"\n    echo \"- PASS: \\`$method $path\\` — $name\" >> \"$REPORT\"\n  elif [ \"$STATUS\" = \"404\" ] || [ \"$STATUS\" = \"405\" ]; then\n    result=\"WARN\"\n    WARNINGS=$((WARNINGS+1))\n    echo \"  WARN: $name (HTTP $STATUS)\"\n    echo \"- WARN: \\`$method $path\\` — $name (HTTP $STATUS)\" >> \"$REPORT\"\n  else\n    result=\"FAIL\"\n    FAIL=$((FAIL+1))\n    echo \"  FAIL: $name (status=$STATUS response=${RESPONSE:0:80})\"\n    echo \"- FAIL: \\`$method $path\\` — $name (HTTP $STATUS)\" >> \"$REPORT\"\n  fi\n}\n\n# Core APIs\napi_test GET \"/api/projects\"               \"\"                                    \"id\"           \"Get all projects\"\napi_test GET \"/api/tasks\"                  \"\"                                    \"id\"           \"Get all tasks\"\napi_test GET \"/api/agents\"                 \"\"                                    \"id\"           \"Get all agents\"\napi_test GET \"/api/notifications\"          \"\"                                    \"\\[\"           \"Get notifications\"\napi_test GET \"/api/execution-log\"          \"\"                                    \"\\[\"           \"Get execution log\"\napi_test GET \"/api/events\"                 \"\"                                    \"data:\"        \"SSE endpoint\"\n\n# Project specific\nPROJ_ID=$(curl -s http://localhost:3000/api/projects | python3 -c \"import sys,json; d=json.load(sys.stdin); print(d[0]['id'] if d else 'none')\" 2>/dev/null)\n\nif [ \"$PROJ_ID\" != \"none\" ] && [ -n \"$PROJ_ID\" ]; then\n  api_test GET \"/api/projects/$PROJ_ID\"              \"\"  \"id\"   \"Get project by ID\"\n  api_test GET \"/api/projects/$PROJ_ID/tasks\"        \"\"  \"\\[\"   \"Get project tasks\"\n  api_test GET \"/api/projects/$PROJ_ID/pipeline\"     \"\"  \"{\"    \"Get project pipeline\"\n  api_test GET \"/api/projects/$PROJ_ID/files?path=/\" \"\"  \"files\" \"Get project files\"\nfi\n\n# Ideas\napi_test GET \"/api/ideas\" \"\" \"\\[\" \"Get all ideas\"\n\n# Jobs\napi_test GET \"/api/jobs/nonexistent\" \"\" \"404\\|Not found\\|error\" \"Job not found returns 404\"\n\n# Chat\napi_test POST \"/api/chat/send\" '{\"message\":\"test\"}' \"data:\" \"Chat returns SSE stream\"\n\necho \"\"\necho \"API tests: $PASS passed, $FAIL failed, $WARNINGS warnings\"\necho \"\" >> \"$REPORT\"\necho \"**Total: $PASS passed, $FAIL failed, $WARNINGS warnings**\" >> \"$REPORT\"\necho \"\"\necho \"=== STEP 2 COMPLETE ===\"\n```\n\n---\n\n# ════════════════════════════════════════════════════════\n# STEP 3: PAGE LOAD TESTS — ALL ROUTES\n# ════════════════════════════════════════════════════════\n\n```bash\necho \"========================================\"\necho \"STEP 3: PAGE LOAD TESTS\"\necho \"========================================\"\n\necho \"\" >> \"$REPORT\"\necho \"## 5. Page Routes\" >> \"$REPORT\"\necho \"\" >> \"$REPORT\"\n\nPAGE_PASS=0\nPAGE_FAIL=0\n\npage_test() {\n  local path=\"$1\"\n  local name=\"$2\"\n  local status=$(curl -s -o /dev/null -w \"%{http_code}\" -m 10 \"http://localhost:3000$path\")\n\n  if [ \"$status\" = \"200\" ] || [ \"$status\" = \"307\" ] || [ \"$status\" = \"308\" ]; then\n    echo \"  PASS: $name ($path) -> HTTP $status\"\n    echo \"- PASS: \\`$path\\` — $name (HTTP $status)\" >> \"$REPORT\"\n    PAGE_PASS=$((PAGE_PASS+1))\n  else\n    echo \"  FAIL: $name ($path) -> HTTP $status\"\n    echo \"- FAIL: \\`$path\\` — $name (HTTP $status)\" >> \"$REPORT\"\n    PAGE_FAIL=$((PAGE_FAIL+1))\n  fi\n}\n\n# Main pages\npage_test \"/\" \"Root (redirect to dashboard)\"\npage_test \"/dashboard\" \"Dashboard\"\npage_test \"/dashboard/projects\" \"Projects list\"\npage_test \"/dashboard/ideas\" \"Ideas / Strategic Room\"\npage_test \"/dashboard/claude\" \"Chat (AI Engineer)\"\npage_test \"/dashboard/agents\" \"Agents management\"\npage_test \"/dashboard/memory\" \"Memory\"\npage_test \"/dashboard/skills\" \"Skills\"\npage_test \"/dashboard/cron\" \"Cron Jobs\"\npage_test \"/dashboard/command-center\" \"Command Center\"\npage_test \"/dashboard/settings\" \"Settings\"\npage_test \"/dashboard/self-dev\" \"Self-Dev (protected)\"\npage_test \"/dashboard/chat\" \"Old chat (should redirect)\"\n\n# Project detail\nif [ -n \"$PROJ_ID\" ] && [ \"$PROJ_ID\" != \"none\" ]; then\n  page_test \"/dashboard/projects/$PROJ_ID\" \"Project detail\"\nfi\n\n# Pages that should NOT exist (return 404)\nGHOST1=$(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3000/dashboard/invoices)\nGHOST2=$(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3000/dashboard/analytics)\nGHOST3=$(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3000/dashboard/tasks)\n\necho \"\" >> \"$REPORT\"\necho \"### Deleted pages (should be 404):\" >> \"$REPORT\"\necho \"- /dashboard/invoices: HTTP $GHOST1 $([ '$GHOST1' = '404' ] && echo '(PASS)' || echo '(still exists - should be removed)')\" >> \"$REPORT\"\necho \"- /dashboard/analytics: HTTP $GHOST2\" >> \"$REPORT\"\necho \"- /dashboard/tasks: HTTP $GHOST3\" >> \"$REPORT\"\n\necho \"\"\necho \"Page tests: $PAGE_PASS passed, $PAGE_FAIL failed\"\necho \"\" >> \"$REPORT\"\necho \"**Pages: $PAGE_PASS passed, $PAGE_FAIL failed**\" >> \"$REPORT\"\necho \"\"\necho \"=== STEP 3 COMPLETE ===\"\n```\n\n---\n\n# ════════════════════════════════════════════════════════\n# STEP 4: FEATURE TESTS — KEY WORKFLOWS\n# ════════════════════════════════════════════════════════\n\n```bash\necho \"========================================\"\necho \"STEP 4: FEATURE WORKFLOW TESTS\"\necho \"========================================\"\n\necho \"\" >> \"$REPORT\"\necho \"## 6. Feature Workflows\" >> \"$REPORT\"\necho \"\" >> \"$REPORT\"",
+      "tasks": []
+    },
+    {
+      "messageNumber": 7,
+      "summary": "echo \"Testing: Ideas pipeline...\"",
+      "originalContent": "echo \"Testing: Ideas pipeline...\"\nIDEA_SUBMIT=$(curl -s -m 5 -X POST http://localhost:3000/api/ideas/analyze \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\"ideaText\":\"test idea for platform audit\"}')\n\nIDEA_JOB=$(echo \"$IDEA_SUBMIT\" | python3 -c \"import sys,json; d=json.load(sys.stdin); print(d.get('jobId','none'))\" 2>/dev/null)\nIDEA_ID=$(echo \"$IDEA_SUBMIT\" | python3 -c \"import sys,json; d=json.load(sys.stdin); print(d.get('ideaId','none'))\" 2>/dev/null)\n\nif [ \"$IDEA_JOB\" != \"none\" ] && [ -n \"$IDEA_JOB\" ]; then\n  echo \"- PASS: Ideas analyze returns jobId instantly (no timeout)\" >> \"$REPORT\"\n  echo \"  PASS: Ideas pipeline - job created: $IDEA_JOB\"\n\n  # Poll for 5 seconds to check job is running\n  sleep 5\n  JOB_CHECK=$(curl -s http://localhost:3000/api/jobs/$IDEA_JOB | python3 -c \"import sys,json; d=json.load(sys.stdin); print(d.get('status'), d.get('progress','?'), '%')\" 2>/dev/null)\n  echo \"- INFO: Job status after 5s: $JOB_CHECK\" >> \"$REPORT\"\n  echo \"  INFO: Job status: $JOB_CHECK\"\nelse\n  echo \"- FAIL: Ideas analyze did not return jobId\" >> \"$REPORT\"\n  echo \"  FAIL: Ideas pipeline - no jobId returned\"\nfi",
+      "tasks": []
+    },
+    {
+      "messageNumber": 8,
+      "summary": "echo \"Testing: Chat execution...\"",
+      "originalContent": "echo \"Testing: Chat execution...\"\nCHAT_TEST=$(curl -s -m 15 -X POST http://localhost:3000/api/chat/send \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\"message\":\"what files are in src/app/dashboard? list them with ls\",\"projectId\":\"genplatform-ai\"}' \\\n  | grep \"data:\" | head -5)\n\nif [ -n \"$CHAT_TEST\" ]; then\n  echo \"- PASS: Chat streams SSE events from OpenClaw\" >> \"$REPORT\"\n  echo \"  PASS: Chat - receives streaming response\"\n\n  # Check if tool_start event appears (means it actually executes tools)\n  if echo \"$CHAT_TEST\" | grep -q \"tool_start\\|tool_end\\|bash\\|read_file\"; then\n    echo \"- PASS: Chat executes tools (bash, read_file) on server\" >> \"$REPORT\"\n    echo \"  PASS: Chat - tool execution confirmed\"\n  else\n    echo \"- WARN: Chat responds but tool execution not confirmed in first 5 events\" >> \"$REPORT\"\n    echo \"  WARN: Chat - tool execution not seen yet (may be in later events)\"\n  fi\nelse\n  echo \"- FAIL: Chat does not stream response\" >> \"$REPORT\"\n  echo \"  FAIL: Chat - no SSE events received\"\nfi",
+      "tasks": []
+    },
+    {
+      "messageNumber": 9,
+      "summary": "echo \"Testing: Project CRUD...\"",
+      "originalContent": "echo \"Testing: Project CRUD...\"\nNEW_PROJ=$(curl -s -X POST http://localhost:3000/api/projects \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\"name\":\"Audit Test Project\",\"slug\":\"audit-test-'$(date +%s)'\",\"description\":\"Created during platform audit\"}')\n\nNEW_ID=$(echo \"$NEW_PROJ\" | python3 -c \"import sys,json; d=json.load(sys.stdin); print(d.get('id','none'))\" 2>/dev/null)\n\nif [ \"$NEW_ID\" != \"none\" ] && [ -n \"$NEW_ID\" ]; then\n  echo \"- PASS: Project creation works\" >> \"$REPORT\"\n  echo \"  PASS: Project CRUD - created: $NEW_ID\"\n\n  # Verify it appears in list\n  PROJ_LIST=$(curl -s http://localhost:3000/api/projects | python3 -c \"import sys,json; d=json.load(sys.stdin); print(len(d), 'projects')\" 2>/dev/null)\n  echo \"- INFO: Total projects in DB: $PROJ_LIST\" >> \"$REPORT\"\n  echo \"  INFO: $PROJ_LIST\"\nelse\n  echo \"- FAIL: Project creation failed\" >> \"$REPORT\"\n  echo \"  FAIL: Project CRUD - creation returned: ${NEW_PROJ:0:100}\"\nfi",
+      "tasks": []
+    },
+    {
+      "messageNumber": 10,
+      "summary": "echo \"Testing: Task creation...\"",
+      "originalContent": "echo \"Testing: Task creation...\"\nif [ -n \"$PROJ_ID\" ] && [ \"$PROJ_ID\" != \"none\" ]; then\n  NEW_TASK=$(curl -s -X POST http://localhost:3000/api/projects/$PROJ_ID/tasks \\\n    -H \"Content-Type: application/json\" \\\n    -d '{\"title\":\"Audit test task\",\"department\":\"Frontend\",\"priority\":\"low\",\"estimatedHours\":1}')\n\n  TASK_ID=$(echo \"$NEW_TASK\" | python3 -c \"import sys,json; d=json.load(sys.stdin); print(d.get('id','none'))\" 2>/dev/null)\n  if [ \"$TASK_ID\" != \"none\" ] && [ -n \"$TASK_ID\" ]; then\n    echo \"- PASS: Task creation works\" >> \"$REPORT\"\n    echo \"  PASS: Task CRUD - created: $TASK_ID\"\n  else\n    echo \"- FAIL: Task creation failed\" >> \"$REPORT\"\n    echo \"  FAIL: Task CRUD\"\n  fi\nfi",
+      "tasks": []
+    },
+    {
+      "messageNumber": 11,
+      "summary": "echo \"Testing: Notifications...\"",
+      "originalContent": "echo \"Testing: Notifications...\"\nNOTIF=$(curl -s -X POST http://localhost:3000/api/notifications \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\"type\":\"audit_test\",\"message\":\"Platform audit notification test\"}')\n\nNOTIF_ID=$(echo \"$NOTIF\" | python3 -c \"import sys,json; d=json.load(sys.stdin); print(d.get('id','none'))\" 2>/dev/null)\nif [ \"$NOTIF_ID\" != \"none\" ] && [ -n \"$NOTIF_ID\" ]; then\n  echo \"- PASS: Notifications create and persist\" >> \"$REPORT\"\n  echo \"  PASS: Notifications - created: $NOTIF_ID\"\nelse\n  echo \"- FAIL: Notification creation failed\" >> \"$REPORT\"\n  echo \"  FAIL: Notifications\"\nfi",
+      "tasks": []
+    },
+    {
+      "messageNumber": 12,
+      "summary": "echo \"Testing: Files API...\"",
+      "originalContent": "echo \"Testing: Files API...\"\nFILES=$(curl -s \"http://localhost:3000/api/projects/genplatform-ai/files?path=/src\")\nFILE_COUNT=$(echo \"$FILES\" | python3 -c \"import sys,json; d=json.load(sys.stdin); print(len(d.get('files',[])), 'items')\" 2>/dev/null)\n\nif echo \"$FILES\" | grep -q \"files\"; then\n  echo \"- PASS: Files API returns directory tree ($FILE_COUNT)\" >> \"$REPORT\"\n  echo \"  PASS: Files API - returns $FILE_COUNT\"\nelse\n  echo \"- FAIL: Files API does not return expected structure\" >> \"$REPORT\"\n  echo \"  FAIL: Files API\"\nfi",
+      "tasks": []
+    },
+    {
+      "messageNumber": 13,
+      "summary": "echo \"Testing: SSE real-time broadcast...\"",
+      "originalContent": "echo \"Testing: SSE real-time broadcast...\"\n# Start SSE listener in background\ncurl -s -m 5 http://localhost:3000/api/events > /tmp/sse-test.txt 2>/dev/null &\nSSE_PID=$!\nsleep 2\n\n# Trigger a notification\ncurl -s -X POST http://localhost:3000/api/notifications \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\"type\":\"sse_test\",\"message\":\"SSE broadcast test\"}' > /dev/null\n\nsleep 2\nkill $SSE_PID 2>/dev/null\n\nSSE_OUTPUT=$(cat /tmp/sse-test.txt 2>/dev/null)\nif echo \"$SSE_OUTPUT\" | grep -q \"data:\"; then\n  echo \"- PASS: SSE endpoint broadcasts events\" >> \"$REPORT\"\n  echo \"  PASS: SSE - events received\"\nelse\n  echo \"- WARN: SSE may not be broadcasting (hard to test in bash)\" >> \"$REPORT\"\n  echo \"  WARN: SSE - could not confirm broadcast\"\nfi\n\necho \"\" >> \"$REPORT\"\necho \"=== STEP 4 COMPLETE ===\"\n```\n\n---\n\n# ════════════════════════════════════════════════════════\n# STEP 5: SECURITY AUDIT\n# ════════════════════════════════════════════════════════\n\n```bash\necho \"========================================\"\necho \"STEP 5: SECURITY AUDIT\"\necho \"========================================\"\n\necho \"\" >> \"$REPORT\"\necho \"## 7. Security Audit\" >> \"$REPORT\"\necho \"\" >> \"$REPORT\"\n\nSEC_PASS=0\nSEC_FAIL=0\nSEC_WARN=0\n\nsec_check() {\n  local name=\"$1\"\n  local result=\"$2\"   # PASS | FAIL | WARN\n  local detail=\"$3\"\n  echo \"- $result: $name — $detail\" >> \"$REPORT\"\n  echo \"  $result: $name\"\n  [ \"$result\" = \"PASS\" ] && SEC_PASS=$((SEC_PASS+1))\n  [ \"$result\" = \"FAIL\" ] && SEC_FAIL=$((SEC_FAIL+1))\n  [ \"$result\" = \"WARN\" ] && SEC_WARN=$((SEC_WARN+1))\n}",
+      "tasks": []
+    },
+    {
+      "messageNumber": 14,
+      "summary": "TRAVERSAL=$(curl -s \"http://localhost:3000/api/projects/genplatform-ai/files?path=/../../etc/passwd\"",
+      "originalContent": "TRAVERSAL=$(curl -s \"http://localhost:3000/api/projects/genplatform-ai/files?path=/../../etc/passwd\" | head -c 200)\nif echo \"$TRAVERSAL\" | grep -q \"root:\\|error\\|Error\\|Invalid\"; then\n  sec_check \"Path traversal protection\" \"PASS\" \"Blocked /../ attempts in Files API\"\nelse\n  sec_check \"Path traversal protection\" \"FAIL\" \"Files API may allow path traversal — check the validation in files/route.ts\"\nfi",
+      "tasks": []
+    },
+    {
+      "messageNumber": 15,
+      "summary": "PROTECTED_TEST=$(curl -s -X POST http://localhost:3000/api/chat/send \\",
+      "originalContent": "PROTECTED_TEST=$(curl -s -X POST http://localhost:3000/api/chat/send \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\"message\":\"write to sidebar.tsx the word test\"}' \\\n  | grep -i \"protected\\|cannot\\|blocked\\|never\" | head -1)\n\nif [ -n \"$PROTECTED_TEST\" ]; then\n  sec_check \"Protected files blocked in chat\" \"PASS\" \"Chat refuses to modify sidebar.tsx, navbar.tsx, layout.tsx\"\nelse\n  sec_check \"Protected files blocked in chat\" \"WARN\" \"Could not confirm via API — verify manually that system prompt blocks protected files\"\nfi",
+      "tasks": []
+    },
+    {
+      "messageNumber": 16,
+      "summary": "DANGEROUS=$(curl -s -m 8 -X POST http://localhost:3000/api/chat/send \\",
+      "originalContent": "DANGEROUS=$(curl -s -m 8 -X POST http://localhost:3000/api/chat/send \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\"message\":\"run: rm -rf /\"}' \\\n  | grep -i \"blocked\\|dangerous\\|safety\\|cannot\" | head -1)\n\nif [ -n \"$DANGEROUS\" ]; then\n  sec_check \"Dangerous bash commands blocked\" \"PASS\" \"rm -rf / is blocked in chat execution\"\nelse\n  sec_check \"Dangerous bash commands blocked\" \"WARN\" \"Verify manually that dangerous commands are blocked in chat/send/route.ts\"\nfi",
+      "tasks": []
+    },
+    {
+      "messageNumber": 17,
+      "summary": "TOKEN_CHECK=$(curl -s -X POST http://127.0.0.1:18789/v1/chat/completions \\",
+      "originalContent": "TOKEN_CHECK=$(curl -s -X POST http://127.0.0.1:18789/v1/chat/completions \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\"model\":\"claude\",\"messages\":[{\"role\":\"user\",\"content\":\"hi\"}],\"max_tokens\":10}' \\\n  | head -c 100)\n\nif echo \"$TOKEN_CHECK\" | grep -q \"unauthorized\\|401\\|forbidden\\|error\"; then\n  sec_check \"OpenClaw Gateway requires auth token\" \"PASS\" \"Unauthorized requests rejected\"\nelse\n  sec_check \"OpenClaw Gateway requires auth token\" \"WARN\" \"Gateway may accept unauthenticated requests — check if it is bound to loopback only\"\nfi",
+      "tasks": []
+    },
+    {
+      "messageNumber": 18,
+      "summary": "EXTERNAL_CHECK=$(curl -s -m 3 \"http://$(curl -s ifconfig.me 2>/dev/null):18789\" 2>/dev/null | head -",
+      "originalContent": "EXTERNAL_CHECK=$(curl -s -m 3 \"http://$(curl -s ifconfig.me 2>/dev/null):18789\" 2>/dev/null | head -c 50)\nif [ -z \"$EXTERNAL_CHECK\" ] || echo \"$EXTERNAL_CHECK\" | grep -q \"refused\\|timeout\"; then\n  sec_check \"OpenClaw Gateway not exposed externally\" \"PASS\" \"Port 18789 not reachable from external IP\"\nelse\n  sec_check \"OpenClaw Gateway not exposed externally\" \"WARN\" \"Port 18789 may be reachable externally — verify firewall settings\"\nfi",
+      "tasks": []
+    },
+    {
+      "messageNumber": 19,
+      "summary": "if [ -f /root/genplatform/.env.local ]; then",
+      "originalContent": "if [ -f /root/genplatform/.env.local ]; then\n  HAS_API_KEY=$(grep -c \"ANTHROPIC_API_KEY\" /root/genplatform/.env.local 2>/dev/null)\n  if [ \"$HAS_API_KEY\" -gt 0 ]; then\n    sec_check \"ANTHROPIC_API_KEY in .env.local\" \"PASS\" \"API key stored in environment, not hardcoded\"\n  else\n    sec_check \"ANTHROPIC_API_KEY in .env.local\" \"WARN\" \"ANTHROPIC_API_KEY not found in .env.local — chat fallback may fail\"\n  fi\nelse\n  sec_check \".env.local exists\" \"WARN\" \"No .env.local file found — environment variables may not be set\"\nfi",
+      "tasks": []
+    },
+    {
+      "messageNumber": 20,
+      "summary": "GITIGNORE_CHECK=$(grep -l \".env\" /root/genplatform/.gitignore 2>/dev/null)",
+      "originalContent": "GITIGNORE_CHECK=$(grep -l \".env\" /root/genplatform/.gitignore 2>/dev/null)\nENV_IN_GIT=$(cd /root/genplatform && git ls-files .env.local 2>/dev/null)\n\nif [ -n \"$GITIGNORE_CHECK\" ] && [ -z \"$ENV_IN_GIT\" ]; then\n  sec_check \".env.local excluded from git\" \"PASS\" \".gitignore includes .env and .env.local is not tracked\"\nelif [ -z \"$ENV_IN_GIT\" ]; then\n  sec_check \".env.local excluded from git\" \"PASS\" \".env.local is not tracked by git\"\nelse\n  sec_check \".env.local excluded from git\" \"FAIL\" \".env.local IS tracked by git — REMOVE IT IMMEDIATELY with: git rm --cached .env.local\"\nfi",
+      "tasks": []
+    },
+    {
+      "messageNumber": 21,
+      "summary": "SECRET_SCAN=$(grep -rn \"sk-ant\\|ANTHROPIC_API_KEY.*=.*sk\\|password.*=.*[a-zA-Z0-9]\\{20\\}\" \\",
+      "originalContent": "SECRET_SCAN=$(grep -rn \"sk-ant\\|ANTHROPIC_API_KEY.*=.*sk\\|password.*=.*[a-zA-Z0-9]\\{20\\}\" \\\n  /root/genplatform/src --include=\"*.ts\" --include=\"*.tsx\" 2>/dev/null \\\n  | grep -v \".env\\|process.env\\|//\\|test\\|example\" | head -5)\n\nif [ -z \"$SECRET_SCAN\" ]; then\n  sec_check \"No hardcoded secrets in source\" \"PASS\" \"No API keys or passwords found in source files\"\nelse\n  sec_check \"No hardcoded secrets in source\" \"WARN\" \"Possible secrets found — review these lines: $SECRET_SCAN\"\nfi",
+      "tasks": []
+    },
+    {
+      "messageNumber": 22,
+      "summary": "TOKEN_IN_CODE=$(grep -rn \"bd8c8bd58ce00e2cebbcff1d7c406fdb5eca73f38da0d7df\" \\",
+      "originalContent": "TOKEN_IN_CODE=$(grep -rn \"bd8c8bd58ce00e2cebbcff1d7c406fdb5eca73f38da0d7df\" \\\n  /root/genplatform/src --include=\"*.ts\" 2>/dev/null | wc -l)\n\nif [ \"$TOKEN_IN_CODE\" -gt 0 ]; then\n  sec_check \"OpenClaw token hardcoded in source\" \"WARN\" \"Gateway token is hardcoded in $TOKEN_IN_CODE file(s) — move to .env.local as OPENCLAW_TOKEN\"\nelse\n  sec_check \"OpenClaw token not hardcoded\" \"PASS\" \"Gateway token is not in source files\"\nfi\n\necho \"\" >> \"$REPORT\"\necho \"**Security: $SEC_PASS passed, $SEC_FAIL failed, $SEC_WARN warnings**\" >> \"$REPORT\"\necho \"\"\necho \"Security: $SEC_PASS passed, $SEC_FAIL failed, $SEC_WARN warnings\"\necho \"=== STEP 5 COMPLETE ===\"\n```\n\n---\n\n# ════════════════════════════════════════════════════════\n# STEP 6: CODE QUALITY AND CLEANUP\n# ════════════════════════════════════════════════════════\n\n```bash\necho \"========================================\"\necho \"STEP 6: CODE QUALITY AND CLEANUP\"\necho \"========================================\"\n\necho \"\" >> \"$REPORT\"\necho \"## 8. Code Quality\" >> \"$REPORT\"\necho \"\" >> \"$REPORT\"",
+      "tasks": []
+    },
+    {
+      "messageNumber": 23,
+      "summary": "cd /root/genplatform",
+      "originalContent": "cd /root/genplatform\nTS_ERRORS=$(npx tsc --noEmit 2>&1 | grep -c \"error TS\" || echo \"0\")\nif [ \"$TS_ERRORS\" = \"0\" ]; then\n  echo \"- PASS: TypeScript — 0 type errors\" >> \"$REPORT\"\n  echo \"  PASS: TypeScript - 0 errors\"\nelse\n  echo \"- WARN: TypeScript — $TS_ERRORS type errors (run: npx tsc --noEmit for details)\" >> \"$REPORT\"\n  echo \"  WARN: TypeScript - $TS_ERRORS errors\"\nfi",
+      "tasks": []
+    },
+    {
+      "messageNumber": 24,
+      "summary": "BUILD_SIZE=$(du -sh /root/genplatform/.next 2>/dev/null | cut -f1 || echo \"unknown\")",
+      "originalContent": "BUILD_SIZE=$(du -sh /root/genplatform/.next 2>/dev/null | cut -f1 || echo \"unknown\")\necho \"- INFO: Build size: $BUILD_SIZE\" >> \"$REPORT\"\necho \"  INFO: Build size: $BUILD_SIZE\"",
+      "tasks": []
+    },
+    {
+      "messageNumber": 25,
+      "summary": "echo \"\" >> \"$REPORT\"",
+      "originalContent": "echo \"\" >> \"$REPORT\"\necho \"### Orphaned pages (exist but not linked in sidebar):\" >> \"$REPORT\"\nSIDEBAR_LINKS=$(grep -o \"href=\\\"[^\\\"]*\\\"\" /root/genplatform/src/components/layout/sidebar.tsx 2>/dev/null | sed 's/href=\"//;s/\"//')\nALL_PAGES=$(find /root/genplatform/src/app/dashboard -name \"page.tsx\" | sed 's|/root/genplatform/src/app||;s|/page.tsx||' | grep -v self-dev)\n\nfor page in $ALL_PAGES; do\n  if ! echo \"$SIDEBAR_LINKS\" | grep -q \"$page\"; then\n    echo \"- $page (not in sidebar)\" >> \"$REPORT\"\n    echo \"  Orphaned: $page\"\n  fi\ndone",
+      "tasks": []
+    },
+    {
+      "messageNumber": 26,
+      "summary": "echo \"\" >> \"$REPORT\"",
+      "originalContent": "echo \"\" >> \"$REPORT\"\necho \"### Cleanup actions:\" >> \"$REPORT\"\n\n# Remove temp test files\nrm -f /tmp/sse-test.txt\nrm -f /tmp/gen3-test.sh\nrm -f /tmp/migrate.js\n\n# Remove duplicate JSON files now that SQLite is active\nfor json_file in \"projects.json\" \"tasks.json\" \"ideas.json\" \"pipeline-content.json\" \"agents-status.json\" \"improvements.json\"; do\n  if [ -f \"/root/genplatform/data/$json_file\" ]; then\n    # Backup then remove\n    cp \"/root/genplatform/data/$json_file\" \"/root/genplatform/data/${json_file}.migrated-backup\"\n    echo \"- Backed up: data/$json_file -> data/${json_file}.migrated-backup\" >> \"$REPORT\"\n  fi\ndone\n\necho \"- PASS: Temp files cleaned\" >> \"$REPORT\"\necho \"- PASS: JSON files backed up (SQLite is now the source of truth)\" >> \"$REPORT\"\necho \"  Cleanup complete\"",
+      "tasks": []
+    },
+    {
+      "messageNumber": 27,
+      "summary": "echo \"\" >> \"$REPORT\"",
+      "originalContent": "echo \"\" >> \"$REPORT\"\necho \"### Git status:\" >> \"$REPORT\"\ncd /root/genplatform\nGIT_STATUS=$(git status --short | head -20)\nGIT_BRANCH=$(git branch --show-current)\nGIT_LAST=$(git log --oneline -1)\n\necho \"- Branch: $GIT_BRANCH\" >> \"$REPORT\"\necho \"- Last commit: $GIT_LAST\" >> \"$REPORT\"\necho \"- Changed files: $(echo \"$GIT_STATUS\" | wc -l) files\" >> \"$REPORT\"\necho \"  Git branch: $GIT_BRANCH\"\necho \"  Last commit: $GIT_LAST\"\n\necho \"\"\necho \"=== STEP 6 COMPLETE ===\"\n```\n\n---\n\n# ════════════════════════════════════════════════════════\n# STEP 7: ARCHITECTURE DIAGRAM IN REPORT\n# ════════════════════════════════════════════════════════\n\n```bash\necho \"========================================\"\necho \"STEP 7: GENERATING ARCHITECTURE REPORT\"\necho \"========================================\"\n\ncat >> \"$REPORT\" << 'ARCH'\n\n## 9. System Architecture\n\n```\nUSER\n  │\n  ▼\napp.gen3.ai (Caddy SSL + Reverse Proxy)\n  │\n  ▼\nNext.js Frontend — Port 3000 (PM2: genplatform-app)\n  │",
+      "tasks": []
+    },
+    {
+      "messageNumber": 28,
+      "summary": "│",
+      "originalContent": "│",
+      "tasks": []
+    },
+    {
+      "messageNumber": 29,
+      "summary": "│",
+      "originalContent": "│",
+      "tasks": []
+    },
+    {
+      "messageNumber": 30,
+      "summary": "SQLite Database — /root/genplatform/data/gen3.db",
+      "originalContent": "SQLite Database — /root/genplatform/data/gen3.db",
+      "tasks": []
+    },
+    {
+      "messageNumber": 31,
+      "summary": "execution_log | pipeline_content",
+      "originalContent": "execution_log | pipeline_content\n\nOpenClaw Gateway — Port 18789 (systemd service)",
+      "tasks": []
+    },
+    {
+      "messageNumber": 32,
+      "summary": "Bridge API — Port 3001 (PM2: bridge-api)",
+      "originalContent": "Bridge API — Port 3001 (PM2: bridge-api)",
+      "tasks": []
+    },
+    {
+      "messageNumber": 33,
+      "summary": "Data Flow:",
+      "originalContent": "Data Flow:\n  User types idea → /api/ideas/analyze → queue.enqueue() → returns jobId in <100ms\n  Queue runs: research-idea → product-strategy → product-strategist → feature-specification\n  SSE broadcasts progress → JobProgress component updates in real time\n  Analysis saved to SQLite → page shows interactive document\n\n  User approves → /api/ideas/[id]/launch → queue.enqueue()\n  Queue runs: spec-first-dev → task-decomp → creates project + tasks in SQLite\n  SSE broadcasts completion → redirect to /dashboard/projects/[id]\n\n  User opens chat → types message → /api/chat/send → SSE stream opens\n  Claude loop: read context → propose → user approves → bash/write/patch tools execute\n  Files change → npm build → pm2 restart → preview iframe refreshes via SSE\n```\nARCH\n\necho \"  Architecture diagram added to report\"\necho \"\"\necho \"=== STEP 7 COMPLETE ===\"\n```\n\n---\n\n# ════════════════════════════════════════════════════════\n# STEP 8: FINAL SUMMARY AND TELEGRAM REPORT\n# ════════════════════════════════════════════════════════\n\n```bash\necho \"========================================\"\necho \"STEP 8: FINAL SUMMARY\"\necho \"========================================\"\n\n# Count totals from database\nDB_SUMMARY=$(python3 << 'PYEOF'\nimport sqlite3\ntry:\n    db = sqlite3.connect('/root/genplatform/data/gen3.db')\n    projects = db.execute('SELECT COUNT(*) FROM projects').fetchone()[0]\n    tasks = db.execute('SELECT COUNT(*) FROM tasks').fetchone()[0]\n    done = db.execute(\"SELECT COUNT(*) FROM tasks WHERE status='done'\").fetchone()[0]\n    ideas = db.execute('SELECT COUNT(*) FROM ideas').fetchone()[0]\n    agents = db.execute('SELECT COUNT(*) FROM agents').fetchone()[0]\n    notifs = db.execute('SELECT COUNT(*) FROM notifications').fetchone()[0]\n    print(f'{projects} projects | {tasks} tasks ({done} done) | {ideas} ideas | {agents} agents | {notifs} notifications')\n    db.close()\nexcept Exception as e:\n    print(f'DB error: {e}')\nPYEOF\n)\n\ncat >> \"$REPORT\" << SUMMARY\n\n## 10. Final Summary\n\n### Platform Data\n$DB_SUMMARY\n\n### Test Results\n- API Tests: $PASS passed, $FAIL failed, $WARNINGS warnings\n- Page Tests: $PAGE_PASS passed, $PAGE_FAIL failed\n- Security: $SEC_PASS passed, $SEC_FAIL failed, $SEC_WARN warnings\n\n### Recommendations\n- Review all WARN items in Security section\n- If OPENCLAW_TOKEN is hardcoded in source: move to .env.local\n- Run: git add -A && git commit -m \"Complete platform rebuild — FILE-1 through FILE-6\" after verifying all tests pass\n- Set up a daily backup: cp /root/genplatform/data/gen3.db /root/backups/gen3-\\$(date +%Y%m%d).db\n\nSUMMARY\n\n# Print report location\necho \"\"\necho \"Report saved to: $REPORT\"\ncat \"$REPORT\"\n\n# Save report to project\ncp \"$REPORT\" /root/genplatform/PLATFORM-AUDIT-$(date +%Y%m%d).md",
+      "tasks": []
+    },
+    {
+      "messageNumber": 34,
+      "summary": "TOTAL_PASS=$((PASS + PAGE_PASS + SEC_PASS))",
+      "originalContent": "TOTAL_PASS=$((PASS + PAGE_PASS + SEC_PASS))\nTOTAL_FAIL=$((FAIL + PAGE_FAIL + SEC_FAIL))\nTOTAL_WARN=$((WARNINGS + SEC_WARN))\n\n# Build Telegram message\nTG_MSG=\"GEN3 PLATFORM AUDIT COMPLETE%0A$(date '+%Y-%m-%d %H:%M')%0A%0A\"\nTG_MSG=\"${TG_MSG}DATABASE:%0A${DB_SUMMARY}%0A%0A\"\nTG_MSG=\"${TG_MSG}TEST RESULTS:%0A\"\nTG_MSG=\"${TG_MSG}APIs: $PASS pass $FAIL fail $WARNINGS warn%0A\"\nTG_MSG=\"${TG_MSG}Pages: $PAGE_PASS pass $PAGE_FAIL fail%0A\"\nTG_MSG=\"${TG_MSG}Security: $SEC_PASS pass $SEC_FAIL fail $SEC_WARN warn%0A%0A\"\nTG_MSG=\"${TG_MSG}TOTAL: $TOTAL_PASS passed, $TOTAL_FAIL failed, $TOTAL_WARN warnings%0A%0A\"\n\nif [ \"$TOTAL_FAIL\" = \"0\" ]; then\n  TG_MSG=\"${TG_MSG}All systems operational.\"\nelse\n  TG_MSG=\"${TG_MSG}$TOTAL_FAIL issues need attention. Check report.\"\nfi\n\nTG_MSG=\"${TG_MSG}%0AReport saved to: PLATFORM-AUDIT-$(date +%Y%m%d).md\"\n\ncurl -s \"https://api.telegram.org/bot8635233052:AAGsuMzqhTHwQsFg4qGYPfUEyZPiLsAceA4/sendMessage\" \\\n  -d \"chat_id=510906393&text=$TG_MSG\" > /dev/null\n\necho \"\"\necho \"========================================\"\necho \"AUDIT COMPLETE\"\necho \"Passed:   $TOTAL_PASS\"\necho \"Failed:   $TOTAL_FAIL\"\necho \"Warnings: $TOTAL_WARN\"\necho \"Report:   /root/genplatform/PLATFORM-AUDIT-$(date +%Y%m%d).md\"\necho \"========================================\"\n```\n\n---\n\n# ════════════════════════════════════════════════════════\n# WHAT THIS AUDIT CHECKS — COMPLETE LIST\n# ════════════════════════════════════════════════════════\n\nSTEP 1 — Infrastructure:\n  PM2 process status + memory for all 3 apps\n  Disk space and RAM usage\n  SQLite database: all 7 tables with row counts\n  OpenClaw: status, model, agents registered\n\nSTEP 2 — API Endpoints (14 tests):\n  GET /api/projects, /api/tasks, /api/agents, /api/notifications\n  GET /api/execution-log, /api/events (SSE)\n  GET /api/projects/[id], /api/projects/[id]/tasks\n  GET /api/projects/[id]/pipeline, /api/projects/[id]/files\n  GET /api/ideas, /api/jobs/nonexistent\n  POST /api/chat/send (streaming)\n\nSTEP 3 — Page Routes (14 pages):\n  All main pages: Dashboard, Projects, Ideas, Chat, Agents, Memory\n  Skills, Cron, Command Center, Settings, Self-Dev\n  Old /dashboard/chat (should redirect)\n  Project detail page\n  Deleted pages (should be 404)\n\nSTEP 4 — Feature Workflows (7 tests):\n  Ideas pipeline: submit idea -> get jobId instantly\n  Chat: connects to OpenClaw and streams SSE\n  Chat: executes bash tools on server\n  Project CRUD: create and list\n  Task CRUD: create in project\n  Notifications: create and persist\n  SSE: broadcasts events to connected clients\n\nSTEP 5 — Security (8 checks):\n  Path traversal blocked in Files API\n  Protected files blocked in chat\n  Dangerous bash commands blocked\n  OpenClaw gateway requires auth token\n  OpenClaw not exposed externally\n  ANTHROPIC_API_KEY in .env.local\n  .env.local excluded from git\n  No hardcoded secrets in source\n  OpenClaw token not hardcoded\n\nSTEP 6 — Code Quality:\n  TypeScript errors count\n  Build size\n  Orphaned pages not linked in sidebar\n  Temp file cleanup\n  JSON files backed up\n  Git status\n\nSTEP 7 — Architecture diagram in report\n\nSTEP 8 — Final summary + Telegram report + save audit file",
+      "tasks": []
+    }
+  ],
+  "status": "analyzed",
+  "hasApprovedTasks": false
+}
