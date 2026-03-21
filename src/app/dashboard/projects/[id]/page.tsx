@@ -125,6 +125,7 @@ export default function ProjectDetailPage() {
           <TabsTrigger value="pipeline">Pipeline</TabsTrigger>
           <TabsTrigger value="tasks">Tasks ({totalTasks})</TabsTrigger>
           <TabsTrigger value="preview">Preview</TabsTrigger>
+          <TabsTrigger value="files">Files</TabsTrigger>
           <TabsTrigger value="settings">Settings</TabsTrigger>
         </TabsList>
 
@@ -214,6 +215,16 @@ export default function ProjectDetailPage() {
                   <p className="text-xs text-muted-foreground mt-1">Add a preview URL in Settings tab</p>
                 </div>
               )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Files Tab */}
+        <TabsContent value="files">
+          <Card>
+            <CardContent className="pt-4 h-96">
+              <iframe src={`/api/projects/${projectId}/files?path=/src`}
+                className="w-full h-full border-0" title="Files" />
             </CardContent>
           </Card>
         </TabsContent>

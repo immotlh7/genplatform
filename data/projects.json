@@ -1,0 +1,81 @@
+[
+  {
+    "id": "genplatform-ai",
+    "name": "GenPlatform.ai",
+    "description": "Mission Control Dashboard for AI agents and automation",
+    "slug": "genplatform",
+    "status": "active",
+    "progress": 75,
+    "priority": "high",
+    "color": "#4F46E5",
+    "initials": "GP",
+    "techStack": [
+      "Next.js",
+      "TypeScript",
+      "Tailwind",
+      "shadcn/ui"
+    ],
+    "deployUrl": "https://app.gen3.ai",
+    "previewUrl": "https://app.gen3.ai",
+    "subdomain": "app",
+    "repoPath": "/root/genplatform",
+    "githubUrl": "https://github.com/immotlh7/genplatform",
+    "pipeline": {
+      "idea": {
+        "status": "done",
+        "completedAt": "2026-03-18"
+      },
+      "analysis": {
+        "status": "done",
+        "completedAt": "2026-03-18"
+      },
+      "planning": {
+        "status": "done",
+        "completedAt": "2026-03-19"
+      },
+      "development": {
+        "status": "active",
+        "total": 127,
+        "completed": 48
+      },
+      "review": {
+        "status": "pending"
+      },
+      "security": {
+        "status": "pending"
+      },
+      "deploy": {
+        "status": "pending",
+        "liveUrl": "https://app.gen3.ai"
+      }
+    },
+    "agents": [
+      {
+        "name": "Frontend Dev",
+        "status": "active",
+        "currentTask": "T-47: Fix dashboard cards",
+        "badge": "building"
+      },
+      {
+        "name": "Backend Dev",
+        "status": "active",
+        "currentTask": "T-48: API route fix",
+        "badge": "coding"
+      },
+      {
+        "name": "QA",
+        "status": "active",
+        "currentTask": "T-45: Review login flow",
+        "badge": "reviewing"
+      },
+      {
+        "name": "Security",
+        "status": "idle",
+        "currentTask": "idle",
+        "badge": "idle"
+      }
+    ],
+    "createdAt": "2026-03-18T00:00:00.000Z",
+    "lastActivity": "2026-03-21T01:03:03.305Z"
+  }
+]

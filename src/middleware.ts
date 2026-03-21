@@ -16,6 +16,10 @@ const publicApiPaths = [
   "/api/webhook/",
   "/api/settings",
   "/api/health",
+  "/api/projects",
+  "/api/tasks",
+  "/api/ideas",
+  "/api/chat/",
   "/api/csrf-token",
 ];
 
