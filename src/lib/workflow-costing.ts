@@ -9,6 +9,7 @@
  */
 
 import { supabase } from '@/lib/supabase-client';
+import { supabase } from '@/lib/supabase';
 
 export interface ResourceCost {
   type: 'compute' | 'storage' | 'api_call' | 'data_transfer' | 'external_service';

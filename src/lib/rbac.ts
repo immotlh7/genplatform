@@ -4,6 +4,7 @@
  */
 
 import { authHelpers, supabaseHelpers, TeamMember } from './supabase'
+import { supabase } from '@/lib/supabase';
 
 // Role hierarchy (higher number = more permissions)
 export const ROLE_HIERARCHY = {

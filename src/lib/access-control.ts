@@ -5,6 +5,7 @@
 
 import { authHelpers, supabaseHelpers, supabaseAdmin } from './supabase'
 import { getCurrentUser, Role, hasPermission } from './rbac'
+import { supabase } from '@/lib/supabase';
 
 export interface User {
   id: string

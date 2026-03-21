@@ -1,4 +1,5 @@
 import { supabase } from './supabase'
+import { supabase } from '@/lib/supabase';
 
 // Migration scripts for database schema updates
 export class DatabaseMigrations {

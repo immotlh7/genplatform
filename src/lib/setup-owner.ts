@@ -4,6 +4,7 @@
  */
 
 import { supabaseAdmin } from './supabase'
+import { supabase } from '@/lib/supabase';
 
 const OWNER_EMAIL = 'medthedev@gmail.com'
 const OWNER_NAME = 'Med'

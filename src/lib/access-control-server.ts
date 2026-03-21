@@ -1,4 +1,5 @@
 import { headers } from 'next/headers'
+import { supabase } from '@/lib/supabase';
 
 // User interface for type safety
 export interface User {

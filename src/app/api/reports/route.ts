@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 // Supabase disabled
 import { cookies } from 'next/headers'
+import { supabase } from '@/lib/supabase';
 
 interface Report {
   id: string
