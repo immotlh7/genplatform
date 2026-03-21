@@ -22,7 +22,6 @@ import {
 } from 'lucide-react'
 import { getCurrentUserClient, canAccessProject, getAccessLevel } from '@/lib/access-control'
 import type { User } from '@/lib/access-control'
-import { supabase } from '@/lib/supabase'
 
 interface Project {
   id: string
@@ -82,76 +81,32 @@ export default function ProjectsPage() {
         return
       }
 
-      // Load projects from Supabase or demo data
+      // Load projects from API (reads from projects.json)
       let allProjects: Project[]
       
       try {
-        const { data: supabaseProjects, error } = await supabase
-          .from('projects')
-          .select('*')
-          .neq('status', 'deleted')
-          .order('created_at', { ascending: false })
-
-        if (error) throw error
-
-        // Convert Supabase data to Project interface
-        allProjects = supabaseProjects?.map(p => ({
+        const res = await fetch('/api/projects')
+        const data = await res.json()
+        const rawProjects = data.projects || data || []
+        
+        allProjects = rawProjects.map((p: any) => ({
           id: p.id,
           name: p.name,
           description: p.description || '',
-          status: p.status,
-          progress: p.progress,
-          githubUrl: p.github_repo,
-          deployUrl: p.vercel_url,
-          lastActivity: p.updated_at,
-          technologies: Array.isArray(p.tech_stack) ? p.tech_stack : [],
-          createdAt: p.created_at,
-          commits: 0 // Will be populated from GitHub API later
-        })) || []
-      } catch (supabaseError) {
+          status: p.status || 'active',
+          progress: p.progress || 0,
+          githubUrl: p.githubUrl || p.github_repo,
+          deployUrl: p.deployUrl || p.previewUrl,
+          lastActivity: p.lastActivity || p.updatedAt || new Date().toISOString(),
+          technologies: p.techStack || p.technologies || [],
+          createdAt: p.createdAt || new Date().toISOString(),
+          commits: p.commits || 0
+        }))
+      } catch (fetchError) {
         if (process.env.NODE_ENV === 'development') {
-          console.warn('Failed to load projects from Supabase, using demo data:', supabaseError);
+          console.warn('Failed to load projects:', fetchError);
         }
-        
-        // Fallback to demo data
-        allProjects = [
-          {
-            id: 'genplatform',
-            name: 'GenPlatform.ai',
-            description: 'Mission Control Dashboard for AI agents and automation',
-            status: 'active',
-            progress: 75,
-            githubUrl: 'https://github.com/immotlh7/genplatform',
-            deployUrl: 'https://genplatform-six.vercel.app',
-            lastActivity: new Date().toISOString(),
-            technologies: ['Next.js', 'TypeScript', 'Tailwind', 'shadcn/ui'],
-            createdAt: '2026-03-18T03:00:00Z',
-            commits: 47
-          },
-          {
-            id: 'agent-skills',
-            name: 'Agent Skills Library',
-            description: 'Collection of reusable skills for AI agents',
-            status: 'active',
-            progress: 45,
-            githubUrl: 'https://github.com/openclaw/skills',
-            lastActivity: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-            technologies: ['Python', 'TypeScript', 'CLI'],
-            createdAt: '2026-03-15T10:00:00Z',
-            commits: 23
-          },
-          {
-            id: 'memory-system',
-            name: 'Distributed Memory System',
-            description: 'Scalable memory and knowledge management for AI',
-            status: 'paused',
-            progress: 20,
-            lastActivity: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
-            technologies: ['Node.js', 'PostgreSQL', 'Vector DB'],
-            createdAt: '2026-03-10T15:00:00Z',
-            commits: 12
-          }
-        ]
+        allProjects = []
       }
 
       // Get access levels for each project
