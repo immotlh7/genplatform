@@ -20,6 +20,8 @@ const publicApiPaths = [
   "/api/projects",
   "/api/tasks",
   "/api/ideas",
+  "/api/jobs",
+  "/api/events",
   "/api/chat/",
   "/api/csrf-token",
   "/api/agents",

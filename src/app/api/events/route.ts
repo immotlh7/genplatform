@@ -1,58 +1,57 @@
-import fs from 'fs';
-import path from 'path';
+import { subscribeSSE } from '@/lib/queue';
+import { LogRepo, NotificationRepo } from '@/lib/repositories';
 
-// In-memory event store (shared across requests in same process)
-const clients = new Set<ReadableStreamDefaultController>();
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
 
-// Push event to all connected clients
-export function broadcastEvent(type: string, data: any) {
-  const message = `data: ${JSON.stringify({ type, data, timestamp: Date.now() })}\n\n`;
-  clients.forEach(controller => {
-    try { controller.enqueue(new TextEncoder().encode(message)); } catch {}
-  });
-}
-
-// Also save to execution-log.json
-const LOG_PATH = path.join(process.cwd(), 'data', 'execution-log.json');
-
-export function logEvent(type: string, message: string, projectId?: string) {
-  const entry = {
-    timestamp: new Date().toISOString(),
-    type,
-    message,
-    projectId: projectId || null
-  };
-  
-  try {
-    let log: any[] = [];
-    try { log = JSON.parse(fs.readFileSync(LOG_PATH, 'utf-8')); } catch {}
-    log.push(entry);
-    // Keep last 500 entries
-    if (log.length > 500) log = log.slice(-500);
-    fs.writeFileSync(LOG_PATH, JSON.stringify(log, null, 2));
-  } catch {}
-  
-  broadcastEvent(type, { message, projectId });
-}
-
-// SSE endpoint
 export async function GET() {
+  const encoder = new TextEncoder();
+
   const stream = new ReadableStream({
     start(controller) {
-      clients.add(controller);
-      // Send initial connection message
-      controller.enqueue(new TextEncoder().encode(`data: ${JSON.stringify({ type: 'connected' })}\n\n`));
+      const sendInitial = () => {
+        try {
+          const log = LogRepo.getRecent(10);
+          const unread = NotificationRepo.unreadCount();
+          const msg = `data: ${JSON.stringify({
+            event: 'connected',
+            log,
+            unreadNotifications: unread,
+          })}\n\n`;
+          controller.enqueue(encoder.encode(msg));
+        } catch {}
+      };
+      sendInitial();
+
+      const unsubscribe = subscribeSSE((data: string) => {
+        try { controller.enqueue(encoder.encode(data)); } catch {}
+      });
+
+      const heartbeat = setInterval(() => {
+        try {
+          controller.enqueue(encoder.encode(`data: ${JSON.stringify({ event: 'ping' })}\n\n`));
+        } catch {
+          clearInterval(heartbeat);
+          unsubscribe();
+        }
+      }, 25000);
+
+      (controller as any)._cleanup = () => {
+        clearInterval(heartbeat);
+        unsubscribe();
+      };
     },
     cancel(controller) {
-      clients.delete(controller);
+      if ((controller as any)._cleanup) (controller as any)._cleanup();
     }
   });
 
   return new Response(stream, {
     headers: {
       'Content-Type': 'text/event-stream',
-      'Cache-Control': 'no-cache',
+      'Cache-Control': 'no-cache, no-transform',
       'Connection': 'keep-alive',
-    }
+      'X-Accel-Buffering': 'no',
+    },
   });
 }
