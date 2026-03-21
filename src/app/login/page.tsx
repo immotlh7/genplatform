@@ -30,7 +30,7 @@ export default function LoginPage() {
         if (response.ok) {
           const data = await response.json();
           if (data.authenticated) {
-            router.push("/dashboard");
+            window.location.href = "/dashboard";
             return;
           }
         }
@@ -66,7 +66,7 @@ export default function LoginPage() {
           title: "Welcome back!",
           description: "Successfully signed in.",
         });
-        router.push("/dashboard");
+        window.location.href = "/dashboard";
       } else {
         toast({
           title: "Error",

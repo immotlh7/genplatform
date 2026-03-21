@@ -10,10 +10,18 @@ export default function LoginLayout({
 }: {
   children: React.ReactNode;
 }) {
-  // Login page has its own clean layout without sidebar or dashboard shell
   return (
-    <div className="min-h-screen bg-background">
-      {children}
-    </div>
+    <>
+      {/* Hide sidebar and navbar on login page */}
+      <style>{`
+        aside, nav, .lg\\:pl-72, [class*="sidebar"], [class*="Sidebar"],
+        header { display: none !important; }
+        .lg\\:pl-72 { padding-left: 0 !important; }
+        main { padding: 0 !important; }
+      `}</style>
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        {children}
+      </div>
+    </>
   );
 }
