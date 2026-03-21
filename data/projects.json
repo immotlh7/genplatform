@@ -84,7 +84,7 @@
     "description": "Simple task management app with clean UI. Create, organize, and track tasks with priority and status.",
     "slug": "taskflow",
     "status": "active",
-    "progress": 0,
+    "progress": 75,
     "priority": "high",
     "color": "#059669",
     "initials": "TF",
@@ -113,7 +113,7 @@
       "development": {
         "status": "active",
         "total": 8,
-        "completed": 0
+        "completed": 6
       },
       "review": {
         "status": "pending"
@@ -122,8 +122,9 @@
         "status": "pending"
       },
       "deploy": {
-        "status": "pending",
-        "liveUrl": "https://taskflow.gen3.ai"
+        "status": "done",
+        "liveUrl": "https://taskflow.gen3.ai",
+        "completedAt": "2026-03-21"
       }
     },
     "agents": [

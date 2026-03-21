@@ -409,3 +409,21 @@
 [2026-03-21T01:56:01.738Z] 📊 Queue: 255/255 done, 0 approved, 0 executing
 [2026-03-21T01:56:01.739Z] ✅ System idle - no work pending
 [2026-03-21T01:56:01.746Z] Done. Issues: 0, Fixes: 0
+[2026-03-21T01:57:01.594Z] --- Watchdog run ---
+[2026-03-21T01:57:01.678Z] ✅ Site up
+[2026-03-21T01:57:01.861Z] ✅ pm2 online
+[2026-03-21T01:57:01.870Z] 📊 Queue: 255/255 done, 0 approved, 0 executing
+[2026-03-21T01:57:01.870Z] ✅ System idle - no work pending
+[2026-03-21T01:57:01.876Z] Done. Issues: 0, Fixes: 0
+[2026-03-21T01:58:01.730Z] --- Watchdog run ---
+[2026-03-21T01:58:01.756Z] ✅ Site up
+[2026-03-21T01:58:01.925Z] ✅ pm2 online
+[2026-03-21T01:58:01.932Z] 📊 Queue: 255/255 done, 0 approved, 0 executing
+[2026-03-21T01:58:01.932Z] ✅ System idle - no work pending
+[2026-03-21T01:58:01.937Z] Done. Issues: 0, Fixes: 0
+[2026-03-21T01:59:01.806Z] --- Watchdog run ---
+[2026-03-21T01:59:01.828Z] ✅ Site up
+[2026-03-21T01:59:01.999Z] ✅ pm2 online
+[2026-03-21T01:59:02.006Z] 📊 Queue: 255/255 done, 0 approved, 0 executing
+[2026-03-21T01:59:02.007Z] ✅ System idle - no work pending
+[2026-03-21T01:59:02.105Z] Done. Issues: 0, Fixes: 0

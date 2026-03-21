@@ -3,7 +3,21 @@ import fs from 'fs/promises';
 import path from 'path';
 
 async function getRepoPath(projectId: string): Promise<string> {
-  // For now, GenPlatform is the main project
+  try {
+    const projectsFile = '/root/genplatform/data/projects.json';
+    const projects = JSON.parse(await fs.readFile(projectsFile, 'utf-8'));
+    const project = projects.find((p: any) => p.id === projectId);
+    if (project?.repoPath) return project.repoPath;
+  } catch {}
+  // Fallback: check common paths
+  const candidates = [
+    `/root/projects/${projectId}`,
+    `/root/${projectId}`,
+    '/root/genplatform',
+  ];
+  for (const c of candidates) {
+    try { await fs.access(c); return c; } catch {}
+  }
   return '/root/genplatform';
 }
 
