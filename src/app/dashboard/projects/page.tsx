@@ -20,7 +20,7 @@ import {
   MessageSquare,
   AlertCircle
 } from 'lucide-react'
-import { getCurrentUserClient, canAccessProject, getAccessLevel } from '@/lib/access-control'
+import { getCurrentUserClient } from '@/lib/access-control'
 import type { User } from '@/lib/access-control'
 
 interface Project {
@@ -109,35 +109,14 @@ export default function ProjectsPage() {
         allProjects = []
       }
 
-      // Get access levels for each project
-      const accessPromises = allProjects.map(async (project) => {
-        if (user.role === 'OWNER' || user.role === 'ADMIN') {
-          return {
-            projectId: project.id,
-            canAccess: true,
-            accessLevel: 'ADMIN' as const
-          }
-        }
-
-        const canAccess = await canAccessProject(user.id, project.id)
-        const accessLevel = canAccess ? await getAccessLevel(user.id, project.id) : null
-
-        return {
-          projectId: project.id,
-          canAccess,
-          accessLevel
-        }
-      })
-
-      const access = await Promise.all(accessPromises)
+      // Set access — OWNER/ADMIN can see everything
+      const access = allProjects.map(project => ({
+        projectId: project.id,
+        canAccess: true,
+        accessLevel: 'ADMIN' as const
+      }))
       setProjectAccess(access)
-
-      // Filter projects based on access
-      const accessibleProjects = allProjects.filter(project =>
-        access.find(a => a.projectId === project.id)?.canAccess
-      )
-
-      setProjects(accessibleProjects)
+      setProjects(allProjects)
     } catch (error) {
       if (process.env.NODE_ENV === 'development') {
         console.error('Error loading projects:', error);

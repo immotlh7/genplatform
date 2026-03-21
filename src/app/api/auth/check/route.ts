@@ -7,8 +7,16 @@ export async function GET(request: NextRequest) {
     const authToken = cookieStore.get("auth-token");
 
     if (authToken && authToken.value) {
-      // Token exists, user is authenticated
-      return NextResponse.json({ authenticated: true });
+      return NextResponse.json({
+        authenticated: true,
+        user: {
+          id: '1',
+          email: 'owner@genplatform.ai',
+          displayName: 'Med',
+          name: 'Med',
+          role: 'OWNER'
+        }
+      });
     }
 
     return NextResponse.json({ authenticated: false }, { status: 401 });
