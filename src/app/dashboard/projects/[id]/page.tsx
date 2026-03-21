@@ -1,361 +1,221 @@
-"use client"
+'use client';
+import { useState, useEffect } from 'react';
+import { useRouter, useParams } from 'next/navigation';
 
-import { useState, useEffect } from 'react'
-import { useParams } from 'next/navigation'
-import { FilesViewer } from '@/components/projects/FilesViewer'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { ExternalLink, Settings, MessageSquare, RefreshCw, Loader2, Activity } from 'lucide-react'
-import { ProjectPipeline } from '@/components/projects/ProjectPipeline'
-import { ActiveAgents } from '@/components/projects/ActiveAgents'
-import { ExecutionLog } from '@/components/projects/ExecutionLog'
-import Link from 'next/link'
+const TABS = ['Pipeline', 'Tasks', 'Files', 'Chat', 'Preview', 'Settings'] as const;
+type Tab = typeof TABS[number];
 
-interface Project {
-  id: string
-  name: string
-  description: string
-  status: string
-  progress: number
-  previewUrl?: string
-  deployUrl?: string
-  githubUrl?: string
-  techStack: string[]
-  totalTasks?: number
-  tasksCompleted?: number
-  lastDeployedAt?: string
-  pipeline?: any
-}
-
-interface LiveLogEntry {
-  time: string
-  message: string
-  type: string
-}
+const STAGES = [
+  { id: 'idea', emoji: '💡', label: 'Idea' }, { id: 'analysis', emoji: '🔬', label: 'Analysis' },
+  { id: 'planning', emoji: '📋', label: 'Planning' }, { id: 'development', emoji: '💻', label: 'Development' },
+  { id: 'review', emoji: '🔍', label: 'Review' }, { id: 'security', emoji: '🛡️', label: 'Security' },
+  { id: 'deploy', emoji: '✅', label: 'Deploy' },
+];
 
 export default function ProjectDetailPage() {
-  const params = useParams()
-  const projectId = params.id as string
-  const [project, setProject] = useState<Project | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [tasks, setTasks] = useState<any[]>([])
-  const [liveLog, setLiveLog] = useState<LiveLogEntry[]>([])
-  const [previewKey, setPreviewKey] = useState(0)
+  const router = useRouter();
+  const params = useParams();
+  const projectId = params.id as string;
+  const [project, setProject] = useState<any>(null);
+  const [pipeline, setPipeline] = useState<any>({});
+  const [tasks, setTasks] = useState<any[]>([]);
+  const [activeTab, setActiveTab] = useState<Tab>('Pipeline');
+  const [selectedStage, setSelectedStage] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
+  const [liveLog, setLiveLog] = useState<any[]>([]);
 
   useEffect(() => {
-    loadProject()
-    loadTasks()
-  }, [projectId])
+    Promise.all([
+      fetch(`/api/projects/${projectId}`).then(r => { if (!r.ok) throw new Error(); return r.json(); }),
+      fetch(`/api/projects/${projectId}/pipeline`).then(r => r.json()).catch(() => ({})),
+      fetch(`/api/projects/${projectId}/tasks`).then(r => r.json()).catch(() => []),
+      fetch('/api/execution-log').then(r => r.json()).catch(() => []),
+    ]).then(([proj, pipe, taskList, log]) => {
+      setProject(proj); setPipeline(pipe); setTasks(Array.isArray(taskList) ? taskList : []);
+      setLiveLog(Array.isArray(log) ? log.slice(-8).reverse() : []); setLoading(false);
+    }).catch(() => { setError(true); setLoading(false); });
+  }, [projectId]);
 
-  // SSE connection for live updates
   useEffect(() => {
-    let es: EventSource | null = null
-    try {
-      es = new EventSource('/api/events')
-      es.onmessage = (e) => {
-        try {
-          const event = JSON.parse(e.data)
-          
-          // Only handle events for this project (or global events)
-          if (event.data?.projectId && event.data.projectId !== projectId) return
-          
-          // Add to live log
-          setLiveLog(prev => [{
-            time: new Date().toLocaleTimeString('en', { hour12: false }),
-            message: event.data?.message || event.type,
-            type: event.type
-          }, ...prev].slice(0, 20))
-          
-          // Refresh task counts if a task was completed
-          if (event.type === 'task_complete') {
-            loadTasks()
-          }
-          
-          // Refresh preview on build success
-          if (event.type === 'build_success' || event.type === 'app_restarted') {
-            setTimeout(() => setPreviewKey(Date.now()), 2000)
-          }
-        } catch {}
-      }
-    } catch {}
-    return () => { es?.close() }
-  }, [projectId])
+    const es = new EventSource('/api/events');
+    es.onmessage = (e) => { try { const ev = JSON.parse(e.data); if (ev.event === 'job_done') fetch(`/api/projects/${projectId}`).then(r => r.json()).then(setProject).catch(() => {}); } catch {} };
+    return () => es.close();
+  }, [projectId]);
 
-  const loadProject = async () => {
-    try {
-      const res = await fetch(`/api/projects/${projectId}`)
-      if (res.ok) {
-        const data = await res.json()
-        setProject(data)
-      }
-    } catch {} finally { setLoading(false) }
-  }
+  if (loading) return <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}><p style={{ fontSize: 13, color: 'var(--color-text-secondary)' }}>Loading...</p></div>;
+  if (error || !project) return <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', gap: 12 }}><p style={{ fontSize: 14, color: 'var(--color-text-secondary)' }}>Project not found</p><button onClick={() => router.push('/dashboard/projects')} style={{ fontSize: 12, padding: '6px 14px', borderRadius: 8, border: '0.5px solid var(--color-border-tertiary)', background: 'transparent', cursor: 'pointer' }}>← Back</button></div>;
 
-  const loadTasks = async () => {
-    try {
-      const res = await fetch(`/api/projects/${projectId}/tasks`)
-      if (res.ok) {
-        const data = await res.json()
-        setTasks(data.tasks || [])
-      }
-    } catch {}
-  }
-
-  if (loading) return (
-    <div className="flex items-center justify-center h-64">
-      <Loader2 className="h-8 w-8 animate-spin" />
-    </div>
-  )
-
-  if (!project) return (
-    <div className="p-6 text-center">
-      <p className="text-muted-foreground">Project not found</p>
-      <Link href="/dashboard/projects"><Button variant="outline" className="mt-4">Back to Projects</Button></Link>
-    </div>
-  )
-
-  const doneTasks = tasks.filter(t => t.status === 'done').length
-  const totalTasks = tasks.length || project.totalTasks || 0
-  const previewUrl = project.previewUrl || project.deployUrl
+  const pd = project.pipeline || {};
+  const totalTasks = pd.development?.total || tasks.length || 0;
+  const completedTasks = pd.development?.completed || tasks.filter((t: any) => t.status === 'done').length || 0;
+  const progress = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : project.progress || 0;
 
   return (
-    <div className="space-y-4 p-6">
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
       {/* Header */}
-      <div className="flex items-start justify-between">
-        <div>
-          <div className="flex items-center gap-3 mb-1">
-            <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white font-bold text-lg">
-              {project.name[0]}
-            </div>
-            <div>
-              <h1 className="text-xl font-bold">{project.name}</h1>
-              <div className="flex items-center gap-2 mt-0.5">
-                <Badge variant="outline" className="capitalize text-xs">{project.status}</Badge>
-                <span className="text-xs text-muted-foreground">{project.progress}% complete</span>
-                {previewUrl && (
-                  <a href={previewUrl} target="_blank" rel="noopener noreferrer"
-                    className="text-xs text-blue-500 hover:underline flex items-center gap-1">
-                    {previewUrl.replace('https://', '')}
-                    <ExternalLink className="h-2.5 w-2.5" />
-                  </a>
-                )}
-              </div>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 24px', borderBottom: '0.5px solid var(--color-border-tertiary)', flexShrink: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <button onClick={() => router.push('/dashboard/projects')} style={{ fontSize: 12, color: 'var(--color-text-secondary)', background: 'none', border: 'none', cursor: 'pointer' }}>←</button>
+          <div style={{ width: 36, height: 36, borderRadius: 8, background: project.color || '#4F46E5', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 500, color: '#fff', flexShrink: 0 }}>{project.initials || project.name?.slice(0, 2).toUpperCase()}</div>
+          <div>
+            <h1 style={{ fontSize: 15, fontWeight: 500, margin: 0 }}>{project.name}</h1>
+            <div style={{ fontSize: 11, color: 'var(--color-text-secondary)', display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span style={{ color: '#1D9E75' }}>{project.status}</span><span>·</span><span>{progress}%</span>
+              {project.deployUrl && <><span>·</span><a href={project.deployUrl} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--color-text-info)', textDecoration: 'none' }}>{project.deployUrl?.replace('https://', '')}</a></>}
             </div>
           </div>
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={() => { loadProject(); loadTasks() }}>
-            <RefreshCw className="h-3.5 w-3.5" />
-          </Button>
-          <Link href={`/dashboard/claude`}>
-            <Button size="sm" className="gap-1.5">
-              <MessageSquare className="h-3.5 w-3.5" /> Chat
-            </Button>
-          </Link>
-        </div>
+        <button onClick={() => setActiveTab('Chat')} style={{ fontSize: 12, padding: '6px 14px', borderRadius: 8, cursor: 'pointer', border: '0.5px solid var(--color-border-tertiary)', background: 'transparent' }}>Open chat</button>
       </div>
 
-      {/* Tech stack */}
-      {project.techStack?.length > 0 && (
-        <div className="flex gap-1.5 flex-wrap">
-          {project.techStack.map(t => (
-            <Badge key={t} variant="secondary" className="text-xs">{t}</Badge>
-          ))}
+      {/* Tabs */}
+      <div style={{ display: 'flex', gap: 0, padding: '0 24px', borderBottom: '0.5px solid var(--color-border-tertiary)', flexShrink: 0 }}>
+        {TABS.map(tab => (<button key={tab} onClick={() => setActiveTab(tab)} style={{ padding: '9px 16px', fontSize: 13, cursor: 'pointer', background: 'transparent', border: 'none', borderBottom: activeTab === tab ? '2px solid var(--color-text-primary)' : '2px solid transparent', color: activeTab === tab ? 'var(--color-text-primary)' : 'var(--color-text-secondary)', fontWeight: activeTab === tab ? 500 : 400 }}>{tab}</button>))}
+      </div>
+
+      {/* Content */}
+      <div style={{ flex: 1, overflow: 'auto' }}>
+        {activeTab === 'Pipeline' && <PipelineTab project={project} pipeline={pipeline} pd={pd} tasks={tasks} liveLog={liveLog} totalTasks={totalTasks} completedTasks={completedTasks} progress={progress} selectedStage={selectedStage} setSelectedStage={setSelectedStage} projectId={projectId} />}
+        {activeTab === 'Tasks' && <TasksTab tasks={tasks} projectId={projectId} onUpdate={() => fetch(`/api/projects/${projectId}/tasks`).then(r => r.json()).then(setTasks).catch(() => {})} />}
+        {activeTab === 'Chat' && <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', gap: 12, padding: 24 }}><div style={{ fontSize: 32, opacity: 0.3 }}>💬</div><p style={{ fontSize: 14, fontWeight: 500, margin: 0 }}>Chat for {project.name}</p><button onClick={() => router.push(`/dashboard/claude`)} style={{ marginTop: 8, padding: '10px 24px', borderRadius: 10, fontSize: 13, fontWeight: 500, cursor: 'pointer', background: '#185FA5', color: '#fff', border: 'none' }}>Open Chat →</button></div>}
+        {activeTab === 'Preview' && <PreviewTab project={project} />}
+        {activeTab === 'Files' && <div style={{ padding: 24, fontSize: 13, color: 'var(--color-text-secondary)' }}>File browser coming soon. Repo path: {project.repoPath || 'not configured'}</div>}
+        {activeTab === 'Settings' && <SettingsTab project={project} />}
+      </div>
+
+      {/* Control bar */}
+      <div style={{ flexShrink: 0, padding: '10px 24px', borderTop: '0.5px solid var(--color-border-tertiary)', display: 'flex', alignItems: 'center', gap: 16, background: 'var(--color-background-primary)' }}>
+        <div style={{ flex: 1, height: 4, borderRadius: 2, background: 'var(--color-border-tertiary)', overflow: 'hidden' }}><div style={{ height: '100%', width: `${progress}%`, background: '#1D9E75', borderRadius: 2, transition: 'width 0.4s' }} /></div>
+        <span style={{ fontSize: 11, color: 'var(--color-text-secondary)', whiteSpace: 'nowrap' }}>{completedTasks}/{totalTasks} tasks ({progress}%)</span>
+        <button onClick={() => setActiveTab('Tasks')} style={{ fontSize: 11, padding: '4px 12px', borderRadius: 6, cursor: 'pointer', border: '0.5px solid var(--color-border-tertiary)', background: 'transparent' }}>View tasks</button>
+      </div>
+    </div>
+  );
+}
+
+function PipelineTab({ project, pipeline, pd, tasks, liveLog, totalTasks, completedTasks, progress, selectedStage, setSelectedStage, projectId }: any) {
+  const getStatus = (id: string) => pd[id]?.status || 'pending';
+  const sc = (s: string) => s === 'done' ? '#1D9E75' : s === 'active' ? '#EF9F27' : 'var(--color-text-secondary)';
+  const sb = (s: string) => s === 'done' ? 'rgba(29,158,117,0.10)' : s === 'active' ? 'rgba(239,159,39,0.10)' : 'var(--color-background-secondary)';
+
+  return (
+    <div style={{ padding: 24 }}>
+      <div style={{ display: 'flex', alignItems: 'center', overflowX: 'auto', paddingBottom: 8, marginBottom: 20 }}>
+        {STAGES.map((stage, i) => {
+          const status = getStatus(stage.id); const sel = selectedStage === stage.id; const info = pd[stage.id] || {};
+          return (
+            <div key={stage.id} style={{ display: 'flex', alignItems: 'center', flexShrink: 0 }}>
+              <div onClick={() => setSelectedStage(sel ? null : stage.id)} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '10px 14px', borderRadius: 12, cursor: 'pointer', minWidth: 88, border: sel ? `1px solid ${sc(status)}` : '0.5px solid var(--color-border-tertiary)', background: sel ? sb(status) : 'var(--color-background-secondary)' }}>
+                <div style={{ width: 38, height: 38, borderRadius: 19, background: sb(status), display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, marginBottom: 6 }}>{stage.emoji}</div>
+                <span style={{ fontSize: 11, fontWeight: 500 }}>{stage.label}</span>
+                <span style={{ fontSize: 10, color: sc(status), marginTop: 2 }}>{status === 'active' && info.total ? `${info.completed || 0}/${info.total}` : status === 'done' ? 'Done' : '—'}</span>
+              </div>
+              {i < STAGES.length - 1 && <div style={{ display: 'flex', alignItems: 'center', padding: '0 2px', flexShrink: 0 }}><div style={{ width: 16, height: 2, borderRadius: 1, background: getStatus(STAGES[i + 1].id) !== 'pending' || status === 'done' ? '#1D9E75' : 'var(--color-border-tertiary)' }} /><span style={{ fontSize: 10, color: 'var(--color-text-secondary)' }}>›</span></div>}
+            </div>
+          );
+        })}
+      </div>
+
+      {selectedStage && (
+        <div style={{ marginBottom: 20, padding: 20, borderRadius: 12, border: `0.5px solid ${sc(getStatus(selectedStage))}40`, background: 'var(--color-background-secondary)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+            <h3 style={{ fontSize: 15, fontWeight: 500, margin: 0 }}>{STAGES.find(s => s.id === selectedStage)?.emoji} {selectedStage.charAt(0).toUpperCase() + selectedStage.slice(1)} Stage</h3>
+            <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+              <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 4, background: `${sc(getStatus(selectedStage))}15`, color: sc(getStatus(selectedStage)) }}>{getStatus(selectedStage)}</span>
+              <button onClick={() => setSelectedStage(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 16, color: 'var(--color-text-secondary)' }}>✕</button>
+            </div>
+          </div>
+          {Object.keys(pipeline[selectedStage] || {}).length === 0 ? (
+            <p style={{ fontSize: 13, color: 'var(--color-text-secondary)' }}>{getStatus(selectedStage) === 'pending' ? 'This stage has not started yet.' : 'No content available.'}</p>
+          ) : (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 16 }}>
+              {Object.entries(pipeline[selectedStage] || {}).filter(([k]) => k !== 'status' && k !== 'total' && k !== 'completed').map(([key, value]: [string, any]) => (
+                <div key={key}><div style={{ fontSize: 11, color: 'var(--color-text-secondary)', marginBottom: 5, textTransform: 'uppercase', fontWeight: 500 }}>{key.replace(/_/g, ' ')}</div><div style={{ fontSize: 13, lineHeight: 1.6, whiteSpace: 'pre-line' }}>{typeof value === 'object' ? JSON.stringify(value, null, 2).slice(0, 400) : String(value).slice(0, 300)}</div></div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
-      <Tabs defaultValue="pipeline">
-        <TabsList>
-          <TabsTrigger value="pipeline">Pipeline</TabsTrigger>
-          <TabsTrigger value="tasks">Tasks ({totalTasks})</TabsTrigger>
-          <TabsTrigger value="preview">Preview</TabsTrigger>
-          <TabsTrigger value="files">Files</TabsTrigger>
-          <TabsTrigger value="live">Live Feed</TabsTrigger>
-          <TabsTrigger value="settings">Settings</TabsTrigger>
-        </TabsList>
-
-        {/* Pipeline Tab */}
-        <TabsContent value="pipeline" className="space-y-4">
-          <Card>
-            <CardContent className="pt-6">
-              <ProjectPipeline
-                projectId={projectId}
-                progress={project.progress}
-                currentPhase="development"
-                tasksDone={doneTasks}
-                tasksTotal={totalTasks}
-              />
-            </CardContent>
-          </Card>
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm">Active Agents</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ActiveAgents projectId={projectId} />
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm">Live Execution Log</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ExecutionLog />
-              </CardContent>
-            </Card>
-          </div>
-        </TabsContent>
-
-        {/* Tasks Tab */}
-        <TabsContent value="tasks">
-          <Card>
-            <CardHeader className="pb-2 flex-row items-center justify-between">
-              <CardTitle className="text-sm">Tasks</CardTitle>
-              <Button size="sm" variant="outline" className="text-xs h-7">+ Add Task</Button>
-            </CardHeader>
-            <CardContent>
-              {tasks.length === 0 ? (
-                <p className="text-sm text-muted-foreground text-center py-8">No tasks yet</p>
-              ) : (
-                <div className="space-y-2">
-                  {tasks.slice(0, 30).map(task => (
-                    <div key={task.id} className="flex items-center gap-3 p-2.5 rounded-lg border hover:bg-accent/30 text-sm">
-                      <div className={`w-2 h-2 rounded-full flex-shrink-0 ${
-                        task.status === 'done' ? 'bg-green-500' :
-                        task.status === 'in_progress' ? 'bg-amber-500 animate-pulse' :
-                        'bg-gray-400'
-                      }`} />
-                      <span className="flex-1 truncate">{task.name || task.title}</span>
-                      {task.department && <Badge variant="secondary" className="text-[10px]">{task.department}</Badge>}
-                      <Badge variant="outline" className="text-[10px] flex-shrink-0">{task.status}</Badge>
-                    </div>
-                  ))}
-                  {tasks.length > 30 && (
-                    <p className="text-xs text-muted-foreground text-center pt-2">
-                      +{tasks.length - 30} more tasks
-                    </p>
-                  )}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Preview Tab */}
-        <TabsContent value="preview">
-          <Card>
-            <CardContent className="pt-4">
-              {previewUrl ? (
-                <div>
-                  <div className="flex justify-between items-center mb-3">
-                    <p className="text-sm text-muted-foreground">{previewUrl}</p>
-                    <div className="flex gap-2">
-                      <Button size="sm" variant="outline" className="gap-1.5 text-xs" onClick={() => setPreviewKey(Date.now())}>
-                        <RefreshCw className="h-3 w-3" /> Refresh
-                      </Button>
-                      <a href={previewUrl} target="_blank" rel="noopener noreferrer">
-                        <Button size="sm" variant="outline" className="gap-1.5 text-xs">
-                          <ExternalLink className="h-3 w-3" /> Open
-                        </Button>
-                      </a>
-                    </div>
-                  </div>
-                  <div className="border rounded-lg overflow-hidden bg-white" style={{ height: '500px' }}>
-                    <iframe key={previewKey} src={previewUrl} className="w-full h-full" title="Preview" />
-                  </div>
-                </div>
-              ) : (
-                <div className="text-center py-12">
-                  <p className="text-muted-foreground text-sm">No preview URL configured</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Files Tab */}
-        <TabsContent value="files">
-          <Card>
-            <CardContent className="pt-4">
-              <FilesViewer projectId={projectId} />
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Live Feed Tab */}
-        <TabsContent value="live">
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm flex items-center gap-2">
-                <Activity className="h-4 w-4 text-green-500" />
-                Live Activity Feed
-                {liveLog.length > 0 && (
-                  <span className="relative flex h-2 w-2">
-                    <span className="animate-ping absolute h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                    <span className="relative rounded-full h-2 w-2 bg-green-500"></span>
-                  </span>
-                )}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {liveLog.length === 0 ? (
-                <div className="text-center py-8">
-                  <Activity className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
-                  <p className="text-sm text-muted-foreground">Waiting for live events...</p>
-                  <p className="text-xs text-muted-foreground mt-1">Events will appear here as agents work on the project</p>
-                </div>
-              ) : (
-                <div className="space-y-1.5">
-                  {liveLog.map((entry, i) => (
-                    <div key={i} className="flex items-start gap-2 p-2 rounded text-xs bg-muted/30">
-                      <span className="text-muted-foreground font-mono flex-shrink-0">{entry.time}</span>
-                      <span className={`flex-shrink-0 ${
-                        entry.type === 'build_success' ? 'text-green-500' :
-                        entry.type === 'build_fail' ? 'text-red-500' :
-                        entry.type === 'task_complete' ? 'text-blue-500' :
-                        entry.type === 'file_modified' ? 'text-yellow-500' :
-                        'text-muted-foreground'
-                      }`}>
-                        {entry.type === 'build_success' ? '✅' :
-                         entry.type === 'build_fail' ? '❌' :
-                         entry.type === 'task_complete' ? '✔️' :
-                         entry.type === 'file_modified' ? '📝' : '📡'}
-                      </span>
-                      <span className="text-foreground">{entry.message}</span>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Settings Tab */}
-        <TabsContent value="settings">
-          <Card>
-            <CardContent className="pt-6 space-y-4">
-              <div>
-                <label className="text-sm font-medium">Description</label>
-                <p className="text-sm text-muted-foreground mt-1">{project.description || 'No description'}</p>
+      {!selectedStage && (
+        <>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 20 }}>
+            {[{ label: 'Total tasks', value: totalTasks, color: 'var(--color-text-primary)' }, { label: 'Completed', value: completedTasks, color: '#1D9E75' }, { label: 'In progress', value: tasks.filter((t: any) => t.status === 'in_progress').length, color: '#EF9F27' }, { label: 'Planned', value: tasks.filter((t: any) => t.status === 'planned').length, color: '#185FA5' }].map(s => (
+              <div key={s.label} style={{ padding: '14px 16px', borderRadius: 12, border: '0.5px solid var(--color-border-tertiary)', background: 'var(--color-background-secondary)' }}>
+                <div style={{ fontSize: 28, fontWeight: 500, color: s.color }}>{s.value}</div>
+                <div style={{ fontSize: 11, color: 'var(--color-text-secondary)', marginTop: 4 }}>{s.label}</div>
               </div>
-              {project.githubUrl && (
-                <div>
-                  <label className="text-sm font-medium">GitHub</label>
-                  <a href={project.githubUrl} target="_blank" rel="noopener noreferrer"
-                    className="block text-sm text-blue-500 hover:underline mt-1">{project.githubUrl}</a>
+            ))}
+          </div>
+          <div style={{ padding: 16, borderRadius: 12, border: '0.5px solid var(--color-border-tertiary)' }}>
+            <h3 style={{ fontSize: 13, fontWeight: 500, margin: '0 0 12px' }}>Recent activity</h3>
+            <div style={{ fontFamily: 'monospace' }}>
+              {liveLog.length === 0 ? <p style={{ fontSize: 11, color: 'var(--color-text-secondary)' }}>No recent activity</p> : liveLog.map((e: any, i: number) => (
+                <div key={i} style={{ display: 'flex', gap: 10, marginBottom: 5, fontSize: 11 }}>
+                  <span style={{ color: 'var(--color-text-secondary)', minWidth: 42, flexShrink: 0 }}>{e.timestamp ? new Date(e.timestamp).toLocaleTimeString('en', { hour: '2-digit', minute: '2-digit', hour12: false }) : '--:--'}</span>
+                  <span style={{ color: e.message?.includes('OK') || e.message?.includes('complete') ? '#1D9E75' : e.message?.includes('fail') ? '#E24B4A' : 'var(--color-text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{e.message?.slice(0, 70)}</span>
                 </div>
-              )}
-              <Link href={`/projects/${projectId}`}>
-                <Button variant="outline" size="sm">Edit in full settings</Button>
-              </Link>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+              ))}
+            </div>
+          </div>
+        </>
+      )}
     </div>
-  )
+  );
+}
+
+function TasksTab({ tasks, projectId, onUpdate }: any) {
+  const COLS = [{ id: 'planned', label: 'Planned', color: 'var(--color-text-secondary)' }, { id: 'in_progress', label: 'In Progress', color: '#EF9F27' }, { id: 'review', label: 'Review', color: '#185FA5' }, { id: 'done', label: 'Done', color: '#1D9E75' }];
+  const pc = (p: string) => p === 'critical' ? '#E24B4A' : p === 'high' ? '#EF9F27' : p === 'medium' ? '#185FA5' : 'var(--color-text-secondary)';
+
+  return (
+    <div style={{ padding: 20, display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, alignContent: 'start' }}>
+      {COLS.map(col => {
+        const ct = tasks.filter((t: any) => t.status === col.id);
+        return (
+          <div key={col.id}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}><span style={{ fontSize: 12, fontWeight: 500, color: col.color }}>{col.label}</span><span style={{ fontSize: 11, padding: '1px 7px', borderRadius: 10, background: 'var(--color-background-secondary)', color: 'var(--color-text-secondary)' }}>{ct.length}</span></div>
+            <div style={{ height: 2, borderRadius: 1, background: col.color, marginBottom: 10, opacity: 0.4 }} />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {ct.map((task: any) => (
+                <div key={task.id} style={{ padding: '10px 12px', borderRadius: 8, border: '0.5px solid var(--color-border-tertiary)', background: 'var(--color-background-secondary)' }}>
+                  <div style={{ fontSize: 12, fontWeight: 500, marginBottom: 4, lineHeight: 1.4 }}>{task.title}</div>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <span style={{ fontSize: 10, color: pc(task.priority) }}>{task.priority}</span>
+                    <span style={{ fontSize: 10, color: 'var(--color-text-secondary)' }}>{task.department}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function PreviewTab({ project }: any) {
+  const url = project.deployUrl;
+  const safeUrl = url?.startsWith('http') ? url : url ? `https://${url}` : null;
+  return (
+    <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+      <div style={{ padding: '6px 14px', borderBottom: '0.5px solid var(--color-border-tertiary)', fontSize: 11, color: 'var(--color-text-secondary)', display: 'flex', justifyContent: 'space-between', background: 'var(--color-background-secondary)' }}>
+        <span>{safeUrl || 'No deploy URL'}</span>
+        {safeUrl && <a href={safeUrl} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--color-text-info)', textDecoration: 'none' }}>Open ↗</a>}
+      </div>
+      {safeUrl ? <iframe src={safeUrl} style={{ flex: 1, border: 'none' }} /> : <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><p style={{ fontSize: 13, color: 'var(--color-text-secondary)' }}>Preview not available</p></div>}
+    </div>
+  );
+}
+
+function SettingsTab({ project }: any) {
+  return (
+    <div style={{ padding: 24, maxWidth: 600 }}>
+      <h2 style={{ fontSize: 15, fontWeight: 500, marginBottom: 20 }}>Project Settings</h2>
+      {[{ label: 'Project ID', value: project.id }, { label: 'Slug', value: project.slug }, { label: 'Deploy URL', value: project.deployUrl }, { label: 'Repo path', value: project.repoPath || 'Not configured' }, { label: 'GitHub', value: project.githubUrl || 'Not configured' }, { label: 'Created', value: project.createdAt ? new Date(project.createdAt).toLocaleDateString() : '—' }].map(f => (
+        <div key={f.label} style={{ marginBottom: 14 }}><label style={{ fontSize: 11, color: 'var(--color-text-secondary)', display: 'block', marginBottom: 4 }}>{f.label}</label><div style={{ fontSize: 12, padding: '8px 12px', borderRadius: 8, background: 'var(--color-background-secondary)', border: '0.5px solid var(--color-border-tertiary)', fontFamily: f.label === 'Project ID' || f.label === 'Slug' ? 'monospace' : 'inherit' }}>{f.value}</div></div>
+      ))}
+    </div>
+  );
 }

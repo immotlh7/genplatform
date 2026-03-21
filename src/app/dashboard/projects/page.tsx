@@ -1,188 +1,91 @@
-"use client"
-
-import { useState, useEffect } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { Progress } from '@/components/ui/progress'
-import { 
-  Github, ExternalLink, Plus, Folder, Loader2, RefreshCw
-} from 'lucide-react'
-import Link from 'next/link'
+'use client';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 
 interface Project {
-  id: string
-  name: string
-  description: string
-  status: string
-  progress: number
-  githubUrl?: string
-  deployUrl?: string
-  previewUrl?: string
-  lastActivity: string
-  techStack?: string[]
-  technologies?: string[]
-  createdAt?: string
+  id: string; name: string; slug: string; description: string; status: string;
+  progress: number; color: string; initials: string; techStack: string[];
+  deployUrl: string; pipeline: any; taskSummary?: { total: number; completed: number; inProgress: number }; createdAt: string;
 }
 
 export default function ProjectsPage() {
-  const [projects, setProjects] = useState<Project[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const router = useRouter();
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState<'all' | 'active' | 'completed'>('all');
 
   useEffect(() => {
-    loadProjects()
-  }, [])
+    fetch('/api/projects').then(r => r.json()).then(data => { if (Array.isArray(data)) setProjects(data); setLoading(false); }).catch(() => setLoading(false));
+  }, []);
 
-  const loadProjects = async () => {
-    setLoading(true)
-    setError(null)
-    try {
-      const res = await fetch('/api/projects')
-      if (!res.ok) throw new Error(`HTTP ${res.status}`)
-      const data = await res.json()
-      const raw = data.projects || data || []
-      setProjects(raw.map((p: any) => ({
-        id: p.id,
-        name: p.name || 'Untitled',
-        description: p.description || '',
-        status: p.status || 'active',
-        progress: p.progress || 0,
-        githubUrl: p.githubUrl,
-        deployUrl: p.deployUrl || p.previewUrl,
-        previewUrl: p.previewUrl,
-        lastActivity: p.lastActivity || p.createdAt || new Date().toISOString(),
-        techStack: p.techStack || p.technologies || [],
-        createdAt: p.createdAt,
-      })))
-    } catch (e: any) {
-      setError(e.message)
-    } finally {
-      setLoading(false)
-    }
-  }
+  const filtered = projects.filter(p => { if (filter === 'active') return p.status === 'active'; if (filter === 'completed') return p.status === 'completed'; return true; });
 
-  const getStatusColor = (status: string) => {
-    if (status === 'active') return 'bg-green-500'
-    if (status === 'paused') return 'bg-yellow-500'
-    if (status === 'completed') return 'bg-blue-500'
-    return 'bg-gray-500'
-  }
+  const getPipelineStage = (project: Project): string => {
+    const p = project.pipeline || {};
+    const stages = ['deploy', 'security', 'review', 'development', 'planning', 'analysis', 'idea'];
+    for (const s of stages) { if (p[s]?.status === 'active') return s; } return 'idea';
+  };
 
-  const formatTimeAgo = (ts: string) => {
-    const diff = Date.now() - new Date(ts).getTime()
-    const hours = Math.floor(diff / 3600000)
-    if (hours < 1) return 'Just now'
-    if (hours < 24) return `${hours}h ago`
-    return `${Math.floor(hours / 24)}d ago`
-  }
+  if (loading) return <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}><p style={{ fontSize: 13, color: 'var(--color-text-secondary)' }}>Loading projects...</p></div>;
 
   return (
-    <div className="space-y-6 p-6">
-      <div className="flex items-center justify-between">
+    <div style={{ padding: 24, maxWidth: 1100 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
         <div>
-          <h1 className="text-3xl font-bold">Projects</h1>
-          <p className="text-muted-foreground">
-            {projects.length} project{projects.length !== 1 ? 's' : ''} managed
-          </p>
+          <h1 style={{ fontSize: 20, fontWeight: 500, margin: '0 0 4px' }}>Projects</h1>
+          <p style={{ fontSize: 13, color: 'var(--color-text-secondary)', margin: 0 }}>{projects.length} project{projects.length !== 1 ? 's' : ''}</p>
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={loadProjects} disabled={loading}>
-            <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-          </Button>
-          <Button size="sm">
-            <Plus className="h-4 w-4 mr-1" /> New Project
-          </Button>
-        </div>
+        <button onClick={() => router.push('/dashboard/ideas')} style={{ padding: '8px 18px', borderRadius: 8, fontSize: 13, fontWeight: 500, cursor: 'pointer', background: '#7F77DD', color: '#fff', border: 'none' }}>+ New project</button>
       </div>
 
-      {error && (
-        <div className="bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800 rounded-lg p-4 text-sm text-red-700 dark:text-red-300">
-          Failed to load projects: {error}
-          <Button variant="outline" size="sm" className="ml-4" onClick={loadProjects}>Retry</Button>
-        </div>
-      )}
+      <div style={{ display: 'flex', gap: 4, marginBottom: 20 }}>
+        {(['all', 'active', 'completed'] as const).map(f => (
+          <button key={f} onClick={() => setFilter(f)} style={{ padding: '5px 14px', borderRadius: 6, fontSize: 12, cursor: 'pointer', border: '0.5px solid var(--color-border-tertiary)', background: filter === f ? 'var(--color-background-secondary)' : 'transparent', color: filter === f ? 'var(--color-text-primary)' : 'var(--color-text-secondary)', fontWeight: filter === f ? 500 : 400, textTransform: 'capitalize' }}>
+            {f} {f === 'all' ? `(${projects.length})` : ''}
+          </button>
+        ))}
+      </div>
 
-      {loading ? (
-        <div className="flex items-center justify-center py-20">
-          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-        </div>
-      ) : projects.length === 0 ? (
-        <div className="text-center py-20">
-          <Folder className="h-16 w-16 text-muted-foreground mx-auto mb-4 opacity-50" />
-          <h3 className="text-lg font-semibold mb-2">No projects yet</h3>
-          <p className="text-muted-foreground">Create your first project to get started.</p>
+      {filtered.length === 0 ? (
+        <div style={{ textAlign: 'center', padding: 60 }}>
+          <div style={{ fontSize: 36, marginBottom: 12, opacity: 0.3 }}>◻</div>
+          <p style={{ fontSize: 14, color: 'var(--color-text-secondary)' }}>No projects yet</p>
+          <button onClick={() => router.push('/dashboard/ideas')} style={{ marginTop: 12, padding: '8px 18px', borderRadius: 8, fontSize: 13, cursor: 'pointer', background: '#7F77DD', color: '#fff', border: 'none' }}>Create your first project</button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {projects.map((project) => (
-            <Link key={project.id} href={`/dashboard/projects/${project.id}`}>
-              <Card className="hover:shadow-lg transition-all cursor-pointer hover:border-blue-500/50 h-full">
-                <CardHeader className="pb-3">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1 min-w-0">
-                      <CardTitle className="text-lg truncate">{project.name}</CardTitle>
-                      <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
-                        {project.description}
-                      </p>
+        <div style={{ display: 'grid', gap: 12 }}>
+          {filtered.map(project => {
+            const total = project.taskSummary?.total || project.pipeline?.development?.total || 0;
+            const completed = project.taskSummary?.completed || project.pipeline?.development?.completed || 0;
+            const progress = total > 0 ? Math.round((completed / total) * 100) : project.progress || 0;
+            return (
+              <div key={project.id} onClick={() => router.push(`/dashboard/projects/${project.id}`)} style={{ padding: '16px 20px', borderRadius: 12, cursor: 'pointer', border: '0.5px solid var(--color-border-tertiary)', background: 'var(--color-background-secondary)', display: 'grid', gridTemplateColumns: '1fr auto', gap: 16, alignItems: 'center' }}>
+                <div style={{ display: 'flex', gap: 14, alignItems: 'flex-start', minWidth: 0 }}>
+                  <div style={{ width: 40, height: 40, borderRadius: 10, flexShrink: 0, background: project.color || '#4F46E5', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 500, color: '#fff' }}>
+                    {project.initials || project.name?.slice(0, 2).toUpperCase()}
+                  </div>
+                  <div style={{ minWidth: 0, flex: 1 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 3 }}>
+                      <span style={{ fontSize: 14, fontWeight: 500 }}>{project.name}</span>
+                      <span style={{ fontSize: 10, padding: '2px 7px', borderRadius: 4, background: project.status === 'active' ? 'rgba(29,158,117,0.12)' : 'var(--color-background-primary)', color: project.status === 'active' ? '#1D9E75' : 'var(--color-text-secondary)' }}>{project.status}</span>
                     </div>
-                    <div className="flex items-center gap-2 ml-2 flex-shrink-0">
-                      <div className={`w-2 h-2 rounded-full ${getStatusColor(project.status)}`} />
-                      <Badge variant="secondary" className="text-xs capitalize">
-                        {project.status}
-                      </Badge>
+                    <p style={{ fontSize: 12, color: 'var(--color-text-secondary)', margin: '0 0 8px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{project.description}</p>
+                    <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
+                      {(project.techStack || []).slice(0, 4).map(t => (<span key={t} style={{ fontSize: 10, padding: '1px 6px', borderRadius: 3, background: 'var(--color-background-primary)', color: 'var(--color-text-secondary)', border: '0.5px solid var(--color-border-tertiary)' }}>{t}</span>))}
+                      <span style={{ fontSize: 10, color: 'var(--color-text-secondary)', marginLeft: 4 }}>Phase: {getPipelineStage(project)}</span>
                     </div>
                   </div>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {/* Progress */}
-                  <div>
-                    <div className="flex items-center justify-between text-sm mb-2">
-                      <span>Progress</span>
-                      <span className="font-medium">{project.progress}%</span>
-                    </div>
-                    <Progress value={project.progress} className="h-2" />
-                  </div>
-
-                  {/* Tech Stack */}
-                  {(project.techStack || []).length > 0 && (
-                    <div className="flex flex-wrap gap-1">
-                      {(project.techStack || []).slice(0, 4).map((tech) => (
-                        <Badge key={tech} variant="outline" className="text-xs">
-                          {tech}
-                        </Badge>
-                      ))}
-                    </div>
-                  )}
-
-                  {/* Footer */}
-                  <div className="flex items-center justify-between pt-2 border-t">
-                    <span className="text-xs text-muted-foreground">
-                      {formatTimeAgo(project.lastActivity)}
-                    </span>
-                    <div className="flex gap-1.5">
-                      {project.githubUrl && (
-                        <a href={project.githubUrl} target="_blank" rel="noopener noreferrer"
-                          onClick={(e) => e.stopPropagation()}
-                          className="p-1.5 rounded-md border hover:bg-accent">
-                          <Github className="h-3.5 w-3.5" />
-                        </a>
-                      )}
-                      {(project.deployUrl || project.previewUrl) && (
-                        <a href={project.deployUrl || project.previewUrl} target="_blank" rel="noopener noreferrer"
-                          onClick={(e) => e.stopPropagation()}
-                          className="p-1.5 rounded-md border hover:bg-accent">
-                          <ExternalLink className="h-3.5 w-3.5" />
-                        </a>
-                      )}
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </Link>
-          ))}
+                </div>
+                <div style={{ textAlign: 'right', minWidth: 120 }}>
+                  <div style={{ fontSize: 22, fontWeight: 500, color: progress > 0 ? '#1D9E75' : 'var(--color-text-secondary)', marginBottom: 4 }}>{progress}%</div>
+                  <div style={{ height: 3, width: 100, borderRadius: 2, background: 'var(--color-border-tertiary)', overflow: 'hidden', marginLeft: 'auto' }}><div style={{ height: '100%', width: `${progress}%`, background: '#1D9E75', borderRadius: 2 }} /></div>
+                  <div style={{ fontSize: 11, color: 'var(--color-text-secondary)', marginTop: 4 }}>{completed}/{total} tasks</div>
+                </div>
+              </div>
+            );
+          })}
         </div>
       )}
     </div>
-  )
+  );
 }
