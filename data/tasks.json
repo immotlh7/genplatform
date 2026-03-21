@@ -356,66 +356,108 @@
   },
   {
     "id": "TF-01",
-    "title": "Setup Next.js project",
+    "name": "إعداد مشروع Next.js",
+    "title": "إعداد مشروع Next.js",
     "status": "done",
-    "department": "DevOps",
+    "priority": "critical",
     "projectId": "taskflow",
-    "priority": "critical"
+    "department": "DevOps",
+    "assignee": "AI Agent",
+    "completedAt": "2026-03-21T01:40:00Z"
   },
   {
     "id": "TF-02",
-    "title": "Create task data model",
+    "name": "إنشاء هيكل الملفات",
+    "title": "إنشاء هيكل الملفات",
     "status": "done",
-    "department": "Backend",
+    "priority": "high",
     "projectId": "taskflow",
-    "priority": "high"
+    "department": "DevOps",
+    "assignee": "AI Agent",
+    "completedAt": "2026-03-21T01:41:00Z"
   },
   {
     "id": "TF-03",
-    "title": "Build task list page",
-    "status": "in_progress",
-    "department": "Frontend",
+    "name": "بناء واجهة قائمة المهام",
+    "title": "بناء واجهة قائمة المهام",
+    "status": "done",
+    "priority": "critical",
     "projectId": "taskflow",
-    "priority": "critical"
+    "department": "Frontend",
+    "assignee": "AI Agent",
+    "completedAt": "2026-03-21T01:42:00Z"
   },
   {
     "id": "TF-04",
-    "title": "Add task creation form",
-    "status": "planned",
-    "department": "Frontend",
+    "name": "إضافة نظام الأولويات",
+    "title": "إضافة نظام الأولويات",
+    "status": "done",
+    "priority": "high",
     "projectId": "taskflow",
-    "priority": "high"
+    "department": "Frontend",
+    "assignee": "AI Agent",
+    "completedAt": "2026-03-21T01:43:00Z"
   },
   {
     "id": "TF-05",
-    "title": "Add priority badges",
-    "status": "planned",
-    "department": "Frontend",
+    "name": "إضافة فلترة حسب الحالة",
+    "title": "إضافة فلترة حسب الحالة",
+    "status": "done",
+    "priority": "high",
     "projectId": "taskflow",
-    "priority": "medium"
+    "department": "Frontend",
+    "assignee": "AI Agent",
+    "completedAt": "2026-03-21T01:43:30Z"
   },
   {
     "id": "TF-06",
-    "title": "Add status toggle",
-    "status": "planned",
-    "department": "Frontend",
+    "name": "إنشاء صفحة Analytics Dashboard",
+    "title": "إنشاء صفحة Analytics Dashboard",
+    "status": "done",
+    "priority": "critical",
     "projectId": "taskflow",
-    "priority": "high"
+    "department": "Frontend",
+    "assignee": "AI Agent",
+    "completedAt": "2026-03-21T02:03:00Z"
   },
   {
     "id": "TF-07",
-    "title": "Add search/filter",
-    "status": "planned",
-    "department": "Frontend",
+    "name": "تسجيل Subdomain في Caddy",
+    "title": "تسجيل Subdomain في Caddy",
+    "status": "done",
+    "priority": "critical",
     "projectId": "taskflow",
-    "priority": "medium"
+    "department": "DevOps",
+    "assignee": "AI Agent",
+    "completedAt": "2026-03-21T01:44:00Z"
   },
   {
     "id": "TF-08",
-    "title": "Deploy to taskflow.gen3.ai",
-    "status": "planned",
-    "department": "DevOps",
+    "name": "نشر عبر PM2",
+    "title": "نشر عبر PM2",
+    "status": "done",
+    "priority": "critical",
     "projectId": "taskflow",
-    "priority": "critical"
+    "department": "DevOps",
+    "assignee": "AI Agent",
+    "completedAt": "2026-03-21T01:44:30Z"
+  },
+  {
+    "id": "TF-09",
+    "name": "إضافة تصدير CSV",
+    "title": "إضافة تصدير CSV",
+    "status": "planned",
+    "priority": "medium",
+    "projectId": "taskflow",
+    "department": "Frontend"
+  },
+  {
+    "id": "TF-10",
+    "name": "إضافة اختصارات لوحة المفاتيح",
+    "title": "إضافة اختصارات لوحة المفاتيح",
+    "status": "planned",
+    "priority": "low",
+    "projectId": "taskflow",
+    "department": "Frontend"
   }
 ]

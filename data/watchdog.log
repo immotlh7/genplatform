@@ -427,3 +427,39 @@
 [2026-03-21T01:59:02.006Z] 📊 Queue: 255/255 done, 0 approved, 0 executing
 [2026-03-21T01:59:02.007Z] ✅ System idle - no work pending
 [2026-03-21T01:59:02.105Z] Done. Issues: 0, Fixes: 0
+[2026-03-21T02:00:02.266Z] --- Watchdog run ---
+[2026-03-21T02:00:02.320Z] ✅ Site up
+[2026-03-21T02:00:02.592Z] ✅ pm2 online
+[2026-03-21T02:00:02.613Z] 📊 Queue: 255/255 done, 0 approved, 0 executing
+[2026-03-21T02:00:02.613Z] ✅ System idle - no work pending
+[2026-03-21T02:00:02.621Z] Done. Issues: 0, Fixes: 0
+[2026-03-21T02:01:01.389Z] --- Watchdog run ---
+[2026-03-21T02:01:01.404Z] ✅ Site up
+[2026-03-21T02:01:01.564Z] ✅ pm2 online
+[2026-03-21T02:01:01.571Z] 📊 Queue: 255/255 done, 0 approved, 0 executing
+[2026-03-21T02:01:01.571Z] ✅ System idle - no work pending
+[2026-03-21T02:01:01.577Z] Done. Issues: 0, Fixes: 0
+[2026-03-21T02:02:01.463Z] --- Watchdog run ---
+[2026-03-21T02:02:01.484Z] ✅ Site up
+[2026-03-21T02:02:01.705Z] ✅ pm2 online
+[2026-03-21T02:02:01.716Z] 📊 Queue: 255/255 done, 0 approved, 0 executing
+[2026-03-21T02:02:01.716Z] ✅ System idle - no work pending
+[2026-03-21T02:02:01.723Z] Done. Issues: 0, Fixes: 0
+[2026-03-21T02:03:01.534Z] --- Watchdog run ---
+[2026-03-21T02:03:01.557Z] ✅ Site up
+[2026-03-21T02:03:01.743Z] ✅ pm2 online
+[2026-03-21T02:03:01.755Z] 📊 Queue: 255/255 done, 0 approved, 0 executing
+[2026-03-21T02:03:01.756Z] ✅ System idle - no work pending
+[2026-03-21T02:03:01.762Z] Done. Issues: 0, Fixes: 0
+[2026-03-21T02:04:01.631Z] --- Watchdog run ---
+[2026-03-21T02:04:01.658Z] ✅ Site up
+[2026-03-21T02:04:01.845Z] ✅ pm2 online
+[2026-03-21T02:04:01.852Z] 📊 Queue: 255/255 done, 0 approved, 0 executing
+[2026-03-21T02:04:01.853Z] ✅ System idle - no work pending
+[2026-03-21T02:04:01.859Z] Done. Issues: 0, Fixes: 0
+[2026-03-21T02:05:01.725Z] --- Watchdog run ---
+[2026-03-21T02:05:01.755Z] ✅ Site up
+[2026-03-21T02:05:01.985Z] ✅ pm2 online
+[2026-03-21T02:05:01.998Z] 📊 Queue: 255/255 done, 0 approved, 0 executing
+[2026-03-21T02:05:01.999Z] ✅ System idle - no work pending
+[2026-03-21T02:05:02.150Z] Done. Issues: 0, Fixes: 0

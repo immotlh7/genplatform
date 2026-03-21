@@ -181,78 +181,127 @@
     "idea": {
       "status": "done",
       "completedAt": "2026-03-21",
-      "title": "TaskFlow - Simple Task Manager",
-      "originalIdea": "تطبيق بسيط لإدارة المهام يتكون من صفحة أو صفحتين، يُستخدم لاختبار الدورة الكاملة لمنصة GenPlatform",
-      "problemSolved": "اختبار Pipeline الكامل من الفكرة إلى الرابط الحي",
-      "valueProposition": "إدارة مهام بسيطة وسريعة مع تصنيف بالأولوية",
+      "title": "TaskFlow - مدير مهام بسيط",
+      "originalIdea": "تطبيق بسيط لإدارة المهام يتكون من صفحة أو صفحتين. يُستخدم كمشروع تجريبي لاختبار الدورة الكاملة لمنصة GenPlatform من الفكرة إلى الرابط الحي.",
+      "problemSolved": "اختبار Pipeline الكامل للمنصة: إنشاء مشروع → تحليل → تخطيط → تطوير → نشر → رابط حي",
+      "valueProposition": "إدارة مهام سريعة وبسيطة مع تصنيف بالأولوية وتتبع التقدم ولوحة تحليلات",
       "targetAudience": [
-        "مستخدمين يريدون تتبع مهام بسيطة",
-        "اختبار منصة GenPlatform"
-      ]
+        "مطورين يريدون تتبع مهام بسيطة",
+        "اختبار دورة GenPlatform الكاملة"
+      ],
+      "submittedBy": "Med",
+      "submittedAt": "2026-03-21T01:40:00Z",
+      "approvedAt": "2026-03-21T01:40:00Z"
     },
     "analysis": {
       "status": "done",
       "completedAt": "2026-03-21",
       "marketAnalysis": {
-        "marketSize": "Test project for GenPlatform pipeline validation"
+        "marketSize": "مشروع تجريبي لاختبار المنصة",
+        "competitors": [
+          {
+            "name": "Todoist",
+            "strength": "ميزات متقدمة",
+            "weakness": "معقد للمهام البسيطة",
+            "ourAdvantage": "بساطة وسرعة"
+          },
+          {
+            "name": "Google Tasks",
+            "strength": "تكامل مع Google",
+            "weakness": "تصميم بسيط جداً",
+            "ourAdvantage": "تصميم أجمل مع Analytics"
+          }
+        ]
       },
       "coreFeatures": [
         {
           "name": "إضافة مهام",
-          "description": "إنشاء مهام جديدة بعنوان وأولوية",
+          "description": "إنشاء مهام جديدة بعنوان وأولوية (عالية/متوسطة/منخفضة)",
           "priority": "must"
         },
         {
           "name": "تصفية المهام",
-          "description": "عرض حسب الحالة (الكل، قيد التنفيذ، مكتمل)",
+          "description": "عرض الكل أو حسب الحالة (في الانتظار / قيد التنفيذ / مكتمل)",
           "priority": "must"
         },
         {
           "name": "تغيير الحالة",
-          "description": "نقل المهام بين الحالات بنقرة واحدة",
+          "description": "نقل المهام بين الحالات بنقرة واحدة (⬜ → 🔄 → ✅)",
           "priority": "must"
         },
         {
           "name": "حذف المهام",
           "description": "إزالة المهام غير المطلوبة",
+          "priority": "must"
+        },
+        {
+          "name": "لوحة تحليلات",
+          "description": "إحصائيات شاملة: بطاقات أرقام، رسم دائري، توزيع الأولويات",
+          "priority": "must"
+        },
+        {
+          "name": "تصدير CSV",
+          "description": "تصدير المهام لملف Excel",
           "priority": "should"
         }
       ],
       "techStack": {
-        "Frontend": "Next.js 15 + TypeScript",
-        "Styling": "Inline CSS (no dependencies)",
+        "Framework": "Next.js 15",
+        "Language": "TypeScript",
+        "Styling": "Inline CSS (zero dependencies)",
         "State": "React useState",
-        "Deployment": "PM2 + Caddy reverse proxy"
+        "Deployment": "PM2 + Caddy reverse proxy",
+        "Domain": "taskflow.gen3.ai"
+      },
+      "costEstimation": {
+        "total": "مجاني (مستضاف على سيرفر GenPlatform)",
+        "timeline": "< 1 ساعة"
       }
     },
     "planning": {
       "status": "done",
       "completedAt": "2026-03-21",
-      "architecture": "Single-page Next.js app with inline state management",
+      "architecture": "تطبيق Next.js من صفحتين، بدون قاعدة بيانات خارجية، state management عبر React hooks",
       "pages": [
         {
           "route": "/",
-          "role": "صفحة المهام الرئيسية مع إضافة وتصفية وإدارة"
+          "role": "الصفحة الرئيسية: قائمة المهام مع إضافة وتصفية وتغيير حالة وحذف"
+        },
+        {
+          "route": "/analytics",
+          "role": "لوحة التحليلات: بطاقات إحصائية، رسم دائري للإنجاز، توزيع الأولويات، آخر المهام المنجزة"
         }
+      ],
+      "fileStructure": [
+        "app/layout.tsx — هيكل التطبيق",
+        "app/page.tsx — صفحة المهام الرئيسية",
+        "app/analytics/page.tsx — لوحة التحليلات",
+        "next.config.ts — إعدادات Next.js",
+        "package.json — التبعيات"
       ]
     },
     "development": {
-      "status": "active",
-      "total": 8,
-      "completed": 6,
+      "status": "done",
+      "total": 10,
+      "completed": 8,
       "phases": [
         {
-          "name": "إعداد المشروع",
+          "name": "إعداد المشروع (Next.js + TypeScript)",
           "status": "done",
           "tasks": 2
         },
         {
-          "name": "واجهة المهام",
+          "name": "واجهة إدارة المهام",
           "status": "done",
           "tasks": 3
         },
         {
-          "name": "التحسينات",
+          "name": "لوحة التحليلات",
+          "status": "done",
+          "tasks": 2
+        },
+        {
+          "name": "التحسينات والميزات الإضافية",
           "status": "active",
           "tasks": 3
         }
