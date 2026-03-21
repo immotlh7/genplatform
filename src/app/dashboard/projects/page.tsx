@@ -58,6 +58,7 @@ export default function ProjectsPage() {
   const [projects, setProjects] = useState<Project[]>([])
   const [projectAccess, setProjectAccess] = useState<ProjectAccess[]>([])
   const [loading, setLoading] = useState(true)
+  const router = useRouter()
   const [selectedProject, setSelectedProject] = useState<Project | null>(null)
   const [showDetail, setShowDetail] = useState(false)
   const [showNewProject, setShowNewProject] = useState(false)
@@ -218,6 +219,8 @@ export default function ProjectsPage() {
   }
 
   const handleProjectClick = (project: Project) => {
+    router.push(`/dashboard/projects/${project.id}`)
+    return; // below kept for reference only
     setSelectedProject(project)
     setShowDetail(true)
   }

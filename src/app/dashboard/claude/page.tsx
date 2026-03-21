@@ -47,7 +47,7 @@ export default function ClaudeCodePage() {
     setMessages(prev => [...prev, userMsg])
 
     try {
-      const res = await fetch('/api/chat/send', {
+      const res = await fetch('/api/chat/ai', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -56,25 +56,21 @@ export default function ClaudeCodePage() {
             name: selectedProject.name,
             path: selectedProject.path,
             url: selectedProject.url,
-          }
+          },
+          conversationHistory: messages.filter(m => m.role === 'user' || m.role === 'ai').slice(-10).map(m => ({
+            role: m.role === 'ai' ? 'assistant' : 'user',
+            content: m.content
+          }))
         })
       })
 
-      if (res.ok) {
-        const data = await res.json()
+      const data = await res.json()
         const aiMsg: Message = {
           role: 'ai',
-          content: data.response || data.message || 'تم استقبال رسالتك.',
+          content: data.reply || data.response || data.message || 'تم استقبال رسالتك.',
           type: 'text'
         }
         setMessages(prev => [...prev, aiMsg])
-      } else {
-        setMessages(prev => [...prev, {
-          role: 'ai',
-          content: '✅ تم إرسال الرسالة إلى OpenClaw عبر Telegram. ستصلك الإجابة قريباً.',
-          type: 'text'
-        }])
-      }
     } catch {
       setMessages(prev => [...prev, {
         role: 'ai',
