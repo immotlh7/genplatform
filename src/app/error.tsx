@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect } from 'react';
-import { AlertCircle } from 'lucide-react';
 
 export default function Error({
   error,
@@ -11,36 +10,31 @@ export default function Error({
   reset: () => void;
 }) {
   useEffect(() => {
-    console.error('Application error:', error);
+    // Send error to server for debugging
+    fetch('/api/client-error', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        message: error.message,
+        stack: error.stack,
+        digest: error.digest,
+        url: typeof window !== 'undefined' ? window.location.href : '',
+        timestamp: new Date().toISOString()
+      })
+    }).catch(() => {})
   }, [error]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
-      <div className="max-w-md w-full p-6">
-        <div className="text-center">
-          <AlertCircle className="mx-auto h-12 w-12 text-red-600 dark:text-red-400 mb-4" />
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">
-            Something went wrong!
-          </h2>
-          <p className="text-gray-600 dark:text-gray-400 mb-6">
-            An error occurred while loading the application. This might be due to network issues or configuration problems.
-          </p>
-          <div className="space-y-4">
-            <button
-              onClick={reset}
-              className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-            >
-              Try again
-            </button>
-            <a
-              href="/dashboard"
-              className="block w-full px-4 py-2 bg-gray-200 dark:bg-gray-800 text-gray-800 dark:text-gray-200 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-700 transition-colors text-center"
-            >
-              Go to Dashboard
-            </a>
-          </div>
-        </div>
-      </div>
+    <div style={{padding:40,textAlign:'center'}}>
+      <h2 style={{color:'red',marginBottom:16}}>Error</h2>
+      <pre style={{textAlign:'left',background:'#111',padding:16,borderRadius:8,overflow:'auto',fontSize:12,color:'#f88',maxHeight:300}}>
+        {error.message}
+        {'\n\n'}
+        {error.stack}
+      </pre>
+      <button onClick={reset} style={{marginTop:16,padding:'10px 24px',background:'#2563eb',color:'#fff',border:'none',borderRadius:8,cursor:'pointer'}}>
+        Try again
+      </button>
     </div>
   );
 }

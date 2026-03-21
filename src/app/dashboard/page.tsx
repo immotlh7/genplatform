@@ -78,7 +78,7 @@ export default function DashboardPage() {
         const liveData = await liveStatusRes.json()
         setLiveTask({
           phase: liveData.phase || 'Phase 1: Foundation',
-          currentTask: liveData.currentTask || liveData.task || 'System monitoring',
+          currentTask: (typeof liveData.currentTask === "object" && liveData.currentTask !== null) ? (liveData.currentTask.name || "System monitoring") : (liveData.currentTask || liveData.task || "System monitoring"),
           progress: liveData.progress || 75,
           status: liveData.status || 'active',
           lastUpdate: liveData.lastUpdate || new Date().toISOString()
